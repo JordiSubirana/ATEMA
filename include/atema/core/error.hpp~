@@ -1,0 +1,12 @@
+
+#ifndef prout
+#define prout
+
+
+
+void prout();
+
+
+#endif
+
+
