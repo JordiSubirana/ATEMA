@@ -14,6 +14,7 @@ LIBS_PATH = $(addprefix ./lib/,$(LIBS))
 
 
 %:
+	@echo make -C $(addprefix src/atema/,$(@)) MODULE=$(@)
 	make -C $(addprefix src/atema/,$(@)) MODULE=$(@)
 
 
