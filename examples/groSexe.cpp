@@ -7,7 +7,7 @@ int main() {
 	prout();
 	
 	auto i = 5;
-	cout << i << endl;
+	cout << i << "grosexe" << endl;
 	
 	return 0;
 }

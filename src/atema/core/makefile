@@ -1,22 +1,34 @@
 
-#include ../../../config.mk
+
+include ../../../config.mk
 
 #TARGET = $(MODULE)
 #LIB = $(addsuffix .a,$(addprefix libatema-,$(MODULE)))
 #LIBS_PATH = $(addprefix ./lib/,$(LIB))
 
-#error.o: $(subst $@: , ,$(shell g++ -std=c++11 -I../../../include -MM -c $(subst .o,.cpp,$@)))
-#	g++ -std=c++11 -I../../../include -c $(subst .o,.cpp,$@) -o $@
-
 
 SRC = $(wildcard *.cpp)
 OBJ = $(subst .cpp,.o,$(SRC))
 
+
+ifeq ($(DYNAMIC_LINK), ON)
+	ifeq ($(OS),Windows_NT)
+		LINK_LIB += -o ../../../lib/lib$(MODULE).dll -Wl,--out-implib,../../../lib$(MODULE)-dll.a
+	else
+		LINK_LIB += -o ../../../lib/lib$(MODULE).so
+	endif
+else
+	LINK_LIB += -o ../../../lib/lib$(MODULE).a
+endif
+
+
 all: $(OBJ)
-	@echo Im $(OBJ)
+	$(LINK_LIB) $(OBJ)
+	@echo $(LINK_LIB) $(OBJ)
 
 %.o: %.cpp
-	g++ -std=c++11 -MMD -I../../../include -c $< -o $@
+	$(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
+	@echo $(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
 
 -include $(SRC:.cpp=.d)
 

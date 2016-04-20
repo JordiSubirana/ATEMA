@@ -4,7 +4,6 @@
 
 #include <cstdio>
 
-#warning compiling
 
 
 void prout() {
