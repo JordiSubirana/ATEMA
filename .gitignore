@@ -33,3 +33,7 @@
 # Dependance files
 *.d
 
+# perso CMakeListe.txt
+CMakeLists.txt
+.idea
+

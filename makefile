@@ -9,6 +9,7 @@ MODULES = $(MODULES_DIR:/= )
 LIBS = $(addsuffix .a,$(addprefix libatema-,$(MODULES)))
 LIBS_PATH = $(addprefix ./lib/,$(LIBS))
 
+#$(CLION_EXE_DIR)/
 
 %:
 	make -C $(addprefix src/atema/,$(@)) MODULE=$(@) 
