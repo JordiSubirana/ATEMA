@@ -28,6 +28,8 @@
 *.app
 
 # Autosave files
-# *~
-#
-#
+*~
+
+# Dependance files
+*.d
+
