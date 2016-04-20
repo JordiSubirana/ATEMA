@@ -1,0 +1,13 @@
+
+
+include ../config.mk
+
+
+MODULES = $(sort $(dir $(wildcard ./src/*/)))
+
+
+all:
+	echo $(MODULES)
+	$(CXX) $(CXXFLAGS) example.cpp
+
+

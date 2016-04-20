@@ -15,7 +15,9 @@ LIBS_PATH = $(addprefix ./lib/,$(LIBS))
 
 
 all: $(MODULES)
-	make -C examples
-
-
+	@echo $(MODULES_PATH)
+#	@echo $(MODULES_DIR)
+#	@echo $(MODULES)
+#	@echo $(LIBS_PATH)
+#	make -C examples
 

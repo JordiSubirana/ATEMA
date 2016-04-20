@@ -1,0 +1,20 @@
+
+#include ../../../config.mk
+
+
+
+TARGET = $(MODULE)
+LIB = $(addsuffix .a,$(addprefix libatema-,$(MODULE)))
+LIBS_PATH = $(addprefix ./lib/,$(LIB))
+
+
+error.o: $(subst error.o: , ,$(shell g++ -std=c++11 -I../../../include -MM error.cpp))
+	g++ -std=c++11 -I../../../include -c error.cpp -o error.o
+
+all: error.o
+	@echo Im $(LIB)
+
+
+
+#g++ -std=c++11 -I../../../include -MM -c error.cpp
+
