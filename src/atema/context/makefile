@@ -31,6 +31,10 @@ all: $(OBJ)
 	$(LINK_LIB) $(OBJ)
 
 
+%.o: %.c
+#	@echo $(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
+	$(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
+
 %.o: %.cpp
 #	@echo $(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
 	$(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@

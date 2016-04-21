@@ -1,5 +1,4 @@
 
-#include <atema/core/error.hpp>
 
 #include <iostream>
 #include <cstdio>
