@@ -1,10 +1,17 @@
 
 
 include ../../../config.mk
+-include makefile.dep
 
-
-SRC = $(wildcard *.cpp) ../../../extlibs/src/glad/glad.cpp
+# ajoute les sources de la lib
+SRC = $(wildcard *.cpp)
 OBJ = $(subst .cpp,.o,$(SRC))
+
+# ajoute les dependances cpp
+SRC_DEP = $(foreach dep,$(DEPENDS),$(wildcard ../../../extlibs/src/$(dep)/*.c) $(wildcard ../../../extlibs/src/$(dep)/*.cpp))
+OBJ += $(subst .c,.o,$(subst .cpp,.o,$(SRC_DEP)))
+
+
 
 toUP = $(subst a,A,$(subst b,B,$(subst c,C,$(subst d,D,$(subst e,E,$(subst f,F,$(subst g,G,$(subst h,H,$(subst i,I,$(subst j,J,$(subst k,K,$(subst l,L,$(subst m,M,$(subst n,N,$(subst o,O,$(subst p,P,$(subst q,Q,$(subst r,R,$(subst s,S,$(subst t,T,$(subst u,U,$(subst v,V,$(subst w,W,$(subst x,X,$(subst y,Y,$(subst z,Z,$1))))))))))))))))))))))))))
 
@@ -23,7 +30,11 @@ ifeq ($(DYNAMIC_LINK), ON)
   endif
 else
   LINK_LIB = $(AR) $(ARFLAGS) "../../../lib/$(LIB).a"
+  CXXFLAGS += -D$(call toUP,$(NAME))_STATIC
 endif
+
+
+CXXFLAGS += -D$(call toUP,$(NAME))_$(call toUP,$(MODULE))_EXPORT
 
 
 all: $(OBJ)
