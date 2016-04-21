@@ -14,6 +14,8 @@ int main() {
 	auto i = 5;
 	cout << i << "grosexe" << endl;
 	
+	printf("asd");
+	
 	return 0;
 }
 
