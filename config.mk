@@ -11,7 +11,7 @@ DEBUG_MODE = ON
 #DYNAMIC_LINK = ON
 
 
-
+NAME=atema
 
 
 ###########################################

@@ -6,27 +6,21 @@ include ../../../config.mk
 SRC = $(wildcard *.cpp)
 OBJ = $(subst .cpp,.o,$(SRC))
 
-LIB = libatema-$(MODULE)
+LIB = lib$(NAME)-$(MODULE)
 
 
 
 ifeq ($(DYNAMIC_LINK), ON)
   LINK_LIB = $(LD) -shared -fPIC $(LDFLAGS)
   CXXFLAGS += -fPIC -DATEMA_DYNAMIC
-else
-  LINK_LIB = $(AR) $(ARFLAGS)
-endif
 
-
-
-ifeq ($(DYNAMIC_LINK), ON)
   ifeq ($(OS),Windows_NT)
     LINK_LIB += -o ../../../bin/$(LIB).dll -Wl,--out-implib,../../../$(LIB)-dll.a
   else
     LINK_LIB += -o ../../../lib/$(LIB).so
   endif
 else
-  LINK_LIB += ../../../lib/$(LIB).a
+  LINK_LIB = $(AR) $(ARFLAGS) ../../../lib/$(LIB).a
 endif
 
 

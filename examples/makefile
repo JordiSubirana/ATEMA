@@ -14,8 +14,8 @@ BIN = $(addprefix ../bin/,$(subst .cpp,.exe,$(SRC)))
 
 
 %.exe: ../examples/%.o
-	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/libatema-core.a -o $@
-	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/libatema-core.a -o $@
+	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
+	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
 
 all: $(BIN)
 
