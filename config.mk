@@ -10,8 +10,8 @@ DEBUG_MODE = ON
 # uncomment to compile a dynamic link library (before reuse, do make clean)
 #DYNAMIC_LINK = ON
 
-
-NAME=atema
+# default target. You can specify the target: make NAME=atema
+NAME?=atema
 
 
 ###########################################

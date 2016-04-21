@@ -9,12 +9,12 @@ BIN = $(addprefix ../bin/,$(subst .cpp,.exe,$(SRC)))
 
 
 %.o: %.cpp
-	@echo $(CXX) $< $(CXXFLAGS)  -I../include -I../extlibs/include -o $@
+#	@echo $(CXX) $< $(CXXFLAGS)  -I../include -I../extlibs/include -o $@
 	$(CXX) $< $(CXXFLAGS)  -I../include -I../extlibs/include -o $@
 
 
 %.exe: ../examples/%.o
-	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
+#	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
 	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
 
 all: $(BIN)

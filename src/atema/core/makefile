@@ -6,13 +6,15 @@ include ../../../config.mk
 SRC = $(wildcard *.cpp)
 OBJ = $(subst .cpp,.o,$(SRC))
 
+toUP = $(subst a,A,$(subst b,B,$(subst c,C,$(subst d,D,$(subst e,E,$(subst f,F,$(subst g,G,$(subst h,H,$(subst i,I,$(subst j,J,$(subst k,K,$(subst l,L,$(subst m,M,$(subst n,N,$(subst o,O,$(subst p,P,$(subst q,Q,$(subst r,R,$(subst s,S,$(subst t,T,$(subst u,U,$(subst v,V,$(subst w,W,$(subst x,X,$(subst y,Y,$(subst z,Z,$1))))))))))))))))))))))))))
+
 LIB = lib$(NAME)-$(MODULE)
 
 
 
 ifeq ($(DYNAMIC_LINK), ON)
   LINK_LIB = $(LD) -shared -fPIC $(LDFLAGS)
-  CXXFLAGS += -fPIC -DATEMA_DYNAMIC
+  CXXFLAGS += -fPIC -D$(call toUP,$(NAME))_DYNAMIC
 
   ifeq ($(OS),Windows_NT)
     LINK_LIB += -o ../../../bin/$(LIB).dll -Wl,--out-implib,../../../$(LIB)-dll.a
@@ -25,12 +27,12 @@ endif
 
 
 all: $(OBJ)
-	@echo $(LINK_LIB) $(OBJ)
+#	@echo $(LINK_LIB) $(OBJ)
 	$(LINK_LIB) $(OBJ)
 
 
 %.o: %.cpp
-	@echo $(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
+#	@echo $(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
 	$(CXX) $< $(CXXFLAGS)  -I../../../include -I../../../extlibs/include -o $@
 
 
