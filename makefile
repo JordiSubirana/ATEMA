@@ -25,10 +25,10 @@ all: $(MODULES)
 clean:
 ifeq ($(OS),Windows_NT)
 	del /s *.o
-	del /s *.a
+	del /s libatema*.a
 	del /s *.d
-	del /s *.so
-	del /s *.dll
+	del /s libatema*.so
+	del /s libatema*.dll
 	del /s *.exe
 else
 	find . -name "*.o" -type f -delete

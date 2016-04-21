@@ -17,12 +17,12 @@ ifeq ($(DYNAMIC_LINK), ON)
   CXXFLAGS += -fPIC -D$(call toUP,$(NAME))_DYNAMIC
 
   ifeq ($(OS),Windows_NT)
-    LINK_LIB += -o ../../../bin/$(LIB).dll -Wl,--out-implib,../../../$(LIB)-dll.a
+    LINK_LIB += -o ../../../bin/$(LIB).dll -Wl,--out-implib,../../../lib/$(LIB)-dll.a
   else
     LINK_LIB += -o ../../../lib/$(LIB).so
   endif
 else
-  LINK_LIB = $(AR) $(ARFLAGS) ../../../lib/$(LIB).a
+  LINK_LIB = $(AR) $(ARFLAGS) "../../../lib/$(LIB).a"
 endif
 
 
