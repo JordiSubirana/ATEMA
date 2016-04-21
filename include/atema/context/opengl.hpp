@@ -5,7 +5,7 @@
 
 // glBindBuffer
 #undef glBindBuffer
-GLAPI PFNGLBINDBUFFERPROC at_glBindBuffer;
+ATEMA_API extern void at_glBindBuffer(GLenum target, GLuint buffer);
 #define glBindBuffer at_glBindBuffer
 
 #endif

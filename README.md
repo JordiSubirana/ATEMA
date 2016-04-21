@@ -2,9 +2,9 @@
 
 * `A` - Advanced
 * `T` - Tools
-* `E` - and Engines
+* `E` - Engine
 * `M` - for Multimedia
-* `A` - Appliccations
+* `A` - Applications
 
 ## Usage
 
