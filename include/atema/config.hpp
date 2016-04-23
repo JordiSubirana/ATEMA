@@ -63,6 +63,8 @@
 	
 	#define ATEMA_EXPORT __declspec(dllexport)
 	#define ATEMA_IMPORT __declspec(dllimport)
+	// #define ATEMA_EXPORT
+	// #define ATEMA_IMPORT
 	
 	#ifndef NOMINMAX
 		

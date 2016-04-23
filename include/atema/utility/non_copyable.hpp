@@ -5,7 +5,7 @@
 
 namespace at
 {
-	class ATEMA_UTILITY_API non_copyable
+	class non_copyable
 	{
 		public:
 			non_copyable() = default;

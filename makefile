@@ -5,6 +5,7 @@ include config.mk
 MODULES_PATH = $(dir $(wildcard ./src/$(NAME)/*/))
 MODULES_DIR = $(subst ./src/$(NAME)/, ,$(MODULES_PATH))
 MODULES = $(MODULES_DIR:/= )
+# MODULES = utility core context window
 
 
 LIBS = $(addsuffix .a,$(addprefix lib$(NAME)-,$(MODULES)))

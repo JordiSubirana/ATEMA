@@ -1,3 +1,3 @@
 
 # list of dependances
-DEPENDS = glad schlo
+DEPENDS = glad

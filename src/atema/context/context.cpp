@@ -26,7 +26,7 @@ namespace at
 	}
 	catch (...)
 	{
-		ATEMA_ERROR("Creation failed.")
+		// ATEMA_ERROR("Creation failed.")
 	}
 	
 	context::~context() noexcept
