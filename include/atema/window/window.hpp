@@ -30,8 +30,9 @@ namespace at
 			
 			void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
 			void create(int x, int y, unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
-			
-		private:
+
+		// TODO SCHLO
+		protected:
 			ATEMA_PIMPL(window_impl) m_pimpl;
 	};
 }

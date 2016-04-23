@@ -1,3 +1,6 @@
+// TODO SCHLO
+#include "internal_config.hpp"
+
 #ifdef ATEMA_WINDOW_IMPL_GLFW
 
 #include "window_impl_glfw.hpp"
@@ -39,6 +42,7 @@ namespace at
 	{
 		try
 		{
+#if 0
 			static bool glfw_init_done = false;
 			flags tmp_flags = 0;
 			
@@ -169,6 +173,7 @@ namespace at
 			glfwGetWindowPos(m_window, &m_x, &m_y);
 			
 			// register_window();
+#endif
 		}
 		catch (...)
 		{

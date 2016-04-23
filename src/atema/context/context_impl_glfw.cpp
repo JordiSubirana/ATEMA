@@ -1,3 +1,6 @@
+// TODO SCHLO
+#include "internal_config.hpp"
+
 #ifdef ATEMA_CONTEXT_IMPL_GLFW
 
 #include "context_impl_glfw.hpp"

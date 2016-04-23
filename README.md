@@ -13,6 +13,8 @@ a link [Hill Climbing](https://en.wikipedia.org/wiki/Hill_climbing)
 
 ## Example
 
+[un tuto, c'est plus simple](https://guides.github.com/features/mastering-markdown/)
+
 ```C
 // du code C ici
 

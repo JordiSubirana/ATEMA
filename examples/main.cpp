@@ -1,6 +1,7 @@
+#include <atema/context/context.hpp>
 #include <atema/window/window.hpp>
-#include <atema/utility/test.hpp>
-#include <atema/core/error.hpp>
+//#include <atema/utility/test.hpp>
+//#include <atema/core/error.hpp>
 
 #include <iostream>
 #include <cstdio>

@@ -15,8 +15,9 @@ namespace at
 			
 			virtual void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version) = 0;
 			virtual void create(int x, int y, unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version) = 0;
-			
-		private:
+
+		// TODO SCHLO
+		protected:
 			flags m_flags;
 	};
 }
