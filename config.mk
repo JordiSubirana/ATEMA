@@ -19,11 +19,11 @@ NAME?=atema
 
 
 CXX = g++ -c
-CXXFLAGS = -std=c++11 -O3 -MMD -Wall
+CXXFLAGS = -std=c++11 -O3 -MMD -Wall -m32
 
 
 LD = g++
-LDFLAGS = -std=c++11
+LDFLAGS = -std=c++11 -m32
 
 AR = ar
 ARFLAGS = -q

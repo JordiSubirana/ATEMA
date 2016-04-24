@@ -1,5 +1,5 @@
 #ifdef _WIN32
-int main() {return 0}
+int main() {return 0;}
 #else
 
 
