@@ -5,11 +5,11 @@
 #include <atema/window/window.hpp>
 #include <atema/core/error.hpp>
 
-#define OPTS window::options
+#define OPTS Window::options
 
 namespace at
 {
-	context::context() :
+	Context::Context() :
 		m_thread_active(false),
 		m_active(false),
 		m_flags(0),
@@ -21,22 +21,22 @@ namespace at
 		
 	}
 	
-	context::~context() noexcept
+	Context::~Context() noexcept
 	{
 		destroy_window();
 	}
 
-	bool context::is_valid() const noexcept
+	bool Context::is_valid() const noexcept
 	{
 		return ((m_window) && (glfwWindowShouldClose(m_window) == 0));
 	}
 	
-	void context::create(const gl_version& version)
+	void Context::create(const gl_version& version)
 	{
 		create(32, 32, "", 0, version); //Invisible window
 	}
 	
-	void context::activate(bool value)
+	void Context::activate(bool value)
 	{
 		if (value == is_active())
 			return;
@@ -53,7 +53,7 @@ namespace at
 
 	//--------------------
 	//SPECIFIC GLFW
-	void context::create(unsigned int w, unsigned int h, const char *name, flags flag_list, const gl_version& version)
+	void Context::create(unsigned int w, unsigned int h, const char *name, Flags flag_list, const gl_version& version)
 	{
 		try
 		{
@@ -62,7 +62,7 @@ namespace at
 			int bw = 0;
 			int bh = 0;
 			
-			flags tmp_flags = 0;
+			Flags tmp_flags = 0;
 			
 			if ((w == 0) || (h == 0))
 			{
@@ -168,13 +168,13 @@ namespace at
 			
 			glfwGetWindowSize(m_window, &bw, &bh);
 			
-			m_infos.w = static_cast<unsigned>(bw);
-			m_infos.h = static_cast<unsigned>(bh);
+			m_infos.w = bw;
+			m_infos.h = bh;
 			
 			if (name)
 				m_name = name;
 			
-			if ((m_infos.w != w) || (m_infos.h != h))
+			if ((m_infos.w != static_cast<int>(w)) || (m_infos.h != static_cast<int>(h)))
 			{
 				ATEMA_ERROR("Window size not available.")
 			}
@@ -184,7 +184,7 @@ namespace at
 			init_gl_states();
 			// register_window();
 		}
-		catch (error& e)
+		catch (Error& e)
 		{
 			destroy_window();
 			
@@ -193,7 +193,7 @@ namespace at
 		}
 	}
 	
-	void context::destroy_window() noexcept
+	void Context::destroy_window() noexcept
 	{
 		if (m_window)
 			glfwDestroyWindow(m_window);

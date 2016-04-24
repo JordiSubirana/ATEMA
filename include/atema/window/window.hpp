@@ -16,13 +16,13 @@
 
 namespace at
 {
-	class mouse;
-	class keyboard;
+	class Mouse;
+	class Keyboard;
 	
-	class ATEMA_WINDOW_API window : public context
+	class ATEMA_WINDOW_API Window : public Context
 	{
 		public:
-			enum class options : flags
+			enum class options : Flags
 			{
 				fullscreen	= 0x0001,
 				visible		= 0x0002,
@@ -35,11 +35,11 @@ namespace at
 			
 		//To implement for each OS
 		public:
-			window();
-			virtual ~window() noexcept;
+			Window();
+			virtual ~Window() noexcept;
 			
-			void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
-			void create(int x, int y, unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
+			void create(unsigned int w, unsigned int h, const char *name, Flags flag_list, const Context::gl_version& version);
+			void create(int x, int y, unsigned int w, unsigned int h, const char *name, Flags flag_list, const Context::gl_version& version);
 			
 			void set_position(int x, int y);
 			
@@ -48,18 +48,17 @@ namespace at
 			void update();
 			
 		private:
-			friend class at::mouse;
-			friend class at::keyboard;
+			friend class at::Mouse;
+			friend class at::Keyboard;
 			
 		//OS specific
 		#if defined(ATEMA_WINDOW_IMPL_GLFW)
 		private:
 			GLFWwindow* get_glfw_window() const noexcept;
 		#endif
-			
 	};
 }
 
-ATEMA_ENUM_FLAGS(at::window::options)
+ATEMA_ENUM_FLAGS(at::Window::options)
 
 #endif

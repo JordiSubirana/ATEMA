@@ -12,7 +12,7 @@
 
 namespace at
 {
-	class ATEMA_WINDOW_API mouse
+	class ATEMA_WINDOW_API Mouse
 	{
 		public:
 			enum class button
@@ -24,11 +24,11 @@ namespace at
 			
 		//To implement for each OS
 		public:
-			mouse();
-			mouse(const window& window);
-			~mouse();
+			Mouse();
+			Mouse(const Window& Window);
+			~Mouse();
 			
-			void set_window(const window& window);
+			void set_window(const Window& Window);
 			
 			bool is_pressed(button b) const;
 			

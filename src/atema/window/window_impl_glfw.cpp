@@ -6,29 +6,29 @@
 
 namespace at
 {
-	window::window()
+	Window::Window()
 	{
 		
 	}
 	
-	window::~window() noexcept
+	Window::~Window() noexcept
 	{
 		
 	}
 	
-	void window::create(unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version)
+	void Window::create(unsigned int w, unsigned int h, const char *name, Flags flag_list, const Context::gl_version& version)
 	{
-		context::create(w, h, name, flag_list, version);
+		Context::create(w, h, name, flag_list, version);
 	}
 	
-	void window::create(int x, int y, unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version)
+	void Window::create(int x, int y, unsigned int w, unsigned int h, const char *name, Flags flag_list, const Context::gl_version& version)
 	{
 		create(w, h, name, flag_list, version);
 		
 		set_position(x, y);
 	}
 	
-	void window::set_position(int x, int y)
+	void Window::set_position(int x, int y)
 	{
 		if (!is_valid())
 			ATEMA_ERROR("Window is not initialized.")
@@ -41,12 +41,12 @@ namespace at
 			ATEMA_ERROR("Position was not properly set.")
 	}
 	
-	window::operator bool() const noexcept
+	Window::operator bool() const noexcept
 	{
 		return (is_valid());
 	}
 	
-	void window::update()
+	void Window::update()
 	{
 		if (!is_valid())
 			ATEMA_ERROR("Window is not initialized.")
@@ -129,7 +129,7 @@ namespace at
 	}
 	
 	//PRIVATE
-	GLFWwindow* window::get_glfw_window() const noexcept
+	GLFWwindow* Window::get_glfw_window() const noexcept
 	{
 		return (m_window);
 	}
