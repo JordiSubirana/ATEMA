@@ -16,7 +16,8 @@
 
 namespace at
 {
-	class window_impl;
+	class mouse;
+	class keyboard;
 	
 	class ATEMA_WINDOW_API window : public context
 	{
@@ -47,6 +48,15 @@ namespace at
 			void update();
 			
 		private:
+			friend class at::mouse;
+			friend class at::keyboard;
+			
+		//OS specific
+		#if defined(ATEMA_WINDOW_IMPL_GLFW)
+		private:
+			GLFWwindow* get_glfw_window() const noexcept;
+		#endif
+			
 	};
 }
 

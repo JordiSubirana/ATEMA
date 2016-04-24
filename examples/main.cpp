@@ -1,5 +1,6 @@
 #include <atema/context/context.hpp>
 #include <atema/window/window.hpp>
+#include <atema/window/keyboard.hpp>
 //#include <atema/utility/test.hpp>
 #include <atema/core/error.hpp>
 
@@ -13,23 +14,22 @@ int main()
 {
 	try
 	{
-		// /*
-		at::window w;
+		at::window window;
+		at::keyboard keyboard;
 		
 		context::gl_version version;
 		version.major = 3;
 		version.minor = 3;
 		
-		w.create(640, 480, "Test", window::options::visible | window::options::frame, version);
-		//*/
+		window.create(640, 480, "Test", window::options::visible | window::options::frame, version);
+		
+		keyboard.set_window(window);
 		
 		printf("Hello World !\n");
-
-
-
-		while (w)
+		
+		while (window && !keyboard.is_pressed(keyboard::key::escape))
 		{
-			w.update();
+			window.update();
 		}
 	}
 	catch (error& e)

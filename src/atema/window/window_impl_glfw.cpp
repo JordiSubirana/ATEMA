@@ -97,7 +97,7 @@ namespace at
 		
 		activate(true);
 		
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
@@ -126,6 +126,12 @@ namespace at
 		glfwSwapBuffers(m_window);
 		
 		glfwPollEvents();
+	}
+	
+	//PRIVATE
+	GLFWwindow* window::get_glfw_window() const noexcept
+	{
+		return (m_window);
 	}
 }
 

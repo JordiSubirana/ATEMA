@@ -71,28 +71,29 @@ namespace at
 			//Init to false in the constructor, and don't care after
 			bool m_thread_active;
 			
-			//OS specific
-			#if defined(ATEMA_CONTEXT_IMPL_GLFW)
-				void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const gl_version& version);
-				void destroy_window() noexcept;
-				
-				using rect = struct
-				{
-					int x;
-					int y;
-					int w;
-					int h;
-				};
-				
-				bool m_active;
-				
-				flags m_flags;
-				rect m_viewport;
-				rect m_infos;
-				std::string m_name;
-				
-				GLFWwindow *m_window;
-			#endif
+		//OS specific
+		#if defined(ATEMA_CONTEXT_IMPL_GLFW)
+		private:
+			void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const gl_version& version);
+			void destroy_window() noexcept;
+			
+			using rect = struct
+			{
+				int x;
+				int y;
+				int w;
+				int h;
+			};
+			
+			bool m_active;
+			
+			flags m_flags;
+			rect m_viewport;
+			rect m_infos;
+			std::string m_name;
+			
+			GLFWwindow *m_window;
+		#endif
 	};
 }
 
