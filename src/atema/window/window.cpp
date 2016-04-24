@@ -5,6 +5,7 @@
 
 #if defined(ATEMA_WINDOW_IMPL_GLFW)
 	
+	#define ATEMA_WINDOW_IMPL_GLFW_IMPLEMENTATION
 	#include "window_impl_glfw.hpp"
 	
 #else
@@ -18,16 +19,15 @@ namespace at
 	window::window()
 	try :
 	#if defined(ATEMA_WINDOW_IMPL_GLFW)
-		m_pimpl(ATEMA_PIMPL_SHARE(window_impl)(ATEMA_PIMPL_CTOR(window_impl_glfw)())),
-		// window_impl_glfw <- window_impl <- context_impl
-		context(ATEMA_PIMPL_SHARE(context_impl)(m_pimpl))
+		m_pimpl(std::make_shared<window_impl_glfw>()),
+		context(std::static_pointer_cast<context_impl>(m_pimpl))
 	#endif
 	{
 		
 	}
-	catch (...)
+	catch (const error& e)
 	{
-		ATEMA_ERROR("Creation failed.")
+		throw;
 	}
 	
 	window::~window() noexcept

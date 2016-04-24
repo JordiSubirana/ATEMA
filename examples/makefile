@@ -26,7 +26,7 @@ BIN = $(addprefix ../bin/,$(subst .cpp,.exe,$(SRC)))
 %.exe: ../examples/%.o
 #	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
 #	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< $(wildcard ../lib/*.a ../extlibs/lib/*.a) -o $@
-	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/libatema-window.a ../lib/libatema-context.a ../lib/libatema-core.a -o $@
+	$(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/libatema-window.a ../lib/libatema-context.a ../lib/libatema-core.a -lglfw3 -lopengl32 -lgdi32 -o $@
 
 all: $(BIN)
 

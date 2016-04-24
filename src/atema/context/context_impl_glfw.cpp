@@ -1,22 +1,65 @@
-// TODO SCHLO
-#include "internal_config.hpp"
+#include <atema/context/context.hpp>
 
 #ifdef ATEMA_CONTEXT_IMPL_GLFW
 
-#include "context_impl_glfw.hpp"
-
-#include <atema/core/error.hpp>
-
 namespace at
 {
-	context_impl_glfw::context_impl_glfw()
+	context::context() :
+		m_thread_active(false),
+		m_valid(false),
+		m_active(false),
+		m_flags(0),
+		m_viewport{0,0,0,0},
+		m_infos{0,0,0,0},
+		m_name(""),
+		m_window(nullptr)
 	{
 		
 	}
 	
-	context_impl_glfw::~context_impl_glfw() noexcept
+	context::~context() noexcept
 	{
 		
+	}
+
+	bool context::is_valid() const noexcept
+	{
+		
+	}
+	
+	void context::create(const gl_version& version)
+	{
+		
+	}
+	
+	void context::activate(bool value)
+	{
+		if (value == is_active())
+			return;
+		
+		if (value)
+		{
+			set_current(this);
+		}
+		else
+		{
+			set_current(nullptr);
+		}
+	}
+
+	//--------------------
+	//SPECIFIC GLFW
+	void context::create(unsigned int w, unsigned int h, const char *name, flags flag_list, const gl_version& version)
+	{
+		
+	}
+	
+	void context::destroy_window() noexcept
+	{
+		if (m_window)
+			glfwDestroyWindow(m_window);
+		
+		m_window = nullptr;
 	}
 }
 

@@ -4,8 +4,7 @@
 #include <atema/window/config.hpp>
 #include <atema/context/context.hpp>
 
-#include <atema/utility/enum_flags.hpp>
-#include <atema/utility/pimpl.hpp>
+#include <atema/utility/flags.hpp>
 
 namespace at
 {
@@ -14,7 +13,7 @@ namespace at
 	class ATEMA_WINDOW_API window : public context
 	{
 		public:
-			enum class options : int
+			enum class options : flags
 			{
 				fullscreen	= 0x0001,
 				visible		= 0x0002,
@@ -30,10 +29,6 @@ namespace at
 			
 			void create(unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
 			void create(int x, int y, unsigned int w, unsigned int h, const char *name, flags flag_list, const context::gl_version& version);
-
-		// TODO SCHLO
-		protected:
-			ATEMA_PIMPL(window_impl) m_pimpl;
 	};
 }
 
