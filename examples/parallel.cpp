@@ -1,10 +1,3 @@
-#ifdef _WIN32
-int main() {return 0;}
-#else
-
-
-
-
 
 # define CL_HPP_TARGET_OPENCL_VERSION 200
 #include <CL/cl2.hpp>
@@ -58,6 +51,3 @@ int main() {
 
 
 
-
-
-#endif
