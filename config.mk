@@ -19,7 +19,7 @@ NAME?=atema
 
 
 CXX = g++ -c
-CXXFLAGS = -std=c++11 -O3 -MMD
+CXXFLAGS = -std=c++11 -O3 -MMD -Wall
 
 
 LD = g++
@@ -39,5 +39,5 @@ ATEMA_LIB = -latema-window -latema-context -latema-core
 ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB = -lglfw3 -lopengl32 -lgdi32
 else
-  EXTERNAL_LIB = -lglfw3 -lGL -lX11 -lXxf86vm -lXcursor -lXinerama -lXrandr -pthread -lXi -ldl
+  EXTERNAL_LIB = -lglfw3 -lGL -lX11 -lXxf86vm -lXcursor -lXinerama -lXrandr -pthread -lXi -ldl -lOpenCL
 endif
