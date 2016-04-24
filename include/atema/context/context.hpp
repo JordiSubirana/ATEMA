@@ -24,6 +24,8 @@
 	#include <glad/glad.h>
 	#include <GLFW/glfw3.h>
 	
+	#include <string>
+	
 	#include <atema/utility/flags.hpp>
 #endif
 
@@ -47,6 +49,7 @@ namespace at
 		private:
 			static void set_current(context *ptr) noexcept;
 			void check_activity() const noexcept;
+			void init_gl_states() const noexcept;
 			
 		//To implement for each OS
 		public:
@@ -55,6 +58,7 @@ namespace at
 			
 			virtual bool is_valid() const noexcept;
 			
+			//Must call init_gl_states() after creating context
 			virtual void create(const gl_version& version);
 			
 			//Must call check_activity() in the top of this method : it throws if activated in another thread
@@ -80,7 +84,6 @@ namespace at
 					int h;
 				};
 				
-				bool m_valid;
 				bool m_active;
 				
 				flags m_flags;

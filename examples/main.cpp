@@ -24,6 +24,11 @@ int main()
 		//*/
 		
 		printf("Hello World !\n");
+		
+		while (w)
+		{
+			w.update();
+		}
 	}
 	catch (error& e)
 	{
