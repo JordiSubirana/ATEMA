@@ -10,6 +10,6 @@ namespace at
 	
 	error::~error() noexcept
 	{
-		
+
 	}
 }
