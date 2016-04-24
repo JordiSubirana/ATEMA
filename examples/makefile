@@ -13,6 +13,13 @@ else
 endif
 
 
+ifeq ($(OS),Windows_NT)
+  EXTERNAL_LIB_PATH = ../extlibs/lib/win64
+else
+  EXTERNAL_LIB_PATH = ../extlibs/lib/linux
+endif
+
+
 SRC = $(wildcard *.cpp)
 OBJ = $(subst .cpp,.o,$(SRC))
 BIN = $(subst .cpp,.exe,$(SRC))
@@ -25,7 +32,7 @@ BIN = $(subst .cpp,.exe,$(SRC))
 
 %.exe:
 #	@echo $(LD) -L../lib -L../extlibs/lib  $(LDFLAGS) $< ../lib/lib$(NAME)-core.a -o $@
-	$(LD) -L../lib -L../extlibs/lib $(LDFLAGS) $(subst .exe,.o,$@) $(ATEMA_LIB) $(EXTERNAL_LIB) -o ../bin/$@
+	$(LD) -L../lib -L$(EXTERNAL_LIB_PATH) $(LDFLAGS) $(subst .exe,.o,$@) $(ATEMA_LIB) $(EXTERNAL_LIB) -o ../bin/$@
 
 all: $(OBJ) $(BIN)
 
