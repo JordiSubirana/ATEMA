@@ -14,14 +14,14 @@ int main()
 {
 	try
 	{
-		Window window;
+		at::Window window;
 		Keyboard keyboard;
 		
 		Context::gl_version version;
 		version.major = 3;
 		version.minor = 3;
 		
-		window.create(640, 480, "Test", Window::options::visible | Window::options::frame, version);
+		window.create(640, 480, "Test", at::Window::options::visible | at::Window::options::frame, version);
 		
 		keyboard.set_window(window);
 		
@@ -33,10 +33,12 @@ int main()
 		if (test_context)
 			printf("Windows gl context found !!!\n");
 		#elif defined(ATEMA_SYSTEM_LINUX)
-		GLXContext test_context = Window::get_current_os_context();
+
+		GLXContext test_context = at::Window::get_current_os_context();
 		
 		if (test_context)
 			printf("Linux gl context found !!!\n");
+		//*/
 		#endif
 		
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
@@ -47,7 +49,7 @@ int main()
 	catch (Error& e)
 	{
 		printf("ERROR\n");
-		printf(e.what());
+		printf("%s", e.what());
 	}
 	
 	return 0;

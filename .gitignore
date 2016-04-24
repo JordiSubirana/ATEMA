@@ -36,4 +36,4 @@ lib/*.a
 # perso CMakeListe.txt
 CMakeLists.txt
 .idea
-
+*.so.*

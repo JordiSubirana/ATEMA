@@ -3,31 +3,49 @@
 
 #include <atema/config.hpp>
 
+
 #if defined(ATEMA_SYSTEM_WINDOWS)
-	
-	#define ATEMA_CONTEXT_IMPL_GLFW
-	
+#		define ATEMA_CONTEXT_IMPL_GLFW
+
 #elif defined(ATEMA_SYSTEM_LINUX)
-	
-	#define ATEMA_CONTEXT_IMPL_GLFW
-	
+#		define ATEMA_CONTEXT_IMPL_GLFW
+
 #elif defined(ATEMA_SYSTEM_MACOS)
-	
-	#define ATEMA_CONTEXT_IMPL_GLFW
+#		define ATEMA_CONTEXT_IMPL_GLFW
 
 #endif
 
 #include <atema/context/config.hpp>
 #include <atema/utility/non_copyable.hpp>
 
+
+
 #if defined(ATEMA_CONTEXT_IMPL_GLFW)
-	#include <glad/glad.h>
-	#include <GLFW/glfw3.h>
-	
-	#include <string>
-	
-	#include <atema/utility/flags.hpp>
+#		include <glad/glad.h>
+#		include <GLFW/glfw3.h>
+
+#		if defined(ATEMA_SYSTEM_WINDOWS)
+#				define GLFW_EXPOSE_NATIVE_WGL // context API
+#				define GLFW_EXPOSE_NATIVE_WIN32 // window API
+
+#		elif defined(ATEMA_SYSTEM_LINUX)
+#		        define GLFW_EXPOSE_NATIVE_GLX // context API
+#       		define GLFW_EXPOSE_NATIVE_X11 // window API
+
+#		elif defined(ATEMA_SYSTEM_MACOS)
+#				define GLFW_EXPOSE_NATIVE_NSGL // context API
+#				define GLFW_EXPOSE_NATIVE_COCOA // window API
+
+#		endif
+
+#		include <GLFW/glfw3native.h>
+#		include <string>
+#		include <atema/utility/flags.hpp>
+
 #endif
+
+
+
 
 namespace at
 {
