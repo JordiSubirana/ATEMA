@@ -12,7 +12,7 @@
 
 namespace at
 {
-	class ATEMA_WINDOW_API keyboard
+	class ATEMA_WINDOW_API Keyboard
 	{
 		public:
 			enum class key
@@ -143,11 +143,11 @@ namespace at
 		
 		//To implement for each OS
 		public:
-			keyboard();
-			keyboard(const window& window);
-			~keyboard();
+			Keyboard();
+			Keyboard(const Window& window);
+			~Keyboard();
 			
-			void set_window(const window& window);
+			void set_window(const Window& window);
 			
 			bool is_pressed(key k) const;
 			

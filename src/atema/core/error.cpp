@@ -2,13 +2,13 @@
 
 namespace at
 {
-	error::error(const char *description) noexcept :
+	Error::Error(const char *description) noexcept :
 		std::runtime_error(description)
 	{
 		
 	}
 	
-	error::~error() noexcept
+	Error::~Error() noexcept
 	{
 
 	}

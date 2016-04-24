@@ -9,7 +9,7 @@
 namespace at
 {
 	template <typename T>
-	class array : public shared_object
+	class Array : public SharedObject
 	{
 		public:	
 			enum class update : GLenum
@@ -20,13 +20,13 @@ namespace at
 			};
 			
 		public:
-			array();
-			array(const T *elements, size_t elements_size, update update_mode = update.static_mode);
-			array(const array<T>& array);
-			~array() noexcept;
+			Array();
+			Array(const T *elements, size_t elements_size, update update_mode = update.static_mode);
+			Array(const Array<T>& Array);
+			~Array() noexcept;
 			
 			void create(const T *elements, size_t elements_size, update update_mode = update.static_mode);
-			void create(const array<T>& array);
+			void create(const Array<T>& Array);
 			
 			T* get() noexcept;
 			const T* get() const noexcept;

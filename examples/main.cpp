@@ -14,25 +14,37 @@ int main()
 {
 	try
 	{
-		at::window window;
-		at::keyboard keyboard;
+		Window window;
+		Keyboard keyboard;
 		
-		context::gl_version version;
+		Context::gl_version version;
 		version.major = 3;
 		version.minor = 3;
 		
-		window.create(640, 480, "Test", window::options::visible | window::options::frame, version);
+		window.create(640, 480, "Test", Window::options::visible | Window::options::frame, version);
 		
 		keyboard.set_window(window);
 		
 		printf("Hello World !\n");
 		
-		while (window && !keyboard.is_pressed(keyboard::key::escape))
+		#if defined(ATEMA_SYSTEM_WINDOWS)
+		HGLRC test_context = Window::get_current_os_context();
+		
+		if (test_context)
+			printf("Windows gl context found !!!\n");
+		#elif defined(ATEMA_SYSTEM_LINUX)
+		GLXContext test_context = Window::get_current_os_context();
+		
+		if (test_context)
+			printf("Linux gl context found !!!\n");
+		#endif
+		
+		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{
 			window.update();
 		}
 	}
-	catch (error& e)
+	catch (Error& e)
 	{
 		printf("ERROR\n");
 		printf(e.what());

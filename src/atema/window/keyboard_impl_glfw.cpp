@@ -6,25 +6,25 @@
 
 namespace at
 {
-	keyboard::keyboard() :
+	Keyboard::Keyboard() :
 		m_window(nullptr)
 	{
 		
 	}
 	
-	keyboard::keyboard(const window& window) :
+	Keyboard::Keyboard(const Window& window) :
 		m_window(window.get_glfw_window())
 	{
 		if (!m_window)
 			ATEMA_ERROR("Invalid window.")
 	}
 	
-	keyboard::~keyboard()
+	Keyboard::~Keyboard()
 	{
 		
 	}
 	
-	void keyboard::set_window(const window& window)
+	void Keyboard::set_window(const Window& window)
 	{
 		if (!window.get_glfw_window())
 			ATEMA_ERROR("Invalid window.")
@@ -32,7 +32,7 @@ namespace at
 		m_window = window.get_glfw_window();
 	}
 	
-	bool keyboard::is_pressed(key k) const
+	bool Keyboard::is_pressed(key k) const
 	{
 		if (!m_window)
 			ATEMA_ERROR("Invalid window.")

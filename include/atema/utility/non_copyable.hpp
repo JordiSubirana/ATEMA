@@ -5,14 +5,14 @@
 
 namespace at
 {
-	class non_copyable
+	class NonCopyable
 	{
 		public:
-			non_copyable() = default;
-			non_copyable(const non_copyable& object) = delete;
-			virtual ~non_copyable() = default;
+			NonCopyable() = default;
+			NonCopyable(const NonCopyable& object) = delete;
+			virtual ~NonCopyable() = default;
 			
-			non_copyable& operator=(const non_copyable& object) = delete;
+			NonCopyable& operator=(const NonCopyable& object) = delete;
 	};
 }
 

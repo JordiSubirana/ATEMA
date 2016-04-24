@@ -6,31 +6,31 @@
 namespace at
 {
 	template <typename T>
-	array<T>::array()
+	Array<T>::array()
 	{
 		
 	}
 	
 	template <typename T>
-	array<T>::array(const T *elements, size_t elements_size, update update_mode)
+	Array<T>::array(const T *elements, size_t elements_size, update update_mode)
 	{
 		create(elements, elements_size, update_mode);
 	}
 	
 	template <typename T>
-	array<T>::array(const array<T>& array)
+	Array<T>::array(const Array<T>& array)
 	{
 		create(array);
 	}
 	
 	template <typename T>
-	array<T>::~array() noexcept
+	Array<T>::~array() noexcept
 	{
 		
 	}
 	
 	template <typename T>
-	void array<T>::create(const T *elements, size_t elements_size, update update_mode)
+	void Array<T>::create(const T *elements, size_t elements_size, update update_mode)
 	{
 		data tmp;
 		
@@ -49,7 +49,7 @@ namespace at
 				tmp.elements[i] = elements[i];
 			}
 			
-			//Flush gl error
+			//Flush gl Error
 			glGetError();
 			
 			//-----
@@ -84,20 +84,20 @@ namespace at
 			data.vbo = 0; //Ensure that VBO will not be destroyed
 			
 		}
-		catch (const error& e)
+		catch (const Error& e)
 		{
 			throw;
 		}
 	}
 	
 	template <typename T>
-	void array<T>::create(const array<T>& array)
+	void Array<T>::create(const Array<T>& array)
 	{
 		create(array.get(), array.get_size(), array.get_update_mode());
 	}
 	
 	template <typename T>
-	T* array<T>::get() noexcept
+	T* Array<T>::get() noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -106,7 +106,7 @@ namespace at
 	}
 	
 	template <typename T>
-	const T* array<T>::get() const noexcept
+	const T* Array<T>::get() const noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -115,37 +115,37 @@ namespace at
 	}
 	
 	template <typename T>
-	T& array<T>::operator[](size_t index)
+	T& Array<T>::operator[](size_t index)
 	{
 		return (m_data.elements[index]);
 	}
 	
 	template <typename T>
-	const T& array<T>::operator[](size_t index) const
+	const T& Array<T>::operator[](size_t index) const
 	{
 		return (m_data.elements[index]);
 	}
 	
 	template <typename T>
-	size_t array<T>::get_size() const
+	size_t Array<T>::get_size() const
 	{
 		return (m_data.elements.size());
 	}
 	
 	template <typename T>
-	typename array<T>::update array<T>::get_update_mode() const
+	typename Array<T>::update Array<T>::get_update_mode() const
 	{
 		return (m_data.update_mode);
 	}
 	
 	template <typename T>
-	GLuint array<T>::get_gl_id() const
+	GLuint Array<T>::get_gl_id() const
 	{
 		return (m_data.vbo);
 	}
 	
 	template <typename T>
-	void array<T>::download()
+	void Array<T>::download()
 	{
 		try
 		{
@@ -155,14 +155,14 @@ namespace at
 			
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
-		catch (const error& e)
+		catch (const Error& e)
 		{
 			throw;
 		}
 	}
 	
 	template <typename T>
-	void array<T>::upload()
+	void Array<T>::upload()
 	{
 		try
 		{
@@ -172,7 +172,7 @@ namespace at
 			
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
-		catch (const error& e)
+		catch (const Error& e)
 		{
 			throw;
 		}

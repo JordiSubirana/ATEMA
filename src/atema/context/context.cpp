@@ -3,16 +3,16 @@
 
 namespace at
 {
-	thread_local context *t_current_context;
+	thread_local Context *t_current_context;
 	
 	//PUBLIC
-	bool context::is_active() const noexcept
+	bool Context::is_active() const noexcept
 	{
 		return (this == t_current_context);
 	}
 	
 	//PRIVATE
-	void context::set_current(context *ptr) noexcept
+	void Context::set_current(Context *ptr) noexcept
 	{
 		if (t_current_context)
 			t_current_context->m_thread_active = false;
@@ -23,13 +23,13 @@ namespace at
 			ptr->m_thread_active = true;
 	}
 	
-	void context::check_activity() const noexcept
+	void Context::check_activity() const noexcept
 	{
 		if (m_thread_active && !is_active())
 			ATEMA_ERROR("Context is already activated in another thread.")
 	}
 	
-	void context::init_gl_states() const noexcept
+	void Context::init_gl_states() const noexcept
 	{
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
