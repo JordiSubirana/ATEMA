@@ -16,7 +16,7 @@ endif
 ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB_PATH = ../extlibs/lib/win64
 else
-  EXTERNAL_LIB_PATH = ../extlibs/lib/linux
+  EXTERNAL_LIB_PATH = ../extlibs/lib/linux64
 endif
 
 

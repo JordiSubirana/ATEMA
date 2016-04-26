@@ -27,18 +27,19 @@
 #		if defined(ATEMA_SYSTEM_WINDOWS)
 #				define GLFW_EXPOSE_NATIVE_WGL // context API
 #				define GLFW_EXPOSE_NATIVE_WIN32 // window API
+#				include <GLFW/glfw3native.h>
 
 #		elif defined(ATEMA_SYSTEM_LINUX)
-#		        define GLFW_EXPOSE_NATIVE_GLX // context API
-#       		define GLFW_EXPOSE_NATIVE_X11 // window API
+				struct __GLXcontextRec;
+				typedef struct __GLXcontextRec *GLXContext;
 
 #		elif defined(ATEMA_SYSTEM_MACOS)
 #				define GLFW_EXPOSE_NATIVE_NSGL // context API
 #				define GLFW_EXPOSE_NATIVE_COCOA // window API
+#				include <GLFW/glfw3native.h>
 
 #		endif
 
-#		include <GLFW/glfw3native.h>
 #		include <string>
 #		include <atema/utility/flags.hpp>
 
