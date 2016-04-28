@@ -1,3 +1,22 @@
+// ----------------------------------------------------------------------
+// Copyright (C) 2016 Jordi SUBIRANA
+//
+// This file is part of ATEMA.
+//
+// ATEMA is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// ATEMA is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
+// ----------------------------------------------------------------------
+
 #ifndef ATEMA_GRAPHICS_ARRAY_IMPL
 #define ATEMA_GRAPHICS_ARRAY_IMPL
 
@@ -5,26 +24,27 @@
 
 namespace at
 {
+	//PUBLIC
 	template <typename T>
-	Array<T>::array()
+	Array<T>::Array()
 	{
 		
 	}
 	
 	template <typename T>
-	Array<T>::array(const T *elements, size_t elements_size, update update_mode)
+	Array<T>::Array(const T *elements, size_t elements_size, update update_mode)
 	{
 		create(elements, elements_size, update_mode);
 	}
 	
 	template <typename T>
-	Array<T>::array(const Array<T>& array)
+	Array<T>::Array(const Array<T>& array)
 	{
 		create(array);
 	}
 	
 	template <typename T>
-	Array<T>::~array() noexcept
+	Array<T>::~Array() noexcept
 	{
 		
 	}
@@ -56,32 +76,32 @@ namespace at
 			//Creation
 			glGenBuffers(1, &(tmp.vbo));
 			
-			glBindBuffer(GL_ARRAY_BUFFER, tmp.vbo);
+			glBindBuffer(get_internal_type(), tmp.vbo);
 			
 			if ((glIsBuffer(tmp.vbo) == GL_FALSE) || (glGetError() != GL_NO_ERROR))
 				ATEMA_ERROR("OpenGL could not create VBO.")
 			
-			glBufferData(GL_ARRAY_BUFFER, elements_size*sizeof(T), nullptr, update_mode);
+			glBufferData(get_internal_type(), elements_size*sizeof(T), nullptr, static_cast<GLenum>(update_mode));
 			
 			if (glGetError() != GL_NO_ERROR)
 				ATEMA_ERROR("OpenGL could not allocate VBO.")
 			
-			glBufferSubData(GL_ARRAY_BUFFER, 0, elements_size*sizeof(T), elements);
+			glBufferSubData(get_internal_type(), 0, elements_size*sizeof(T), elements);
 			
 			if (glGetError() != GL_NO_ERROR)
 				ATEMA_ERROR("OpenGL could not fill VBO.")
 			
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(get_internal_type(), 0);
 			//-----
 			
 			m_data.free(); //Destroy previous VBO
 			
-			m_data.vbo = data.vbo;
-			m_data.elements.swap(data.elements);
-			m_data.elements_size = data.elements_size;
-			m_data.update_mode = data.update_mode;
+			m_data.vbo = tmp.vbo;
+			m_data.elements.swap(tmp.elements);
+			m_data.elements_size = tmp.elements_size;
+			m_data.update_mode = tmp.update_mode;
 			
-			data.vbo = 0; //Ensure that VBO will not be destroyed
+			tmp.vbo = 0; //Ensure that VBO will not be destroyed
 			
 		}
 		catch (const Error& e)
@@ -149,11 +169,11 @@ namespace at
 	{
 		try
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, m_data.vbo);
+			glBindBuffer(get_internal_type(), m_data.vbo);
 			
-			glGetBufferSubData(GL_ARRAY_BUFFER, 0, m_data.elements_size*sizeof(T), get());
+			glGetBufferSubData(get_internal_type(), 0, m_data.elements_size*sizeof(T), get());
 			
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(get_internal_type(), 0);
 		}
 		catch (const Error& e)
 		{
@@ -166,16 +186,29 @@ namespace at
 	{
 		try
 		{
-			glBindBuffer(GL_ARRAY_BUFFER, tmp.vbo);
+			glBindBuffer(get_internal_type(), m_data.vbo);
 			
-			glBufferSubData(GL_ARRAY_BUFFER, 0, tmp.elements_size*sizeof(T), get());
+			glBufferSubData(get_internal_type(), 0, m_data.elements_size*sizeof(T), get());
 			
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(get_internal_type(), 0);
 		}
 		catch (const Error& e)
 		{
 			throw;
 		}
+	}
+	
+	//PROTECTED
+	template <typename T>
+	GLenum Array<T>::get_buffer_type() const noexcept
+	{
+		return (GL_ARRAY_BUFFER);
+	}
+	
+	template <typename T>
+	GLenum Array<T>::get_internal_type() const noexcept
+	{
+		return (this->get_buffer_type());
 	}
 }
 

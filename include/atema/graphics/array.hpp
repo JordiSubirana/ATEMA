@@ -1,3 +1,22 @@
+// ----------------------------------------------------------------------
+// Copyright (C) 2016 Jordi SUBIRANA
+//
+// This file is part of ATEMA.
+//
+// ATEMA is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// ATEMA is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
+// ----------------------------------------------------------------------
+
 #ifndef ATEMA_GRAPHICS_ARRAY_HEADER
 #define ATEMA_GRAPHICS_ARRAY_HEADER
 
@@ -14,19 +33,19 @@ namespace at
 		public:	
 			enum class update : GLenum
 			{
-				static_mode		= GL_STATIC_DRAW;
-				dynamic_mode	= GL_DYNAMIC_DRAW;
-				stream_mode		= GL_STREAM_DRAW;
+				static_mode		= GL_STATIC_DRAW,
+				dynamic_mode	= GL_DYNAMIC_DRAW,
+				stream_mode		= GL_STREAM_DRAW
 			};
 			
 		public:
 			Array();
-			Array(const T *elements, size_t elements_size, update update_mode = update.static_mode);
-			Array(const Array<T>& Array);
-			~Array() noexcept;
+			Array(const T *elements, size_t elements_size, update update_mode = update::static_mode);
+			Array(const Array<T>& array);
+			virtual ~Array() noexcept;
 			
-			void create(const T *elements, size_t elements_size, update update_mode = update.static_mode);
-			void create(const Array<T>& Array);
+			void create(const T *elements, size_t elements_size, update update_mode = update::static_mode);
+			void create(const Array<T>& array);
 			
 			T* get() noexcept;
 			const T* get() const noexcept;
@@ -43,15 +62,19 @@ namespace at
 			void download();
 			void upload();
 			
+		protected:
+			virtual GLenum get_buffer_type() const noexcept;
+			GLenum get_internal_type() const noexcept;
+			
 		private:
-			using data = struct
+			using data = struct arr_data
 			{
 				GLuint vbo;		
-				std::vector elements;		
+				std::vector<T> elements;		
 				size_t elements_size;		
 				update update_mode;
 				
-				data() :
+				arr_data() :
 					vbo(0),
 					elements(),
 					elements_size(0),
@@ -60,18 +83,19 @@ namespace at
 					
 				}
 				
-				~data() noexcept
+				~arr_data() noexcept
 				{
 					free();
 				};
 				
 				void free() noexcept
 				{
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 					glDeleteBuffers(1, &vbo);
 					
 					elements.clear();
-					resize(0);
+					elements.resize(0);
 					
 					elements_size = 0;
 					

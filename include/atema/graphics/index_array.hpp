@@ -17,27 +17,27 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_UTILITY_CONFIG
-#define ATEMA_UTILITY_CONFIG
+#ifndef ATEMA_GRAPHICS_INDEX_ARRAY_HEADER
+#define ATEMA_GRAPHICS_INDEX_ARRAY_HEADER
 
-#include <atema/config.hpp>
+#include <atema/graphics/array.hpp>
 
-#if defined(ATEMA_STATIC)
-	
-	#define ATEMA_UTILITY_API
-	
-#else
-	
-	#if defined(ATEMA_UTILITY_EXPORT)
-		
-		#define ATEMA_UTILITY_API ATEMA_EXPORT
-		
-	#else
-		
-		#define ATEMA_UTILITY_API ATEMA_IMPORT
-		
-	#endif
-
-#endif
+namespace at
+{
+	class IndexArray : public Array<unsigned int>
+	{
+		public:
+			IndexArray();
+			IndexArray(const unsigned int *elements, size_t elements_size, update update_mode = update::static_mode);
+			IndexArray(const Array<unsigned int>& array);
+			IndexArray(const IndexArray& array);
+			virtual ~IndexArray() noexcept;
+			
+			void create(const IndexArray& array);
+			
+		protected:
+			virtual GLenum get_buffer_type() const noexcept;
+	};
+}
 
 #endif
