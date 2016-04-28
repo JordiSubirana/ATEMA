@@ -61,8 +61,8 @@ int main() {
 		Keyboard keyboard;
 
 		Context::gl_version version;
-		version.major = 3;
-		version.minor = 3;
+		version.major = 4;
+		version.minor = 5;
 
 		window.create(640, 480, "Test", Window::options::visible | Window::options::frame | Window::options::resizable , version);
 

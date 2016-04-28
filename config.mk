@@ -40,4 +40,5 @@ ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lopengl32 -lgdi32 
 else
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lGL -lX11 -lXxf86vm -lXcursor -lXinerama -lXrandr -pthread -lXi -ldl
+  CXX = clang++ -c
 endif
