@@ -17,27 +17,47 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_UTILITY_CONFIG
-#define ATEMA_UTILITY_CONFIG
+#include <atema/graphics/index_array.hpp>
 
-#include <atema/config.hpp>
-
-#if defined(ATEMA_STATIC)
+namespace at
+{
+	//PUBLIC
+	IndexArray::IndexArray()
+	{
+		
+	}
 	
-	#define ATEMA_UTILITY_API
+	IndexArray::IndexArray(const unsigned int *elements, size_t elements_size, update update_mode) :
+		Array<unsigned int>(elements, elements_size, update_mode)
+	{
+		
+	}
 	
-#else
+	IndexArray::IndexArray(const Array<unsigned int>& array) :
+		Array<unsigned int>(array)
+	{
+		
+	}
 	
-	#if defined(ATEMA_UTILITY_EXPORT)
+	IndexArray::IndexArray(const IndexArray& array) :
+		Array<unsigned int>(static_cast< Array<unsigned int> >(array))
+	{
 		
-		#define ATEMA_UTILITY_API ATEMA_EXPORT
+	}
+	
+	IndexArray::~IndexArray() noexcept
+	{
 		
-	#else
-		
-		#define ATEMA_UTILITY_API ATEMA_IMPORT
-		
-	#endif
-
-#endif
-
-#endif
+	}
+	
+	void IndexArray::create(const IndexArray& array)
+	{
+		Array<unsigned int>::create(static_cast< Array<unsigned int> >(array));
+	}
+	
+	//PROTECTED
+	GLenum IndexArray::get_buffer_type() const noexcept
+	{
+		return (GL_ELEMENT_ARRAY_BUFFER);
+	}
+}

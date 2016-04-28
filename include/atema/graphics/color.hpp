@@ -17,27 +17,18 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_UTILITY_CONFIG
-#define ATEMA_UTILITY_CONFIG
+#ifndef ATEMA_GRAPHICS_COLOR_HEADER
+#define ATEMA_GRAPHICS_COLOR_HEADER
 
-#include <atema/config.hpp>
-
-#if defined(ATEMA_STATIC)
-	
-	#define ATEMA_UTILITY_API
-	
-#else
-	
-	#if defined(ATEMA_UTILITY_EXPORT)
-		
-		#define ATEMA_UTILITY_API ATEMA_EXPORT
-		
-	#else
-		
-		#define ATEMA_UTILITY_API ATEMA_IMPORT
-		
-	#endif
-
-#endif
+namespace at
+{
+	typedef struct
+	{
+		float r;
+		float g;
+		float b;
+		float a;
+	} Color;
+}
 
 #endif

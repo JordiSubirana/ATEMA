@@ -34,7 +34,7 @@ ifeq ($(DEBUG_MODE), ON)
 endif
 
 
-ATEMA_LIB = -latema-window -latema-context -latema-core
+ATEMA_LIB = -latema-window -latema-graphics -latema-context -latema-core
 
 ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lopengl32 -lgdi32 
