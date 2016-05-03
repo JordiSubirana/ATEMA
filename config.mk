@@ -18,8 +18,11 @@ NAME?=atema
 #     A.V.A.N.C.E.D.     S.E.T.T.I.N.G.S.
 
 
+CC = g++ -c
+CFLAGS = -O3 -MMD -m64 -Wno-missing-braces # -Wall
+
 CXX = g++ -c
-CXXFLAGS = -std=c++11 -O3 -MMD -Wall -m64
+CXXFLAGS = -std=c++11 -O3 -MMD -m64 -Wno-missing-braces # -Wall
 
 
 LD = g++
@@ -40,5 +43,7 @@ ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lopengl32 -lgdi32 
 else
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lGL -lX11 -lXxf86vm -lXcursor -lXinerama -lXrandr -pthread -lXi -ldl
+  CC = clang++ -c
   CXX = clang++ -c
+  LD = clang++
 endif

@@ -19,7 +19,7 @@
 
 #include <atema/graphics/texture.hpp>
 
-#include <atema/core/Error.hpp>
+#include <atema/core/error.hpp>
 
 namespace at
 {

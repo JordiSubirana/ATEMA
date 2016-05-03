@@ -17,8 +17,18 @@ LIBS_PATH = $(addprefix ./lib/,$(LIBS))
 	make -C $(addprefix src/$(NAME)/,$(@)) MODULE=$(@) NAME=$(NAME)
 
 
-all: $(MODULES)
+all: cleana $(MODULES)
 	make -C examples NAME=$(NAME)
+
+
+cleana:
+ifeq ($(OS),Windows_NT)
+	del /s lib$(NAME)*.a
+	del /s lib$(NAME)*.dll
+else
+	find . -name "lib$(NAME)*.a" -type f -delete
+	find . -name "lib$(NAME)*.so" -type f -delete
+endif
 
 
 clean:
