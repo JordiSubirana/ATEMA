@@ -19,7 +19,7 @@
 
 
 #include <atema/parallel/parogl.hpp>
-
+#include <iostream>
 
 using namespace std;
 
@@ -73,12 +73,7 @@ namespace at {
 
 
     Parogl::Parogl() {
-/*
-#version 430 compatibility
-#extension GL_ARB_compute_shader : enable
-#extension GL_ARB_shader_storage_buffer_object : enable
-#extension GL_ARB_compute_variable_group_size : enable
-*/
+
         _progID = glCreateProgram();
         glCheckError("glCreateProgram");
 
@@ -100,24 +95,30 @@ namespace at {
     }
 
 
+    Parogl::~Parogl() {
+        glDeleteProgram(_progID);
+    }
+
+
     void at::Parogl::add_src(std::string const& s) {
         _srcs.push_back(s);
     }
 
 
 
-    void at::Parogl::build() {
+    void at::Parogl::_build() {
         int retval;
         GLsizei length;
         static GLchar log[8192];
         std::string error;
+        string src;
 
-        std::vector<char const*> srcs;
         for (auto &s : _srcs) {
-            srcs.push_back(s.c_str());
+            src += s;
         }
 
-        glShaderSource(_shadID, (GLsizei) srcs.size(), srcs.begin().base(), NULL);
+        const char *csrc = src.c_str();
+        glShaderSource(_shadID, (GLsizei) 1, &csrc, NULL);
         glCheckError("glShaderSource");
 
         glCompileShader(_shadID);
@@ -146,6 +147,16 @@ namespace at {
         glCheckError("glGetProgamInterfaceiv");
 
         _uniform_count = dst;
+
+        /*
+        for (int i = 0; i < dst; ++i) {
+            char n[955] = {0};
+            int k;
+            glGetProgramResourceName(_progID, GL_UNIFORM, i, 954, &k, n);
+            k = glGetProgramResourceLocation(_progID, GL_UNIFORM, n);
+            cout << k << " " << n << endl;
+        }//*/
+
     }
 
 
@@ -173,10 +184,9 @@ namespace at {
     }
 
 
-    void Parogl::setArg(unsigned i, GLO_Image image) {
+    void Parogl::setArg(unsigned i, Texture const& image) {
         (void)i;
 
-        const GLenum prop = GL_LOCATION;
         GLint location;
 
         if (_uniform_i >= _uniform_count)
@@ -185,14 +195,14 @@ namespace at {
         glActiveTexture(GL_TEXTURE0 + _texunit_i);
         glCheckError("glActivateTexture");
 
-        glBindImageTexture(_texunit_i, image.id, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        glBindImageTexture(_texunit_i, image.get_gl_id(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
         glCheckError("glBindImageTexture");
 
-        glGetProgramResourceiv(_progID, GL_UNIFORM, _uniform_i, 1, &prop, 1, NULL, &location);
-        glCheckError("glGetProgramResourceiv");
+        location = glGetUniformLocation(_progID, _argList[i].c_str());
+        glCheckError("getGetUniformLocation");
 
-        glUniform1i(_uniform_i, _texunit_i);
-        glCheckError("glUniform1i");
+        glUniform1i(location, _texunit_i);
+        glCheckError("glUniform1i(image2d)");
 
         _uniform_i++;
         _texunit_i++;
@@ -203,14 +213,13 @@ namespace at {
     void Parogl::setArg(unsigned i, T val) {\
         (void)i;\
         \
-        const GLenum prop = GL_LOCATION;\
         GLint location;\
         \
         if (_uniform_i >= _uniform_count)\
             ATEMA_ERROR("OpenGL error uniform count overflow");\
         \
-        glGetProgramResourceiv(_progID, GL_UNIFORM, _uniform_i, 1, &prop, 1, NULL, &location);\
-        glCheckError("glGetProgramResourceiv");\
+        location = glGetUniformLocation(_progID, _argList[i].c_str());\
+        glCheckError("getGetUniformLocation"); \
         \
         glUniform1 ## suf(location, val);\
         glCheckError("glUniform1" #suf);\
@@ -222,7 +231,6 @@ namespace at {
     implem_glUniform1T(unsigned, ui)
     implem_glUniform1T(int, i)
     implem_glUniform1T(float, f)
-
 
 
 }

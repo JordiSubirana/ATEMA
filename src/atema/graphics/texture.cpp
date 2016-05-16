@@ -78,8 +78,9 @@ namespace at
 		
 		m_pixels.reserve(width*height);
 		m_pixels.assign(width*height, Color(0.0f, 1.0f, 1.0f, 1.0f));
-		
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
+
+#warning Jordi: j'ai mis GL_RGBA32F comme format interne
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
 		
 		if (glGetError() != GL_NO_ERROR)
 			ATEMA_ERROR("OpenGL internal error: Texture creation failed.")

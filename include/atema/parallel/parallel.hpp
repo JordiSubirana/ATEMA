@@ -86,8 +86,9 @@ namespace at {
             add_src(std::forward<Srcs>(srcs)...);
         }
 
-        void build() {
-            p.build();
+        template<typename... Args>
+        void build(Args&&... args) {
+            p.build(std::forward<Args>(args)...);
         }
 
         void setRange(ComputeSize groupCount, ComputeSize groupSize) {
@@ -95,8 +96,8 @@ namespace at {
         }
 
         template<typename T>
-        void setArg(unsigned i, T arg) {
-            p.setArg(i, arg);
+        void setArg(unsigned i, T&& arg) {
+            p.setArg(i, std::forward<T>(arg));
         }
 
         void run() {
@@ -105,7 +106,7 @@ namespace at {
 
         // functor
         template<typename... Ts>
-        void operator() (Ts... ts) {
+        void operator() (Ts&&... ts) {
             p.prerun();
             setArgs<0>(std::forward<Ts>(ts)...);
             run();
@@ -121,14 +122,14 @@ namespace at {
         template<unsigned index, typename T0, typename... T1s>
         void setArgs(T0&& t0, T1s&&... t1s)
         {
-            setArgs<index>(t0);
+            setArgs<index>(std::forward<T0>(t0));
             setArgs<index + 1, T1s...>(std::forward<T1s>(t1s)...);
         }
 
         template<unsigned index, typename T0>
         void setArgs(T0&& t0)
         {
-            setArg(index, t0);
+            setArg(index, std::forward<T0>(t0));
         }
 
         template<unsigned index>

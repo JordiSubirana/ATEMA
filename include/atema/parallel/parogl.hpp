@@ -22,6 +22,7 @@
 
 
 #include <atema/parallel/parallel.hpp>
+#include <atema/graphics/texture.hpp>
 
 
 #include <atema/context/opengl.hpp>
@@ -32,15 +33,12 @@
 
 namespace at {
 
-    struct GLO_Image {
-        GLuint id;
-        GLO_Image(GLuint i) : id(i) {}
-    };
 
     class Parogl {
     protected:
         GLuint _progID, _shadID;
         std::vector<std::string> _srcs;
+        std::vector<std::string> _argList;
 
         // group size / group count
         GLuint gsx, gsy, gsz, gcx, gcy, gcz;
@@ -49,24 +47,52 @@ namespace at {
         unsigned _uniform_i;
         unsigned _texunit_i;
 
+        void _build();
+
+
+
+        template <typename... Ts>
+        void pushName(std::string const& name, Ts&&... ts) {
+            _argList.push_back(name);
+            pushName(std::forward<Ts>(ts)...);
+        }
+
+        void pushName(std::string const& name) {
+            _argList.push_back(name);
+            if (_argList.size() != _uniform_count) {
+                ATEMA_ERROR("In compute shader, missing arguments (just uniforms are counted...)")
+            }
+        }
+
+
     public:
 
         Parogl();
+        ~Parogl();
 
         void add_src(std::string const& s);
 
-        void build();
         void setRange(ComputeSize groupCount, ComputeSize groupSize);
 
         void prerun();
         void run();
+
+        // en parametres: la liste des variables
+        template <typename... Ts>
+        void build(Ts... ts) {
+            _build();
+
+            _argList.clear();
+            pushName(std::forward<Ts>(ts)...);
+        }
+
 
         void setArg(unsigned i, unsigned);
         void setArg(unsigned i, int);
         void setArg(unsigned i, float);
 
         // uniform 1u (Image)
-        void setArg(unsigned i, GLO_Image);
+        void setArg(unsigned i, at::Texture const& );
 
 
     };

@@ -21,5 +21,7 @@
 #define ATEMA_GLOBAL_PARALLEL_HEADER
 
 #include <atema/parallel/parallel.hpp>
+#include <atema/parallel/parogl.hpp>
+#include <atema/parallel/parocl.hpp>
 
 #endif
