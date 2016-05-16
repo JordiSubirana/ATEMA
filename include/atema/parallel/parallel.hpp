@@ -1,17 +1,42 @@
+// ----------------------------------------------------------------------
+// Copyright (C) 2016 Jordi SUBIRANA
+//
+// This file is part of ATEMA.
+//
+// ATEMA is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// ATEMA is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
+// ----------------------------------------------------------------------
+
+
 #ifndef ATEMA_PARALLEL_PARALLEL
 #define ATEMA_PARALLEL_PARALLEL
 
+#include <atema/core/error.hpp>
 
-#include <atema/context/opengl.hpp>
 
-#define CL_HPP_TARGET_OPENCL_VERSION 200
-#include <CL/cl2.hpp>
 
+#include <fstream>
+#include <sstream>
 #include <string>
 
 
 
 namespace at {
+
+    struct ComputeSize {
+        ComputeSize(size_t a = 1, size_t b = 1, size_t c = 1) : x(a), y(b), z(c) {}
+        size_t x, y, z;
+    };
 
     template<class Par>
     class Parallel {
@@ -20,9 +45,28 @@ namespace at {
 
 
     public:
+        template <typename... Ts>
+        Parallel<Par>(Ts&&... ts) : p(std::forward(ts)...) {}
 
-        void add_file(std::string const& s) {
-            p.add_src(s+"_loaded");
+        void add_file(std::string const& filename) {
+            std::string str, buf;
+            std::ifstream ifs(filename, std::ifstream::in);
+
+            if ( !ifs.is_open() ) {
+                std::ostringstream os;
+                os << "ERROR " << __FILE__ << ":" << __LINE__ << ": "<< "file not found: " << filename;
+                throw std::runtime_error(os.str());
+            }
+
+
+            while (!getline(ifs, buf).eof()) {
+                str += buf;
+                str += "\n";
+            }
+
+            str += buf;
+
+            p.add_src(str);
         }
 
         template<typename... Files>
@@ -46,6 +90,10 @@ namespace at {
             p.build();
         }
 
+        void setRange(ComputeSize groupCount, ComputeSize groupSize) {
+            p.setRange(groupCount, groupSize);
+        }
+
         template<typename T>
         void setArg(unsigned i, T arg) {
             p.setArg(i, arg);
@@ -58,9 +106,15 @@ namespace at {
         // functor
         template<typename... Ts>
         void operator() (Ts... ts) {
+            p.prerun();
             setArgs<0>(std::forward<Ts>(ts)...);
             run();
         }
+
+        Par& get() noexcept {
+            return p;
+        }
+
 
     private:
 
@@ -82,9 +136,6 @@ namespace at {
         {
         }
 
-        std::string loadFile(std::string const& file) {
-            return file + "_loaded";
-        }
 
     };
 

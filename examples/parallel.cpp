@@ -1,5 +1,3 @@
-# define CL_HPP_TARGET_OPENCL_VERSION 200
-#include <CL/cl2.hpp>
 
 #include <atema/context/context.hpp>
 #include <atema/window/window.hpp>
@@ -9,12 +7,15 @@
 #include <iostream>
 #include <cstdio>
 #include <atema/parallel/parallel.hpp>
+#include <atema/parallel/parogl.hpp>
+#include <atema/parallel/ocl.hpp>
 #include <atema/context/opengl.hpp>
 
 using namespace std;
 using namespace at;
 
 
+#define STRINGIFY(A) #A
 
 void scan_machine() {
 
@@ -54,15 +55,50 @@ void scan_machine() {
 
 
 
+static void checkErrors(std::string src) {
 
-void checkErrors(std::string desc) {
-	GLenum e = glGetError();
-	if (e != GL_NO_ERROR) {
-		//fprintf(stderr, "OpenGL error in \"%s\": %s (%d)\n", desc.c_str(), gluErrorString(e), e);
-		fprintf(stderr, "OpenGL error in \"%s\": %s (%d)\n", desc.c_str(), "???", e);
-		exit(20);
+	GLenum err = glGetError();
+
+	if (err != GL_NO_ERROR) {
+		string error = "OpenGL error in \"";
+		error += src;
+		error += "\": ";
+
+		switch(err) {
+			case GL_INVALID_OPERATION:
+				error += "INVALID_OPERATION";
+				break;
+			case GL_INVALID_ENUM:
+				error += "INVALID_ENUM";
+				break;
+			case GL_INVALID_VALUE:
+				error += "INVALID_VALUE";
+				break;
+			case GL_OUT_OF_MEMORY:
+				error += "OUT_OF_MEMORY";
+				break;
+			case GL_INVALID_FRAMEBUFFER_OPERATION:
+				error += "INVALID_FRAMEBUFFER_OPERATION";
+				break;
+			case GL_STACK_OVERFLOW:
+				error += "STACK_OVERFLOW";
+				break;
+			case GL_STACK_UNDERFLOW:
+				error += "STACK_UNDERFLOW";
+				break;
+			default:
+				error += "Unknown error";
+				break;
+		}
+
+		error += " (";
+		error += to_string(err);
+		error += ")";
+
+		ATEMA_ERROR(error.c_str());
 	}
 }
+
 
 GLuint genRenderProg(GLuint texHandle) {
 	GLuint progHandle = glCreateProgram();
@@ -85,8 +121,7 @@ GLuint genRenderProg(GLuint texHandle) {
 		 in vec2 texCoord;\
 		 out vec4 color;\
 		 void main() {\
-			 float c = texture(srcTex, texCoord).x;\
-			 color = vec4(c, 1.0, 1.0, 1.0);\
+			 color =  texture(srcTex, texCoord);\
 		 }"
 	};
 
@@ -158,85 +193,17 @@ GLuint genTexture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	checkErrors("Gen texture3");
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 512, 512, 0, GL_RED, GL_FLOAT, NULL);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
 	checkErrors("Gen texture4");
 
 	// Because we're also using this tex as an image (in order to write to it),
 	// we bind it to an image unit as well
 	//glBindImageTexture(0, texHandle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-	glBindImageTexture(0, texHandle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+	glBindImageTexture(0, texHandle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	checkErrors("Gen texture5");
 	return texHandle;
 }
-
-
-GLuint genComputeProg(GLuint texHandle) {
-	// Creating the compute shader, and the program object containing the shader
-	GLuint progHandle = glCreateProgram();
-	GLuint cs = glCreateShader(GL_COMPUTE_SHADER);
-
-	// In order to write to a texture, we have to introduce it as image2D.
-	// local_size_x/y/z layout variables define the work group size.
-	// gl_GlobalInvocationID is a uvec3 variable giving the global ID of the thread,
-	// gl_LocalInvocationID is the local index within the work group, and
-	// gl_WorkGroupID is the work group's index
-	#define STRINGIFY(A) #A
-
-
-
-	string code = STRINGIFY(
-			layout (local_size_x = 16, local_size_y = 16) in;
-			uniform float roll;
-
-			//uniform writeonly image2D destTex;
-			//uniform writeonly image2D destTex;
-			//layout(binding = 0) writeonly uniform image2D destTex;
-			layout(rgba8, binding = 0) uniform mediump image2D destTex;
-
-			void main() {
-				ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
-				//float localCoef = length(vec2(ivec2(gl_LocalInvocationID.xy) - 8) / 8.0);
-				//float globalCoef = sin(float(gl_WorkGroupID.x + gl_WorkGroupID.y) * 0.1 + roll) * 0.5;
-				//imageStore(destTex, storePos, vec4(1.0-globalCoef*localCoef, 0.0, 0.0, 1.0));
-				imageStore(destTex, storePos, vec4(0.5, 0, 0, 0.5));
-			}
-	);
-	const char *csSrc[] = {	"#version 430\n", code.c_str()};
-
-	glShaderSource(cs, 2, csSrc, NULL);
-	glCompileShader(cs);
-	int rvalue;
-	glGetShaderiv(cs, GL_COMPILE_STATUS, &rvalue);
-	if (!rvalue) {
-		fprintf(stderr, "Error in compiling the compute shader\n");
-		GLchar log[10240];
-		GLsizei length;
-		glGetShaderInfoLog(cs, 10239, &length, log);
-		fprintf(stderr, "Compiler log:\n%s\n", log);
-		exit(40);
-	}
-	glAttachShader(progHandle, cs);
-
-	glLinkProgram(progHandle);
-	glGetProgramiv(progHandle, GL_LINK_STATUS, &rvalue);
-	if (!rvalue) {
-		fprintf(stderr, "Error in linking compute shader program\n");
-		GLchar log[10240];
-		GLsizei length;
-		glGetProgramInfoLog(progHandle, 10239, &length, log);
-		fprintf(stderr, "Linker log:\n%s\n", log);
-		exit(41);
-	}
-	glUseProgram(progHandle);
-
-	glUniform1i(glGetUniformLocation(progHandle, "destTex"), 0);
-
-	checkErrors("Compute shader");
-	return progHandle;
-}
-
-
-
 
 
 
@@ -279,32 +246,63 @@ int main() {
 		//*/
         #endif
 
+		cout << "GL_VENDOR " << (char const*)glGetString(GL_VENDOR) << endl;
+		cout << "GL_RENDERER " << (char const*)glGetString(GL_RENDERER) << endl;
 
+
+		glGetError();
 		////////////////////////////////////////////////////////////////////////////////////////
 		glViewport(0, 0, 512, 512);
 		glGetError();
-		GLuint renderHandle, computeHandle;
+		GLuint renderHandle;
 		GLuint texHandle = genTexture();
 		renderHandle = genRenderProg(texHandle);
-		computeHandle = genComputeProg(texHandle);
 
 
-		int frame = 0;
+
+
+
+
+
+		string code = STRINGIFY(
+				uniform writeonly image2D destTex;
+				uniform uint salut;
+				//buffer Pos { float Position[]; };
+				uniform uint salzut;
+
+				void main() {
+					//if (salut == 0) { Position[0] = 5.0f; }
+
+					ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
+					float kk = salut*salzut;
+					imageStore(destTex, storePos, vec4( 0.5*(1+cos((storePos.x+storePos.y*cos(kk/1000))/5.0f)) , (1.0f+sin(kk/100))/2.0f, storePos.x*0.5*(1+cos(sqrt(2)*kk/100))/512, 1));
+				}
+		);
+
+		Parallel<Parogl> cpt;
+		cpt.add_src(code);
+		cpt.build();
+		cpt.setRange(ComputeSize(512/16, 512/16), ComputeSize(16,16));
+
+		cout << "==================================================\n";
+
+
+
+		unsigned frame = 1;
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{
 
-			glUseProgram(computeHandle);
-			glUniform1f(glGetUniformLocation(computeHandle, "roll"), (float)frame*0.1f);
-			glBindImageTexture(0, texHandle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-			glDispatchCompute(512/16, 512/16, 1); // 512^2 threads in blocks of 16^2
-			checkErrors("Dispatch compute shader");
-			frame++;
+			cpt(GLO_Image(texHandle), frame, (unsigned)1);
+
 
 			glUseProgram(renderHandle);
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//*/
+
+			checkErrors("draw");
 
 			window.update();
+			checkErrors("update");
+			frame++;
 		}
 	}
 	catch (Error& e)
@@ -319,79 +317,6 @@ int main() {
 
 
 
-struct A {
-
-	A() {
-		cout << "A()" << endl;
-	}
-
-	/*
-	template <typename T> A(T &&a) {
-		cout << "A(T &&a)" << a << endl;
-	}//*/
-
-
-
-/*
-	A(int& a) {
-		cout << "A(int& a)" << a << endl;
-	}
-*/
-	A(int const& a) {
-		cout << "A(int const& a)" << a << endl;
-	}
-/*
-	A(int&& a) {
-		cout << "A(int&& a)" << a << endl;
-	}
-
-	A(int const&& a) {
-		cout << "A(int const&& a)" << a << endl;
-	}
-
-*/
-
-	A(A& a) {
-		cout << "A(A& a)" << endl;
-	}
-
-	A(A const& a) {
-		cout << "A(A const& a)" << endl;
-	}
-
-	A(A&& a) {
-		cout << "A(A&& a)" << endl;
-	}
-
-	A(A const&& a) {
-		cout << "A(A const&& a)" << endl;
-	}
-
-
-
-
-	A(string& a) {
-		cout << "A(string& a)" << a << endl;
-	}
-
-	A(string const& a) {
-		cout << "A(string const& a)" << a << endl;
-	}
-
-	A(string&& a) {
-		cout << "A(string&& a)" << a << endl;
-		string s(std::move(a));
-	}
-
-	A(string const&& a) {
-		cout << "A(string const&& a)" << a << endl;
-	}
-
-//*/
-
-
-};
-
 
 
 class Runner {
@@ -402,36 +327,36 @@ public:
 	}
 
 	void build() {
-		cout << "Runner::build();";
+		cout << "Runner::build();" << endl;
 	}
 
-	template<typename T>
-	void setArg(unsigned i, T arg) {
-		cout << "Runner::setArg(" << i << ", " << arg << ");" << endl;
+	void prerun() {
+		cout << "Runner::prerun();" << endl;
 	}
-
 
 	void run() {
 		cout << "Runner::run();" << endl;
 	}
 
+	void setArg(unsigned i, string arg) {
+		cout << "Runner::setArg<string>(" << i << ", " << arg << ");" << endl;
+	}
 
+	void setArg(unsigned i, double arg) {
+		cout << "Runner::setArg<double>(" << i << ", " << arg << ");" << endl;
+	}
 
 };
 
-
-template<> // specialisation en dehors de la classe
-void Runner::setArg<char>(unsigned i, char arg) {
-	cout << "Runner::setArg<char>(" << i << ", " << arg << ");" << endl;
-}
 
 
 void test() {
 
 	Parallel<Runner> p;
 
+
 	p.add_src("s1", "s2");
-	p.add_file("f1", "f2");
+	//p.add_file("f1", "f2");
 
 	p.build();
 
@@ -439,21 +364,20 @@ void test() {
 
 
 	return ;
-	const A a;
-
-	string s = "hello;";
-	int i = 64;
-
-	A b(a);
-	A c(42);
-	A d(i);
-	A e(std::move(s));
-	A f(std::string("sDAsd"));
-	cout << "s after:" << (s);
 
 }
 
-
+/*
+ * z b.t
+ * HLM
+ * f?  ; repeat
+ * D  suppr la fin
+ *
+ * :s/old/new    sur la ligne
+ * :l1,l2s/old/new    sur le range
+ * :%s/old/new      fichier
+ * I    debut ligne + insert
+ */
 
 
 
