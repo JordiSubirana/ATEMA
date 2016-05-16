@@ -22,10 +22,10 @@
 
 namespace at
 {
-	thread_local Context *t_current_context;
+	thread_local Context *t_current_context = nullptr;
 	
 	//PUBLIC
-	bool Context::is_active() const noexcept
+	bool Context::is_current_context() const noexcept
 	{
 		return (this == t_current_context);
 	}
@@ -44,7 +44,7 @@ namespace at
 	
 	void Context::check_activity() const noexcept
 	{
-		if (m_thread_active && !is_active())
+		if (m_thread_active && !is_current_context())
 			ATEMA_ERROR("Context is already activated in another thread.")
 	}
 	
@@ -52,7 +52,7 @@ namespace at
 	{
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-		glEnable(GL_TEXTURE_2D);
 		glActiveTexture(GL_TEXTURE0);
+		// glEnable(GL_TEXTURE_2D); //Deprecated for non-fixed pipeline ! 3.X
 	}
 }

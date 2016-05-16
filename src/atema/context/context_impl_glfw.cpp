@@ -32,8 +32,7 @@ namespace at
 		m_thread_active(false),
 		m_active(false),
 		m_flags(0),
-		m_viewport{0,0,0,0},
-		m_infos{0,0,0,0},
+		m_infos(),
 		m_name(""),
 		m_window(nullptr)
 	{
@@ -50,14 +49,14 @@ namespace at
 		return ((m_window) && (glfwWindowShouldClose(m_window) == 0));
 	}
 	
-	void Context::create(const gl_version& version)
+	void Context::create(unsigned int w, unsigned int h, const gl_version& version)
 	{
-		create(32, 32, "", 0, version); //Invisible window
+		create(w, h, "", 0, version); //Invisible window
 	}
 	
-	void Context::activate(bool value)
+	void Context::make_current(bool value)
 	{
-		if (value == is_active())
+		if (value == is_current_context())
 			return;
 		
 		if (value)
@@ -68,8 +67,31 @@ namespace at
 		{
 			set_current(nullptr);
 		}
+		
+		RenderTarget::make_current(value);
 	}
-
+	
+	//RenderTarget
+	void Context::ensure_framebuffer_exists()
+	{
+		//Nothing to do in here
+	}
+	
+	unsigned int Context::get_width() const
+	{
+		return (m_infos.w);
+	}
+	
+	unsigned int Context::get_height() const
+	{
+		return (m_infos.h);
+	}
+	
+	GLuint Context::get_gl_framebuffer_id() const
+	{
+		return (0);
+	}
+	
 	//--------------------
 	//SPECIFIC GLFW
 	void Context::create(unsigned int w, unsigned int h, const char *name, Flags flag_list, const gl_version& version)
@@ -80,6 +102,8 @@ namespace at
 			
 			int bw = 0;
 			int bh = 0;
+			
+			Rect viewport;
 			
 			Flags tmp_flags = 0;
 			
@@ -181,14 +205,26 @@ namespace at
 			m_flags = tmp_flags;
 			
 			if (m_flags & OPTS::autoscale)
-				m_viewport = {0, 0, static_cast<int>(w), static_cast<int>(h)};
+			{
+				viewport.x = 0;
+				viewport.y = 0;
+				viewport.w = w;
+				viewport.h = h;
+			}
 			else
-				m_viewport = {0, 0, 0, 0};
+			{
+				viewport.x = 0;
+				viewport.y = 0;
+				viewport.w = 0;
+				viewport.h = 0;
+			}
+			
+			set_viewport(viewport);
 			
 			glfwGetWindowSize(m_window, &bw, &bh);
 			
-			m_infos.w = bw;
-			m_infos.h = bh;
+			m_infos.w = static_cast<unsigned int>(bw);
+			m_infos.h = static_cast<unsigned int>(bh);
 			
 			if (name)
 				m_name = name;
@@ -202,6 +238,8 @@ namespace at
 			
 			init_gl_states();
 			// register_window();
+			
+			make_current(true);
 		}
 		catch (Error& e)
 		{

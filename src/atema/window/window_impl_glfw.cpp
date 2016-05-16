@@ -71,7 +71,7 @@ namespace at
 			ATEMA_ERROR("Window is not initialized.")
 		
 		//Be careful, this rect is working like x1,y1,x2,y2, not x,y,w,h
-		rect tmp_rect;
+		Rect tmp_rect;
 		
 		if (m_flags & options::autoscale)
 		{
@@ -114,13 +114,9 @@ namespace at
 			// tmp_rect.h = m_infos.h/2 + m_tex.get_height()/2;
 		}
 		
-		activate(true);
-		
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		make_current(true);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		// glEnable(GL_DEPTH_TEST);
 		// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);

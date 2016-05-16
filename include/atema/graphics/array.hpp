@@ -38,6 +38,9 @@ namespace at
 				stream_mode		= GL_STREAM_DRAW
 			};
 			
+			using SharedObject::download;
+			using SharedObject::upload;
+			
 		public:
 			Array();
 			Array(const T *elements, size_t elements_size, update update_mode = update::static_mode);

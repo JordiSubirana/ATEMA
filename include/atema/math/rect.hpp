@@ -17,27 +17,29 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GRAPHICS_COLOR_HEADER
-#define ATEMA_GRAPHICS_COLOR_HEADER
+#ifndef ATEMA_MATH_RECT_HEADER
+#define ATEMA_MATH_RECT_HEADER
 
-#include <atema/graphics/config.hpp>
+#include <atema/math/config.hpp>
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API Color
+	class ATEMA_MATH_API Rect
 	{
 		public:
-			Color();
-			Color(float r, float g, float b, float a) :
-				r(r), b(b), g(g), a(a)
+			Rect() :
+				x(0), y(0), w(0), h(0)
+			{
+				
+			}
+			Rect(int x, int y, unsigned int w, unsigned int h) :
+				x(x), y(y), w(w), h(h)
 			{
 				
 			}
 			
-			float r;
-			float g;
-			float b;
-			float a;
+			int x, y;
+			unsigned int w, h;
 	};
 }
 

@@ -24,12 +24,13 @@
 #include <atema/context/opengl.hpp>
 #include <atema/graphics/color.hpp>
 #include <atema/graphics/shared_object.hpp>
+#include <atema/context/render_target.hpp>
 
 #include <vector>
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API Texture : public SharedObject
+	class ATEMA_GRAPHICS_API Texture : public SharedObject, public RenderTarget
 	{
 		public:
 			enum class filter : GLenum
@@ -37,11 +38,16 @@ namespace at
 				nearest = GL_NEAREST,
 				linear = GL_LINEAR
 			};
+			
+			using SharedObject::download;
+			using SharedObject::upload;
 		
 		public:
 			Texture();
 			Texture(unsigned int width, unsigned int height, filter min_filter = filter::nearest, filter mag_filter = filter::nearest);
 			virtual ~Texture();
+			
+			bool is_valid() const noexcept;
 			
 			void create(unsigned int width, unsigned int height, filter min_filter = filter::nearest, filter mag_filter = filter::nearest);
 			
@@ -58,8 +64,19 @@ namespace at
 			Color& operator[](size_t index);
 			const Color& operator[](size_t index) const;
 			
+			//RenderTarget
+			GLuint get_gl_framebuffer_id() const;
+			
+		protected:
+			//RenderTarget
+			void ensure_framebuffer_exists();
+			
 		private:
+			void ensure_texture();
+			
 			GLuint m_id;
+			bool m_tex_ok;
+			bool m_valid;
 			unsigned int m_width;
 			unsigned int m_height;
 			
@@ -70,6 +87,11 @@ namespace at
 			
 			filter m_min_filter;
 			filter m_mag_filter;
+			
+			//RenderTarget
+			GLuint m_fbo;
+			GLuint m_rbo;
+			bool m_framebuffer_ok;
 	};
 }
 

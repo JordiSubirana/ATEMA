@@ -17,28 +17,12 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GRAPHICS_COLOR_HEADER
-#define ATEMA_GRAPHICS_COLOR_HEADER
+#ifndef ATEMA_GLOBAL_WINDOW_HEADER
+#define ATEMA_GLOBAL_WINDOW_HEADER
 
-#include <atema/graphics/config.hpp>
-
-namespace at
-{
-	class ATEMA_GRAPHICS_API Color
-	{
-		public:
-			Color();
-			Color(float r, float g, float b, float a) :
-				r(r), b(b), g(g), a(a)
-			{
-				
-			}
-			
-			float r;
-			float g;
-			float b;
-			float a;
-	};
-}
+#include <atema/window/config.hpp>
+#include <atema/window/keyboard.hpp>
+#include <atema/window/mouse.hpp>
+#include <atema/window/window.hpp>
 
 #endif

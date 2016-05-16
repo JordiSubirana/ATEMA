@@ -52,6 +52,8 @@ namespace at
 				adapt		= 0x0040
 			};
 			
+			using Context::create;
+			
 		//To implement for each OS
 		public:
 			Window();

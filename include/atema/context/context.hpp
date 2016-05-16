@@ -36,7 +36,7 @@
 
 #include <atema/context/config.hpp>
 #include <atema/utility/non_copyable.hpp>
-
+#include <atema/context/render_target.hpp>
 
 
 #if defined(ATEMA_CONTEXT_IMPL_GLFW)
@@ -71,7 +71,7 @@ namespace at
 {
 	class Window;
 	
-	class ATEMA_CONTEXT_API Context : public NonCopyable
+	class ATEMA_CONTEXT_API Context : public NonCopyable, public RenderTarget
 	{
 		public:
 			using gl_version = struct
@@ -82,7 +82,7 @@ namespace at
 		
 		//Already implemented
 		public:
-			bool is_active() const noexcept;
+			bool is_current_context() const noexcept;
 			
 		private:
 			static void set_current(Context *ptr) noexcept;
@@ -97,11 +97,20 @@ namespace at
 			virtual bool is_valid() const noexcept;
 			
 			//Must call init_gl_states() after creating Context
-			virtual void create(const gl_version& version);
+			//w & h refer to the size of the internal framebuffer
+			virtual void create(unsigned int w, unsigned int h, const gl_version& version);
 			
 			//Must call check_activity() in the top of this method : it throws if activated in another thread
 			//Then activate and set_current with this (true) or nullptr (false)
-			virtual void activate(bool value);
+			virtual void make_current(bool value);
+			
+			//Default framebuffer dimensions
+			virtual unsigned int get_width() const;
+			virtual unsigned int get_height() const;
+			virtual GLuint get_gl_framebuffer_id() const;
+			
+		protected:
+			virtual void ensure_framebuffer_exists();
 			
 		private:
 			friend class at::Window;
@@ -115,19 +124,10 @@ namespace at
 			void create(unsigned int w, unsigned int h, const char *name, Flags flag_list, const gl_version& version);
 			void destroy_window() noexcept;
 			
-			using rect = struct
-			{
-				int x;
-				int y;
-				int w;
-				int h;
-			};
-			
 			bool m_active;
 			
 			Flags m_flags;
-			rect m_viewport;
-			rect m_infos;
+			Rect m_infos;
 			std::string m_name;
 			
 			GLFWwindow *m_window;
