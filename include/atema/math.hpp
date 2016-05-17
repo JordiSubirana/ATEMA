@@ -22,6 +22,6 @@
 
 #include <atema/math/config.hpp>
 #include <atema/math/rect.hpp>
-#include <atema/math/vector2.hpp>
+#include <atema/math/vector.hpp>
 
 #endif
