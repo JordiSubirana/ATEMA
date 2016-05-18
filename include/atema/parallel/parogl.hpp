@@ -21,7 +21,8 @@
 #define ATEMA_PARALLEL_OGL_HPP
 
 
-#include <atema/parallel/parallel.hpp>
+#include <atema/core/error.hpp>
+#include <atema/parallel/tools.hpp>
 #include <atema/graphics/texture.hpp>
 #include <atema/math/vector.hpp>
 
@@ -30,10 +31,16 @@
 
 
 #include <vector>
+#include <string>
 
 
 namespace at {
 
+
+    struct Buffer {
+        GLuint id;
+        Buffer(GLuint i) : id(i) {}
+    };
 
     class Parogl {
     protected:
@@ -44,9 +51,12 @@ namespace at {
         // group size / group count
         GLuint gsx, gsy, gsz, gcx, gcy, gcz;
 
+        GLint _ssbo_count;
         GLint _uniform_count;
-        unsigned _uniform_i;
-        unsigned _texunit_i;
+
+        unsigned _ssbo_i;
+        unsigned _uniform_i, _texunit_i;
+
 
         void _build();
 
@@ -60,8 +70,8 @@ namespace at {
 
         void pushName(std::string const& name) {
             _argList.push_back(name);
-            if (_argList.size() != _uniform_count) {
-                ATEMA_ERROR("In compute shader, missing arguments (just uniforms are counted...)")
+            if (_argList.size() != _uniform_count+_ssbo_count) {
+                ATEMA_ERROR("In compute shader, number of arguments missmatch (just uniforms and ssbo are counted...)")
             }
         }
 
@@ -89,23 +99,25 @@ namespace at {
 
 
         // uniform 1u (Image)
-        void setArg(unsigned i, at::Texture const& );
+        void set_arg(unsigned i, Texture const& );
 
-        void setArg(unsigned i, unsigned);
-        void setArg(unsigned i, int);
-        void setArg(unsigned i, float);
+        void set_arg(unsigned i, Buffer const& );
 
-        void setArg(unsigned i, Vector2u);
-        void setArg(unsigned i, Vector2i);
-        void setArg(unsigned i, Vector2f);
+        void set_arg(unsigned i, unsigned);
+        void set_arg(unsigned i, int);
+        void set_arg(unsigned i, float);
 
-        void setArg(unsigned i, Vector3u);
-        void setArg(unsigned i, Vector3i);
-        void setArg(unsigned i, Vector3f);
+        void set_arg(unsigned i, Vector2u);
+        void set_arg(unsigned i, Vector2i);
+        void set_arg(unsigned i, Vector2f);
 
-        void setArg(unsigned i, Vector4u);
-        void setArg(unsigned i, Vector4i);
-        void setArg(unsigned i, Vector4f);
+        void set_arg(unsigned i, Vector3u);
+        void set_arg(unsigned i, Vector3i);
+        void set_arg(unsigned i, Vector3f);
+
+        void set_arg(unsigned i, Vector4u);
+        void set_arg(unsigned i, Vector4i);
+        void set_arg(unsigned i, Vector4f);
 
 
 

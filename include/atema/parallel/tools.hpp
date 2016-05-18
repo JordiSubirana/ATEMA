@@ -17,17 +17,20 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GLOBAL_PARALLEL_HEADER
-#define ATEMA_GLOBAL_PARALLEL_HEADER
+#ifndef ATEMA_PARALLEL_TOOLS_HPP
+#define ATEMA_PARALLEL_TOOLS_HPP
 
-#include <atema/parallel/parallel.hpp>
-#include <atema/parallel/parocl.hpp>
-#include <atema/parallel/parogl.hpp>
+#include <cstddef>
 
 namespace at {
 
-    using ParaGL = Parallel<Parogl>;
+    struct ComputeSize {
+        ComputeSize(std::size_t a = 1, std::size_t b = 1, std::size_t c = 1) : x(a), y(b), z(c) { }
+
+        size_t x, y, z;
+    };
 
 }
+
 
 #endif

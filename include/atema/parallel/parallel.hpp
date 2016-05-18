@@ -22,6 +22,7 @@
 #define ATEMA_PARALLEL_PARALLEL
 
 #include <atema/core/error.hpp>
+#include <atema/parallel/tools.hpp>
 
 
 
@@ -30,13 +31,8 @@
 #include <string>
 
 
-
 namespace at {
 
-    struct ComputeSize {
-        ComputeSize(size_t a = 1, size_t b = 1, size_t c = 1) : x(a), y(b), z(c) {}
-        size_t x, y, z;
-    };
 
     template<class Par>
     class Parallel {
@@ -55,7 +51,7 @@ namespace at {
             if ( !ifs.is_open() ) {
                 std::ostringstream os;
                 os << "ERROR " << __FILE__ << ":" << __LINE__ << ": "<< "file not found: " << filename;
-                throw std::runtime_error(os.str());
+                ATEMA_ERROR(os.str().c_str())
             }
 
 
@@ -96,8 +92,8 @@ namespace at {
         }
 
         template<typename T>
-        void setArg(unsigned i, T&& arg) {
-            p.setArg(i, std::forward<T>(arg));
+        void set_arg(unsigned i, T&& arg) {
+            p.set_arg(i, std::forward<T>(arg));
         }
 
         void run() {
@@ -108,7 +104,7 @@ namespace at {
         template<typename... Ts>
         void operator() (Ts&&... ts) {
             p.prerun();
-            setArgs<0>(std::forward<Ts>(ts)...);
+            set_args<0>(std::forward<Ts>(ts)...);
             run();
         }
 
@@ -120,25 +116,27 @@ namespace at {
     private:
 
         template<unsigned index, typename T0, typename... T1s>
-        void setArgs(T0&& t0, T1s&&... t1s)
+        void set_args(T0&& t0, T1s&&... t1s)
         {
-            setArgs<index>(std::forward<T0>(t0));
-            setArgs<index + 1, T1s...>(std::forward<T1s>(t1s)...);
+            set_args<index>(std::forward<T0>(t0));
+            set_args<index + 1, T1s...>(std::forward<T1s>(t1s)...);
         }
 
         template<unsigned index, typename T0>
-        void setArgs(T0&& t0)
+        void set_args(T0&& t0)
         {
-            setArg(index, std::forward<T0>(t0));
+            set_arg(index, std::forward<T0>(t0));
         }
 
         template<unsigned index>
-        void setArgs()
+        void set_args()
         {
         }
 
 
     };
+
+
 
 }
 

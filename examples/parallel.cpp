@@ -18,6 +18,9 @@ static string code = STRINGIFY(
 		uniform uint time;
 		uniform vec2 os;
 		uniform float zoom;
+		buffer Pos {
+				float pos[];
+		};
 
 		void main() {
 			const float PI = 3.1415926f;
@@ -33,6 +36,10 @@ static string code = STRINGIFY(
 			float x = cx;
 			float y = cy;
 			float tmp;
+
+			if (zoom == 0) {
+				i = pos[0];
+			}
 
 			for ( ; i<Reso ; i+=1) {
 				tmp = x*x - y*y;
@@ -83,19 +90,23 @@ int main() {
 		tex.create(512, 512);
 		tex.set_viewport(Rect(0, 0, tex.get_width(), tex.get_height()));
 
-		cout << "GL_VENDOR " << (char const*)glGetString(GL_VENDOR) << endl;
-		cout << "GL_RENDERER " << (char const*)glGetString(GL_RENDERER) << endl;
+		cout << "==================================================\n";
+		cout << "GL_VENDOR   : " << (char const*)glGetString(GL_VENDOR) << endl;
+		cout << "GL_RENDERER : " << (char const*)glGetString(GL_RENDERER) << endl;
 		cout << "==================================================\n";
 		cout << "  [arrows] : navigate\n";
 		cout << "  [pageUp] : zoom in\n";
 		cout << "  [pageDown] : zoom out\n";
 		cout << "  [space] : reset\n";
 		cout << "  [escape] : exit\n";
+		cout << "==================================================\n";
 
+
+		Buffer buffer(0);
 
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("destTex", "Reso", "time", "os", "zoom");
+		cpt.build("destTex", "Reso", "time", "os", "zoom", "Pos");
 		cpt.set_range(ComputeSize(512 / 16, 512 / 16), ComputeSize(16, 16));
 
 		Vector2f os;
@@ -107,18 +118,18 @@ int main() {
 		{
 			window.clear();
 
-			if (keyboard.is_pressed(Keyboard::key::left)) os.x -= 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::right)) os.x += 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::down)) os.y -= 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::up)) os.y += 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::page_down)) zoom *= 1.01;
-			if (keyboard.is_pressed(Keyboard::key::page_up)) zoom *= 0.99;
+			if (keyboard.is_pressed(Keyboard::key::left)) 		os.x -= 0.01*zoom;
+			if (keyboard.is_pressed(Keyboard::key::right)) 		os.x += 0.01*zoom;
+			if (keyboard.is_pressed(Keyboard::key::down)) 		os.y -= 0.01*zoom;
+			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.01*zoom;
+			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.01;
+			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.99;
 			if (keyboard.is_pressed(Keyboard::key::space)) {
 				zoom = 1;
 				os *= 0;
 			}
 
-			cpt(tex, (unsigned)100, frame, os, zoom);
+			cpt(tex, (unsigned)100, frame, os, zoom, buffer);
 
 			window.draw(tex);
 			window.update();

@@ -20,6 +20,7 @@
 
 #include <atema/parallel/parogl.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -148,11 +149,19 @@ namespace at {
 
         _uniform_count = dst;
 
+
+        glGetProgramInterfaceiv(_progID, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &dst);
+        glCheckError("glGetProgamInterfaceiv");
+
+        _ssbo_count = dst;
+
+
+
         /*
         for (int i = 0; i < dst; ++i) {
             char n[955] = {0};
             int k;
-            glGetProgramResourceName(_progID, GL_UNIFORM, i, 954, &k, n);
+            glGetProgramResourceName(_progID, GL_SHADER_STORAGE_BLOCK, i, 954, &k, n);
             k = glGetProgramResourceLocation(_progID, GL_UNIFORM, n);
             cout << k << " " << n << endl;
         }//*/
@@ -171,20 +180,24 @@ namespace at {
     }
 
 
-    void at::Parogl::run() {
-        glDispatchComputeGroupSizeARB(gcx, gcy, gcz, gsx, gsy, gsz); // 512^2 threads in blocks of 16^2
-        glCheckError("glDispatchComputeGroupSizeARB");
-    }
 
     void Parogl::prerun() {
         _uniform_i = 0;
         _texunit_i = 0;
+        _ssbo_i = 0;
 
         glUseProgram(_progID);
     }
 
 
-    void Parogl::setArg(unsigned i, Texture const& image) {
+    void at::Parogl::run() {
+        glDispatchComputeGroupSizeARB(gcx, gcy, gcz, gsx, gsy, gsz); // 512^2 threads in blocks of 16^2
+        glCheckError("glDispatchComputeGroupSizeARB");
+    }
+
+
+
+    void Parogl::set_arg(unsigned i, Texture const& image) {
 
         GLint location;
 
@@ -200,6 +213,12 @@ namespace at {
         location = glGetUniformLocation(_progID, _argList[i].c_str());
         glCheckError("getGetUniformLocation");
 
+        if (location == -1) {
+            ostringstream oss;
+            oss << "OpenGL error : variable \"" << _argList[i] << "\" in shader can not be found";
+            ATEMA_ERROR(oss.str().c_str())
+        }
+
         glUniform1i(location, _texunit_i);
         glCheckError("glUniform1i(image2d)");
 
@@ -208,8 +227,37 @@ namespace at {
     }
 
 
-    #define implem_glUniform1T(T, suf) \
-    void Parogl::setArg(unsigned i, T val) {\
+
+    void Parogl::set_arg(unsigned i, const Buffer &buffer) {
+
+        if (_ssbo_i >= _ssbo_count)
+            ATEMA_ERROR("OpenGL error SSBO count overflow");
+
+        GLuint block_index;
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, _ssbo_i, buffer.id);
+        glCheckError("glBindBufferBase");
+
+        block_index = glGetProgramResourceIndex(_progID, GL_SHADER_STORAGE_BLOCK, _argList[i].c_str());
+        glCheckError("glGetProgramResourceIndex");
+
+        if (block_index == -1) {
+            ostringstream oss;
+            oss << "OpenGL error : variable \"" << _argList[i] << "\" in shader can not be found";
+            ATEMA_ERROR(oss.str().c_str())
+        }
+
+        glShaderStorageBlockBinding(_progID, block_index, _ssbo_i);
+        glCheckError("glShaderStorageBlockBinding");
+
+        _ssbo_i++;
+    }
+
+
+
+
+    #define implem_glUniform(T, suf, par) \
+    void Parogl::set_arg(unsigned i, T val) {\
         \
         GLint location;\
         \
@@ -219,88 +267,37 @@ namespace at {
         location = glGetUniformLocation(_progID, _argList[i].c_str());\
         glCheckError("getGetUniformLocation"); \
         \
-        glUniform1 ## suf(location, val);\
-        glCheckError("glUniform1" #suf);\
+        if (location == -1) {\
+            ostringstream oss;\
+            oss << "OpenGL error : variable \"" << _argList[i] << "\" in shader can not be found";\
+            ATEMA_ERROR(oss.str().c_str())\
+        }\
         \
-        _uniform_i++;\
-    }
-
-
-    #define implem_glUniform2T(T, suf) \
-    void Parogl::setArg(unsigned i, T val) {\
-        \
-        GLint location;\
-        \
-        if (_uniform_i >= _uniform_count)\
-            ATEMA_ERROR("OpenGL error uniform count overflow");\
-        \
-        location = glGetUniformLocation(_progID, _argList[i].c_str());\
-        glCheckError("getGetUniformLocation"); \
-        \
-        glUniform2 ## suf(location, val.x, val.y);\
-        glCheckError("glUniform2" #suf);\
+        glUniform ## suf(location, par);\
+        glCheckError("glUniform" #suf);\
         \
         _uniform_i++;\
     }
 
 
 
-    #define implem_glUniform3T(T, suf) \
-    void Parogl::setArg(unsigned i, T val) {\
-        \
-        GLint location;\
-        \
-        if (_uniform_i >= _uniform_count)\
-            ATEMA_ERROR("OpenGL error uniform count overflow");\
-        \
-        location = glGetUniformLocation(_progID, _argList[i].c_str());\
-        glCheckError("getGetUniformLocation"); \
-        \
-        glUniform3 ## suf(location, val.x, val.y, val.z);\
-        glCheckError("glUniform3" #suf);\
-        \
-        _uniform_i++;\
-    }
+    #define COMMA ,
 
+    implem_glUniform(unsigned, 1ui, val)
+    implem_glUniform(int,      1i, val)
+    implem_glUniform(float,    1f, val)
 
+    implem_glUniform(Vector2u, 2ui, val.x COMMA val.y)
+    implem_glUniform(Vector2i, 2i, val.x COMMA val.y)
+    implem_glUniform(Vector2f, 2f, val.x COMMA val.y)
 
-    #define implem_glUniform4T(T, suf) \
-    void Parogl::setArg(unsigned i, T val) {\
-        \
-        GLint location;\
-        \
-        if (_uniform_i >= _uniform_count)\
-            ATEMA_ERROR("OpenGL error uniform count overflow");\
-        \
-        location = glGetUniformLocation(_progID, _argList[i].c_str());\
-        glCheckError("getGetUniformLocation"); \
-        \
-        glUniform4 ## suf(location, val.x, val.y, val.z, val.z);\
-        glCheckError("glUniform4" #suf);\
-        \
-        _uniform_i++;\
-    }
+    implem_glUniform(Vector3u, 3ui, val.x COMMA val.y COMMA val.z)
+    implem_glUniform(Vector3i, 3i, val.x COMMA val.y COMMA val.z)
+    implem_glUniform(Vector3f, 3f, val.x COMMA val.y COMMA val.z)
 
-
-
-
-
-    implem_glUniform1T(unsigned, ui)
-    implem_glUniform1T(int, i)
-    implem_glUniform1T(float, f)
-
-    implem_glUniform2T(Vector2u, ui)
-    implem_glUniform2T(Vector2i, i)
-    implem_glUniform2T(Vector2f, f)
-
-    implem_glUniform3T(Vector3u, ui)
-    implem_glUniform3T(Vector3i, i)
-    implem_glUniform3T(Vector3f, f)
-
-    implem_glUniform4T(Vector4u, ui)
-    implem_glUniform4T(Vector4i, i)
-    implem_glUniform4T(Vector4f, f)
-
+    implem_glUniform(Vector4u, 4ui, val.x COMMA val.y COMMA val.z COMMA val.z)
+    implem_glUniform(Vector4i, 4i, val.x COMMA val.y COMMA val.z COMMA val.z)
+    implem_glUniform(Vector4f, 4f, val.x COMMA val.y COMMA val.z COMMA val.z)
 
 
 
