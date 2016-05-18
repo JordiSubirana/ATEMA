@@ -48,9 +48,9 @@ static string code = STRINGIFY(
 					uint X = p.x;
 					uint Y = p.y;
 					X &= Y;
-					data.x *= (X != 0) ? 1 : 1-zoom;
-					data.y *= (X != 0) ? 1 : 1-zoom;
-					data.z *= (X != 0) ? 1 : 1-zoom;
+					data.x = (X != 0) ? data.x : 0.0f;
+					data.y = (X != 0) ? data.y : 0.0f;
+					data.z = (X != 0) ? data.z : 0.0f;
 
 					imageStore(destTex, p, data);
 					return ;
