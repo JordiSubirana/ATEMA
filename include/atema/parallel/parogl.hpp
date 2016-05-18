@@ -23,6 +23,7 @@
 
 #include <atema/parallel/parallel.hpp>
 #include <atema/graphics/texture.hpp>
+#include <atema/math/vector.hpp>
 
 
 #include <atema/context/opengl.hpp>
@@ -72,7 +73,7 @@ namespace at {
 
         void add_src(std::string const& s);
 
-        void setRange(ComputeSize groupCount, ComputeSize groupSize);
+        void set_range(ComputeSize groupCount, ComputeSize groupSize);
 
         void prerun();
         void run();
@@ -87,12 +88,25 @@ namespace at {
         }
 
 
+        // uniform 1u (Image)
+        void setArg(unsigned i, at::Texture const& );
+
         void setArg(unsigned i, unsigned);
         void setArg(unsigned i, int);
         void setArg(unsigned i, float);
 
-        // uniform 1u (Image)
-        void setArg(unsigned i, at::Texture const& );
+        void setArg(unsigned i, Vector2u);
+        void setArg(unsigned i, Vector2i);
+        void setArg(unsigned i, Vector2f);
+
+        void setArg(unsigned i, Vector3u);
+        void setArg(unsigned i, Vector3i);
+        void setArg(unsigned i, Vector3f);
+
+        void setArg(unsigned i, Vector4u);
+        void setArg(unsigned i, Vector4i);
+        void setArg(unsigned i, Vector4f);
+
 
 
     };

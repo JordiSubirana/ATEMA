@@ -91,8 +91,8 @@ namespace at {
             p.build(std::forward<Args>(args)...);
         }
 
-        void setRange(ComputeSize groupCount, ComputeSize groupSize) {
-            p.setRange(groupCount, groupSize);
+        void set_range(ComputeSize groupCount, ComputeSize groupSize) {
+            p.set_range(groupCount, groupSize);
         }
 
         template<typename T>

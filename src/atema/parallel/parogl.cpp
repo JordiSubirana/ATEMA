@@ -27,7 +27,7 @@ using namespace std;
 namespace at {
 
 
-    static void glCheckError(std::string src) {
+    static inline void glCheckError(std::string src) {
 
         GLenum err = glGetError();
 
@@ -161,7 +161,7 @@ namespace at {
 
 
 
-    void Parogl::setRange(ComputeSize groupCount, ComputeSize groupSize) {
+    void Parogl::set_range(ComputeSize groupCount, ComputeSize groupSize) {
         gcx = (GLuint) groupCount.x;
         gcy = (GLuint) groupCount.y;
         gcz = (GLuint) groupCount.z;
@@ -185,7 +185,6 @@ namespace at {
 
 
     void Parogl::setArg(unsigned i, Texture const& image) {
-        (void)i;
 
         GLint location;
 
@@ -211,7 +210,6 @@ namespace at {
 
     #define implem_glUniform1T(T, suf) \
     void Parogl::setArg(unsigned i, T val) {\
-        (void)i;\
         \
         GLint location;\
         \
@@ -228,9 +226,82 @@ namespace at {
     }
 
 
+    #define implem_glUniform2T(T, suf) \
+    void Parogl::setArg(unsigned i, T val) {\
+        \
+        GLint location;\
+        \
+        if (_uniform_i >= _uniform_count)\
+            ATEMA_ERROR("OpenGL error uniform count overflow");\
+        \
+        location = glGetUniformLocation(_progID, _argList[i].c_str());\
+        glCheckError("getGetUniformLocation"); \
+        \
+        glUniform2 ## suf(location, val.x, val.y);\
+        glCheckError("glUniform2" #suf);\
+        \
+        _uniform_i++;\
+    }
+
+
+
+    #define implem_glUniform3T(T, suf) \
+    void Parogl::setArg(unsigned i, T val) {\
+        \
+        GLint location;\
+        \
+        if (_uniform_i >= _uniform_count)\
+            ATEMA_ERROR("OpenGL error uniform count overflow");\
+        \
+        location = glGetUniformLocation(_progID, _argList[i].c_str());\
+        glCheckError("getGetUniformLocation"); \
+        \
+        glUniform3 ## suf(location, val.x, val.y, val.z);\
+        glCheckError("glUniform3" #suf);\
+        \
+        _uniform_i++;\
+    }
+
+
+
+    #define implem_glUniform4T(T, suf) \
+    void Parogl::setArg(unsigned i, T val) {\
+        \
+        GLint location;\
+        \
+        if (_uniform_i >= _uniform_count)\
+            ATEMA_ERROR("OpenGL error uniform count overflow");\
+        \
+        location = glGetUniformLocation(_progID, _argList[i].c_str());\
+        glCheckError("getGetUniformLocation"); \
+        \
+        glUniform4 ## suf(location, val.x, val.y, val.z, val.z);\
+        glCheckError("glUniform4" #suf);\
+        \
+        _uniform_i++;\
+    }
+
+
+
+
+
     implem_glUniform1T(unsigned, ui)
     implem_glUniform1T(int, i)
     implem_glUniform1T(float, f)
+
+    implem_glUniform2T(Vector2u, ui)
+    implem_glUniform2T(Vector2i, i)
+    implem_glUniform2T(Vector2f, f)
+
+    implem_glUniform3T(Vector3u, ui)
+    implem_glUniform3T(Vector3i, i)
+    implem_glUniform3T(Vector3f, f)
+
+    implem_glUniform4T(Vector4u, ui)
+    implem_glUniform4T(Vector4i, i)
+    implem_glUniform4T(Vector4f, f)
+
+
 
 
 }
