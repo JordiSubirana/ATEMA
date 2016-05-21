@@ -23,14 +23,14 @@
 #include <atema/graphics/config.hpp>
 #include <atema/context/opengl.hpp>
 #include <atema/graphics/color.hpp>
-#include <atema/graphics/shared_object.hpp>
+#include <atema/context/resource_gl.hpp>
 #include <atema/context/render_target.hpp>
 
 #include <vector>
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API Texture : public SharedObject, public RenderTarget
+	class ATEMA_GRAPHICS_API Texture : public ResourceGL, public RenderTarget
 	{
 		public:
 			enum class filter : GLenum
@@ -38,9 +38,6 @@ namespace at
 				nearest = GL_NEAREST,
 				linear = GL_LINEAR
 			};
-			
-			using SharedObject::download;
-			using SharedObject::upload;
 		
 		public:
 			Texture();
@@ -58,8 +55,8 @@ namespace at
 			
 			void set_filters(filter min_filter, filter mag_filter);
 			
-			void download();
-			void upload();
+			void to_cpu();
+			void to_gpu();
 			
 			Color& operator[](size_t index);
 			const Color& operator[](size_t index) const;
@@ -76,7 +73,7 @@ namespace at
 			
 			GLuint m_id;
 			bool m_tex_ok;
-			bool m_valid;
+			bool m_filled;
 			unsigned int m_width;
 			unsigned int m_height;
 			

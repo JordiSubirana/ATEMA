@@ -20,7 +20,6 @@
 #include <atema/graphics/texture.hpp>
 #include <atema/core/error.hpp>
 
-#include <iostream>
 using namespace std;
 
 namespace at
@@ -28,7 +27,7 @@ namespace at
 	Texture::Texture() :
 		m_id(0),
 		m_tex_ok(false),
-		m_valid(false),
+		m_filled(false),
 		m_width(0),
 		m_height(0),
 		m_pixels(),
@@ -67,30 +66,40 @@ namespace at
 	
 	bool Texture::is_valid() const noexcept
 	{
-		return (m_tex_ok && m_valid);
+		return (m_tex_ok && m_filled);
 	}
 	
 	void Texture::create(unsigned int width, unsigned int height, Texture::filter min_filter, Texture::filter mag_filter)
 	{
-		ensure_texture();
-		
-		glBindTexture(GL_TEXTURE_2D, m_id);
-		
-		m_pixels.reserve(width*height);
-		m_pixels.assign(width*height, Color(0.0f, 1.0f, 1.0f, 1.0f));
-
-#warning Jordi: j'ai mis GL_RGBA32F comme format interne
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
-		
-		if (glGetError() != GL_NO_ERROR)
-			ATEMA_ERROR("OpenGL internal error: Texture creation failed.")
-		
-		set_filters(min_filter, mag_filter);
-		
-		m_width = width;
-		m_height = height;
-		
-		m_valid = true;
+		try
+		{
+			ensure_texture();
+			
+			m_filled = false;
+			
+			glBindTexture(GL_TEXTURE_2D, m_id);
+			
+			m_pixels.resize(width*height);
+			m_pixels.assign(width*height, Color(0.0f, 0.0f, 0.0f, 1.0f));
+			
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
+			
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL internal error: Texture creation failed.")
+			
+			set_filters(min_filter, mag_filter);
+			
+			m_width = width;
+			m_height = height;
+			
+			m_filled = true;
+		}
+		catch (const Error& e)
+		{
+			m_pixels.resize(0);
+			
+			throw;
+		}
 	}
 	
 	unsigned int Texture::get_width() const noexcept
@@ -118,17 +127,18 @@ namespace at
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	
-	void Texture::download()
+	void Texture::to_cpu()
 	{
 		glBindTexture(GL_TEXTURE_2D, m_id);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	
-	void Texture::upload()
+	void Texture::to_gpu()
 	{
 		glBindTexture(GL_TEXTURE_2D, m_id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
+		// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(m_width), static_cast<GLsizei>(m_height), GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	
@@ -144,7 +154,7 @@ namespace at
 	
 	void Texture::ensure_texture()
 	{
-		if (is_valid())
+		if (m_tex_ok)
 			return;
 		
 		try

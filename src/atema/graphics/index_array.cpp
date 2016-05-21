@@ -24,25 +24,25 @@ namespace at
 	//PUBLIC
 	IndexArray::IndexArray()
 	{
-		
+		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
-	IndexArray::IndexArray(const unsigned int *elements, size_t elements_size, update update_mode) :
-		Array<unsigned int>(elements, elements_size, update_mode)
+	IndexArray::IndexArray(const unsigned int *elements, size_t elements_size, update_mode update_mode) :
+		BufferArray<unsigned int>(elements, elements_size, update_mode)
 	{
-		
+		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
-	IndexArray::IndexArray(const Array<unsigned int>& array) :
-		Array<unsigned int>(array)
+	IndexArray::IndexArray(const BufferArray<unsigned int>& array) :
+		BufferArray<unsigned int>(array)
 	{
-		
+		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
 	IndexArray::IndexArray(const IndexArray& array) :
-		Array<unsigned int>(static_cast< Array<unsigned int> >(array))
+		BufferArray<unsigned int>(static_cast< BufferArray<unsigned int> >(array))
 	{
-		
+		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
 	IndexArray::~IndexArray() noexcept
@@ -52,12 +52,6 @@ namespace at
 	
 	void IndexArray::create(const IndexArray& array)
 	{
-		Array<unsigned int>::create(static_cast< Array<unsigned int> >(array));
-	}
-	
-	//PROTECTED
-	GLenum IndexArray::get_buffer_type() const noexcept
-	{
-		return (GL_ELEMENT_ARRAY_BUFFER);
+		BufferArray<unsigned int>::create(static_cast< BufferArray<unsigned int> >(array));
 	}
 }

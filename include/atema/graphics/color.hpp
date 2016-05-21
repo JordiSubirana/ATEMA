@@ -24,11 +24,16 @@
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API Color
+	class Color
 	{
 		public:
-			Color();
-			Color(float r, float g, float b, float a) :
+			Color() noexcept :
+				Color(0.0f, 0.0f, 0.0f, 1.0f)
+			{
+				
+			}
+			
+			Color(float r, float g, float b, float a) noexcept :
 				r(r), b(b), g(g), a(a)
 			{
 				

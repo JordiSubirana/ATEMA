@@ -17,18 +17,24 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GRAPHICS_SHARED_OBJECT_HEADER
-#define ATEMA_GRAPHICS_SHARED_OBJECT_HEADER
+#ifndef ATEMA_GRAPHICS_DRAWABLE_HEADER
+#define ATEMA_GRAPHICS_DRAWABLE_HEADER
 
-class SharedObject
+namespace at
 {
-	public:
-		SharedObject() = default;
-		virtual ~SharedObject() = default;
-
-// Possible names : download()/gpu2cpu() - upload()/cpu2gpu()
-		virtual void download() = 0;
-		virtual void upload() = 0;
-};
+	class Renderer;
+	
+	class Drawable
+	{
+		friend class Renderer;
+		
+		public:
+			Drawable() = default;
+			virtual ~Drawable() = default;
+			
+		protected:
+			virtual void draw(const Renderer& renderer) = 0;
+	};
+}
 
 #endif

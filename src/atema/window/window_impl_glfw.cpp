@@ -69,7 +69,7 @@ namespace at
 	{
 		if (!is_valid())
 			ATEMA_ERROR("Window is not initialized.")
-		
+		/*
 		//Be careful, this rect is working like x1,y1,x2,y2, not x,y,w,h
 		Rect tmp_rect;
 		
@@ -113,10 +113,10 @@ namespace at
 			// tmp_rect.w = m_infos.w/2 + m_tex.get_width()/2;
 			// tmp_rect.h = m_infos.h/2 + m_tex.get_height()/2;
 		}
+		*/
+		Context::make_current(true);
 		
-		make_current(true);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
 		// glEnable(GL_DEPTH_TEST);
 		// glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
@@ -136,7 +136,7 @@ namespace at
 						   GL_NEAREST);
 		// */
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
 		glfwSwapBuffers(m_window);
 		

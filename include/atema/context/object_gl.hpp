@@ -17,14 +17,23 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GLOBAL_CONTEXT_HEADER
-#define ATEMA_GLOBAL_CONTEXT_HEADER
+#ifndef ATEMA_CONTEXT_OBJECT_GL_HEADER
+#define ATEMA_CONTEXT_OBJECT_GL_HEADER
 
 #include <atema/context/config.hpp>
-#include <atema/context/context.hpp>
-#include <atema/context/object_gl.hpp>
 #include <atema/context/opengl.hpp>
-#include <atema/context/render_target.hpp>
-#include <atema/context/resource_gl.hpp>
+
+namespace at
+{
+	class ObjectGL
+	{
+		public:
+			ObjectGL() = default;
+			virtual ~ObjectGL() = default;
+			
+			virtual GLuint get_gl_id() const = 0;
+			virtual bool is_valid() const = 0;
+	};
+}
 
 #endif

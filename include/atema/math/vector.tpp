@@ -24,21 +24,21 @@
 
 namespace at
 {
-	template <size_t N, typename T>
-	Vector<N, T>::Vector()
-	{
-		T tmp = static_cast<T>(0);
+	// template <size_t N, typename T>
+	// Vector<N, T>::Vector()
+	// {
+		// T tmp = static_cast<T>(0);
 		
-		for (size_t i = 0; i < N; i++)
-			this->data[i] = tmp;
-	}
+		// for (size_t i = 0; i < N; i++)
+			// this->data[i] = tmp;
+	// }
 	
-	template <size_t N, typename T>
-	Vector<N, T>::Vector(T arg)
-	{
-		for (size_t i = 0; i < N; i++)
-			this->data[i] = arg;
-	}
+	// template <size_t N, typename T>
+	// Vector<N, T>::Vector(T arg)
+	// {
+		// for (size_t i = 0; i < N; i++)
+			// this->data[i] = arg;
+	// }
 	
 	template <size_t N, typename T>
 	Vector<N, T>::~Vector() noexcept
@@ -70,6 +70,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] + arg.data[i];
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -79,6 +81,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] - arg.data[i];
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -88,6 +92,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] * arg.data[i];
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -97,6 +103,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] / arg.data[i];
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -106,6 +114,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] + arg;
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -115,6 +125,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] - arg;
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -124,6 +136,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] * arg;
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>
@@ -133,6 +147,8 @@ namespace at
 		
 		for (size_t i = 0; i < N; i++)
 			tmp.data[i] = this->data[i] / arg;
+		
+		return (tmp);
 	}
 	
 	template <size_t N, typename T>

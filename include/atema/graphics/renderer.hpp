@@ -22,14 +22,41 @@
 
 #include <atema/graphics/config.hpp>
 #include <atema/context/render_target.hpp>
+#include <atema/graphics/shader.hpp>
+#include <atema/graphics/drawable.hpp>
 
 namespace at
 {
 	class ATEMA_GRAPHICS_API Renderer
 	{
 		public:
-			Renderer() = default;
-			virtual ~Renderer() noexcept = default;
+			enum class polygon_mode : GLenum
+			{
+				points = GL_POINT,
+				lines = GL_LINE,
+				surfaces = GL_FILL
+			};
+			
+		public:
+			Renderer();
+			virtual ~Renderer() noexcept;
+			
+			void set_target(RenderTarget *target);
+			const RenderTarget* get_target() const;
+			
+			void set_shader(Shader *shader);
+			const Shader* get_shader() const;
+			
+			void set_polygon_mode(polygon_mode mode);
+			polygon_mode get_polygon_mode() const noexcept;
+			
+			void draw(Drawable& drawable);
+			
+		private:
+			RenderTarget *m_target;
+			Shader *m_shader;
+			
+			polygon_mode m_polygon_mode;
 	};
 }
 

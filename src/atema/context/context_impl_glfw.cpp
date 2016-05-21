@@ -57,14 +57,21 @@ namespace at
 	void Context::make_current(bool value)
 	{
 		if (value == is_current_context())
+		{
+			RenderTarget::make_current(value);
 			return;
+		}
 		
 		if (value)
 		{
+			glfwMakeContextCurrent(m_window);
+			
 			set_current(this);
 		}
 		else
 		{
+			glfwMakeContextCurrent(nullptr);
+			
 			set_current(nullptr);
 		}
 		
@@ -88,6 +95,11 @@ namespace at
 	}
 	
 	GLuint Context::get_gl_framebuffer_id() const
+	{
+		return (0);
+	}
+	
+	GLuint Context::get_gl_id() const noexcept
 	{
 		return (0);
 	}
@@ -240,6 +252,8 @@ namespace at
 			// register_window();
 			
 			make_current(true);
+			
+			
 		}
 		catch (Error& e)
 		{

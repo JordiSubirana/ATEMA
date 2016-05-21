@@ -20,12 +20,15 @@
 #ifndef ATEMA_GLOBAL_GRAPHICS_HEADER
 #define ATEMA_GLOBAL_GRAPHICS_HEADER
 
-#include <atema/graphics/array.hpp>
+#include <atema/graphics/buffer_array.hpp>
 #include <atema/graphics/color.hpp>
 #include <atema/graphics/config.hpp>
+#include <atema/graphics/drawable.hpp>
 #include <atema/graphics/index_array.hpp>
+#include <atema/graphics/indexed_array.hpp>
+#include <atema/graphics/mesh.hpp>
 #include <atema/graphics/renderer.hpp>
-#include <atema/graphics/shared_object.hpp>
+#include <atema/graphics/shader.hpp>
 #include <atema/graphics/texture.hpp>
 
 #endif

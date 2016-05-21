@@ -108,6 +108,7 @@ namespace at
 			virtual unsigned int get_width() const;
 			virtual unsigned int get_height() const;
 			virtual GLuint get_gl_framebuffer_id() const;
+			GLuint get_gl_id() const noexcept;
 			
 		protected:
 			virtual void ensure_framebuffer_exists();

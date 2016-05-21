@@ -44,8 +44,10 @@ namespace at
 			this->ensure_framebuffer_exists();
 			
 			glBindFramebuffer(GL_FRAMEBUFFER, this->get_gl_framebuffer_id());
+			glViewport(m_rect.x, m_rect.y, m_rect.w, m_rect.h);
 			
 			t_current_render_target = this;
+			glGetIntegerv(GL_VIEWPORT, t_current_viewport);
 		}
 		else
 		{

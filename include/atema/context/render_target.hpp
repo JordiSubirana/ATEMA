@@ -25,10 +25,11 @@
 #include <atema/graphics/color.hpp>
 #include <atema/utility/flags.hpp>
 #include <atema/math/rect.hpp>
+#include <atema/context/object_gl.hpp>
 
 namespace at
 {
-	class ATEMA_CONTEXT_API RenderTarget
+	class ATEMA_CONTEXT_API RenderTarget : public ObjectGL
 	{
 		public:
 			enum class clear_targets : Flags

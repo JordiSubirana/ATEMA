@@ -1,7 +1,4 @@
-#include <atema/context/context.hpp>
-#include <atema/window/window.hpp>
-#include <atema/window/keyboard.hpp>
-#include <atema/core/error.hpp>
+#include <atema/atema.hpp>
 
 #include <iostream>
 #include <cstdio>
@@ -13,7 +10,12 @@ int main()
 {
 	try
 	{
-		at::Window window;
+		Vector2f vec;
+		
+		vec.x = 4.0f;
+		cout << vec.normalize().x << endl;
+		
+		Window window;
 		Keyboard keyboard;
 		
 		Context::gl_version version;

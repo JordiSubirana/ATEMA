@@ -32,7 +32,7 @@ int main()
 		
 		tex.set_clear_color(Color(0.2f,0,0,1));
 		tex.clear();
-		tex.download(); //get clear color to all pixels in cpu
+		tex.to_cpu(); //get clear color to all pixels in cpu
 		for (size_t i = 0; i < std::min(tex.get_width(), tex.get_height()); i++)
 		{
 			Color c = tex[i+i*tex.get_width()];
@@ -40,7 +40,7 @@ int main()
 			tex[i+i*tex.get_width()] = Color(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		
-		tex.upload(); //upload white line to gpu
+		tex.to_gpu(); //upload white line to gpu
 		
 		window.set_clear_color(Color(0,0,1,1));
 		

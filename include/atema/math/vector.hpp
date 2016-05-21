@@ -41,9 +41,9 @@
 #define ATEMA_VECTOR_ALIASES(DIM)								\
 	template <typename T>										\
 	using Vector ## DIM = Vector<DIM, T>;						\
-	using Vector ## DIM ## i = Vector ## DIM <int>;			\
+	using Vector ## DIM ## i = Vector ## DIM <int>;				\
 	using Vector ## DIM ## u = Vector ## DIM <unsigned int>;	\
-	using Vector ## DIM ## f = Vector ## DIM <float>;		\
+	using Vector ## DIM ## f = Vector ## DIM <float>;			\
 	using Vector ## DIM ## d = Vector ## DIM <double>;
 
 namespace at
@@ -74,31 +74,60 @@ namespace at
 	template <size_t N, typename T>
 	class ATEMA_MATH_API Vector : public Vec<N, T>
 	{
-	public:
-		Vector();
-		Vector(T arg);
-		~Vector() noexcept;
+		public:
+			// Vector();
+			// Vector(T arg);
+			
+			template <typename... Args>
+			Vector(Args... args)
+			{
+				// init<0>(std::forward<Args>(args)...);
+				init<0>(args...);
+			}
+			
+			~Vector() noexcept;
 
-		Vector<N, T>& normalize() noexcept;
-		T get_norm() const noexcept;
+			Vector<N, T>& normalize() noexcept;
+			T get_norm() const noexcept;
 
-		Vector<N, T> operator +(const Vector<N, T>& arg) const;
-		Vector<N, T> operator -(const Vector<N, T>& arg) const;
-		Vector<N, T> operator *(const Vector<N, T>& arg) const;
-		Vector<N, T> operator /(const Vector<N, T>& arg) const;
-		Vector<N, T> operator +(T arg) const;
-		Vector<N, T> operator -(T arg) const;
-		Vector<N, T> operator *(T arg) const;
-		Vector<N, T> operator /(T arg) const;
+			Vector<N, T> operator +(const Vector<N, T>& arg) const;
+			Vector<N, T> operator -(const Vector<N, T>& arg) const;
+			Vector<N, T> operator *(const Vector<N, T>& arg) const;
+			Vector<N, T> operator /(const Vector<N, T>& arg) const;
+			Vector<N, T> operator +(T arg) const;
+			Vector<N, T> operator -(T arg) const;
+			Vector<N, T> operator *(T arg) const;
+			Vector<N, T> operator /(T arg) const;
 
-		Vector<N, T>& operator +=(const Vector<N, T>& arg);
-		Vector<N, T>& operator -=(const Vector<N, T>& arg);
-		Vector<N, T>& operator *=(const Vector<N, T>& arg);
-		Vector<N, T>& operator /=(const Vector<N, T>& arg);
-		Vector<N, T>& operator +=(T arg);
-		Vector<N, T>& operator -=(T arg);
-		Vector<N, T>& operator *=(T arg);
-		Vector<N, T>& operator /=(T arg);
+			Vector<N, T>& operator +=(const Vector<N, T>& arg);
+			Vector<N, T>& operator -=(const Vector<N, T>& arg);
+			Vector<N, T>& operator *=(const Vector<N, T>& arg);
+			Vector<N, T>& operator /=(const Vector<N, T>& arg);
+			Vector<N, T>& operator +=(T arg);
+			Vector<N, T>& operator -=(T arg);
+			Vector<N, T>& operator *=(T arg);
+			Vector<N, T>& operator /=(T arg);
+			
+		private:
+			template <size_t M, typename... Args>
+			void init(T arg, Args... args)
+			{
+				this->data[M] = arg;
+				// init<M+1>(std::forward<Args>(args)...);
+				init<M+1>(args...);
+			}
+			
+			template <size_t M>
+			void init(T arg)
+			{
+				this->data[M] = arg;
+			}
+			
+			template <size_t M>
+			void init()
+			{
+				
+			}
 	};
 
 	ATEMA_VECTOR_ALIASES(2)
