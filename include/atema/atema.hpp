@@ -25,7 +25,6 @@
 #include <atema/graphics.hpp>
 #include <atema/math.hpp>
 #include <atema/parallel.hpp>
-#include <atema/utility.hpp>
 #include <atema/window.hpp>
 
 #endif

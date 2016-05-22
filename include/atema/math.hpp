@@ -21,6 +21,7 @@
 #define ATEMA_GLOBAL_MATH_HEADER
 
 #include <atema/math/config.hpp>
+#include <atema/math/matrix.hpp>
 #include <atema/math/rect.hpp>
 #include <atema/math/vector.hpp>
 

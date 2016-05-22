@@ -23,7 +23,7 @@
 #include <atema/context/config.hpp>
 #include <atema/context/opengl.hpp>
 #include <atema/graphics/color.hpp>
-#include <atema/utility/flags.hpp>
+#include <atema/core/flags.hpp>
 #include <atema/math/rect.hpp>
 #include <atema/context/object_gl.hpp>
 

@@ -22,6 +22,8 @@
 
 #include <atema/math/config.hpp>
 
+#include <iostream>
+
 #define ATEMA_VECTOR_BEGIN(DIM)					\
 	template <typename T>						\
 	class Vec<DIM, T>							\
@@ -108,6 +110,9 @@ namespace at
 			Vector<N, T>& operator *=(T arg);
 			Vector<N, T>& operator /=(T arg);
 			
+			T& operator[](size_t index);
+			const T& operator[](size_t index) const;
+			
 		private:
 			template <size_t M, typename... Args>
 			void init(T arg, Args... args)
@@ -133,6 +138,20 @@ namespace at
 	ATEMA_VECTOR_ALIASES(2)
 	ATEMA_VECTOR_ALIASES(3)
 	ATEMA_VECTOR_ALIASES(4)
+}
+
+template <size_t N, typename T>
+std::ostream& operator<<(std::ostream& os, const at::Vector<N, T>& vec)
+{
+    for (size_t i = 0; i < N; i++)
+	{
+		os << vec[i];
+		
+		if (i < N - 1)
+			os << ", ";
+	}
+	
+    return (os);
 }
 
 #include <atema/math/vector.tpp>

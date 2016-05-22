@@ -17,10 +17,10 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_NON_COPYABLE_HEADER
-#define ATEMA_NON_COPYABLE_HEADER
+#ifndef ATEMA_CORE_NON_COPYABLE_HEADER
+#define ATEMA_CORE_NON_COPYABLE_HEADER
 
-#include <atema/utility/config.hpp>
+#include <atema/core/config.hpp>
 
 namespace at
 {

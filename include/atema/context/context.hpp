@@ -35,7 +35,7 @@
 #endif
 
 #include <atema/context/config.hpp>
-#include <atema/utility/non_copyable.hpp>
+#include <atema/core/non_copyable.hpp>
 #include <atema/context/render_target.hpp>
 
 
@@ -60,7 +60,7 @@
 #		endif
 
 #		include <string>
-#		include <atema/utility/flags.hpp>
+#		include <atema/core/flags.hpp>
 
 #endif
 

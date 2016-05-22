@@ -22,5 +22,8 @@
 
 #include <atema/core/config.hpp>
 #include <atema/core/error.hpp>
+#include <atema/core/flags.hpp>
+#include <atema/core/non_copyable.hpp>
+#include <atema/core/utility.hpp>
 
 #endif

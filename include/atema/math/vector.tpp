@@ -20,6 +20,7 @@
 #ifndef ATEMA_MATH_VECTOR_IMPLEMENTATION
 #define ATEMA_MATH_VECTOR_IMPLEMENTATION
 
+#include <atema/core/error.hpp>
 #include <cmath>
 
 namespace at
@@ -223,6 +224,23 @@ namespace at
 		return (*this);
 	}
 	
+	template <size_t N, typename T>
+	T& Vector<N, T>::operator[](size_t index)
+	{
+		if (index >= N)
+			ATEMA_ERROR("Index is out of range.")
+		
+		return (this->data[index]);
+	}
+	
+	template <size_t N, typename T>
+	const T& Vector<N, T>::operator[](size_t index) const
+	{
+		if (index >= N)
+			ATEMA_ERROR("Index is out of range.")
+		
+		return (this->data[index]);
+	}
 }
 
 #endif

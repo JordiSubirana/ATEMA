@@ -23,7 +23,7 @@
 #include <atema/window/config.hpp>
 #include <atema/context/context.hpp>
 
-#include <atema/utility/flags.hpp>
+#include <atema/core/flags.hpp>
 
 #include <string>
 

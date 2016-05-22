@@ -17,8 +17,8 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_UTILITY_ENUM_FLAGS_HEADER
-#define ATEMA_UTILITY_ENUM_FLAGS_HEADER
+#ifndef ATEMA_CORE_ENUM_FLAGS_HEADER
+#define ATEMA_CORE_ENUM_FLAGS_HEADER
 
 namespace at
 {

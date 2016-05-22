@@ -23,7 +23,7 @@
 #include <atema/graphics/config.hpp>
 #include <atema/context/opengl.hpp>
 #include <atema/context/object_gl.hpp>
-#include <atema/utility/non_copyable.hpp>
+#include <atema/core/non_copyable.hpp>
 #include <atema/math/vector.hpp>
 #include <atema/graphics/texture.hpp>
 #include <atema/graphics/buffer_array.hpp>

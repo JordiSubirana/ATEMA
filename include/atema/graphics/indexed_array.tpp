@@ -98,6 +98,9 @@ namespace at
 	template <typename T>
 	size_t IndexedArray<T>::get_size() const
 	{
+		if (!indices.is_valid())
+			return (elements.get_size());
+		
 		return (indices.get_size());
 	}
 	
