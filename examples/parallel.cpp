@@ -3,71 +3,76 @@
 
 #include <iostream>
 #include <cstdio>
+#include <chrono>
 
 using namespace std;
 using namespace at;
 
-#define PI 3.14159265359f
 
 
-#define STRINGIFY(A) #A
+const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
+		layout(location = 0) in vec3 position;
+		layout(location = 1) in vec3 inf;
+		out vec3 frag_color;
 
-static string code = STRINGIFY(
-		uniform writeonly image2D destTex;
-		uniform uint Reso;
+		void main()
+		{
+			frag_color = inf;
+			gl_Position = vec4(position.x, position.y, position.z, 1.0);
+			gl_PointSize = 3.0;
+		}
+);
+
+const char *fragment_shader = "#version 330 core\n" ATEMA_STRINGIFY(
+		in vec3 frag_color;
+		out vec4 outcolor;
+
+		void main()
+		{
+			outcolor = vec4(frag_color, 1.0);
+		}
+);
+
+static string code = ATEMA_STRINGIFY(
+
 		uniform uint time;
-		uniform vec2 os;
-		uniform float zoom;
 		buffer Pos {
-				float pos[];
+				float pos_dst[];
+		};
+		buffer Inf {
+				float inf_dst[];
 		};
 
 		void main() {
-			const float PI = 3.1415926f;
-			ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-			vec4 data = vec4(0,0,0,1);
-			float i = 1;
+			uint i = gl_GlobalInvocationID.x;
+			float t = time;
+			float j = i;
 
-			float cx = ((p.x-256.0f)/180.0f-0.6);
-			float cy = ((p.y-256.0f)/180.0f);
-			cx = cx*zoom+os.x;
-			cy = cy*zoom+os.y;
+			vec3 pos;
+			vec3 inf;
 
-			float x = cx;
-			float y = cy;
-			float tmp;
+			pos.x = pos_dst[3*i+0];
+			pos.y = pos_dst[3*i+1];
+			pos.z = pos_dst[3*i+2];
+			inf.x = inf_dst[3*i+0];
+			inf.y = inf_dst[3*i+1];
+			inf.z = inf_dst[3*i+2];
 
-			if (zoom == 0) {
-				i = pos[0];
-			}
 
-			for ( ; i<Reso ; i+=1) {
-				tmp = x*x - y*y;
-				y = 2*x*y + cy;
-				x = tmp + cx;
-				if (x*x + y*y > 4+1.8*cos(time/1200.0f)) {
-					//data.xyz = vec3(i/Reso,(mod(i+Reso/3, Reso))/Reso,(mod(i+2*Reso/3, Reso))/Reso);
+			pos.x = cos(j);
+			pos.y = sin(j);
+			pos.z = 0;
 
-					data.x = 0.5f*(1.0f+cos(2.0f*PI*(i/Reso+1.0f/3.0f)));
-					data.y = 0.5f*(1.0f+cos(2.0f*PI*(i/Reso+2.0f/3.0f)));
-					data.z = 0.5f*(1.0f+cos(2.0f*PI*(i/Reso+0.0f/3.0f)));
+			inf.x = 1;
+			inf.y = 0;
+			inf.z = 0.5+0.5*cos(t);
 
-					uint X = p.x;
-					uint Y = p.y;
-					X &= Y;
-					data.x *= (X != 0) ? 1 : 1-zoom;
-					data.y *= (X != 0) ? 1 : 1-zoom;
-					data.z *= (X != 0) ? 1 : 1-zoom;
-
-					imageStore(destTex, p, data);
-					return ;
-				}
-			}
-			data.x = 0.25*(2+cos(cx*50)+sin(cy*50));
-			data.y = (p.x+p.y)/1024.0f;
-			data.z = 1-sqrt(pow((p.x-256.)/256., 2) + pow((p.y-256.)/256., 2));
-
-			imageStore(destTex, p, data);
+			pos_dst[3*i+0] = pos.x;
+			pos_dst[3*i+1] = pos.y;
+			pos_dst[3*i+2] = pos.z;
+			inf_dst[3*i+0] = inf.x;
+			inf_dst[3*i+1] = inf.y;
+			inf_dst[3*i+2] = inf.z;
 		}
 );
 
@@ -75,66 +80,109 @@ static string code = STRINGIFY(
 int main() {
 
 	try	{
+		tic();
+
+		const float fps=12;
+		const unsigned N = 1024;
+
 		Context::gl_version version;
 		version.major = 4;
 		version.minor = 3;
 
 		Window window;
-		window.create(512, 512, "Test", Window::options::visible | Window::options::frame | Window::options::resizable , version);
+		window.create(512, 512, "Particle", Window::options::visible | Window::options::frame | Window::options::resizable , version);
 		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));
 
 		Keyboard keyboard;
 		keyboard.set_window(window);
 
-		Texture tex;
-		tex.create(512, 512);
-		tex.set_viewport(Rect(0, 0, tex.get_width(), tex.get_height()));
-
 		cout << "==================================================\n";
 		cout << "GL_VENDOR   : " << (char const*)glGetString(GL_VENDOR) << endl;
 		cout << "GL_RENDERER : " << (char const*)glGetString(GL_RENDERER) << endl;
 		cout << "==================================================\n";
-		cout << "  [arrows] : navigate\n";
-		cout << "  [pageUp] : zoom in\n";
-		cout << "  [pageDown] : zoom out\n";
-		cout << "  [space] : reset\n";
-		cout << "  [escape] : exit\n";
+		cout << "  [arrows] :   navigate\n";
 		cout << "==================================================\n";
 
 
-		Buffer buffer(0);
+		//Mesh creation : triangle position
+		Vector3f pos_d[N];
+		Mesh pos_m(Mesh::draw_mode::points, pos_d, sizeof(pos_d)/sizeof(Vector3f));
+		Buffer<Vector3f> &pos = pos_m.elements;
 
+		//Buffer creation : triangle color
+		Vector3f inf_d[N];
+		Buffer<Vector3f> inf(inf_d, sizeof(inf_d) / sizeof(Vector3f));
+
+		//Shader creation
+		Shader shader;
+		shader.create_from_memory("position", vertex_shader, fragment_shader);
+		shader.set_varying("inf", inf);
+
+		//Renderer creation
+		Renderer renderer;
+		renderer.set_target(&window);
+		renderer.set_shader(&shader);
+
+		// Parallel kernel creation
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("destTex", "Reso", "time", "os", "zoom", "Pos");
-		cpt.set_range(ComputeSize(512 / 16, 512 / 16), ComputeSize(16, 16));
+		cpt.build("time", "Pos", "Inf");
+		cpt.set_range(ComputeSize(N / 64), ComputeSize(64));
 
-		Vector2f os;
-		os *= 0;
-		float zoom = 1;
-
+		// parametres controle
 		unsigned frame = 1;
+
+		cout << toc() << "s" << endl;
+
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{
+			tic();
 			window.clear();
 
-			if (keyboard.is_pressed(Keyboard::key::left)) 		os.x -= 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::right)) 		os.x += 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::down)) 		os.y -= 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.01*zoom;
-			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.01;
-			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.99;
+			/*
+			if (keyboard.is_pressed(Keyboard::key::left)) 		os.x -= 0.05*zoom;
+			if (keyboard.is_pressed(Keyboard::key::right)) 		os.x += 0.05*zoom;
+			if (keyboard.is_pressed(Keyboard::key::down)) 		os.y -= 0.05*zoom;
+			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.05*zoom;
+			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.1;
+			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.9;
 			if (keyboard.is_pressed(Keyboard::key::space)) {
-				zoom = 1;
 				os *= 0;
+				zoom = 1.5;
+			}//*/
+
+			cpt(frame, pos, inf);
+
+			/*
+			pos_m.to_cpu();
+			for (int i=0 ; i<N ; i++) {
+				Vector3f &elt = pos_m.elements[i];
+				cout << elt << endl;
+				elt.x = (float) cos(i*1.0);
+				elt.y = (float) sin(i*1.0);
+				elt.z = 0;
+				inf[i].x = 0;
+				inf[i].y = 1;
+				inf[i].z = 0.5;
 			}
+			pos_m.to_gpu();
+			inf.to_gpu();
+			return 0; //*/
 
-			cpt(tex, (unsigned)100, frame, os, zoom, buffer);
+			glFinish();
 
-			window.draw(tex);
-			window.update();
+			window.clear();
+			renderer.draw(pos_m);
 
 			frame++;
+
+			sleep( msecond(10) );
+
+			float dt = 1/fps - toc();
+			if (dt > 0.0f)
+				sleep(second(dt));
+
+			window.update();
 		}
 	}
 	catch (Error& e) {

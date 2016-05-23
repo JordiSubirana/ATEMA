@@ -17,42 +17,39 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <atema/context/context.hpp>
-#include <atema/core/error.hpp>
+#ifndef ATEMA_CORE_TIMER_HPP
+#define ATEMA_CORE_TIMER_HPP
 
-namespace at
-{
-	thread_local Context *t_current_context = nullptr;
-	
-	//PUBLIC
-	bool Context::is_current_context() const noexcept
-	{
-		return (this == t_current_context);
-	}
-	
-	//PRIVATE
-	void Context::set_current(Context *ptr) noexcept
-	{
-		if (t_current_context)
-			t_current_context->m_thread_active = false;
-		
-		t_current_context = ptr;
-		
-		if (ptr)
-			ptr->m_thread_active = true;
-	}
-	
-	void Context::check_activity() const noexcept
-	{
-		if (m_thread_active && !is_current_context())
-			ATEMA_ERROR("Context is already activated in another thread.")
-	}
-	
-	void Context::init_gl_states() const noexcept
-	{
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-		glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-		// super guillaume
-	}
+#include <atema/core/duration.hpp>
+
+#include <chrono>
+
+namespace at {
+
+
+    class Timer {
+        std::chrono::high_resolution_clock::time_point t0;
+
+    public:
+
+        Timer() noexcept ;
+
+        void reset() noexcept ;
+
+        Duration elapsed() const ;
+
+        static Duration elapsed_from_start();
+
+    };
+
+    void tic() noexcept ;
+    float toc();
+
 }
+
+
+
+
+
+#endif
+

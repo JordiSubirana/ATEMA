@@ -28,7 +28,7 @@
 namespace at
 {
 	template <typename T>
-	class BufferArray : public ResourceGL
+	class Buffer : public ResourceGL
 	{
 		public:	
 			enum class update_mode : GLenum
@@ -45,13 +45,13 @@ namespace at
 			};
 			
 		public:
-			BufferArray();
-			BufferArray(const T *elements, size_t elements_size, update_mode update_mode = update_mode::static_draw);
-			BufferArray(const BufferArray<T>& array);
-			virtual ~BufferArray() noexcept;
+			Buffer();
+			Buffer(const T *elements, size_t elements_size, update_mode update_mode = update_mode::static_draw);
+			Buffer(const Buffer<T>& array);
+			virtual ~Buffer() noexcept;
 			
 			void create(const T *elements, size_t elements_size, update_mode update_mode = update_mode::static_draw);
-			void create(const BufferArray<T>& array);
+			void create(const Buffer<T>& array);
 			
 			T* get() noexcept;
 			const T* get() const noexcept;
@@ -86,6 +86,6 @@ namespace at
 	};
 }
 
-#include <atema/graphics/buffer_array.tpp>
+#include "buffer.tpp"
 
 #endif

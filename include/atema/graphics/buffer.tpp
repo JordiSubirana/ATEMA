@@ -26,7 +26,7 @@ namespace at
 {
 	//PUBLIC
 	template <typename T>
-	BufferArray<T>::BufferArray() :
+	Buffer<T>::Buffer() :
 		m_internal_type(GL_ARRAY_BUFFER),
 		m_vbo(0),
 		m_elements(),
@@ -38,21 +38,21 @@ namespace at
 	}
 	
 	template <typename T>
-	BufferArray<T>::BufferArray(const T *elements, size_t elements_size, update_mode update_mode) :
-		BufferArray()
+	Buffer<T>::Buffer(const T *elements, size_t elements_size, update_mode update_mode) :
+		Buffer()
 	{
 		create(elements, elements_size, update_mode);
 	}
 	
 	template <typename T>
-	BufferArray<T>::BufferArray(const BufferArray<T>& array) :
-		BufferArray()
+	Buffer<T>::Buffer(const Buffer<T>& array) :
+		Buffer()
 	{
 		create(array);
 	}
 	
 	template <typename T>
-	BufferArray<T>::~BufferArray() noexcept
+	Buffer<T>::~Buffer() noexcept
 	{
 		glBindBuffer(m_internal_type, 0);
 		glDeleteBuffers(1, &m_vbo);
@@ -63,7 +63,7 @@ namespace at
 	}
 	
 	template <typename T>
-	void BufferArray<T>::create(const T *elements, size_t elements_size, update_mode update_mode)
+	void Buffer<T>::create(const T *elements, size_t elements_size, update_mode update_mode)
 	{
 		try
 		{
@@ -108,13 +108,13 @@ namespace at
 	}
 	
 	template <typename T>
-	void BufferArray<T>::create(const BufferArray<T>& array)
+	void Buffer<T>::create(const Buffer<T>& array)
 	{
 		create(array.get(), array.get_size(), array.get_update_mode());
 	}
 	
 	template <typename T>
-	T* BufferArray<T>::get() noexcept
+	T* Buffer<T>::get() noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -123,7 +123,7 @@ namespace at
 	}
 	
 	template <typename T>
-	const T* BufferArray<T>::get() const noexcept
+	const T* Buffer<T>::get() const noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -132,7 +132,7 @@ namespace at
 	}
 	
 	template <typename T>
-	T& BufferArray<T>::operator[](size_t index)
+	T& Buffer<T>::operator[](size_t index)
 	{
 		if (index >= get_size())
 			ATEMA_ERROR("Index is greater than array size.")
@@ -141,7 +141,7 @@ namespace at
 	}
 	
 	template <typename T>
-	const T& BufferArray<T>::operator[](size_t index) const
+	const T& Buffer<T>::operator[](size_t index) const
 	{
 		if (index >= get_size())
 			ATEMA_ERROR("Index is greater than array size.")
@@ -150,31 +150,31 @@ namespace at
 	}
 	
 	template <typename T>
-	size_t BufferArray<T>::get_size() const
+	size_t Buffer<T>::get_size() const
 	{
 		return (m_elements.size());
 	}
 	
 	template <typename T>
-	typename BufferArray<T>::update_mode BufferArray<T>::get_update_mode() const
+	typename Buffer<T>::update_mode Buffer<T>::get_update_mode() const
 	{
 		return (m_update_mode);
 	}
 	
 	template <typename T>
-	GLuint BufferArray<T>::get_gl_id() const noexcept
+	GLuint Buffer<T>::get_gl_id() const noexcept
 	{
 		return (m_vbo);
 	}
 	
 	template <typename T>
-	bool BufferArray<T>::is_valid() const noexcept
+	bool Buffer<T>::is_valid() const noexcept
 	{
 		return (m_buffer_ok && m_filled);
 	}
 	
 	template <typename T>
-	void BufferArray<T>::to_cpu()
+	void Buffer<T>::to_cpu()
 	{
 		try
 		{
@@ -194,7 +194,7 @@ namespace at
 	}
 	
 	template <typename T>
-	void BufferArray<T>::to_gpu()
+	void Buffer<T>::to_gpu()
 	{
 		try
 		{
@@ -215,7 +215,7 @@ namespace at
 	
 	//PRIVATE
 	template <typename T>
-	void BufferArray<T>::ensure_buffer()
+	void Buffer<T>::ensure_buffer()
 	{
 		if (m_buffer_ok)
 			return;

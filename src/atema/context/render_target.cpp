@@ -55,7 +55,7 @@ namespace at
 		}
 	}
 	
-	void RenderTarget::draw(const RenderTarget& render_target)
+	void RenderTarget::blit(const RenderTarget &render_target)
 	{
 		//TODO: Ensure framebuffers exist
 		this->ensure_framebuffer_exists();

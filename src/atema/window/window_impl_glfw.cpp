@@ -23,6 +23,7 @@
 
 #include <atema/core/error.hpp>
 
+
 namespace at
 {
 	Window::Window()
@@ -88,12 +89,12 @@ namespace at
 			if (scale > ratio)
 			{
 				tmp_rect.h = m_infos.h;
-				tmp_rect.w = static_cast<float>(tmp_rect.h) * ratio;
+				tmp_rect.w = (unsigned int) (static_cast<float>(tmp_rect.h) * ratio);
 			}
 			else if (scale < ratio)
 			{
 				tmp_rect.w = m_infos.w;
-				tmp_rect.h = static_cast<float>(tmp_rect.w) / ratio;
+				tmp_rect.h = (unsigned int) (static_cast<float>(tmp_rect.w) / ratio);
 			}
 			else
 			{
@@ -147,6 +148,10 @@ namespace at
 	GLFWwindow* Window::get_glfw_window() const noexcept
 	{
 		return (m_window);
+	}
+
+	void Window::set_title(std::string title) {
+		glfwSetWindowTitle(m_window, title.c_str());
 	}
 }
 

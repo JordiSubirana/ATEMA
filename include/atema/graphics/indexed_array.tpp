@@ -29,7 +29,7 @@ namespace at
 	}
 	
 	template <typename T>
-	IndexedArray<T>::IndexedArray(const T *elements, size_t elements_size, const unsigned int *indices, size_t indices_size, typename BufferArray<T>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
+	IndexedArray<T>::IndexedArray(const T *elements, size_t elements_size, const unsigned int *indices, size_t indices_size, typename Buffer<T>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
 		elements(elements, elements_size, elements_update_mode),
 		indices(indices, indices_size, indices_update_mode)
 	{
@@ -37,7 +37,7 @@ namespace at
 	}
 	
 	template <typename T>
-	IndexedArray<T>::IndexedArray(const BufferArray<T>& elements, const IndexArray& indices) :
+	IndexedArray<T>::IndexedArray(const Buffer<T>& elements, const IndexArray& indices) :
 		elements(elements),
 		indices(indices)
 	{
@@ -58,14 +58,14 @@ namespace at
 	}
 	
 	template <typename T>
-	void IndexedArray<T>::create(const T *elements, size_t elements_size, const unsigned int *indices, size_t indices_size, typename BufferArray<T>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
+	void IndexedArray<T>::create(const T *elements, size_t elements_size, const unsigned int *indices, size_t indices_size, typename Buffer<T>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
 	{
 		this->elements.create(elements, elements_size, elements_update_mode);
 		this->indices.create(indices, indices_size, indices_update_mode);
 	}
 	
 	template <typename T>
-	void IndexedArray<T>::create(const BufferArray<T>& elements, const IndexArray& indices)
+	void IndexedArray<T>::create(const Buffer<T>& elements, const IndexArray& indices)
 	{
 		this->elements.create(elements);
 		this->indices.create(indices);

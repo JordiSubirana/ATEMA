@@ -47,8 +47,8 @@ int main()
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{
 			window.clear();
-			
-			window.draw(tex);
+
+			window.blit(tex);
 			
 			window.update();
 		}

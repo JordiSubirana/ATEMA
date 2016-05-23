@@ -17,15 +17,17 @@ const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 	{
 		frag_color = color;
 		gl_Position = vec4(position.x, position.y, position.z, 1.0);
+		gl_PointSize = 10.0;
 	}
 );
 
 const char *fragment_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 	in vec3 frag_color;
+	out vec4 outcolor;
 	
 	void main()
 	{
-		gl_FragColor = vec4(frag_color, 1.0);
+		outcolor = vec4(frag_color, 1.0);
 	}
 );
 
@@ -72,17 +74,17 @@ int main()
 		//Shader creation
 		Shader shader;
 		shader.create_from_memory("position", vertex_shader, fragment_shader);
-		
+
 		//Renderer creation
 		Renderer renderer;
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
 		//Mesh creation : triangle position
-		Mesh mesh(Mesh::draw_mode::triangles, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
+		Mesh mesh(Mesh::draw_mode::points, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
 		
-		//BufferArray creation : triangle color
-		BufferArray<Vector3f> colors(colors_data, sizeof(colors_data)/sizeof(Vector3f));
+		//Buffer creation : triangle color
+		Buffer<Vector3f> colors(colors_data, sizeof(colors_data) / sizeof(Vector3f));
 		
 		//Update shader internal stuff
 		shader.set_varying("color", colors);

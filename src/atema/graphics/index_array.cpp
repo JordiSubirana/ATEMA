@@ -28,19 +28,19 @@ namespace at
 	}
 	
 	IndexArray::IndexArray(const unsigned int *elements, size_t elements_size, update_mode update_mode) :
-		BufferArray<unsigned int>(elements, elements_size, update_mode)
+		Buffer<unsigned int>(elements, elements_size, update_mode)
 	{
 		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
-	IndexArray::IndexArray(const BufferArray<unsigned int>& array) :
-		BufferArray<unsigned int>(array)
+	IndexArray::IndexArray(const Buffer<unsigned int>& array) :
+		Buffer<unsigned int>(array)
 	{
 		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
 	
 	IndexArray::IndexArray(const IndexArray& array) :
-		BufferArray<unsigned int>(static_cast< BufferArray<unsigned int> >(array))
+		Buffer<unsigned int>(static_cast< Buffer<unsigned int> >(array))
 	{
 		m_internal_type = GL_ELEMENT_ARRAY_BUFFER;
 	}
@@ -52,6 +52,6 @@ namespace at
 	
 	void IndexArray::create(const IndexArray& array)
 	{
-		BufferArray<unsigned int>::create(static_cast< BufferArray<unsigned int> >(array));
+		Buffer<unsigned int>::create(static_cast< Buffer<unsigned int> >(array));
 	}
 }

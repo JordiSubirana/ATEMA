@@ -26,7 +26,7 @@
 #include <atema/core/non_copyable.hpp>
 #include <atema/math/vector.hpp>
 #include <atema/graphics/texture.hpp>
-#include <atema/graphics/buffer_array.hpp>
+#include "buffer.hpp"
 #include <atema/graphics/color.hpp>
 
 #include <map>
@@ -53,10 +53,10 @@ namespace at
 			void set_uniform(const char *name, const Vector2f& arg);
 			void set_uniform(const char *name, const Vector3f& arg);
 			void set_uniform(const char *name, const Vector4f& arg);
-			void set_varying(const char *name, const BufferArray<float>& array);
-			void set_varying(const char *name, const BufferArray<Vector2f>& array);
-			void set_varying(const char *name, const BufferArray<Vector3f>& array);
-			void set_varying(const char *name, const BufferArray<Vector4f>& array);
+			void set_varying(const char *name, const Buffer<float>& array);
+			void set_varying(const char *name, const Buffer<Vector2f>& array);
+			void set_varying(const char *name, const Buffer<Vector3f>& array);
+			void set_varying(const char *name, const Buffer<Vector4f>& array);
 			void delete_varying(const char *name);
 			
 			void bind() const;
@@ -92,9 +92,9 @@ namespace at
 			std::map< GLint, std::pair<int, const Texture*> > m_texs;
 			
 			/*
-			std::map<GLint, const BufferArray<float>*> m_arr_float;
-			std::map<GLint, const BufferArray<Vector2f>*> m_arr_vec2;
-			std::map<GLint, const BufferArray<Vector3f>*> m_arr_vec3;
+			std::map<GLint, const Buffer<float>*> m_arr_float;
+			std::map<GLint, const Buffer<Vector2f>*> m_arr_vec2;
+			std::map<GLint, const Buffer<Vector3f>*> m_arr_vec3;
 			#warning create Vector4f container
 			//*/
 			

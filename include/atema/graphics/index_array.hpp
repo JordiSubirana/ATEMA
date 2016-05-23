@@ -20,54 +20,54 @@
 #ifndef ATEMA_GRAPHICS_INDEX_ARRAY_HEADER
 #define ATEMA_GRAPHICS_INDEX_ARRAY_HEADER
 
-#include <atema/graphics/buffer_array.hpp>
+#include "buffer.hpp"
 #include <atema/core/error.hpp>
 
 #include <vector>
 
 namespace at
 {
-	class IndexArray : public BufferArray<unsigned int>
+	class IndexArray : public Buffer<unsigned int>
 	{
 		public:
-			using BufferArray<unsigned int>::create;
-			using BufferArray<unsigned int>::get;
-			using BufferArray<unsigned int>::get_gl_id;
-			using BufferArray<unsigned int>::is_valid;
-			using BufferArray<unsigned int>::to_cpu;
-			using BufferArray<unsigned int>::to_gpu;
-			using BufferArray<unsigned int>::operator[];
-			using BufferArray<unsigned int>::get_size;
-			using BufferArray<unsigned int>::get_update_mode;
+			using Buffer<unsigned int>::create;
+			using Buffer<unsigned int>::get;
+			using Buffer<unsigned int>::get_gl_id;
+			using Buffer<unsigned int>::is_valid;
+			using Buffer<unsigned int>::to_cpu;
+			using Buffer<unsigned int>::to_gpu;
+			using Buffer<unsigned int>::operator[];
+			using Buffer<unsigned int>::get_size;
+			using Buffer<unsigned int>::get_update_mode;
 		
 		public:
 			IndexArray();
 			IndexArray(const unsigned int *elements, size_t elements_size, update_mode update_mode = update_mode::static_draw);
-			IndexArray(const BufferArray<unsigned int>& array);
+			IndexArray(const Buffer<unsigned int>& array);
 			IndexArray(const IndexArray& array);
 			virtual ~IndexArray() noexcept;
 			
 			void create(const IndexArray& array);
 			
 			template <typename T>
-			void generate(const BufferArray<T>& array);
+			void generate(const Buffer<T>& array);
 	};
 	
 	template <typename T>
-	void IndexArray::generate(const BufferArray<T>& array)
+	void IndexArray::generate(const Buffer<T>& array)
 	{
 		//TODO: Handle vector exceptions
 		std::vector<unsigned int> tmp;
 		
 		if (!array.is_valid())
-			ATEMA_ERROR("BufferArray is invalid.")
+			ATEMA_ERROR("Buffer is invalid.")
 		
 		tmp.resize(array.get_size());
 		
 		for (unsigned int i = 0; i <= tmp.size(); i++)
 			tmp[i] = i;
 		
-		BufferArray<unsigned int>::create(tmp.data(), tmp.size(), get_update_mode());
+		Buffer<unsigned int>::create(tmp.data(), tmp.size(), get_update_mode());
 	}
 }
 
