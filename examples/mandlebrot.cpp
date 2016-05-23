@@ -11,9 +11,8 @@ using namespace at;
 
 
 
-#define STRINGIFY(A) #A
 
-static string code = STRINGIFY(
+static string code = ATEMA_STRINGIFY(
 // soit c'est writeonly, soit on precise le format...
 		image2Dwr(rgba32f) destTex;
 		uniform uint Reso;

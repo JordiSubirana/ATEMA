@@ -10,9 +10,8 @@ using namespace at;
 
 
 
-#define STRINGIFY(AAAAA) #AAAAA
 
-static string code = STRINGIFY(
+static string code = ATEMA_STRINGIFY(
 		// soit c'est writeonly, soit on precise le format...
 	 	image2Dwr(rgba32f) destTex;
 		uniform uint Reso;
@@ -62,7 +61,7 @@ static string code = STRINGIFY(
 );
 
 
-static string code2 = STRINGIFY(
+static string code2 = ATEMA_STRINGIFY(
 		// soit c'est writeonly, soit on precise le format...
 	 	image2Dwr(rgba32f) destTex;
 		uniform uint Reso;
