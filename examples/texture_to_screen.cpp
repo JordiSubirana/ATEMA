@@ -1,8 +1,6 @@
 #include <atema/atema.hpp>
 
 #include <iostream>
-#include <cstdio>
-#include <cmath>
 
 using namespace std;
 using namespace at;
@@ -11,38 +9,33 @@ int main()
 {
 	try
 	{
-		Window window;
-		Keyboard keyboard;
-		
+		//Setup OpenGL version
 		Context::gl_version version;
 		version.major = 3;
 		version.minor = 3;
 		
-		window.create(640, 480, "Test", at::Window::options::visible | at::Window::options::frame, version);
-		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));
+		//Window creation
+		Window window;
+		window.create(512, 512, "Test", at::Window::options::visible | at::Window::options::frame, version);
+		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));		
+		window.set_clear_color(Color(0.3,0.3,0.3,1.0));
 		
+		//Keyboard creation
+		Keyboard keyboard;
 		keyboard.set_window(window);
 		
-		//Texture created after window opening (context stuff...)
+		//Texture creation
 		Texture tex;
-		tex.create(640, 480);
+		tex.create("images/lena.jpg");
 		tex.set_viewport(Rect(0, 0, tex.get_width(), tex.get_height()));
-		
-		//get opengl texture id : tex.get_gl_id();
-		
-		tex.set_clear_color(Color(0.2f,0,0,1));
-		tex.clear();
 		tex.to_cpu(); //get clear color to all pixels in cpu
 		for (size_t i = 0; i < std::min(tex.get_width(), tex.get_height()); i++)
 		{
 			Color c = tex[i+i*tex.get_width()];
 			
-			tex[i+i*tex.get_width()] = Color(1.0f, 1.0f, 1.0f, 1.0f);
+			tex[i+i*tex.get_width()] = Color(1.0f, 0.0f, 0.0f, 1.0f);
 		}
-		
 		tex.to_gpu(); //upload white line to gpu
-		
-		window.set_clear_color(Color(0,0,1,1));
 		
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{

@@ -20,7 +20,14 @@
 #include <atema/graphics/texture.hpp>
 #include <atema/core/error.hpp>
 
-using namespace std;
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_JPEG
+#define STBI_ONLY_PNG
+#define STBI_ONLY_BMP
+#define STBI_ONLY_TGA
+#include <stb/stb_image.h>
+
+#include <iostream>
 
 namespace at
 {
@@ -81,6 +88,65 @@ namespace at
 			
 			m_pixels.resize(width*height);
 			m_pixels.assign(width*height, Color(0.0f, 0.0f, 0.0f, 1.0f));
+			
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
+			
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL internal error: Texture creation failed.")
+			
+			set_filters(min_filter, mag_filter);
+			
+			m_width = width;
+			m_height = height;
+			
+			m_filled = true;
+		}
+		catch (const Error& e)
+		{
+			m_pixels.resize(0);
+			
+			throw;
+		}
+	}
+	
+	void Texture::create(const char *filename, Texture::filter min_filter, Texture::filter mag_filter)
+	{
+		try
+		{
+			int w = 0, h = 0, bpp = 0;
+			unsigned width = 0, height = 0;
+			unsigned char *data = nullptr;
+			
+			if (!filename)
+				ATEMA_ERROR("No filename given.")
+			
+			ensure_texture();
+			
+			m_filled = false;
+			
+			data = stbi_load(filename, &w, &h, &bpp, STBI_rgb_alpha);
+			
+			if (!data)
+				ATEMA_ERROR("Image file could not be loaded.")
+			
+			std::cout << "image w : " << w << ", h : " << h << ", bpp : " << bpp << std::endl;
+			
+			width = static_cast<unsigned int>(w);
+			height = static_cast<unsigned int>(h);
+			
+			glBindTexture(GL_TEXTURE_2D, m_id);
+			
+			m_pixels.resize(width*height);
+			
+			for (size_t i = 0; i < m_pixels.size(); i++)
+			{
+				for (size_t o = 0; o < 4; o++)
+				{
+					m_pixels[i][o] = static_cast<float>(data[i*4+o])/255.0f;
+				}
+			}
+			
+			stbi_image_free(data);
 			
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_FLOAT, reinterpret_cast<float*>(m_pixels.data()));
 			
@@ -245,7 +311,6 @@ namespace at
 			// glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_id, 0);
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_id, 0);
 			
-			// cout << get_width() << ", " << get_height() << " : tex " << get_gl_id() << "fbo : " << m_fbo << endl;
 			//TODO: fix this
 			if ((glGetError() != GL_NO_ERROR) || (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE))
 			{

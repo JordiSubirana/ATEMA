@@ -22,7 +22,6 @@
 
 #include <vector>
 #include <fstream>
-#include <iostream>
 
 namespace at
 {
@@ -768,9 +767,6 @@ namespace at
 			glBindBuffer(GL_ARRAY_BUFFER, it->second->get_gl_id());
 			glEnableVertexAttribArray(it->first);
 			glVertexAttribPointer(it->first, 3, GL_FLOAT, GL_FALSE, 0, 0);
-			// std::cout << glGetError() << std::endl;
-			// if (glGetError() != GL_NO_ERROR)
-				// ATEMA_ERROR("FUCK YOUUU")
 		}
 		//*/
 	}

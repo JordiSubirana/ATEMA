@@ -21,6 +21,9 @@
 #define ATEMA_GRAPHICS_COLOR_HEADER
 
 #include <atema/graphics/config.hpp>
+#include <atema/core/error.hpp>
+
+#include <cstddef>
 
 namespace at
 {
@@ -43,6 +46,22 @@ namespace at
 			float g;
 			float b;
 			float a;
+			
+			float& operator[](size_t index)
+			{
+				if (index >= 4)
+					ATEMA_ERROR("Index is out of range.")
+				
+				return (reinterpret_cast<float*>(this)[index]);
+			}
+			
+			const float& operator[](size_t index) const
+			{
+				if (index >= 4)
+					ATEMA_ERROR("Index is out of range.")
+				
+				return (reinterpret_cast<const float*>(this)[index]);
+			}
 	};
 }
 

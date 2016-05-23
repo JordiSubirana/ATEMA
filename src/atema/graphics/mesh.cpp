@@ -19,7 +19,6 @@
 
 #include <atema/graphics/mesh.hpp>
 #include <atema/graphics/renderer.hpp>
-#include <iostream>
 
 namespace at
 {
