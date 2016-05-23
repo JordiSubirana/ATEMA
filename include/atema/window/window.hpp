@@ -55,7 +55,9 @@ namespace at
 			using Context::create;
 			
 		//To implement for each OS
-		public:
+		void set_title(std::string title);
+
+	public:
 			Window();
 			virtual ~Window() noexcept;
 			

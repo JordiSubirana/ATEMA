@@ -86,12 +86,18 @@ namespace at {
                 "#extension GL_ARB_compute_shader : enable\n"
                 "#extension GL_ARB_shader_storage_buffer_object : enable\n"
                 "#extension GL_ARB_compute_variable_group_size : enable\n"
-                "layout (local_size_variable) in;\n";
+                //"#extension GL_NV_shader_buffer_load : enable\n"
+                "layout (local_size_variable) in;\n"
+                "const float PI = 3.14159265359f;\n"
+                "#define image2Dwr(format) layout(format) uniform image2D\n";
 
         _srcs.push_back(headers);
 
 
+        _ssbo_i = 0;
+        _ssbo_count = 0;
         _uniform_i = 0;
+        _uniform_count = 0;
         _texunit_i = 0;
     }
 
@@ -187,6 +193,7 @@ namespace at {
         _ssbo_i = 0;
 
         glUseProgram(_progID);
+        glCheckError("glUseProgram");
     }
 
 
@@ -207,7 +214,9 @@ namespace at {
         glActiveTexture(GL_TEXTURE0 + _texunit_i);
         glCheckError("glActivateTexture");
 
-        glBindImageTexture(_texunit_i, image.get_gl_id(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        //todo manage read/write qualifiers (inside texture)
+        //todo magage textures/images
+        glBindImageTexture(_texunit_i, image.get_gl_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
         glCheckError("glBindImageTexture");
 
         location = glGetUniformLocation(_progID, _argList[i].c_str());
@@ -228,14 +237,15 @@ namespace at {
 
 
 
-    void Parogl::set_arg(unsigned i, const Buffer &buffer) {
+    void Parogl::set_arg_buffer(unsigned i, GLuint id) {
 
         if (_ssbo_i >= _ssbo_count)
             ATEMA_ERROR("OpenGL error SSBO count overflow");
 
         GLuint block_index;
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, _ssbo_i, buffer.id);
+        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, _ssbo_i, id);
         glCheckError("glBindBufferBase");
 
         block_index = glGetProgramResourceIndex(_progID, GL_SHADER_STORAGE_BLOCK, _argList[i].c_str());
@@ -286,18 +296,22 @@ namespace at {
     implem_glUniform(unsigned, 1ui, val)
     implem_glUniform(int,      1i, val)
     implem_glUniform(float,    1f, val)
+    implem_glUniform(double,   1d, val)
 
     implem_glUniform(Vector2u, 2ui, val.x COMMA val.y)
     implem_glUniform(Vector2i, 2i, val.x COMMA val.y)
     implem_glUniform(Vector2f, 2f, val.x COMMA val.y)
+    implem_glUniform(Vector2d, 2d, val.x COMMA val.y)
 
     implem_glUniform(Vector3u, 3ui, val.x COMMA val.y COMMA val.z)
     implem_glUniform(Vector3i, 3i, val.x COMMA val.y COMMA val.z)
     implem_glUniform(Vector3f, 3f, val.x COMMA val.y COMMA val.z)
+    implem_glUniform(Vector3d, 3d, val.x COMMA val.y COMMA val.z)
 
     implem_glUniform(Vector4u, 4ui, val.x COMMA val.y COMMA val.z COMMA val.z)
     implem_glUniform(Vector4i, 4i, val.x COMMA val.y COMMA val.z COMMA val.z)
     implem_glUniform(Vector4f, 4f, val.x COMMA val.y COMMA val.z COMMA val.z)
+    implem_glUniform(Vector4d, 4d, val.x COMMA val.y COMMA val.z COMMA val.z)
 
 
 

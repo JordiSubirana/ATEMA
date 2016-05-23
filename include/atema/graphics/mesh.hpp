@@ -54,14 +54,14 @@ namespace at
 			
 		public:
 			Mesh();
-			Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename BufferArray<Vector3f>::update_mode elements_update_mode = BufferArray<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
-			Mesh(draw_mode mesh_draw_mode, const BufferArray<Vector3f>& elements, const IndexArray& indices);
+			Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<Vector3f>::update_mode elements_update_mode = Buffer<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
+			Mesh(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices);
 			Mesh(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array);
 			Mesh(const Mesh& mesh);
 			virtual ~Mesh() noexcept;
 			
-			void create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename BufferArray<Vector3f>::update_mode elements_update_mode = BufferArray<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
-			void create(draw_mode mesh_draw_mode, const BufferArray<Vector3f>& elements, const IndexArray& indices);
+			void create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<Vector3f>::update_mode elements_update_mode = Buffer<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
+			void create(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices);
 			void create(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array);
 			void create(const Mesh& mesh);
 			

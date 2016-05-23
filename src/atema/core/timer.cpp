@@ -17,42 +17,42 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <atema/context/context.hpp>
-#include <atema/core/error.hpp>
 
-namespace at
-{
-	thread_local Context *t_current_context = nullptr;
-	
-	//PUBLIC
-	bool Context::is_current_context() const noexcept
-	{
-		return (this == t_current_context);
-	}
-	
-	//PRIVATE
-	void Context::set_current(Context *ptr) noexcept
-	{
-		if (t_current_context)
-			t_current_context->m_thread_active = false;
-		
-		t_current_context = ptr;
-		
-		if (ptr)
-			ptr->m_thread_active = true;
-	}
-	
-	void Context::check_activity() const noexcept
-	{
-		if (m_thread_active && !is_current_context())
-			ATEMA_ERROR("Context is already activated in another thread.")
-	}
-	
-	void Context::init_gl_states() const noexcept
-	{
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-		glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-		// super guillaume
-	}
+#include <atema/core/timer.hpp>
+#include <thread>
+
+
+namespace at {
+
+    static const Timer from_start;
+    static thread_local Timer chrono;
+
+    Timer::Timer() noexcept {
+        reset();
+    }
+
+    void Timer::reset() noexcept {
+        t0 = std::chrono::high_resolution_clock::now();
+    }
+
+    Duration Timer::elapsed() const {
+        auto t1 =  std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<unsigned long long, std::micro> time_span = std::chrono::duration_cast<std::chrono::duration<unsigned long long, std::micro>>(t1-t0);
+
+        return usecond<unsigned long long>(time_span.count());
+    }
+
+
+    Duration Timer::elapsed_from_start() {
+        return from_start.elapsed();
+    }
+
+    void tic() noexcept {
+        chrono.reset();
+    }
+
+    float toc() {
+        return chrono.elapsed().s();
+    }
 }

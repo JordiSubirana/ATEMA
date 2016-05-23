@@ -20,7 +20,7 @@
 #ifndef ATEMA_GRAPHICS_INDEXED_ARRAY_HEADER
 #define ATEMA_GRAPHICS_INDEXED_ARRAY_HEADER
 
-#include <atema/graphics/buffer_array.hpp>
+#include "buffer.hpp"
 #include <atema/graphics/index_array.hpp>
 
 namespace at
@@ -29,18 +29,18 @@ namespace at
 	class IndexedArray : public ResourceGL
 	{
 		public:
-			BufferArray<T> elements;
+			Buffer<T> elements;
 			IndexArray indices;
 			
 		public:
 			IndexedArray();
-			IndexedArray(const T *elements, size_t elements_size, const unsigned int *indices = nullptr, size_t indices_size = 0, typename BufferArray<T>::update_mode elements_update_mode = BufferArray<T>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
-			IndexedArray(const BufferArray<T>& elements, const IndexArray& indices);
+			IndexedArray(const T *elements, size_t elements_size, const unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<T>::update_mode elements_update_mode = Buffer<T>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
+			IndexedArray(const Buffer<T>& elements, const IndexArray& indices);
 			IndexedArray(const IndexedArray<T>& array);
 			virtual ~IndexedArray() noexcept;
 			
-			void create(const T *elements, size_t elements_size, const unsigned int *indices = nullptr, size_t indices_size = 0, typename BufferArray<T>::update_mode elements_update_mode = BufferArray<T>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
-			void create(const BufferArray<T>& elements, const IndexArray& indices);
+			void create(const T *elements, size_t elements_size, const unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<T>::update_mode elements_update_mode = Buffer<T>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
+			void create(const Buffer<T>& elements, const IndexArray& indices);
 			void create(const IndexedArray<T>& array);
 			
 			T& operator[](size_t index);

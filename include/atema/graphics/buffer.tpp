@@ -21,13 +21,14 @@
 #define ATEMA_GRAPHICS_BUFFER_ARRAY_IMPLEMENTATION
 
 #include <atema/core/error.hpp>
+#include <atema/graphics/buffer.hpp>
 
 namespace at
 {
 	//PUBLIC
 	template <typename T>
-	BufferArray<T>::BufferArray() :
-		m_internal_type(GL_ARRAY_BUFFER),
+	Buffer<T>::Buffer() :
+		m_internal_type(GL_SHADER_STORAGE_BUFFER),
 		m_vbo(0),
 		m_elements(),
 		m_update_mode(update_mode::static_draw),
@@ -38,21 +39,21 @@ namespace at
 	}
 	
 	template <typename T>
-	BufferArray<T>::BufferArray(const T *elements, size_t elements_size, update_mode update_mode) :
-		BufferArray()
+	Buffer<T>::Buffer(const T *elements, size_t elements_size, update_mode update_mode) :
+		Buffer()
 	{
 		create(elements, elements_size, update_mode);
 	}
 	
 	template <typename T>
-	BufferArray<T>::BufferArray(const BufferArray<T>& array) :
-		BufferArray()
+	Buffer<T>::Buffer(const Buffer<T>& array) :
+		Buffer()
 	{
 		create(array);
 	}
 	
 	template <typename T>
-	BufferArray<T>::~BufferArray() noexcept
+	Buffer<T>::~Buffer() noexcept
 	{
 		glBindBuffer(m_internal_type, 0);
 		glDeleteBuffers(1, &m_vbo);
@@ -63,7 +64,7 @@ namespace at
 	}
 	
 	template <typename T>
-	void BufferArray<T>::create(const T *elements, size_t elements_size, update_mode update_mode)
+	void Buffer<T>::create(const T *elements, size_t elements_size, update_mode update_mode)
 	{
 		try
 		{
@@ -106,15 +107,63 @@ namespace at
 			throw;
 		}
 	}
-	
+
+
 	template <typename T>
-	void BufferArray<T>::create(const BufferArray<T>& array)
+	T* Buffer<T>::createVRAM_map(size_t elements_size, update_mode update_mode) {
+		try
+		{
+			m_filled = false;
+			m_elements.clear();
+
+			if (!elements_size)
+				return nullptr ;
+
+			ensure_buffer();
+
+			m_update_mode = update_mode;
+
+			glBindBuffer(m_internal_type, m_vbo);
+
+			glBufferData(m_internal_type, elements_size*sizeof(T), nullptr, static_cast<GLenum>(update_mode));
+
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL could not allocate VBO.")
+
+			glBufferSubData(m_internal_type, 0, elements_size*sizeof(T), nullptr);
+
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL could not fill VBO.")
+
+
+			m_filled = true;
+
+			return static_cast<T*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE));
+
+		}
+		catch (const Error& e)
+		{
+			m_elements.resize(0);
+
+			throw;
+		}
+	}
+
+	template <typename T>
+	void Buffer<T>::unmap() const {
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glBindBuffer(m_internal_type, 0);
+	}
+
+
+	template <typename T>
+	void Buffer<T>::create(const Buffer<T>& array)
 	{
 		create(array.get(), array.get_size(), array.get_update_mode());
 	}
 	
 	template <typename T>
-	T* BufferArray<T>::get() noexcept
+	T* Buffer<T>::get() noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -123,7 +172,7 @@ namespace at
 	}
 	
 	template <typename T>
-	const T* BufferArray<T>::get() const noexcept
+	const T* Buffer<T>::get() const noexcept
 	{
 		if (get_size() == 0)
 			return (nullptr);
@@ -132,7 +181,7 @@ namespace at
 	}
 	
 	template <typename T>
-	T& BufferArray<T>::operator[](size_t index)
+	T& Buffer<T>::operator[](size_t index)
 	{
 		if (index >= get_size())
 			ATEMA_ERROR("Index is greater than array size.")
@@ -141,7 +190,7 @@ namespace at
 	}
 	
 	template <typename T>
-	const T& BufferArray<T>::operator[](size_t index) const
+	const T& Buffer<T>::operator[](size_t index) const
 	{
 		if (index >= get_size())
 			ATEMA_ERROR("Index is greater than array size.")
@@ -150,31 +199,31 @@ namespace at
 	}
 	
 	template <typename T>
-	size_t BufferArray<T>::get_size() const
+	size_t Buffer<T>::get_size() const
 	{
 		return (m_elements.size());
 	}
 	
 	template <typename T>
-	typename BufferArray<T>::update_mode BufferArray<T>::get_update_mode() const
+	typename Buffer<T>::update_mode Buffer<T>::get_update_mode() const
 	{
 		return (m_update_mode);
 	}
 	
 	template <typename T>
-	GLuint BufferArray<T>::get_gl_id() const noexcept
+	GLuint Buffer<T>::get_gl_id() const noexcept
 	{
 		return (m_vbo);
 	}
 	
 	template <typename T>
-	bool BufferArray<T>::is_valid() const noexcept
+	bool Buffer<T>::is_valid() const noexcept
 	{
 		return (m_buffer_ok && m_filled);
 	}
 	
 	template <typename T>
-	void BufferArray<T>::to_cpu()
+	void Buffer<T>::to_cpu()
 	{
 		try
 		{
@@ -194,7 +243,7 @@ namespace at
 	}
 	
 	template <typename T>
-	void BufferArray<T>::to_gpu()
+	void Buffer<T>::to_gpu()
 	{
 		try
 		{
@@ -215,7 +264,7 @@ namespace at
 	
 	//PRIVATE
 	template <typename T>
-	void BufferArray<T>::ensure_buffer()
+	void Buffer<T>::ensure_buffer()
 	{
 		if (m_buffer_ok)
 			return;

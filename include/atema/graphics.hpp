@@ -20,7 +20,7 @@
 #ifndef ATEMA_GLOBAL_GRAPHICS_HEADER
 #define ATEMA_GLOBAL_GRAPHICS_HEADER
 
-#include <atema/graphics/buffer_array.hpp>
+#include "atema/graphics/buffer.hpp"
 #include <atema/graphics/color.hpp>
 #include <atema/graphics/config.hpp>
 #include <atema/graphics/drawable.hpp>

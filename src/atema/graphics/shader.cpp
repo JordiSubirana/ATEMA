@@ -103,7 +103,7 @@ namespace at
 			
 			glCompileShader(shader_id);
 			
-			//TODO: récupérer les chaînes d'erreur de la compilation OpenGL.
+			//TODO: rï¿½cupï¿½rer les chaï¿½nes d'erreur de la compilation OpenGL.
 			glGetShaderiv(shader_id, GL_COMPILE_STATUS, &result);
 			
 			// /*
@@ -602,7 +602,7 @@ namespace at
 		}
 	}
 
-	void Shader::set_varying(const char *name, const BufferArray<float>& array)
+	void Shader::set_varying(const char *name, const Buffer<float>& array)
 	{
 		try
 		{
@@ -626,7 +626,7 @@ namespace at
 		}
 	}
 
-	void Shader::set_varying(const char *name, const BufferArray<Vector2f>& array)
+	void Shader::set_varying(const char *name, const Buffer<Vector2f>& array)
 	{
 		try
 		{
@@ -650,7 +650,7 @@ namespace at
 		}
 	}
 
-	void Shader::set_varying(const char *name, const BufferArray<Vector3f>& array)
+	void Shader::set_varying(const char *name, const Buffer<Vector3f>& array)
 	{
 		try
 		{
@@ -674,7 +674,7 @@ namespace at
 		}
 	}
 	
-	void Shader::set_varying(const char *name, const BufferArray<Vector4f>& array)
+	void Shader::set_varying(const char *name, const Buffer<Vector4f>& array)
 	{
 		try
 		{

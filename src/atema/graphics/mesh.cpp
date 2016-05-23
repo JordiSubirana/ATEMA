@@ -28,13 +28,13 @@ namespace at
 		
 	}
 	
-	Mesh::Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename BufferArray<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
+	Mesh::Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
 		Mesh()
 	{
 		create(mesh_draw_mode, elements, elements_size, indices, indices_size, elements_update_mode, indices_update_mode);
 	}
 	
-	Mesh::Mesh(draw_mode mesh_draw_mode, const BufferArray<Vector3f>& elements, const IndexArray& indices) :
+	Mesh::Mesh(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices) :
 		Mesh()
 	{
 		create(mesh_draw_mode, elements, indices);
@@ -57,13 +57,13 @@ namespace at
 		
 	}
 	
-	void Mesh::create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename BufferArray<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
+	void Mesh::create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
 	{
 		m_draw_mode = mesh_draw_mode;
 		IndexedArray<Vector3f>::create(elements, elements_size, indices, indices_size, elements_update_mode, indices_update_mode);
 	}
 	
-	void Mesh::create(draw_mode mesh_draw_mode, const BufferArray<Vector3f>& elements, const IndexArray& indices)
+	void Mesh::create(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices)
 	{
 		m_draw_mode = mesh_draw_mode;
 		IndexedArray<Vector3f>::create(elements, indices);

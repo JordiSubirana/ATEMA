@@ -17,8 +17,19 @@ LIBS_PATH = $(addprefix ./lib/,$(LIBS))
 	make -C $(addprefix src/$(NAME)/,$(@)) MODULE=$(@) NAME=$(NAME)
 
 
-all: cleana $(MODULES)
+.PHONY: prepare cleana all clean
+all: prepare cleana $(MODULES)
 	make -C examples NAME=$(NAME)
+
+
+prepare:
+ifeq (,$(wildcard ./bin))
+	mkdir bin
+endif
+ifeq (,$(wildcard ./lib))
+	mkdir lib
+endif
+
 
 
 cleana:

@@ -24,6 +24,7 @@
 #include <atema/core/error.hpp>
 #include <atema/parallel/tools.hpp>
 #include <atema/graphics/texture.hpp>
+#include <atema/graphics/buffer.hpp>
 #include <atema/math/vector.hpp>
 
 
@@ -36,11 +37,6 @@
 
 namespace at {
 
-
-    struct Buffer {
-        GLuint id;
-        Buffer(GLuint i) : id(i) {}
-    };
 
     class Parogl {
     protected:
@@ -101,27 +97,41 @@ namespace at {
         // uniform 1u (Image)
         void set_arg(unsigned i, Texture const& );
 
-        void set_arg(unsigned i, Buffer const& );
+        template <typename T>
+        void set_arg(unsigned i, Buffer<T> const& );
+        void set_arg_buffer(unsigned i, GLuint );
 
         void set_arg(unsigned i, unsigned);
         void set_arg(unsigned i, int);
         void set_arg(unsigned i, float);
+        void set_arg(unsigned i, double);
 
         void set_arg(unsigned i, Vector2u);
         void set_arg(unsigned i, Vector2i);
         void set_arg(unsigned i, Vector2f);
+        void set_arg(unsigned i, Vector2d);
 
         void set_arg(unsigned i, Vector3u);
         void set_arg(unsigned i, Vector3i);
         void set_arg(unsigned i, Vector3f);
+        void set_arg(unsigned i, Vector3d);
 
         void set_arg(unsigned i, Vector4u);
         void set_arg(unsigned i, Vector4i);
         void set_arg(unsigned i, Vector4f);
+        void set_arg(unsigned i, Vector4d);
 
 
 
     };
+
+
+
+    template <typename T>
+    void Parogl::set_arg(unsigned i, Buffer<T> const& buff) {
+        set_arg_buffer(i, buff.get_gl_id());
+    }
+
 
 }
 

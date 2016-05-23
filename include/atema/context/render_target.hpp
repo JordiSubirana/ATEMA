@@ -51,7 +51,7 @@ namespace at
 			virtual unsigned int get_width() const = 0;
 			virtual unsigned int get_height() const = 0;
 			
-			void draw(const RenderTarget& render_target);
+			void blit(const RenderTarget &render_target);
 			
 			void set_viewport(const Rect& rect);
 			Rect& get_viewport() noexcept;
