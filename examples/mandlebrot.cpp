@@ -36,7 +36,6 @@ static string code = ATEMA_STRINGIFY(
 			double tmp;
 
 			if (zoom == 0) {
-				i = pos[0];
 				i *= time;
 			}
 
@@ -100,7 +99,7 @@ int main() {
 
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("destTex", "Reso", "time", "os", "zoom", "Pos");
+		cpt.build("destTex", "Reso", "time", "os", "zoom");
 		cpt.set_range(ComputeSize(512 / 16, 512 / 16), ComputeSize(16, 16));
 
 		Vector2d os;

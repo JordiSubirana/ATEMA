@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <cstdio>
-#include <chrono>
+#include <cstdlib>
 
 using namespace std;
 using namespace at;
@@ -19,7 +19,11 @@ const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 		{
 			frag_color = inf;
 			gl_Position = vec4(position.x, position.y, position.z, 1.0);
-			gl_PointSize = 3.0;
+
+			if (inf.x == 0 && inf.y == 0 && inf.z == 0)
+				gl_PointSize = 8.0;
+			else
+				gl_PointSize = 1.0;
 		}
 );
 
@@ -39,6 +43,9 @@ static string code = ATEMA_STRINGIFY(
 		buffer Pos {
 				float pos_dst[];
 		};
+		buffer Vel {
+				float vel_dst[];
+		};
 		buffer Inf {
 				float inf_dst[];
 		};
@@ -49,41 +56,61 @@ static string code = ATEMA_STRINGIFY(
 			float j = i;
 
 			vec3 pos;
+			vec3 vel;
 			vec3 inf;
 
 			pos.x = pos_dst[3*i+0];
 			pos.y = pos_dst[3*i+1];
 			pos.z = pos_dst[3*i+2];
+			vel.x = vel_dst[3*i+0];
+			vel.y = vel_dst[3*i+1];
+			vel.z = vel_dst[3*i+2];
 			inf.x = inf_dst[3*i+0];
 			inf.y = inf_dst[3*i+1];
 			inf.z = inf_dst[3*i+2];
 
+			float dx = pos.x;
+			float dy = pos.y;
 
-			pos.x = cos(j);
-			pos.y = sin(j);
-			pos.z = 0;
+			float d = sqrt(dx*dx + dy*dy)+0.01;
+			float h = 1/(d*d);
 
-			inf.x = 1;
-			inf.y = 0;
-			inf.z = 0.5+0.5*cos(t);
+			vel += -0.001*vec3(dx,dy,0)*h-0.0*vel;
+			pos += vel;
+
+			inf.x = d;
+			inf.y = 1-d;
+			inf.z = 0.5+0.5*cos(t/10.0);
+
+			if (i == 0)
+				inf *= 0;
+
 
 			pos_dst[3*i+0] = pos.x;
 			pos_dst[3*i+1] = pos.y;
 			pos_dst[3*i+2] = pos.z;
+			vel_dst[3*i+0] = vel.x;
+			vel_dst[3*i+1] = vel.y;
+			vel_dst[3*i+2] = vel.z;
 			inf_dst[3*i+0] = inf.x;
 			inf_dst[3*i+1] = inf.y;
 			inf_dst[3*i+2] = inf.z;
 		}
 );
 
+float rand01() {
+	return (rand()%1000000)/1000000.0f;
+}
+
 
 int main() {
 
 	try	{
 		tic();
+		srand(3543);
 
-		const float fps=12;
-		const unsigned N = 1024;
+		const float fps=60;
+		const unsigned N = 1024*512;
 
 		Context::gl_version version;
 		version.major = 4;
@@ -106,12 +133,36 @@ int main() {
 
 		//Mesh creation : triangle position
 		Vector3f pos_d[N];
+		for (unsigned i=0 ; i<N ; i++) {
+			pos_d[i].x = cos(float(i));
+			pos_d[i].y = sin(float(i));
+			//pos_d[i].x = i*cos(2*3.141592f*float(i)/N)/N;
+			//pos_d[i].y = i*sin(2*3.141592f*float(i)/N)/N;
+			pos_d[i].z = 0;
+		}
 		Mesh pos_m(Mesh::draw_mode::points, pos_d, sizeof(pos_d)/sizeof(Vector3f));
 		Buffer<Vector3f> &pos = pos_m.elements;
 
 		//Buffer creation : triangle color
-		Vector3f inf_d[N];
-		Buffer<Vector3f> inf(inf_d, sizeof(inf_d) / sizeof(Vector3f));
+		Buffer<Vector3f> vel;
+		Vector3f *vel_d = vel.createVRAM_map(N);
+		for (unsigned i=0 ; i<N ; i++) {
+			vel_d[i].x = 0.01f*(rand01()-0.5f);
+			vel_d[i].y = 0.01f*(rand01()-0.5f);
+			vel_d[i].z = 0;
+		}
+		vel.unmap();
+
+
+		//Buffer creation : triangle color
+		Buffer<Vector3f> inf;
+		Vector3f *inf_d = inf.createVRAM_map(N);
+		for (unsigned i=0 ; i<N ; i++) {
+			inf_d[i] *= 0;
+		}
+		inf.unmap();
+
+
 
 		//Shader creation
 		Shader shader;
@@ -126,7 +177,7 @@ int main() {
 		// Parallel kernel creation
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("time", "Pos", "Inf");
+		cpt.build("time", "Pos", "Vel", "Inf");
 		cpt.set_range(ComputeSize(N / 64), ComputeSize(64));
 
 		// parametres controle
@@ -134,6 +185,8 @@ int main() {
 
 		cout << toc() << "s" << endl;
 
+		bool pause = false;
+		bool toggler = false;
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
 		{
 			tic();
@@ -145,14 +198,20 @@ int main() {
 			if (keyboard.is_pressed(Keyboard::key::down)) 		os.y -= 0.05*zoom;
 			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.05*zoom;
 			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.1;
-			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.9;
+			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.9;//*/
 			if (keyboard.is_pressed(Keyboard::key::space)) {
-				os *= 0;
-				zoom = 1.5;
-			}//*/
+				if (toggler)
+					pause = !pause;
+				toggler = false;
+			}
+			else {
+				toggler = true;
+			}
 
-			cpt(frame, pos, inf);
-
+			if (!pause) {
+				cpt(frame, pos, vel, inf);
+				frame++;
+			}
 			/*
 			pos_m.to_cpu();
 			for (int i=0 ; i<N ; i++) {
@@ -169,18 +228,15 @@ int main() {
 			inf.to_gpu();
 			return 0; //*/
 
-			glFinish();
 
 			window.clear();
 			renderer.draw(pos_m);
 
-			frame++;
-
-			sleep( msecond(10) );
 
 			float dt = 1/fps - toc();
 			if (dt > 0.0f)
 				sleep(second(dt));
+			//*/
 
 			window.update();
 		}

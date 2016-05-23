@@ -52,7 +52,10 @@ namespace at
 			
 			void create(const T *elements, size_t elements_size, update_mode update_mode = update_mode::static_draw);
 			void create(const Buffer<T>& array);
-			
+			T* createVRAM_map(size_t elements_size, update_mode update_mode = update_mode::static_draw);
+
+			void unmap() const;
+
 			T* get() noexcept;
 			const T* get() const noexcept;
 			

@@ -21,13 +21,14 @@
 #define ATEMA_GRAPHICS_BUFFER_ARRAY_IMPLEMENTATION
 
 #include <atema/core/error.hpp>
+#include <atema/graphics/buffer.hpp>
 
 namespace at
 {
 	//PUBLIC
 	template <typename T>
 	Buffer<T>::Buffer() :
-		m_internal_type(GL_ARRAY_BUFFER),
+		m_internal_type(GL_SHADER_STORAGE_BUFFER),
 		m_vbo(0),
 		m_elements(),
 		m_update_mode(update_mode::static_draw),
@@ -106,7 +107,55 @@ namespace at
 			throw;
 		}
 	}
-	
+
+
+	template <typename T>
+	T* Buffer<T>::createVRAM_map(size_t elements_size, update_mode update_mode) {
+		try
+		{
+			m_filled = false;
+			m_elements.clear();
+
+			if (!elements_size)
+				return nullptr ;
+
+			ensure_buffer();
+
+			m_update_mode = update_mode;
+
+			glBindBuffer(m_internal_type, m_vbo);
+
+			glBufferData(m_internal_type, elements_size*sizeof(T), nullptr, static_cast<GLenum>(update_mode));
+
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL could not allocate VBO.")
+
+			glBufferSubData(m_internal_type, 0, elements_size*sizeof(T), nullptr);
+
+			if (glGetError() != GL_NO_ERROR)
+				ATEMA_ERROR("OpenGL could not fill VBO.")
+
+
+			m_filled = true;
+
+			return static_cast<T*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE));
+
+		}
+		catch (const Error& e)
+		{
+			m_elements.resize(0);
+
+			throw;
+		}
+	}
+
+	template <typename T>
+	void Buffer<T>::unmap() const {
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glBindBuffer(m_internal_type, 0);
+	}
+
+
 	template <typename T>
 	void Buffer<T>::create(const Buffer<T>& array)
 	{
