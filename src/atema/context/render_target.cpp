@@ -19,7 +19,7 @@
 
 #include <atema/context/render_target.hpp>
 #include <atema/core/error.hpp>
-
+#include <iostream>
 namespace at
 {
 	thread_local RenderTarget *t_current_render_target = nullptr;
@@ -44,7 +44,12 @@ namespace at
 			this->ensure_framebuffer_exists();
 			
 			glBindFramebuffer(GL_FRAMEBUFFER, this->get_gl_framebuffer_id());
-			glViewport(m_rect.x, m_rect.y, m_rect.w, m_rect.h);
+			// glViewport(m_rect.x1, m_rect.y1, m_rect.x2, m_rect.y2);
+			glViewport(
+				(m_rect.x1 < m_rect.x2 ? m_rect.x1 : m_rect.x2),
+				(m_rect.y1 < m_rect.y2 ? m_rect.y1 : m_rect.y2),
+				(m_rect.get_width()),
+				(m_rect.get_height()));
 			
 			t_current_render_target = this;
 			glGetIntegerv(GL_VIEWPORT, t_current_viewport);
@@ -57,14 +62,27 @@ namespace at
 	
 	void RenderTarget::blit(const RenderTarget &render_target)
 	{
+		blit(render_target, render_target.m_rect, m_rect);
+	}
+	
+	void RenderTarget::blit(const RenderTarget &render_target, const Rect& src, const Rect& dst)
+	{
 		//TODO: Ensure framebuffers exist
 		this->ensure_framebuffer_exists();
 		render_target.get_gl_framebuffer_id();
 		
 		GLuint current = (t_current_render_target ? t_current_render_target->get_gl_framebuffer_id() : 0);
-		const Rect& t_rect = render_target.m_rect;
+		
 		GLuint t_id = render_target.get_gl_framebuffer_id();
 		GLuint m_id = this->get_gl_framebuffer_id();
+		
+		Rect o_src(src);
+		Rect o_dst(dst);
+		
+		((src.x1 <= src.x2) ? (o_src.x2 += 1) : (o_src.x1 += 1));
+		((src.y1 <= src.y2) ? (o_src.y2 += 1) : (o_src.y1 += 1));
+		((dst.x1 <= dst.x2) ? (o_dst.x2 += 1) : (o_dst.x1 += 1));
+		((dst.y1 <= dst.y2) ? (o_dst.y2 += 1) : (o_dst.y1 += 1));
 		
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this->get_gl_framebuffer_id());
 		if (m_id == 0)
@@ -79,12 +97,42 @@ namespace at
 		else
 			glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-		glBlitFramebuffer(	t_rect.x, t_rect.y, t_rect.w, t_rect.h,
-							m_rect.x, m_rect.y, m_rect.w, m_rect.h,
-							GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+		glBlitFramebuffer(	o_src.x1, o_src.y1, o_src.x2, o_src.y2,
+							o_dst.x1, o_dst.y1, o_dst.x2, o_dst.y2,
+							GL_COLOR_BUFFER_BIT, // | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
 							GL_NEAREST);
-		
+		static bool test = false;
+		if (!test)
+		{
+			std::cout << "src : " << o_src.x1 << ", " << o_src.y1 << ", " << o_src.x2 << ", " << o_src.y2 << std::endl;
+			std::cout << "dst : " << o_dst.x1 << ", " << o_dst.y1 << ", " << o_dst.x2 << ", " << o_dst.y2 << std::endl;
+			test = true;
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, current);
+	}
+	
+	Rect RenderTarget::compute_viewport(RenderTarget::viewport_flip flip_type)
+	{
+		Rect tmp;
+		
+		switch (flip_type)
+		{
+			case viewport_flip::none:
+				tmp.create(0, 0, this->get_width()-1, this->get_height()-1);
+				break;
+			case viewport_flip::vertical:
+				tmp.create(0, this->get_height()-1, this->get_width()-1, 0);
+				break;
+			case viewport_flip::horizontal:
+				tmp.create(this->get_width()-1, 0, 0, this->get_height()-1);
+				break;
+			case viewport_flip::both:
+			default:
+				tmp.create(this->get_width()-1, this->get_height()-1, 0, 0);
+				break;
+		}
+		std::cout << "tmp : " << tmp.x1 << ", " << tmp.y1 << ", " << tmp.x2 << ", " << tmp.y2 << std::endl;
+		return (tmp);
 	}
 	
 	void RenderTarget::set_viewport(const Rect& rect)
@@ -126,7 +174,12 @@ namespace at
 		glGetIntegerv(GL_VIEWPORT, t_current_viewport);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, this->get_gl_framebuffer_id());
-		glViewport(m_rect.x, m_rect.y, m_rect.w, m_rect.h);
+		// glViewport(m_rect.x1, m_rect.y1, m_rect.x2, m_rect.y2);
+		glViewport(
+			(m_rect.x1 < m_rect.x2 ? m_rect.x1 : m_rect.x2),
+			(m_rect.y1 < m_rect.y2 ? m_rect.y1 : m_rect.y2),
+			(m_rect.get_width()),
+			(m_rect.get_height()));
 		
 		glClearColor(m_clear_color.r, m_clear_color.g, m_clear_color.b, m_clear_color.a);
 		

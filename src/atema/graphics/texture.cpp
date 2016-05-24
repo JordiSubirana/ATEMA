@@ -69,6 +69,15 @@ namespace at
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDeleteTextures(1, &m_id);
+		
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		if (glIsFramebuffer(m_fbo) != GL_FALSE)
+			glDeleteFramebuffers(1, &m_fbo);
+		
+		if (glIsRenderbuffer(m_rbo) != GL_FALSE)
+			glDeleteRenderbuffers(1, &m_rbo);
 	}
 	
 	bool Texture::is_valid() const noexcept
@@ -100,6 +109,8 @@ namespace at
 			m_height = height;
 			
 			m_filled = true;
+			
+			set_viewport(Rect(0, 0, width-1, height-1));
 		}
 		catch (const Error& e)
 		{
@@ -159,6 +170,8 @@ namespace at
 			m_height = height;
 			
 			m_filled = true;
+			
+			set_viewport(Rect(0, 0, width-1, height-1));
 		}
 		catch (const Error& e)
 		{

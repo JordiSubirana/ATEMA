@@ -86,12 +86,12 @@ namespace at
 	
 	unsigned int Context::get_width() const
 	{
-		return (m_infos.w);
+		return (m_infos.x2);
 	}
 	
 	unsigned int Context::get_height() const
 	{
-		return (m_infos.h);
+		return (m_infos.y2);
 	}
 	
 	GLuint Context::get_gl_framebuffer_id() const
@@ -218,42 +218,40 @@ namespace at
 			
 			if (m_flags & OPTS::autoscale)
 			{
-				viewport.x = 0;
-				viewport.y = 0;
-				viewport.w = w;
-				viewport.h = h;
+				viewport.x1 = 0;
+				viewport.y1 = 0;
+				viewport.x2 = w-1;
+				viewport.y2 = h-1;
 			}
 			else
 			{
-				viewport.x = 0;
-				viewport.y = 0;
-				viewport.w = 0;
-				viewport.h = 0;
+				viewport.x1 = 0;
+				viewport.y1 = 0;
+				viewport.x2 = 0;
+				viewport.y2 = 0;
 			}
-			
-			set_viewport(viewport);
 			
 			glfwGetWindowSize(m_window, &bw, &bh);
 			
-			m_infos.w = static_cast<unsigned int>(bw);
-			m_infos.h = static_cast<unsigned int>(bh);
+			m_infos.x2 = bw;
+			m_infos.y2 = bh;
 			
 			if (name)
 				m_name = name;
 			
-			if ((m_infos.w != static_cast<int>(w)) || (m_infos.h != static_cast<int>(h)))
+			if ((m_infos.x2 != static_cast<int>(w)) || (m_infos.y2 != static_cast<int>(h)))
 			{
 				ATEMA_ERROR("Window size not available.")
 			}
 			
-			glfwGetWindowPos(m_window, &m_infos.x, &m_infos.y);
+			set_viewport(Rect(0, 0, bw-1, bh-1));
+			
+			glfwGetWindowPos(m_window, &m_infos.x1, &m_infos.y1);
 			
 			init_gl_states();
 			// register_window();
 			
 			make_current(true);
-			
-			
 		}
 		catch (Error& e)
 		{

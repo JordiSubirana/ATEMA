@@ -17,7 +17,6 @@ const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 	{
 		frag_color = color;
 		gl_Position = vec4(position.x, position.y, position.z, 1.0);
-		gl_PointSize = 10.0;
 	}
 );
 
@@ -81,7 +80,7 @@ int main()
 		renderer.set_shader(&shader);
 		
 		//Mesh creation : triangle position
-		Mesh mesh(Mesh::draw_mode::points, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
+		Mesh mesh(Mesh::draw_mode::triangles, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
 		
 		//Buffer creation : triangle color
 		Buffer<Vector3f> colors(colors_data, sizeof(colors_data) / sizeof(Vector3f));

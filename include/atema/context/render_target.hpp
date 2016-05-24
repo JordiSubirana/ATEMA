@@ -39,6 +39,14 @@ namespace at
 				all		= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
 			};
 			
+			enum class viewport_flip
+			{
+				none,
+				vertical,
+				horizontal,
+				both
+			};
+			
 		public:
 			RenderTarget();
 			virtual ~RenderTarget() noexcept = default;
@@ -52,6 +60,9 @@ namespace at
 			virtual unsigned int get_height() const = 0;
 			
 			void blit(const RenderTarget &render_target);
+			void blit(const RenderTarget &render_target, const Rect& src, const Rect& dst);
+			
+			Rect compute_viewport(viewport_flip flip_type);
 			
 			void set_viewport(const Rect& rect);
 			Rect& get_viewport() noexcept;

@@ -55,9 +55,9 @@ namespace at
 		
 		glfwSetWindowPos(m_window, x, y);
 		
-		glfwGetWindowPos(m_window, &m_infos.x, &m_infos.y);
+		glfwGetWindowPos(m_window, &m_infos.x1, &m_infos.y1);
 		
-		if ((m_infos.x != x) || (m_infos.y != y))
+		if ((m_infos.x1 != x) || (m_infos.y1 != y))
 			ATEMA_ERROR("Position was not properly set.")
 	}
 	

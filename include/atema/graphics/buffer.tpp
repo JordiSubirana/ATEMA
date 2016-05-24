@@ -28,7 +28,7 @@ namespace at
 	//PUBLIC
 	template <typename T>
 	Buffer<T>::Buffer() :
-		m_internal_type(GL_SHADER_STORAGE_BUFFER),
+		m_internal_type(GL_ARRAY_BUFFER),
 		m_vbo(0),
 		m_elements(),
 		m_update_mode(update_mode::static_draw),
@@ -110,7 +110,8 @@ namespace at
 
 
 	template <typename T>
-	T* Buffer<T>::createVRAM_map(size_t elements_size, update_mode update_mode) {
+	T* Buffer<T>::createVRAM_map(size_t elements_size, update_mode update_mode)
+	{
 		try
 		{
 			m_filled = false;
@@ -150,11 +151,11 @@ namespace at
 	}
 
 	template <typename T>
-	void Buffer<T>::unmap() const {
+	void Buffer<T>::unmap() const
+	{
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 		glBindBuffer(m_internal_type, 0);
 	}
-
 
 	template <typename T>
 	void Buffer<T>::create(const Buffer<T>& array)
