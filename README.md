@@ -8,6 +8,11 @@ This software is provided under GPL license. See the [GNU website](http://www.gn
 The goal of **ATEMA** is to provide a simple, intuitive and efficient API in order to allow developers to easily create multimedia programs, such as 2D/3D games, parallel computations on GPU, and more.  
 **ATEMA** can be used as a static/dynamic library, or you can directly include the headers you need in your project and define a special directive in your file to use **ATEMA** as an header-only library.
 
+## Developers
+
+_**Jordi SUBIRANA**_, main developer. (Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr)
+_**schlog**_, helper and developer of Parallel module.
+
 ## Dependencies
 
 As many dependencies as possible are header-only libraries. The exhaustive list is :  
@@ -34,10 +39,10 @@ This software is designed to be portable and all the modules should work on Wind
 
 ## Install
 
-A _Makefile_ system allow you to easily build the library of each module and a global one. The Makefile also build the examples in the bin repository.  
+A _makefile_ system allow you to easily build the library of each module and a global one. The makefile also build the examples in the bin directory.  
 The only prerequisite is a compatible C++11 compiler.
 
 ## Examples
 
-You can find in the [examples repository](https://github.com/JordiSubirana/ATEMA/tree/master/examples) a lot of sources showing different ways to use **ATEMA**.  
+You can find in the [examples directory](https://github.com/JordiSubirana/ATEMA/tree/master/examples) a lot of sources showing different ways to use **ATEMA**.  
 _Some screenshots will appear there soon._
