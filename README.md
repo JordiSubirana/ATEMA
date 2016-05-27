@@ -10,7 +10,7 @@ The goal of **ATEMA** is to provide a simple, intuitive and efficient API in ord
 
 ## Developers
 
-_**Jordi SUBIRANA**_, main developer. (Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr)
+_**Jordi SUBIRANA**_, main developer. (Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr))  
 _**schlog**_, helper and developer of Parallel module.
 
 ## Dependencies
