@@ -45,6 +45,15 @@ namespace at
 	}
 	
 	template <size_t COL, size_t ROW, typename T>
+	Matrix<COL, ROW, T>::Matrix(const Matrix<COL, ROW, T>& arg)
+	{
+		size_t size = COL*ROW;
+		
+		for (size_t i = 0; i < size; i++)
+			this->m_data[i] = arg.m_data[i];
+	}
+	
+	template <size_t COL, size_t ROW, typename T>
 	Matrix<COL, ROW, T>::~Matrix() noexcept
 	{
 		
@@ -99,6 +108,22 @@ namespace at
 				{
 					tmp[t_c][t_r] += this->m_columns[c][t_r] * arg[t_c][c];
 				}
+			}
+		}
+		
+		return (tmp);
+	}
+	
+	template <size_t COL, size_t ROW, typename T>
+	Vector<ROW, T> Matrix<COL, ROW, T>::operator *(const Vector<COL, T>& arg) const
+	{
+		Vector<ROW, T> tmp;
+		
+		for (size_t t_r = 0; t_r < ROW; t_r++)
+		{
+			for (size_t t_c = 0; t_c < COL; t_c++)
+			{
+				tmp[t_r] += this->m_columns[t_c][t_r] * arg[t_c];
 			}
 		}
 		
@@ -235,6 +260,15 @@ namespace at
 			ATEMA_ERROR("Index is out of range.")
 		
 		return (this->m_columns[index]);
+	}
+	
+	template <size_t COL, size_t ROW, typename T>
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(const Matrix<COL, ROW, T>& arg)
+	{
+		size_t size = COL*ROW;
+		
+		for (size_t i = 0; i < size; i++)
+			this->m_data[i] = arg.m_data[i];
 	}
 	
 	template <size_t COL, size_t ROW, typename T>

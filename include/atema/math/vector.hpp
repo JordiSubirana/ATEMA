@@ -24,6 +24,7 @@
 
 #include <iostream>
 
+//MACROS
 #define ATEMA_VECTOR_BEGIN(DIM)					\
 	template <typename T>						\
 	class Vec<DIM, T>							\
@@ -48,6 +49,7 @@
 	using Vector ## DIM ## f = Vector ## DIM <float>;			\
 	using Vector ## DIM ## d = Vector ## DIM <double>;
 
+//CLASS
 namespace at
 {
 	template <int N, typename T>
@@ -74,7 +76,7 @@ namespace at
 	ATEMA_VECTOR_END
 
 	template <size_t N, typename T>
-	class ATEMA_MATH_API Vector : public Vec<N, T>
+	class Vector : public Vec<N, T>
 	{
 		public:
 			// Vector();
@@ -91,6 +93,7 @@ namespace at
 
 			Vector<N, T>& normalize() noexcept;
 			T get_norm() const noexcept;
+			Vector<N, T> get_normalized() const noexcept;
 
 			Vector<N, T> operator +(const Vector<N, T>& arg) const;
 			Vector<N, T> operator -(const Vector<N, T>& arg) const;
@@ -140,6 +143,21 @@ namespace at
 	ATEMA_VECTOR_ALIASES(4)
 }
 
+//TOOLS
+namespace at
+{
+	template <size_t N, typename T>
+	T dot(const Vector<N, T>& v1, const Vector<N, T>& v2);
+	
+	template <typename T>
+	Vector3<T> cross(const Vector3<T>& v1, const Vector3<T>& v2);
+}
+
+//IMPLEMENTATIONS
+#include <atema/math/vector.tpp>
+#include <atema/math/vector_tools.tpp>
+
+//STANDARD OUTPUT
 template <size_t N, typename T>
 std::ostream& operator<<(std::ostream& os, const at::Vector<N, T>& vec)
 {
@@ -153,7 +171,5 @@ std::ostream& operator<<(std::ostream& os, const at::Vector<N, T>& vec)
 	
     return (os);
 }
-
-#include <atema/math/vector.tpp>
 
 #endif

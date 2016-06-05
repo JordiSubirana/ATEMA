@@ -25,6 +25,7 @@
 
 #include <iostream>
 
+//MACROS
 #define ATEMA_MATRIX_ALIASES(COL, ROW)													\
 	template <typename T>																\
 	using Matrix ## COL ## x ## ROW = Matrix<COL, ROW, T>;								\
@@ -41,6 +42,7 @@
 	using Matrix ## DIM ## f = Matrix ## DIM <float>;			\
 	using Matrix ## DIM ## d = Matrix ## DIM <double>;
 
+//CLASS
 namespace at
 {
 	template <size_t COL, size_t ROW, typename T>
@@ -49,6 +51,7 @@ namespace at
 		public:
 			Matrix();
 			Matrix(T arg);
+			Matrix(const Matrix<COL, ROW, T>& arg);
 			virtual ~Matrix() noexcept;
 			
 			Matrix<ROW, COL, T> get_transposed() const noexcept;
@@ -56,6 +59,7 @@ namespace at
 			Matrix<COL, ROW, T> operator +(const Matrix<COL, ROW, T>& arg) const;
 			Matrix<COL, ROW, T> operator -(const Matrix<COL, ROW, T>& arg) const;
 			Matrix<ROW, ROW, T> operator *(const Matrix<ROW, COL, T>& arg) const;
+			Vector<ROW, T> operator *(const Vector<COL, T>& arg) const;
 			Matrix<COL, ROW, T> operator +(T arg) const;
 			Matrix<COL, ROW, T> operator -(T arg) const;
 			Matrix<COL, ROW, T> operator *(T arg) const;
@@ -70,6 +74,8 @@ namespace at
 			
 			Vector<ROW, T>& operator[](size_t index);
 			const Vector<ROW, T>& operator[](size_t index) const;
+			
+			Matrix<COL, ROW, T>& operator=(const Matrix<COL, ROW, T>& arg);
 			
 			T* get();
 			const T* get() const;
@@ -96,6 +102,18 @@ namespace at
 	ATEMA_MATRIX_ALIASES(4,4)
 }
 
+//TOOLS
+namespace at
+{
+	template <typename T>
+	Matrix4<T> look_at(const Vector3<T>& origin_position, const Vector3<T>& target_position, const Vector3<T>& up_direction);
+}
+
+//IMPLEMENTATIONS
+#include <atema/math/matrix.tpp>
+#include <atema/math/matrix_tools.tpp>
+
+//STANDARD OUTPUT
 template <size_t COL, size_t ROW, typename T>
 std::ostream& operator<<(std::ostream& os, const at::Matrix<COL, ROW, T>& mat)
 {
@@ -115,7 +133,5 @@ std::ostream& operator<<(std::ostream& os, const at::Matrix<COL, ROW, T>& mat)
 	
     return (os);
 }
-
-#include <atema/math/matrix.tpp>
 
 #endif

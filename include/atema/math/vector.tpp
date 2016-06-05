@@ -63,6 +63,16 @@ namespace at
 		
 		return (static_cast<T>(sqrt(tmp)));
 	}
+	
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::get_normalized() const noexcept
+	{
+		Vector<N, T> tmp;
+		
+		tmp = (*this)/get_norm();
+		
+		return (tmp);
+	}
 
 	template <size_t N, typename T>
 	Vector<N, T> Vector<N, T>::operator +(const Vector<N, T>& arg) const
