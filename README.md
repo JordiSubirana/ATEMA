@@ -19,6 +19,7 @@ As many dependencies as possible are header-only libraries. The exhaustive list 
 * Header-only dependencies
  * stb_image (see [nothings/stb](https://github.com/nothings/stb) on GitHub)
  * stb_image_write (see [nothings/stb](https://github.com/nothings/stb) on GitHub)
+ * TinyJPEG (see [serge-rgb/TinyJPEG](https://github.com/serge-rgb/TinyJPEG) on GitHub)
 * Compiled dependencies
  * GLFW (see [GLFW website](http://www.glfw.org/))
  * glad (see [Dav1dde/glad](https://github.com/Dav1dde/glad) on GitHub)
