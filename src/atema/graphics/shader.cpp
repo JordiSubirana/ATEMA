@@ -53,7 +53,7 @@ namespace at
 			
 			while(getline(shader_stream, line))
 			{
-				shader_code += "" + line;
+				shader_code += "\n" + line;
 			}
 			
 			shader_stream.close();
