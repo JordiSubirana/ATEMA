@@ -15,7 +15,7 @@ int main(int argc, char ** argv)
 		
 		//Open input & output files (a file is created if it doesn't exist)
 		input_file.open("txt/basic_file.txt");
-		output_file.open("txt/file_read_output.txt");
+		output_file.open("outputs/file_read_output.txt");
 		
 		//When opened, a file is pointing on the first line
 		cout << "File current line : " << input_file.get_current_line_index() << endl;

@@ -30,6 +30,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 
+#define TJE_IMPLEMENTATION
+#include <tiny_jpeg.h>
+
 // #include <iostream>
 #include <string>
 
@@ -210,10 +213,13 @@ namespace at
 			error = stbi_write_bmp(filename, m_width, m_height, 4, data.data());
 		else if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("tga") == 0)
 			error = stbi_write_tga(filename, m_width, m_height, 4, data.data());
+		else if ((file.size() >= 5 && file.substr(file.size()-3, 3).compare("jpg") == 0) ||
+				(file.size() >= 6 && file.substr(file.size()-4, 4).compare("jpeg") == 0))
+			error = tje_encode_to_file(filename, m_width, m_height, 4, data.data());
 		else
 			ATEMA_ERROR("Invalid filename or extension.")
 		
-		if (!error) // stb_image_write functions return 0 on failure
+		if (!error) // stb_image_write and tiny_jpeg functions return 0 on failure
 			ATEMA_ERROR("An error occurred when writing to file.")
 	}
 	

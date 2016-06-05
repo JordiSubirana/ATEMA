@@ -22,7 +22,7 @@ int main()
 		
 		tex.create("images/lena-diagonals.png");
 		
-		tex.save("main_lena_save.png");
+		tex.save("outputs/main_lena_save.jpeg");
 	}
 	catch (Error& e)
 	{
