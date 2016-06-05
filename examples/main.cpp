@@ -10,42 +10,19 @@ int main()
 {
 	try
 	{
-		Vector2f vec;
-		
-		vec.x = 4.0f;
-		cout << vec.normalize().x << endl;
-		
-		Window window;
-		Keyboard keyboard;
-		
+		//Setup OpenGL version
 		Context::gl_version version;
 		version.major = 3;
 		version.minor = 3;
 		
-		window.create(640, 480, "Test", at::Window::options::visible | at::Window::options::frame, version);
+		Context context;
+		context.create(512, 512, version);
 		
-		keyboard.set_window(window);
+		Texture tex;
 		
-		printf("Hello World !\n");
+		tex.create("images/lena-diagonals.png");
 		
-		#if defined(ATEMA_SYSTEM_WINDOWS)
-		HGLRC test_context = Window::get_current_os_context();
-		
-		if (test_context)
-			printf("Windows gl context found !!!\n");
-		#elif defined(ATEMA_SYSTEM_LINUX)
-
-		GLXContext test_context = at::Window::get_current_os_context();
-		
-		if (test_context)
-			printf("Linux gl context found !!!\n");
-		//*/
-		#endif
-		
-		while (window && !keyboard.is_pressed(Keyboard::key::escape))
-		{
-			window.update();
-		}
+		tex.save("main_lena_save.png");
 	}
 	catch (Error& e)
 	{

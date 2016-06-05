@@ -27,7 +27,11 @@
 #define STBI_ONLY_TGA
 #include <stb/stb_image.h>
 
-#include <iostream>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>
+
+// #include <iostream>
+#include <string>
 
 namespace at
 {
@@ -140,8 +144,6 @@ namespace at
 			if (!data)
 				ATEMA_ERROR("Image file could not be loaded.")
 			
-			std::cout << "image w : " << w << ", h : " << h << ", bpp : " << bpp << std::endl;
-			
 			width = static_cast<unsigned int>(w);
 			height = static_cast<unsigned int>(h);
 			
@@ -179,6 +181,40 @@ namespace at
 			
 			throw;
 		}
+	}
+	
+	void Texture::save(const char *filename)
+	{
+		std::string file;
+		int error;
+		std::vector<unsigned char> data;
+		
+		if (!filename)
+			ATEMA_ERROR("No filename given.")
+		
+		data.resize(m_width*m_height*4);
+		
+		for (size_t i = 0; i < m_pixels.size(); i++)
+		{
+			for (size_t o = 0; o < 4; o++)
+			{
+				data[i*4+o] = static_cast<unsigned char>(m_pixels[i][o]*255.0f);
+			}
+		}
+		
+		file = filename;
+		
+		if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("png") == 0)
+			error = stbi_write_png(filename, m_width, m_height, 4, data.data(), 0);
+		else if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("bmp") == 0)
+			error = stbi_write_bmp(filename, m_width, m_height, 4, data.data());
+		else if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("tga") == 0)
+			error = stbi_write_tga(filename, m_width, m_height, 4, data.data());
+		else
+			ATEMA_ERROR("Invalid filename or extension.")
+		
+		if (!error) // stb_image_write functions return 0 on failure
+			ATEMA_ERROR("An error occurred when writing to file.")
 	}
 	
 	unsigned int Texture::get_width() const noexcept

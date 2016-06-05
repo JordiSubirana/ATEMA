@@ -49,6 +49,8 @@ namespace at
 			void create(unsigned int width, unsigned int height, filter min_filter = filter::nearest, filter mag_filter = filter::nearest);
 			void create(const char *filename, filter min_filter = filter::nearest, filter mag_filter = filter::nearest);
 			
+			void save(const char *filename);
+			
 			unsigned int get_width() const noexcept;
 			unsigned int get_height() const noexcept;
 			
