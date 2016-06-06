@@ -36,6 +36,8 @@ namespace at
 			
 			static Mesh create_grid_mesh(size_t div_x, size_t div_y, const Vector3f& p1 = Vector3f(-1.0f, 1.0f, 0.0f), const Vector3f& p2 = Vector3f(-1.0f, -1.0f, 0.0f), const Vector3f& p3 = Vector3f(1.0f, 1.0f, 0.0f));
 			static Buffer<Vector2f> create_grid_texture_coordinates(size_t div_x, size_t div_y, const Vector2f& p1 = Vector2f(0.0f, 0.0f), const Vector2f& p2 = Vector2f(0.0f, 1.0f), const Vector2f& p3 = Vector2f(1.0f, 0.0f));
+			
+			static Mesh create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin = Vector3f(0.0f, 0.0f, 0.0f));
 	};
 }
 

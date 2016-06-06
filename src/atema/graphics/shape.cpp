@@ -18,6 +18,7 @@
 // ----------------------------------------------------------------------
 
 #include <atema/graphics/shape.hpp>
+#include <atema/math/tools.hpp>
 #include <atema/core/error.hpp>
 
 #include <vector>
@@ -165,5 +166,119 @@ namespace at
 		array.create(points.data(), points.size());
 		
 		return (array);
+	}
+	
+	//SPHERE
+	Mesh Shape::create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin)
+	{
+		Mesh mesh;
+		std::vector<Vector3f> points;
+		std::vector<unsigned int> indices;
+		
+		size_t index;
+		size_t index_max;
+		
+		float dslice = ATEMA_DEG_TO_RAD( 360.0f/nb_slices );
+		float dstack = ATEMA_DEG_TO_RAD( 180.0f/(nb_stacks-1) );
+		
+		const float rad_pi = static_cast<float>(ATEMA_PI);
+		const float rad_2pi = 2*rad_pi;
+		
+		float u;
+		float t;
+		
+		points.resize(2 + nb_slices*(nb_stacks-2));
+		indices.resize(2*3*nb_slices*(nb_stacks-2));
+		
+		//POINTS
+		//Sphere top
+		points[0] = origin;
+		points[0].y += radius;
+		
+		//Sphere middle
+		index = 1;
+		u = 0.0f;
+		t = dstack;
+		for (size_t y = 0; y < nb_stacks-2; y++)
+		{
+			u = 0.0f;
+			
+			for (size_t x = 0; x < nb_slices; x++)
+			{
+				points[index] = origin;
+				
+				points[index].x += static_cast<float>(radius * std::sin(t) * std::cos(u));
+				points[index].y += static_cast<float>(radius * std::cos(t));
+				points[index].z += static_cast<float>(radius * std::sin(t) * std::sin(u));
+				
+				u += dslice;
+				
+				index++;
+			}
+			
+			t += dstack;
+		}
+		
+		//Sphere down
+		points[points.size()-1] = origin;
+		points[points.size()-1].y -= radius;
+		
+		//INDICES
+		//Sphere top
+		index = 1;
+		index_max = nb_slices*3;
+		for (size_t i = 0; i < index_max; i += 3)
+		{
+			indices[i+0] = 0; //Common point : sphere top
+			indices[i+1] = index++;
+			if (i < index_max-3)
+				indices[i+2] = index;
+			else //Closing the loop !
+				indices[i+2] = index - nb_slices;
+		}
+		
+		//Shere middle : offset of 1 because of the top point
+		index = index_max;
+		for (size_t y = 0; y < nb_stacks-3; y++)
+		{
+			for (size_t x = 0; x < nb_slices; x++)
+			{
+				if (x < nb_slices-1)
+				{
+					indices[index++] = static_cast<unsigned int>(1 + x		+ y*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x		+(y+1)*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+ y*nb_slices); //Change 1
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+ y*nb_slices); //Change 2
+					indices[index++] = static_cast<unsigned int>(1 + x		+(y+1)*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+(y+1)*nb_slices); //Change 3
+				}
+				else //Closing the loop !
+				{
+					indices[index++] = static_cast<unsigned int>(1 + x		+ y*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x		+(y+1)*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+(y-1)*nb_slices); //Change 1
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+(y-1)*nb_slices); //Change 2
+					indices[index++] = static_cast<unsigned int>(1 + x		+(y+1)*nb_slices);
+					indices[index++] = static_cast<unsigned int>(1 + x+1	+(y+0)*nb_slices); //Change 3
+				}
+			}
+		}
+		
+		//Sphere down
+		index_max = indices.size();
+		index = points.size() - 1 - nb_slices;
+		for (size_t i = index_max - (nb_slices*3); i < index_max; i += 3)
+		{
+			indices[i+0] = index++;
+			indices[i+1] = points.size()-1; //Common point : sphere down
+			if (i < index_max-3)
+				indices[i+2] = index;
+			else //Closing the loop !
+				indices[i+2] = index - nb_slices;
+		}
+		
+		mesh.create(Mesh::draw_mode::triangles, points.data(), points.size(), indices.data(), indices.size());
+		
+		return (mesh);
 	}
 }

@@ -17,13 +17,14 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GLOBAL_MATH_HEADER
-#define ATEMA_GLOBAL_MATH_HEADER
+#ifndef ATEMA_MATH_TOOLS_HEADER
+#define ATEMA_MATH_TOOLS_HEADER
 
 #include <atema/math/config.hpp>
-#include <atema/math/matrix.hpp>
-#include <atema/math/rect.hpp>
-#include <atema/math/tools.hpp>
-#include <atema/math/vector.hpp>
+
+#define ATEMA_PI 3.14159265358979323846
+
+#define ATEMA_DEG_TO_RAD(at_degrees) ((at_degrees)*ATEMA_PI/180.0f)
+#define ATEMA_RAD_TO_DEG(at_radians) ((at_radians)*180.0f/ATEMA_PI)
 
 #endif
