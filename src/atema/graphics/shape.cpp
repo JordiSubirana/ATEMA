@@ -71,8 +71,6 @@ namespace at
 		Vector3f dx;
 		Vector3f dy;
 		
-		Vector3f tmp;
-		
 		size_t index;
 		
 		if (!div_x || !div_y)
@@ -84,22 +82,15 @@ namespace at
 		dx = (p3-p1)/static_cast<float>(div_x);
 		dy = (p2-p1)/static_cast<float>(div_y);
 		
-		tmp = p1;
-		
 		index = 0;
 		
 		for (size_t y = 0; y < points_y; y++)
 		{
 			for (size_t x = 0; x < points_x; x++)
 			{
-				points[index] = tmp;
+				points[index] = p1 + dx*static_cast<float>(x) + dy*static_cast<float>(y);
 				index++;
-				
-				tmp += dx;
 			}
-			
-			tmp -= (dx*static_cast<float>(points_x));
-			tmp += dy;
 		}
 		
 		index = 0;

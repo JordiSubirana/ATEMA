@@ -57,6 +57,7 @@ namespace at
 			void set_varying(const char *name, const Buffer<Vector2f>& array);
 			void set_varying(const char *name, const Buffer<Vector3f>& array);
 			void set_varying(const char *name, const Buffer<Vector4f>& array);
+			void set_varying(const char *name, const Buffer<Color>& array);
 			void delete_varying(const char *name);
 			
 			void bind() const;

@@ -36,7 +36,7 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//Mesh creation : grid with 30*30 cells
+		//Mesh creation
 		Mesh mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
 		
 		bool toggle_polygone_mode = false;

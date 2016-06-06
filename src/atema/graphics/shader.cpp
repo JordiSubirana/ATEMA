@@ -698,6 +698,30 @@ namespace at
 		}
 	}
 	
+	void Shader::set_varying(const char *name, const Buffer<Color>& array)
+	{
+		try
+		{
+			GLint location;
+			
+			ensure_vao(); //At this point VAO is created or an exception is thrown
+			
+			location = get_location(name);
+			
+			glBindVertexArray(m_vao);
+			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+			glEnableVertexAttribArray(location);
+			glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, 0);
+			glBindVertexArray(0);
+			
+			// m_arr_vec4[location] = &array;
+		}
+		catch (const Error& e)
+		{
+			throw;
+		}
+	}
+	
 	void Shader::delete_varying(const char *name)
 	{
 		try
