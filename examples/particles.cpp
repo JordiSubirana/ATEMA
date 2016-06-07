@@ -9,18 +9,21 @@ using namespace std;
 using namespace at;
 
 
-#define POINTS_X 256
-#define POINTS_Y 256
 
 const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 		layout(location = 0) in vec3 position;
-		layout(location = 1) in vec3 color;
+		layout(location = 1) in vec3 inf;
 		out vec3 frag_color;
 
-		void main() {
-			frag_color = color;
-			gl_Position = vec4(position.x, position.y, position.z, 4.0)/4;
-			gl_PointSize = 1.0;
+		void main()
+		{
+			frag_color = inf;
+			gl_Position = vec4(position.x, position.y, position.z, 1.0);
+
+			if (inf.x == 0 && inf.y == 0 && inf.z == 0)
+				gl_PointSize = 8.0;
+			else
+				gl_PointSize = 1.0;
 		}
 );
 
@@ -40,44 +43,45 @@ static string code = ATEMA_STRINGIFY(
 			float y;
 			float z;
 		};
-		struct Color {
-			float r;
-			float g;
-			float b;
-			float a;
-		};
 
 
-		uniform float t;
-		buffer Mesh {
-				vec3_fix mesh[];
+		uniform uint time;
+		buffer Pos {
+				vec3_fix pos[];
 		};
-		buffer Colors {
-				Color c[];
+		buffer Vel {
+				vec3_fix vel[];
 		};
-		uniform uint cmd;
+		buffer Inf {
+				vec3_fix inf[];
+		};
 
 		void main() {
-			uint id = gl_GlobalInvocationID.x;
-			c[id].r *= 1;
+			uint i = gl_GlobalInvocationID.x;
+			float t = time;
+			float j = i;
 
-			float r = mesh[id].x;
-			float i = mesh[id].y;
-			float m = sqrt(r*r + i*i);
-			float a = atan(i, r);
+			float dx = pos[i].x;
+			float dy = pos[i].y;
 
+			float d = sqrt(dx*dx + dy*dy)+0.01;
+			float h = 1/(d*d);
 
-			if (cmd == 0) {
-				float k = 1.5+0.5*cos(3.141592+t);
-				m = pow(m, k);
-				a = a*k;
-				r = m*cos(a);
-				i = m*sin(a);
+			vel[i].x += -0.001*dx*h-0.0*vel[i].x;
+			vel[i].y += -0.001*dy*h-0.0*vel[i].y;
+			pos[i].x += vel[i].x;
+			pos[i].y += vel[i].y;
+			pos[i].z = 0;
+
+			inf[i].x = d;
+			inf[i].y = 1-d;
+			inf[i].z = 0.5+0.5*cos(t/10.0);
+
+			if (i == 0) {
+				inf[i].x = 0;
+				inf[i].y = 0;
+				inf[i].z = 0;
 			}
-
-
-			mesh[id].x = r;
-			mesh[id].y = i;
 		}
 );
 
@@ -102,22 +106,9 @@ int main() {
 		Window window;
 		window.create(512, 512, "Particle", Window::options::visible | Window::options::frame | Window::options::resizable , version);
 		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));
-		window.set_clear_color(Color(0.3,0.3,0.3,1.0));
 
 		Keyboard keyboard;
 		keyboard.set_window(window);
-
-
-		//Shader creation
-		Shader shader;
-		shader.create_from_memory("position", vertex_shader, fragment_shader);
-
-		//Renderer creation
-		Renderer renderer;
-		renderer.set_target(&window);
-		renderer.set_shader(&shader);
-		renderer.set_polygon_mode(Renderer::polygon_mode::points);
-
 
 		cout << "==================================================\n";
 		cout << "GL_VENDOR   : " << (char const*)glGetString(GL_VENDOR) << endl;
@@ -127,59 +118,63 @@ int main() {
 		cout << "==================================================\n";
 
 
-		//Mesh creation : grid of (cell_x * cell_y) cells --> (cell_x + 1) * (cell_y + 1) points
-		Mesh mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1, Vector3f(-2.0f, 2.0f, 0.0f), Vector3f(-2.0f, -2.0f, 0.0f), Vector3f(2.0f, 2.0f, 0.0f));
-		//Mesh mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1);
-
-
-		//Color buffer
-		std::vector<Color> colors_vector;
-		colors_vector.resize(mesh.elements.get_size());
-		try
-		{
-			Texture texture;
-			texture.create("images/big-lena.png");
-			size_t dx = texture.get_width() / POINTS_X;
-			size_t dy = texture.get_height() / POINTS_Y;
-
-			for (size_t y = 0; y < POINTS_Y; y++) {
-				for (size_t x = 0; x < POINTS_X; x++) {
-					size_t xi = x*dx;
-					size_t yi = y*dy;
-
-					colors_vector[x + y*POINTS_X] = texture[xi + yi*texture.get_width()];
-				}
-			}
+		//Mesh creation : triangle position
+		Vector3f pos_d[N];
+		for (unsigned i=0 ; i<N ; i++) {
+			pos_d[i].x = cos(float(i));
+			pos_d[i].y = sin(float(i));
+			//pos_d[i].x = i*cos(2*3.141592f*float(i)/N)/N;
+			//pos_d[i].y = i*sin(2*3.141592f*float(i)/N)/N;
+			pos_d[i].z = 0;
 		}
-		catch (...)
-		{
-			cerr << "image not found" << endl;
-			//Put random colors
-			for (size_t i = 0; i < colors_vector.size(); i++) {
-				float i_norm = static_cast<float>(i)/static_cast<float>(colors_vector.size());
-				colors_vector[i] = Color(i_norm, 1.0f-i_norm, (i_norm/2.0f)+0.25f, 1.0f);
-			}
+		Mesh pos_m(Mesh::draw_mode::points, pos_d, sizeof(pos_d)/sizeof(Vector3f));
+		Buffer<Vector3f> &pos = pos_m.elements;
+
+
+		//Buffer creation : triangle color
+		Buffer<Vector3f> vel;
+		Vector3f *vel_d = vel.createVRAM_map(N);
+		if (!vel_d) {
+			ATEMA_ERROR("mapping failed")
 		}
+		for (unsigned i=0 ; i<N ; i++) {
+			vel_d[i].x = 0.01f*(rand01()-0.5f);
+			vel_d[i].y = 0.01f*(rand01()-0.5f);
+			vel_d[i].z = 0;
+		}
+		vel.unmap();
 
-		Buffer<Color> colors;
-		colors.create(colors_vector.data(), colors_vector.size());
-		shader.set_varying("color", colors);
+
+		//Buffer creation : triangle color
+		Buffer<Vector3f> inf;
+		Vector3f *inf_d = inf.createVRAM_map(N);
+		for (unsigned i=0 ; i<N ; i++) {
+			inf_d[i] *= 0;
+		}
+		inf.unmap();
 
 
+		//Shader creation
+		Shader shader;
+		shader.create_from_memory("position", vertex_shader, fragment_shader);
+		shader.set_varying("inf", inf);
 
+		//Renderer creation
+		Renderer renderer;
+		renderer.set_target(&window);
+		renderer.set_shader(&shader);
 
 		// Parallel kernel creation
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("t", "Mesh", "Colors", "cmd");
-		cpt.set_range(ComputeSize(POINTS_X * POINTS_Y / 64), ComputeSize(64));//*/
+		cpt.build("time", "Pos", "Vel", "Inf");
+		cpt.set_range(ComputeSize(N / 64), ComputeSize(64));
 
 		// parametres controle
-		unsigned cmd = 0;
+		unsigned frame = 1;
 
 		cout << toc() << "s" << endl;
 
-		float t = 0;
 		bool pause = false;
 		bool toggler = false;
 		while (window && !keyboard.is_pressed(Keyboard::key::escape))
@@ -194,10 +189,6 @@ int main() {
 			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.05*zoom;
 			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.1;
 			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.9;//*/
-			if (keyboard.is_pressed(Keyboard::key::r))  {
-				colors.to_gpu();
-				mesh.elements.to_gpu();
-			}
 			if (keyboard.is_pressed(Keyboard::key::space)) {
 				if (toggler)
 					pause = !pause;
@@ -208,14 +199,28 @@ int main() {
 			}
 
 			if (!pause) {
-				t += 1.0f/fps;
-				mesh.elements.to_gpu();
-				cpt(t, mesh.elements, colors, cmd);
+				cpt(frame, pos, vel, inf);
+				frame++;
 			}
+			/*
+			pos_m.to_cpu();
+			for (int i=0 ; i<N ; i++) {
+				Vector3f &elt = pos_m.elements[i];
+				cout << elt << endl;
+				elt.x = (float) cos(i*1.0);
+				elt.y = (float) sin(i*1.0);
+				elt.z = 0;
+				inf[i].x = 0;
+				inf[i].y = 1;
+				inf[i].z = 0.5;
+			}
+			pos_m.to_gpu();
+			inf.to_gpu();
+			return 0; //*/
 
 
 			window.clear();
-			renderer.draw(mesh);
+			renderer.draw(pos_m);
 
 
 			float dt = 1/fps - toc();

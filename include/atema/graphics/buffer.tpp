@@ -23,6 +23,8 @@
 #include <atema/core/error.hpp>
 #include <atema/graphics/buffer.hpp>
 
+
+
 namespace at
 {
 	//PUBLIC
@@ -139,7 +141,7 @@ namespace at
 
 			m_filled = true;
 
-			return static_cast<T*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE));
+			return static_cast<T*>(glMapBuffer(m_internal_type, GL_READ_WRITE));
 
 		}
 		catch (const Error& e)
@@ -153,7 +155,7 @@ namespace at
 	template <typename T>
 	void Buffer<T>::unmap() const
 	{
-		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glUnmapBuffer(m_internal_type);
 		glBindBuffer(m_internal_type, 0);
 	}
 

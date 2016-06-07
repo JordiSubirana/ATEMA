@@ -131,7 +131,7 @@ int main()
 	catch (Error& e)
 	{
 		printf("ERROR\n");
-		printf("%s", e.what());
+		printf("%s\n", e.what());
 	}
 	
 	return 0;
