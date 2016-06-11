@@ -17,85 +17,85 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <atema/graphics/mesh.hpp>
+#include <atema/graphics/mesh_element.hpp>
 #include <atema/graphics/renderer.hpp>
 
 namespace at
 {
-	Mesh::Mesh() :
-		m_draw_mode(Mesh::draw_mode::points)
+	MeshElement::MeshElement() :
+		m_draw_mode(MeshElement::draw_mode::points)
 	{
 		
 	}
 	
-	Mesh::Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
-		Mesh()
+	MeshElement::MeshElement(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode) :
+		MeshElement()
 	{
 		create(mesh_draw_mode, elements, elements_size, indices, indices_size, elements_update_mode, indices_update_mode);
 	}
 	
-	Mesh::Mesh(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices) :
-		Mesh()
+	MeshElement::MeshElement(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices) :
+		MeshElement()
 	{
 		create(mesh_draw_mode, elements, indices);
 	}
 	
-	Mesh::Mesh(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array) :
-		Mesh(mesh_draw_mode, indexed_array.elements, indexed_array.indices)
+	MeshElement::MeshElement(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array) :
+		MeshElement(mesh_draw_mode, indexed_array.elements, indexed_array.indices)
 	{
 		
 	}
 	
-	Mesh::Mesh(const Mesh& mesh) :
-		Mesh(mesh.m_draw_mode, static_cast<const IndexedArray<Vector3f>&>(mesh))
+	MeshElement::MeshElement(const MeshElement& mesh) :
+		MeshElement(mesh.m_draw_mode, static_cast<const IndexedArray<Vector3f>&>(mesh))
 	{
 		
 	}
 	
-	Mesh::~Mesh() noexcept
+	MeshElement::~MeshElement() noexcept
 	{
 		
 	}
 	
-	void Mesh::create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
+	void MeshElement::create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices, size_t indices_size, typename Buffer<Vector3f>::update_mode elements_update_mode, IndexArray::update_mode indices_update_mode)
 	{
 		m_draw_mode = mesh_draw_mode;
 		IndexedArray<Vector3f>::create(elements, elements_size, indices, indices_size, elements_update_mode, indices_update_mode);
 	}
 	
-	void Mesh::create(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices)
+	void MeshElement::create(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices)
 	{
 		m_draw_mode = mesh_draw_mode;
 		IndexedArray<Vector3f>::create(elements, indices);
 	}
 	
-	void Mesh::create(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array)
+	void MeshElement::create(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array)
 	{
 		create(mesh_draw_mode, indexed_array.elements, indexed_array.indices);
 	}
 	
-	void Mesh::create(const Mesh& mesh)
+	void MeshElement::create(const MeshElement& mesh)
 	{
 		create(mesh.m_draw_mode, static_cast<const IndexedArray<Vector3f>&>(mesh));
 	}
 	
-	void Mesh::set_draw_mode(draw_mode mesh_draw_mode) noexcept
+	void MeshElement::set_draw_mode(draw_mode mesh_draw_mode) noexcept
 	{
 		m_draw_mode = mesh_draw_mode;
 	}
 	
-	Mesh::draw_mode Mesh::get_draw_mode() const noexcept
+	MeshElement::draw_mode MeshElement::get_draw_mode() const noexcept
 	{
 		return (m_draw_mode);
 	}
 	
-	bool Mesh::is_valid() const noexcept
+	bool MeshElement::is_valid() const noexcept
 	{
 		return (elements.is_valid());
 	}
 	
 	//PRIVATE
-	bool Mesh::ensure_indices()
+	bool MeshElement::ensure_indices()
 	{
 		if (indices.is_valid())
 			return (true);
@@ -114,7 +114,7 @@ namespace at
 		return (true);
 	}
 	
-	void Mesh::draw(const Renderer& renderer)
+	void MeshElement::draw(const Renderer& renderer)
 	{
 		GLint entry_location;
 		

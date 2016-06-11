@@ -36,8 +36,8 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//Mesh creation : grid with 30*30 cells
-		Mesh mesh = Shape::create_grid_mesh(30, 30, Vector3f(-0.8f, 0.8f, 0.0f), Vector3f(-0.8f, -0.8f, 0.0f), Vector3f(0.8f, 0.8f, 0.0f));
+		//MeshElement creation : grid with 30*30 cells
+		MeshElement mesh = Shape::create_grid_mesh(30, 30, Vector3f(-0.8f, 0.8f, 0.0f), Vector3f(-0.8f, -0.8f, 0.0f), Vector3f(0.8f, 0.8f, 0.0f));
 		
 		//Grid texture coordinates
 		Buffer<Vector2f> tex_coords = Shape::create_grid_texture_coordinates(30, 30);

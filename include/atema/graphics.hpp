@@ -26,7 +26,7 @@
 #include <atema/graphics/drawable.hpp>
 #include <atema/graphics/index_array.hpp>
 #include <atema/graphics/indexed_array.hpp>
-#include <atema/graphics/mesh.hpp>
+#include <atema/graphics/mesh_element.hpp>
 #include <atema/graphics/renderer.hpp>
 #include <atema/graphics/shader.hpp>
 #include <atema/graphics/shape.hpp>

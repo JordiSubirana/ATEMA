@@ -17,8 +17,8 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GRAPHICS_MESH_HEADER
-#define ATEMA_GRAPHICS_MESH_HEADER
+#ifndef ATEMA_GRAPHICS_MESH_ELEMENT_HEADER
+#define ATEMA_GRAPHICS_MESH_ELEMENT_HEADER
 
 #include <atema/graphics/config.hpp>
 #include <atema/graphics/indexed_array.hpp>
@@ -30,7 +30,7 @@ namespace at
 {
 	class Renderer;
 	
-	class ATEMA_GRAPHICS_API Mesh : public IndexedArray<Vector3f>, public Drawable
+	class ATEMA_GRAPHICS_API MeshElement : public IndexedArray<Vector3f>, public Drawable
 	{
 		public:
 			using IndexedArray<Vector3f>::create;
@@ -53,17 +53,17 @@ namespace at
 			};
 			
 		public:
-			Mesh();
-			Mesh(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<Vector3f>::update_mode elements_update_mode = Buffer<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
-			Mesh(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices);
-			Mesh(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array);
-			Mesh(const Mesh& mesh);
-			virtual ~Mesh() noexcept;
+			MeshElement();
+			MeshElement(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<Vector3f>::update_mode elements_update_mode = Buffer<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
+			MeshElement(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices);
+			MeshElement(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array);
+			MeshElement(const MeshElement& mesh);
+			virtual ~MeshElement() noexcept;
 			
 			void create(draw_mode mesh_draw_mode, const Vector3f *elements, size_t elements_size, unsigned int *indices = nullptr, size_t indices_size = 0, typename Buffer<Vector3f>::update_mode elements_update_mode = Buffer<Vector3f>::update_mode::static_draw, IndexArray::update_mode indices_update_mode = IndexArray::update_mode::static_draw);
 			void create(draw_mode mesh_draw_mode, const Buffer<Vector3f>& elements, const IndexArray& indices);
 			void create(draw_mode mesh_draw_mode, const IndexedArray<Vector3f>& indexed_array);
-			void create(const Mesh& mesh);
+			void create(const MeshElement& mesh);
 			
 			void set_draw_mode(draw_mode mesh_draw_mode) noexcept;
 			draw_mode get_draw_mode() const noexcept;

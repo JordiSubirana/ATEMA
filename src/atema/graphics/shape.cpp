@@ -26,9 +26,9 @@
 namespace at
 {
 	//TRIANGLE
-	Mesh Shape::create_triangle_mesh(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3)
+	MeshElement Shape::create_triangle_mesh(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3)
 	{
-		Mesh mesh;
+		MeshElement mesh;
 		std::vector<Vector3f> points;
 		
 		points.resize(3);
@@ -37,7 +37,7 @@ namespace at
 		points[1] = p2;
 		points[2] = p3;
 		
-		mesh.create(Mesh::draw_mode::triangles, points.data(), points.size());
+		mesh.create(MeshElement::draw_mode::triangles, points.data(), points.size());
 		
 		return (mesh);
 	}
@@ -59,9 +59,9 @@ namespace at
 	}
 	
 	//GRID
-	Mesh Shape::create_grid_mesh(size_t div_x, size_t div_y, const Vector3f& p1, const Vector3f& p2, const Vector3f& p3)
+	MeshElement Shape::create_grid_mesh(size_t div_x, size_t div_y, const Vector3f& p1, const Vector3f& p2, const Vector3f& p3)
 	{
-		Mesh mesh;
+		MeshElement mesh;
 		std::vector<Vector3f> points;
 		std::vector<unsigned int> indices;
 		
@@ -108,7 +108,7 @@ namespace at
 			}
 		}
 		
-		mesh.create(Mesh::draw_mode::triangles, points.data(), points.size(), indices.data(), indices.size());
+		mesh.create(MeshElement::draw_mode::triangles, points.data(), points.size(), indices.data(), indices.size());
 		
 		return (mesh);
 	}
@@ -160,9 +160,9 @@ namespace at
 	}
 	
 	//SPHERE
-	Mesh Shape::create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin)
+	MeshElement Shape::create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin)
 	{
-		Mesh mesh;
+		MeshElement mesh;
 		std::vector<Vector3f> points;
 		std::vector<unsigned int> indices;
 		
@@ -268,7 +268,7 @@ namespace at
 				indices[i+2] = index - nb_slices;
 		}
 		
-		mesh.create(Mesh::draw_mode::triangles, points.data(), points.size(), indices.data(), indices.size());
+		mesh.create(MeshElement::draw_mode::triangles, points.data(), points.size(), indices.data(), indices.size());
 		
 		return (mesh);
 	}
