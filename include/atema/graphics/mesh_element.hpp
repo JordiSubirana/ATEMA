@@ -29,9 +29,12 @@
 namespace at
 {
 	class Renderer;
+	class Mesh;
 	
 	class ATEMA_GRAPHICS_API MeshElement : public IndexedArray<Vector3f>, public Drawable
 	{
+		friend class at::Mesh;
+		
 		public:
 			using IndexedArray<Vector3f>::create;
 			

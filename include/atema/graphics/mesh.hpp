@@ -17,22 +17,34 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HEADER
-#define ATEMA_GLOBAL_GRAPHICS_HEADER
+#ifndef ATEMA_GRAPHICS_MESH_HEADER
+#define ATEMA_GRAPHICS_MESH_HEADER
 
-#include "atema/graphics/buffer.hpp"
-#include <atema/graphics/color.hpp>
 #include <atema/graphics/config.hpp>
-#include <atema/graphics/drawable.hpp>
-#include <atema/graphics/index_array.hpp>
-#include <atema/graphics/indexed_array.hpp>
-#include <atema/graphics/material.hpp>
-#include <atema/graphics/mesh.hpp>
 #include <atema/graphics/mesh_element.hpp>
-#include <atema/graphics/model.hpp>
-#include <atema/graphics/renderer.hpp>
-#include <atema/graphics/shader.hpp>
-#include <atema/graphics/shape.hpp>
-#include <atema/graphics/texture.hpp>
+#include <atema/graphics/drawable.hpp>
+
+#include <vector>
+
+namespace at
+{
+	class Model;
+	
+	class ATEMA_GRAPHICS_API Mesh : public Drawable
+	{
+		friend class at::Model;
+		
+		public:
+			Mesh();
+			virtual ~Mesh();
+			
+			void create(const char *filename);
+			
+		private:
+			void draw(const Renderer& renderer);
+			
+			std::vector<MeshElement> m_elements;
+	};
+}
 
 #endif

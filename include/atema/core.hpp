@@ -24,6 +24,7 @@
 #include <atema/core/duration.hpp>
 #include <atema/core/error.hpp>
 #include <atema/core/file.hpp>
+#include <atema/core/file_stream.hpp>
 #include <atema/core/flags.hpp>
 #include <atema/core/non_copyable.hpp>
 #include <atema/core/timer.hpp>
