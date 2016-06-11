@@ -39,6 +39,11 @@ namespace at
 		
 	}
 	
+	Mesh& Model::get_mesh() noexcept
+	{
+		return (m_mesh);
+	}
+	
 	void Model::create(const char *filename)
 	{
 		bool valid_tmp = m_valid;
@@ -49,11 +54,14 @@ namespace at
 		m_valid = false;
 		
 		if (File::extension_match(filename, "obj"))
+		{
 			load_obj(filename);
+		}
 		else
+		{
 			m_valid = valid_tmp;
-		
-		ATEMA_ERROR("Invalid filename or extension.")
+			ATEMA_ERROR("Invalid filename or extension.")
+		}
 	}
 	
 	bool Model::is_valid() const noexcept
@@ -66,6 +74,8 @@ namespace at
 	{
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
+		
+		std::string directory;
 
 		std::string err;
 		bool ret = tinyobj::LoadObj(shapes, materials, err, filename);
@@ -89,15 +99,17 @@ namespace at
 			if ((shapes[i].mesh.positions.size() == 0) || (shapes[i].mesh.positions.size()%3 != 0))
 				ATEMA_ERROR("Invalid vertices size.")
 			
-			mesh_elements[i].elements.create(reinterpret_cast<Vector3f*>(shapes[i].mesh.positions.data()), shapes[i].mesh.positions.size()/3);
+			mesh_elements[i].create(MeshElement::draw_mode::triangles, reinterpret_cast<Vector3f*>(shapes[i].mesh.positions.data()), shapes[i].mesh.positions.size()/3);
 			
 			if (shapes[i].mesh.indices.size() > 0)
-				mesh_elements[i].indices.create(shapes[i].mesh.indices.data(), shapes[i].mesh.indices.size());
+				mesh_elements[i].indices.create(shapes[i].mesh.indices.data(), shapes[i].mesh.indices.size());				
 			
 			//MATERIAL IDs shapes[i].mesh.material_ids.size()
 		}
 		
 		m_materials.resize(materials.size());
+		
+		directory = File::get_path(filename);
 		
 		for (size_t i = 0; i < m_materials.size(); i++)
 		{
@@ -114,9 +126,12 @@ namespace at
 			// m_materials[i].dissolve = materials[i].dissolve; //dissolve
 			// m_materials[i].illum = materials[i].illum; //illum
 			
-			m_materials[i].ambient_texture.create(materials[i].ambient_texname.c_str()); //map_Ka
-			m_materials[i].diffuse_texture.create(materials[i].diffuse_texname.c_str()); //map_Kd
-			m_materials[i].specular_texture.create(materials[i].specular_texname.c_str()); //map_Ks
+			if (!materials[i].ambient_texname.empty())
+				m_materials[i].ambient_texture.create((directory + materials[i].ambient_texname).c_str()); //map_Ka
+			if (!materials[i].diffuse_texname.empty())
+				m_materials[i].diffuse_texture.create((directory + materials[i].diffuse_texname).c_str()); //map_Kd
+			if (!materials[i].specular_texname.empty())
+				m_materials[i].specular_texture.create((directory + materials[i].specular_texname).c_str()); //map_Ks
 			// m_materials[i].specular_highlight_texture.create(materials[i].specular_highlight_texname.c_str()); //map_Ns
 		}
 		

@@ -54,6 +54,8 @@ namespace at
 			Matrix(const Matrix<COL, ROW, T>& arg);
 			virtual ~Matrix() noexcept;
 			
+			Matrix<ROW, COL, T>& identity();
+			
 			Matrix<ROW, COL, T> get_transposed() const noexcept;
 			
 			Matrix<COL, ROW, T> operator +(const Matrix<COL, ROW, T>& arg) const;
@@ -103,10 +105,32 @@ namespace at
 }
 
 //TOOLS
+template <typename T>
+at::Vector3<T> operator*(const at::Matrix4<T>& mat, const at::Vector3<T>& vec);
+
 namespace at
 {
-	template <typename T>
-	Matrix4<T> look_at(const Vector3<T>& origin_position, const Vector3<T>& target_position, const Vector3<T>& up_direction);
+	class Transform
+	{
+		public:
+			Transform() = delete;
+			virtual ~Transform() = delete;
+			
+			template <typename T>
+			static Matrix4<T> look_at(const Vector3<T>& origin_position, const Vector3<T>& target_position, const Vector3<T>& up_direction);
+			
+			template <typename T>
+			static Matrix4<T> perspective(T fov, T ratio, T z_near, T z_far);
+			
+			template <typename T>
+			static Matrix4<T> rotation(T angle_rad, const Vector3<T>& axis);
+			
+			template <typename T>
+			static Matrix4<T> translation(const Vector3<T>& vector);
+			
+			template <typename T>
+			static Matrix4<T> scale(const Vector3<T>& vector);
+	};
 }
 
 //IMPLEMENTATIONS

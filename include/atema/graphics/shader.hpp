@@ -26,8 +26,9 @@
 #include <atema/core/non_copyable.hpp>
 #include <atema/math/vector.hpp>
 #include <atema/graphics/texture.hpp>
-#include "buffer.hpp"
+#include <atema/graphics/buffer.hpp>
 #include <atema/graphics/color.hpp>
+#include <atema/math/matrix.hpp>
 
 #include <map>
 
@@ -47,12 +48,12 @@ namespace at
 			GLuint get_gl_vao_id() const;
 			
 			void set_uniform(const char *name, const Texture& texture);
-			// void set_uniform(const char *name, const Transform& transform);
 			void set_uniform(const char *name, const Color& color);
 			void set_uniform(const char *name, float arg);
 			void set_uniform(const char *name, const Vector2f& arg);
 			void set_uniform(const char *name, const Vector3f& arg);
 			void set_uniform(const char *name, const Vector4f& arg);
+			void set_uniform(const char *name, const Matrix4f& arg);
 			void set_varying(const char *name, const Buffer<float>& array);
 			void set_varying(const char *name, const Buffer<Vector2f>& array);
 			void set_varying(const char *name, const Buffer<Vector3f>& array);

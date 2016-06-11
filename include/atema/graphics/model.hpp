@@ -34,6 +34,8 @@ namespace at
 			Model();
 			virtual ~Model();
 			
+			Mesh& get_mesh() noexcept;
+			
 			void create(const char *filename);
 			
 			bool is_valid() const noexcept;

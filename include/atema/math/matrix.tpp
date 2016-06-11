@@ -60,6 +60,16 @@ namespace at
 	}
 	
 	template <size_t COL, size_t ROW, typename T>
+	Matrix<ROW, COL, T>& Matrix<COL, ROW, T>::identity()
+	{
+		for (size_t c = 0; c < COL; c++)
+			for (size_t r = 0; r < ROW; r++)
+				this->m_columns[c][r] = (c == r ? 1 : 0);
+		
+		return (*this);
+	}
+	
+	template <size_t COL, size_t ROW, typename T>
 	Matrix<ROW, COL, T> Matrix<COL, ROW, T>::get_transposed() const noexcept
 	{
 		Matrix<ROW, COL, T> tmp;

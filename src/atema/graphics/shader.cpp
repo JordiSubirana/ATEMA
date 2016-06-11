@@ -481,27 +481,7 @@ namespace at
 			throw;
 		}
 	}
-	/*
-	void Shader::set_uniform(const char *name, const Transform& transform)
-	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniformMatrix4fv(location, 1, GL_FALSE, transform);
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
-	}
-	//*/
+	
 	void Shader::set_uniform(const char *name, const Color& color)
 	{
 		try
@@ -593,6 +573,26 @@ namespace at
 			glUseProgram(m_program);
 			
 			glUniform4f(location, arg.data[0], arg.data[1], arg.data[2], arg.data[3]);
+			
+			glUseProgram(0);
+		}
+		catch (const Error& e)
+		{
+			throw;
+		}
+	}
+	
+	void Shader::set_uniform(const char *name, const Matrix4f& arg)
+	{
+		try
+		{
+			GLint location;
+			
+			location = get_location(name);
+			
+			glUseProgram(m_program);
+			
+			glUniformMatrix4fv(location, 1, GL_FALSE, arg.get());
 			
 			glUseProgram(0);
 		}
