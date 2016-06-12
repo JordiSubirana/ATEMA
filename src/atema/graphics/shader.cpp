@@ -225,6 +225,11 @@ namespace at
 		
 		m_texs.clear();
 		
+		for (auto& pair : m_variables)
+			pair.second->m_valid = false;
+		
+		m_variables.clear();
+		
 		/*
 		m_arr_float.clear();
 		m_arr_vec2.clear();
@@ -262,6 +267,7 @@ namespace at
 		m_tex_units(0),
 		m_locations(),
 		m_texs(),
+		m_variables(),
 		m_vao(0),
 		m_vao_ok(false)
 	{
@@ -433,293 +439,119 @@ namespace at
 
 	void Shader::set_uniform(const char *name, const Texture& texture)
 	{
-		try
+		GLint location;
+		bool exists = false;
+		GLenum tex_unit = GL_TEXTURE0;
+		
+		if (!name)
+			ATEMA_ERROR("No variable name given.")
+		
+		exists = (m_locations.find(std::string(name)) != m_locations.end());
+		
+		if (exists)
 		{
-			GLint location;
-			bool exists = false;
-			GLenum tex_unit = GL_TEXTURE0;
+			location = m_locations[std::string(name)];
 			
-			if (!name)
-				ATEMA_ERROR("No variable name given.")
-			
-			exists = (m_locations.find(std::string(name)) != m_locations.end());
-			
-			if (exists)
-			{
-				location = m_locations[std::string(name)];
-				
-				m_texs[location].second = &texture;
-			}
-			else
-			{
-				if ((get_max_texture_units() - m_tex_units == 0) && !exists) // on depasse le nombre max de texture units
-					ATEMA_ERROR("Too much texture units allocated.")
-				
-				location = glGetUniformLocation(m_program, name);
-				
-				if (location < 0)
-					ATEMA_ERROR("Invalid variable name.")
-				
-				m_locations[std::string(name)] = location;
-				
-				m_texs[location].first = static_cast<int>(m_tex_units);
-				m_texs[location].second = &texture;
-				
-				m_tex_units++;
-			}
-			
-			tex_unit += static_cast<GLenum>(m_texs[location].first);
-			
-			glUseProgram(m_program);
-			
-			glUniform1i(location, m_texs[location].first);
-			
-			glUseProgram(0);
+			m_texs[location].second = &texture;
 		}
-		catch (const Error& e)
+		else
 		{
-			throw;
+			if ((get_max_texture_units() - m_tex_units == 0) && !exists) // on depasse le nombre max de texture units
+				ATEMA_ERROR("Too much texture units allocated.")
+			
+			location = glGetUniformLocation(m_program, name);
+			
+			if (location < 0)
+				ATEMA_ERROR("Invalid variable name.")
+			
+			m_locations[std::string(name)] = location;
+			
+			m_texs[location].first = static_cast<int>(m_tex_units);
+			m_texs[location].second = &texture;
+			
+			m_tex_units++;
 		}
+		
+		tex_unit += static_cast<GLenum>(m_texs[location].first);
+		
+		set_parameter(location, texture);
 	}
 	
 	void Shader::set_uniform(const char *name, const Color& color)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniform4fv(location, 1, reinterpret_cast<const float*>(&color));
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), color);
 	}
 
 	void Shader::set_uniform(const char *name, float arg)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniform1f(location, arg);
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), arg);
 	}
 
 	void Shader::set_uniform(const char *name, const Vector2f& arg)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniform2f(location, arg.data[0], arg.data[1]);
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), arg);
 	}
 
 	void Shader::set_uniform(const char *name, const Vector3f& arg)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniform3f(location, arg.data[0], arg.data[1], arg.data[2]);
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), arg);
 	}
 	
 	void Shader::set_uniform(const char *name, const Vector4f& arg)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniform4f(location, arg.data[0], arg.data[1], arg.data[2], arg.data[3]);
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), arg);
 	}
 	
 	void Shader::set_uniform(const char *name, const Matrix4f& arg)
 	{
-		try
-		{
-			GLint location;
-			
-			location = get_location(name);
-			
-			glUseProgram(m_program);
-			
-			glUniformMatrix4fv(location, 1, GL_FALSE, arg.get());
-			
-			glUseProgram(0);
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), arg);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<float>& array)
 	{
-		try
-		{
-			GLint location;
-			
-			ensure_vao(); //At this point VAO is created or an exception is thrown
-			
-			location = get_location(name);
-			
-			glBindVertexArray(m_vao);
-			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
-			glEnableVertexAttribArray(location);
-			glVertexAttribPointer(location, 1, GL_FLOAT, GL_FALSE, 0, 0);
-			glBindVertexArray(0);
-			
-			// m_arr_float[location] = &array;
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), array);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<Vector2f>& array)
 	{
-		try
-		{
-			GLint location;
-			
-			ensure_vao(); //At this point VAO is created or an exception is thrown
-			
-			location = get_location(name);
-			
-			glBindVertexArray(m_vao);
-			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
-			glEnableVertexAttribArray(location);
-			glVertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-			glBindVertexArray(0);
-			
-			// m_arr_vec2[location] = &array;
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), array);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<Vector3f>& array)
 	{
-		try
-		{
-			GLint location;
-			
-			ensure_vao(); //At this point VAO is created or an exception is thrown
-			
-			location = get_location(name);
-			
-			glBindVertexArray(m_vao);
-			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
-			glEnableVertexAttribArray(location);
-			glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
-			glBindVertexArray(0);
-			
-			// m_arr_vec3[location] = &array;
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), array);
 	}
 	
 	void Shader::set_varying(const char *name, const Buffer<Vector4f>& array)
 	{
-		try
-		{
-			GLint location;
-			
-			ensure_vao(); //At this point VAO is created or an exception is thrown
-			
-			location = get_location(name);
-			
-			glBindVertexArray(m_vao);
-			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
-			glEnableVertexAttribArray(location);
-			glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, 0);
-			glBindVertexArray(0);
-			
-			// m_arr_vec4[location] = &array;
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), array);
 	}
 	
 	void Shader::set_varying(const char *name, const Buffer<Color>& array)
 	{
-		try
-		{
-			GLint location;
-			
-			ensure_vao(); //At this point VAO is created or an exception is thrown
-			
-			location = get_location(name);
-			
-			glBindVertexArray(m_vao);
-			glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
-			glEnableVertexAttribArray(location);
-			glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, 0);
-			glBindVertexArray(0);
-			
-			// m_arr_vec4[location] = &array;
-		}
-		catch (const Error& e)
-		{
-			throw;
-		}
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_parameter(get_location(name), array);
 	}
 	
 	void Shader::delete_varying(const char *name)
@@ -750,7 +582,6 @@ namespace at
 		
 		glUseProgram(m_program);
 		
-		// /*
 		for (auto& pair : m_texs)
 		{
 			if (!pair.second.second->is_valid())
@@ -760,39 +591,6 @@ namespace at
 			
 			glBindTexture(GL_TEXTURE_2D, pair.second.second->get_gl_id());
 		}
-		//*/
-		
-		/*
-		for (auto it = m_arr_float.begin(); it != m_arr_float.end(); it++)
-		{
-			if (!it->second->is_valid())
-				ATEMA_ERROR("Invalid buffer array.")
-			
-			glBindBuffer(GL_ARRAY_BUFFER, it->second->get_gl_id());
-			glEnableVertexAttribArray(it->first);
-			glVertexAttribPointer(it->first, 1, GL_FLOAT, GL_FALSE, 0, 0);
-		}
-		
-		for (auto it = m_arr_vec2.begin(); it != m_arr_vec2.end(); it++)
-		{
-			if (!it->second->is_valid())
-				ATEMA_ERROR("Invalid buffer array.")
-			
-			glBindBuffer(GL_ARRAY_BUFFER, it->second->get_gl_id());
-			glEnableVertexAttribArray(it->first);
-			glVertexAttribPointer(it->first, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		}
-		
-		for (auto it = m_arr_vec3.begin(); it != m_arr_vec3.end(); it++)
-		{
-			if (!it->second->is_valid())
-				ATEMA_ERROR("Invalid buffer array.")
-			
-			glBindBuffer(GL_ARRAY_BUFFER, it->second->get_gl_id());
-			glEnableVertexAttribArray(it->first);
-			glVertexAttribPointer(it->first, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		}
-		//*/
 	}
 
 	void Shader::unbind() const
@@ -817,4 +615,117 @@ namespace at
 	{
 		return (m_valid);
 	}
+	
+	//--------------------
+	//PARAMETERS
+	void Shader::set_parameter(GLint location, const Texture& texture)
+	{
+		glUseProgram(m_program);
+		glUniform1i(location, m_texs[location].first);
+		glUseProgram(0);
+	}
+	
+	void Shader::set_parameter(GLint location, const Color& color)
+	{
+		glUseProgram(m_program);
+		glUniform4f(location, color.r, color.g, color.b, color.a);
+		glUseProgram(0);
+	}
+
+	void Shader::set_parameter(GLint location, float arg)
+	{
+		glUseProgram(m_program);
+		glUniform1f(location, arg);
+		glUseProgram(0);
+	}
+
+	void Shader::set_parameter(GLint location, const Vector2f& arg)
+	{
+		glUseProgram(m_program);
+		glUniform2f(location, arg.data[0], arg.data[1]);
+		glUseProgram(0);
+	}
+
+	void Shader::set_parameter(GLint location, const Vector3f& arg)
+	{
+		glUseProgram(m_program);
+		glUniform3f(location, arg.data[0], arg.data[1], arg.data[2]);
+		glUseProgram(0);
+	}
+	
+	void Shader::set_parameter(GLint location, const Vector4f& arg)
+	{
+		glUseProgram(m_program);
+		glUniform4f(location, arg.data[0], arg.data[1], arg.data[2], arg.data[3]);
+		glUseProgram(0);
+	}
+	
+	void Shader::set_parameter(GLint location, const Matrix4f& arg)
+	{
+		glUseProgram(m_program);
+		glUniformMatrix4fv(location, 1, GL_FALSE, arg.get());
+		glUseProgram(0);
+	}
+
+	void Shader::set_parameter(GLint location, const Buffer<float>& array)
+	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 1, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindVertexArray(0);
+	}
+
+	void Shader::set_parameter(GLint location, const Buffer<Vector2f>& array)
+	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindVertexArray(0);
+	}
+
+	void Shader::set_parameter(GLint location, const Buffer<Vector3f>& array)
+	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindVertexArray(0);
+	}
+	
+	void Shader::set_parameter(GLint location, const Buffer<Vector4f>& array)
+	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindVertexArray(0);
+	}
+	
+	void Shader::set_parameter(GLint location, const Buffer<Color>& array)
+	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, array.get_gl_id());
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		glBindVertexArray(0);
+	}
+	
+	//SHADER VARIABLE SPECIFIC
+	void Shader::set_parameter(GLint location, const MeshElement& arg)
+	{
+		glBindVertexArray(m_vao);
+		
+		if ((location == m_entry) && (arg.indices.is_valid()))
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, arg.indices.get_gl_id());
+		glBindBuffer(GL_ARRAY_BUFFER, arg.elements.get_gl_id());
+		
+		glEnableVertexAttribArray(location);
+		glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		
+		glBindVertexArray(0);
+		glDisableVertexAttribArray(location);
+	}
+	//--------------------
 }

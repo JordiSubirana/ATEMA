@@ -29,7 +29,7 @@ int main()
 		
 		//Shader creation
 		Shader shader;
-		shader.create_from_file("position", "shaders/basic_mesh.vert", "shaders/basic_mesh.frag");
+		shader.create_from_file("position", "shaders/unicolor_mesh.vert", "shaders/unicolor_mesh.frag");
 
 		//Renderer creation
 		Renderer renderer;
@@ -38,6 +38,11 @@ int main()
 		
 		//MeshElement creation
 		MeshElement mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
+		
+		//Shader Variable
+		ShaderVariable<Color> shader_color = shader.get_variable<Color>("color");
+		shader_color = Color(1.0f, 1.0f, 0.0f, 1.0f); //Yellow
+		// shader.set_uniform("color", Color(1.0f, 1.0f, 0.0f, 1.0f));
 		
 		bool toggle_polygone_mode = false;
 		

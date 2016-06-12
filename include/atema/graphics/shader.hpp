@@ -28,14 +28,23 @@
 #include <atema/graphics/texture.hpp>
 #include <atema/graphics/buffer.hpp>
 #include <atema/graphics/color.hpp>
+#include <atema/graphics/mesh_element.hpp>
 #include <atema/math/matrix.hpp>
 
 #include <map>
 
 namespace at
 {
+	class ShaderAbstractVariable;
+	
+	template <typename T>
+	class ShaderVariable;
+	
 	class ATEMA_GRAPHICS_API Shader : public ObjectGL, public NonCopyable
 	{
+		template <typename T>
+		friend class at::ShaderVariable;
+		
 		public:
 			Shader();
 			Shader(const char *entry_name, const char *vert_sh_filename, const char *frag_sh_filename);
@@ -46,6 +55,9 @@ namespace at
 			
 			GLint get_gl_entry_location() const;
 			GLuint get_gl_vao_id() const;
+			
+			template <typename T>
+			ShaderVariable<T> get_variable(const char *name);
 			
 			void set_uniform(const char *name, const Texture& texture);
 			void set_uniform(const char *name, const Color& color);
@@ -78,6 +90,23 @@ namespace at
 			void clear();
 			void ensure_vao();
 			
+			//---PARAMETERS
+			void set_parameter(GLint location, const Texture& texture);
+			void set_parameter(GLint location, const Color& color);
+			void set_parameter(GLint location, float arg);
+			void set_parameter(GLint location, const Vector2f& arg);
+			void set_parameter(GLint location, const Vector3f& arg);
+			void set_parameter(GLint location, const Vector4f& arg);
+			void set_parameter(GLint location, const Matrix4f& arg);
+			void set_parameter(GLint location, const Buffer<float>& array);
+			void set_parameter(GLint location, const Buffer<Vector2f>& array);
+			void set_parameter(GLint location, const Buffer<Vector3f>& array);
+			void set_parameter(GLint location, const Buffer<Vector4f>& array);
+			void set_parameter(GLint location, const Buffer<Color>& array);
+			//ShaderVariable specific
+			void set_parameter(GLint location, const MeshElement& mesh_element);
+			//---
+			
 			bool m_valid;
 			
 			GLuint m_program;
@@ -93,16 +122,43 @@ namespace at
 			
 			std::map< GLint, std::pair<int, const Texture*> > m_texs;
 			
-			/*
-			std::map<GLint, const Buffer<float>*> m_arr_float;
-			std::map<GLint, const Buffer<Vector2f>*> m_arr_vec2;
-			std::map<GLint, const Buffer<Vector3f>*> m_arr_vec3;
-			#warning create Vector4f container
-			//*/
+			std::map<GLint, ShaderAbstractVariable*> m_variables;
 			
 			GLuint m_vao;
 			bool m_vao_ok;
 	};
+}
+
+#include <atema/graphics/shader_variable.hpp>
+
+//Inline definitions
+namespace at
+{
+	template <typename T>
+	ShaderVariable<T> Shader::get_variable(const char *name)
+	{
+		ShaderVariable<T> *ret = nullptr;
+		GLint location = get_location(name);
+		auto it = m_variables.find(location);
+		
+		if (it != m_variables.end())
+		{
+			ret = dynamic_cast< ShaderVariable<T>* >(it->second);
+			
+			if (!ret)
+				ATEMA_ERROR("Invalid type requested for the variable.")
+		}
+		else
+		{		
+			ShaderVariable<T> tmp(this, location);
+			tmp.m_valid = true;
+			
+			ret = &tmp;
+			m_variables[location] = static_cast< ShaderAbstractVariable* >(ret);
+		}
+		
+		return (*ret);
+	}
 }
 
 #endif
