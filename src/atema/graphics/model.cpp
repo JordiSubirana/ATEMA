@@ -39,11 +39,6 @@ namespace at
 		
 	}
 	
-	Mesh& Model::get_mesh() noexcept
-	{
-		return (m_mesh);
-	}
-	
 	void Model::create(const char *filename)
 	{
 		bool valid_tmp = m_valid;
@@ -56,6 +51,10 @@ namespace at
 		if (File::extension_match(filename, "obj"))
 		{
 			load_obj(filename);
+		}
+		else if (File::extension_match(filename, "dae"))
+		{
+			load_dae(filename);
 		}
 		else
 		{
@@ -80,8 +79,6 @@ namespace at
 		std::string err;
 		bool ret = tinyobj::LoadObj(shapes, materials, err, filename);
 		
-		std::vector<MeshElement>& mesh_elements = m_mesh.m_elements;
-		
 		if (!err.empty())
 		{
 			//Warnings
@@ -90,19 +87,37 @@ namespace at
 		if (!ret)
 			ATEMA_ERROR("Error when loading OBJ file.")
 		
-		mesh_elements.resize(shapes.size());
+		m_elements.resize(shapes.size());
 		
-		for (size_t i = 0; i < mesh_elements.size(); i++)
+		for (size_t i = 0; i < m_elements.size(); i++)
 		{
 			//NAME shapes[i].name.c_str()
+			auto& mesh = shapes[i].mesh;
+			auto& positions = mesh.positions;
+			auto& indices = mesh.indices;
+			auto& normals = mesh.normals;
+			auto& texcoords = mesh.texcoords;
 			
-			if ((shapes[i].mesh.positions.size() == 0) || (shapes[i].mesh.positions.size()%3 != 0))
+			if ((positions.size() == 0) || (positions.size()%3 != 0))
 				ATEMA_ERROR("Invalid vertices size.")
 			
-			mesh_elements[i].create(MeshElement::draw_mode::triangles, reinterpret_cast<Vector3f*>(shapes[i].mesh.positions.data()), shapes[i].mesh.positions.size()/3);
+			m_elements[i].mesh = std::make_shared< Mesh >();			
+			m_elements[i].mesh->create(Mesh::draw_mode::triangles, reinterpret_cast< Vector3f* >(positions.data()), positions.size()/3);
 			
-			if (shapes[i].mesh.indices.size() > 0)
-				mesh_elements[i].indices.create(shapes[i].mesh.indices.data(), shapes[i].mesh.indices.size());				
+			if (indices.size() > 0)
+				m_elements[i].mesh->indices.create(indices.data(), indices.size());
+			
+			if ( (normals.size()) && (normals.size() == positions.size()) )
+			{
+				m_elements[i].normals = std::make_shared< Buffer<Vector3f> >();
+				m_elements[i].normals->create(reinterpret_cast<Vector3f*>(normals.data()), normals.size()/3);
+			}
+			
+			if ( (texcoords.size()) && (texcoords.size() == positions.size()) )
+			{
+				m_elements[i].texcoords = std::make_shared< Buffer<Vector2f> >();
+				m_elements[i].texcoords->create(reinterpret_cast<Vector2f*>(texcoords.data()), texcoords.size()/2);
+			}
 			
 			//MATERIAL IDs shapes[i].mesh.material_ids.size()
 		}
@@ -136,5 +151,11 @@ namespace at
 		}
 		
 		m_valid = true;
+	}
+	
+	void Model::draw(const Renderer& renderer)
+	{
+		for (auto& element : m_elements)
+			element.mesh->draw(renderer);
 	}
 }

@@ -118,7 +118,7 @@ int main() {
 		cout << "==================================================\n";
 
 
-		//MeshElement creation : triangle position
+		//Mesh creation : triangle position
 		Vector3f pos_d[N];
 		for (unsigned i=0 ; i<N ; i++) {
 			pos_d[i].x = cos(float(i));
@@ -127,7 +127,7 @@ int main() {
 			//pos_d[i].y = i*sin(2*3.141592f*float(i)/N)/N;
 			pos_d[i].z = 0;
 		}
-		MeshElement pos_m(MeshElement::draw_mode::points, pos_d, sizeof(pos_d)/sizeof(Vector3f));
+		Mesh pos_m(Mesh::draw_mode::points, pos_d, sizeof(pos_d)/sizeof(Vector3f));
 		Buffer<Vector3f> &pos = pos_m.elements;
 
 

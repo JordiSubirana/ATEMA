@@ -37,10 +37,11 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//MeshElement creation
-		// MeshElement mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
+		//Mesh creation
+		// Mesh mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
 		Model model;
-		model.create("3d/Spider-Man_Symbiote.obj");
+		// model.create("3d/Spider-Man_Symbiote.obj");
+		model.create("3d/Spider-Man_Symbiote.dae");
 		
 		//Transform matrices
 		Matrix4f camera, perspective, transform;
@@ -92,7 +93,7 @@ int main()
 			//Clear the window, then draw the colored triangle
 			window.clear();
 			
-			renderer.draw(model.get_mesh());
+			renderer.draw(model);
 			
 			window.update();
 		}

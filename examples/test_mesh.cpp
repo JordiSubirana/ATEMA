@@ -79,8 +79,8 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//MeshElement creation : triangle position
-		MeshElement mesh(MeshElement::draw_mode::triangles, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
+		//Mesh creation : triangle position
+		Mesh mesh(Mesh::draw_mode::triangles, vertices_data, sizeof(vertices_data)/sizeof(Vector3f));
 		
 		//Buffer creation : triangle color
 		Buffer<Vector3f> colors(colors_data, sizeof(colors_data) / sizeof(Vector3f));

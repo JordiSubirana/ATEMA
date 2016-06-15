@@ -49,7 +49,7 @@ static string code = ATEMA_STRINGIFY(
 
 
 		uniform float t;
-		buffer MeshElement {
+		buffer Mesh {
 				vec3_fix mesh[];
 		};
 		buffer Colors {
@@ -127,9 +127,9 @@ int main() {
 		cout << "==================================================\n";
 
 
-		//MeshElement creation : grid of (cell_x * cell_y) cells --> (cell_x + 1) * (cell_y + 1) points
-		MeshElement mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1, Vector3f(-2.0f, 2.0f, 0.0f), Vector3f(-2.0f, -2.0f, 0.0f), Vector3f(2.0f, 2.0f, 0.0f));
-		//MeshElement mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1);
+		//Mesh creation : grid of (cell_x * cell_y) cells --> (cell_x + 1) * (cell_y + 1) points
+		Mesh mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1, Vector3f(-2.0f, 2.0f, 0.0f), Vector3f(-2.0f, -2.0f, 0.0f), Vector3f(2.0f, 2.0f, 0.0f));
+		//Mesh mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1);
 
 
 		//Color buffer
@@ -171,7 +171,7 @@ int main() {
 		// Parallel kernel creation
 		Parallel<Parogl> cpt;
 		cpt.add_src(code);
-		cpt.build("t", "MeshElement", "Colors", "cmd");
+		cpt.build("t", "Mesh", "Colors", "cmd");
 		cpt.set_range(ComputeSize(POINTS_X * POINTS_Y / 64), ComputeSize(64));//*/
 
 		// parametres controle

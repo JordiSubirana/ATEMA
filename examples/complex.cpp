@@ -39,9 +39,9 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//MeshElement creation : grid of (cell_x * cell_y) cells --> (cell_x + 1) * (cell_y + 1) points
-		// MeshElement mesh = Shape::create_grid_mesh(POINTS_X, POINTS_Y, Vector3f(-0.9f, 0.9f, 0.0f), Vector3f(-0.9f, -0.9f, 0.0f), Vector3f(0.9f, 0.9f, 0.0f));
-		MeshElement mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1);
+		//Mesh creation : grid of (cell_x * cell_y) cells --> (cell_x + 1) * (cell_y + 1) points
+		// Mesh mesh = Shape::create_grid_mesh(POINTS_X, POINTS_Y, Vector3f(-0.9f, 0.9f, 0.0f), Vector3f(-0.9f, -0.9f, 0.0f), Vector3f(0.9f, 0.9f, 0.0f));
+		Mesh mesh = Shape::create_grid_mesh(POINTS_X-1, POINTS_Y-1);
 		
 		//Texture creation
 		Texture texture;

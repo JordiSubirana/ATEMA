@@ -36,8 +36,8 @@ int main()
 		renderer.set_target(&window);
 		renderer.set_shader(&shader);
 		
-		//MeshElement creation
-		MeshElement mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
+		//Mesh creation
+		Mesh mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
 		
 		//Shader Variable
 		ShaderVariable<Color> shader_color = shader.get_variable<Color>("color");

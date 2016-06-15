@@ -21,7 +21,7 @@
 #define ATEMA_GRAPHICS_SHAPE_HEADER
 
 #include <atema/graphics/config.hpp>
-#include <atema/graphics/mesh_element.hpp>
+#include <atema/graphics/mesh.hpp>
 
 namespace at
 {
@@ -31,13 +31,13 @@ namespace at
 			Shape() = delete;
 			~Shape() = delete;
 			
-			static MeshElement create_triangle_mesh(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3);
+			static Mesh create_triangle_mesh(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3);
 			static Buffer<Vector2f> create_triangle_texture_coordinates(const Vector2f& p1, const Vector2f& p2, const Vector2f& p3);
 			
-			static MeshElement create_grid_mesh(size_t div_x, size_t div_y, const Vector3f& p1 = Vector3f(-1.0f, 1.0f, 0.0f), const Vector3f& p2 = Vector3f(-1.0f, -1.0f, 0.0f), const Vector3f& p3 = Vector3f(1.0f, 1.0f, 0.0f));
+			static Mesh create_grid_mesh(size_t div_x, size_t div_y, const Vector3f& p1 = Vector3f(-1.0f, 1.0f, 0.0f), const Vector3f& p2 = Vector3f(-1.0f, -1.0f, 0.0f), const Vector3f& p3 = Vector3f(1.0f, 1.0f, 0.0f));
 			static Buffer<Vector2f> create_grid_texture_coordinates(size_t div_x, size_t div_y, const Vector2f& p1 = Vector2f(0.0f, 0.0f), const Vector2f& p2 = Vector2f(0.0f, 1.0f), const Vector2f& p3 = Vector2f(1.0f, 0.0f));
 			
-			static MeshElement create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin = Vector3f(0.0f, 0.0f, 0.0f));
+			static Mesh create_sphere_mesh(float radius, size_t nb_stacks, size_t nb_slices, const Vector3f& origin = Vector3f(0.0f, 0.0f, 0.0f));
 	};
 }
 
