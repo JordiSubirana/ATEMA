@@ -28,7 +28,7 @@
 #include <atema/graphics/texture.hpp>
 #include <atema/graphics/buffer.hpp>
 #include <atema/graphics/color.hpp>
-#include <atema/graphics/mesh_element.hpp>
+#include <atema/graphics/mesh.hpp>
 #include <atema/math/matrix.hpp>
 
 #include <map>
@@ -104,8 +104,10 @@ namespace at
 			void set_parameter(GLint location, const Buffer<Vector4f>& array);
 			void set_parameter(GLint location, const Buffer<Color>& array);
 			//ShaderVariable specific
-			void set_parameter(GLint location, const MeshElement& mesh_element);
+			void set_parameter(GLint location, const Mesh& mesh);
 			//---
+			
+			static const char* get_glsl_header();
 			
 			bool m_valid;
 			

@@ -713,7 +713,7 @@ namespace at
 	}
 	
 	//SHADER VARIABLE SPECIFIC
-	void Shader::set_parameter(GLint location, const MeshElement& arg)
+	void Shader::set_parameter(GLint location, const Mesh& arg)
 	{
 		glBindVertexArray(m_vao);
 		
@@ -728,4 +728,33 @@ namespace at
 		glDisableVertexAttribArray(location);
 	}
 	//--------------------
+	
+	const char* Shader::get_glsl_header()
+	{
+		static const char * header = ""; /*ATEMA_STRINGIFY( //ATEMA Definitions
+			struct AtemaMaterial
+			{
+				vec4 ambient_color;
+				vec4 diffuse_color;
+				vec4 specular_color;
+				
+				float shininess;
+				
+				sampler2D ambient_texture;
+				sampler2D diffuse_texture;
+				sampler2D specular_texture;
+			};
+			
+			struct AtemaModel
+			{
+				vec3 position;
+				vec3 normal;
+				vec2 tex_coords;
+				AtemaMaterial material;
+			};
+		);
+		//*/
+		
+		return (header);
+	}
 }
