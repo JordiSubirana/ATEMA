@@ -20,7 +20,7 @@ int main()
 		
 		//Window creation
 		Window window;
-		window.create(640, 480, "Test", at::Window::options::visible | at::Window::options::frame, version);
+		window.create(1024, 720, "Test", at::Window::options::visible | at::Window::options::frame, version);
 		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));		
 		window.set_clear_color(Color(0.3,0.3,0.3,1.0));
 		
@@ -30,7 +30,7 @@ int main()
 		
 		//Shader creation
 		Shader shader;
-		shader.create_from_file("position", "shaders/basic_mesh_mvp.vert", "shaders/basic_mesh_mvp.frag");
+		shader.create_from_file("model", "shaders/mesh_material_mvp.vert", "shaders/mesh_material_mvp.frag");
 
 		//Renderer creation
 		Renderer renderer;
@@ -38,24 +38,26 @@ int main()
 		renderer.set_shader(&shader);
 		
 		//Mesh creation
-		// Mesh mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
 		Model model;
-		// model.create("3d/Spider-Man_Symbiote.obj");
-		model.create("3d/Spider-Man_Symbiote.dae");
+		model.create("3d/Spidey.obj");
+		
+		//Light
+		PointLight light01;
+		light01.position = Vector3f(30.0f, -10.0f, 0.0f);
+		light01.color = Color(0.5f, 0.5f, 0.5f, 1.0f);
+		light01.radius = 75.0f;
+		light01.intensity = 0.02f;
 		
 		//Transform matrices
 		Matrix4f camera, perspective, transform;
-		camera = Transform::look_at(Vector3f(5.0f, 2.0f, 5.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f));
-		perspective = Transform::perspective(static_cast<float>(ATEMA_DEG_TO_RAD(70.0f)), 640.0f/480.0f, 0.1f, 1000.0f);
+		camera = Transform::look_at(Vector3f(5.0f, 2.0f, 5.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f)); //the camera will change later, those values aren't important
+		perspective = Transform::perspective(static_cast<float>(ATEMA_DEG_TO_RAD(70.0f)), 1024.0f/720.0f, 0.1f, 1000.0f);
 		transform.identity();
-		
-		// camera.identity();
-		// perspective.identity();
-		// transform = Transform::scale(Vector3f(0.5f, 0.5f, 0.5f));
 		
 		shader.set_uniform("mat_M", transform); //Model
 		shader.set_uniform("mat_V", camera); //View
 		shader.set_uniform("mat_P", perspective); //Projection
+		shader.set_uniform("light01", light01); //Light
 		
 		bool toggle_polygone_mode = false;
 		float angle = 0.0f;
@@ -82,15 +84,19 @@ int main()
 				toggle_polygone_mode = false;
 			}
 			
-			angle += 0.001f;
+			angle += 0.0025f;
 			
 			if (angle >= 2.0f*ATEMA_PI)
 				angle = 0.0f;
 			
-			camera = Transform::look_at(Vector3f(2.5f*std::cos(angle), 2.0f, 2.5f*std::sin(angle)), Vector3f(0.0f, 2.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f));
+			Vector3f camera_pos = Vector3f(1.2f*std::cos(angle), 2.0f, 1.2f*std::sin(angle));
+			
+			camera = Transform::look_at(camera_pos, Vector3f(0.0f, 1.5f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f));
 			shader.set_uniform("mat_V", camera); //View
 			
-			//Clear the window, then draw the colored triangle
+			shader.set_uniform("camera_pos", camera_pos);
+			
+			//Clear the window, then draw the object
 			window.clear();
 			
 			renderer.draw(model);

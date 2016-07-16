@@ -29,22 +29,17 @@
 #include <atema/graphics/buffer.hpp>
 #include <atema/graphics/color.hpp>
 #include <atema/graphics/mesh.hpp>
+#include <atema/graphics/material.hpp>
+#include <atema/graphics/light.hpp>
 #include <atema/math/matrix.hpp>
 
 #include <map>
+#include <string>
 
 namespace at
 {
-	class ShaderAbstractVariable;
-	
-	template <typename T>
-	class ShaderVariable;
-	
 	class ATEMA_GRAPHICS_API Shader : public ObjectGL, public NonCopyable
 	{
-		template <typename T>
-		friend class at::ShaderVariable;
-		
 		public:
 			Shader();
 			Shader(const char *entry_name, const char *vert_sh_filename, const char *frag_sh_filename);
@@ -53,11 +48,11 @@ namespace at
 			void create_from_file(const char *entry_name, const char *vert_sh_filename, const char *frag_sh_filename);
 			void create_from_memory(const char *entry_name, const char *vert_sh, const char *frag_sh);
 			
+			GLint get_uniform_location(const char *name);
+			GLint get_varying_location(const char *name);
+			const char *get_entry_name() const;
 			GLint get_gl_entry_location() const;
 			GLuint get_gl_vao_id() const;
-			
-			template <typename T>
-			ShaderVariable<T> get_variable(const char *name);
 			
 			void set_uniform(const char *name, const Texture& texture);
 			void set_uniform(const char *name, const Color& color);
@@ -66,6 +61,9 @@ namespace at
 			void set_uniform(const char *name, const Vector3f& arg);
 			void set_uniform(const char *name, const Vector4f& arg);
 			void set_uniform(const char *name, const Matrix4f& arg);
+			void set_uniform(const char *name, const Material& arg);
+			void set_uniform(const char *name, const PointLight& arg);
+			
 			void set_varying(const char *name, const Buffer<float>& array);
 			void set_varying(const char *name, const Buffer<Vector2f>& array);
 			void set_varying(const char *name, const Buffer<Vector3f>& array);
@@ -85,8 +83,9 @@ namespace at
 		private:
 			GLuint load_from_file(const char *filename, GLenum shader_type);
 			GLuint load_from_memory(const char *data, GLenum shader_type);
+			void complete_shader(std::string& shader, GLenum shader_type);
 			GLuint load(GLuint vert, GLuint frag);
-			GLint get_location(const char *name);
+			
 			void clear();
 			void ensure_vao();
 			
@@ -116,51 +115,19 @@ namespace at
 			GLuint m_vert;
 			GLuint m_frag;
 			
+			std::string m_entry_name;			
 			GLint m_entry;
 			
 			size_t m_tex_units;
 			
-			std::map<std::string, GLint> m_locations;
+			std::map<std::string, GLint> m_uniform_locations;
+			std::map<std::string, GLint> m_varying_locations;
 			
 			std::map< GLint, std::pair<int, const Texture*> > m_texs;
-			
-			std::map<GLint, ShaderAbstractVariable*> m_variables;
 			
 			GLuint m_vao;
 			bool m_vao_ok;
 	};
-}
-
-#include <atema/graphics/shader_variable.hpp>
-
-//Inline definitions
-namespace at
-{
-	template <typename T>
-	ShaderVariable<T> Shader::get_variable(const char *name)
-	{
-		ShaderVariable<T> *ret = nullptr;
-		GLint location = get_location(name);
-		auto it = m_variables.find(location);
-		
-		if (it != m_variables.end())
-		{
-			ret = dynamic_cast< ShaderVariable<T>* >(it->second);
-			
-			if (!ret)
-				ATEMA_ERROR("Invalid type requested for the variable.")
-		}
-		else
-		{		
-			ShaderVariable<T> tmp(this, location);
-			tmp.m_valid = true;
-			
-			ret = &tmp;
-			m_variables[location] = static_cast< ShaderAbstractVariable* >(ret);
-		}
-		
-		return (*ret);
-	}
 }
 
 #endif

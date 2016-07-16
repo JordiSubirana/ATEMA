@@ -76,7 +76,8 @@ namespace at
 			
 		private:
 			bool ensure_indices();
-			void draw(const Renderer& renderer);
+			void draw(Renderer& renderer);
+			void draw(Renderer& renderer, GLint forced_location);
 			
 			draw_mode m_draw_mode;
 	};

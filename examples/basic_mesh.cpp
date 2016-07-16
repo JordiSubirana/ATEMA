@@ -40,9 +40,7 @@ int main()
 		Mesh mesh = Shape::create_sphere_mesh(0.8f, 35, 35);
 		
 		//Shader Variable
-		ShaderVariable<Color> shader_color = shader.get_variable<Color>("color");
-		shader_color = Color(1.0f, 1.0f, 0.0f, 1.0f); //Yellow
-		// shader.set_uniform("color", Color(1.0f, 1.0f, 0.0f, 1.0f));
+		shader.set_uniform("color", Color(1.0f, 1.0f, 0.0f, 1.0f));
 		
 		bool toggle_polygone_mode = false;
 		

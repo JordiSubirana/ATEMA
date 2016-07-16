@@ -30,8 +30,15 @@
 
 namespace at
 {
+	class Model;
+	
+	template <typename T>
+	class ShaderVariable;
+	
 	class ATEMA_GRAPHICS_API Model : public Drawable
 	{
+		friend class at::ShaderVariable<Model>;
+		
 		public:
 			Model();
 			virtual ~Model();
@@ -44,7 +51,7 @@ namespace at
 			void load_obj(const char *filename);
 			void load_dae(const char *filename);
 			
-			void draw(const Renderer& renderer);
+			void draw(Renderer& renderer);
 			
 			bool m_valid;
 			
@@ -56,8 +63,9 @@ namespace at
 				std::shared_ptr< Material > material;
 			};
 			
-			std::vector< Material > m_materials;
 			std::vector< ModelElement > m_elements;
+			
+			size_t m_current_element;
 	};
 }
 

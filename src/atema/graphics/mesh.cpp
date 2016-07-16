@@ -114,14 +114,15 @@ namespace at
 		return (true);
 	}
 	
-	void Mesh::draw(const Renderer& renderer)
+	void Mesh::draw(Renderer& renderer)
 	{
-		GLint entry_location;
-		
+		draw(renderer, renderer.get_shader()->get_gl_entry_location());
+	}
+	
+	void Mesh::draw(Renderer& renderer, GLint forced_location)
+	{
 		if (!is_valid())
 			return;
-		
-		entry_location = renderer.get_shader()->get_gl_entry_location();
 		
 		glBindVertexArray(renderer.get_shader()->get_gl_vao_id());
 		
@@ -129,8 +130,8 @@ namespace at
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices.get_gl_id());
 		glBindBuffer(GL_ARRAY_BUFFER, elements.get_gl_id());
 		
-		glEnableVertexAttribArray(entry_location);
-		glVertexAttribPointer(entry_location, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(forced_location);
+		glVertexAttribPointer(forced_location, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		
 		if (indices.is_valid())
 			glDrawElements(static_cast<GLenum>(m_draw_mode), indices.get_size(), GL_UNSIGNED_INT, 0);
@@ -139,7 +140,7 @@ namespace at
 		
 		glBindVertexArray(0);
 		
-		glDisableVertexAttribArray(entry_location);
+		glDisableVertexAttribArray(forced_location);
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

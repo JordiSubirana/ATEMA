@@ -18,10 +18,13 @@
 // ----------------------------------------------------------------------
 
 #include <atema/graphics/shader.hpp>
+#include <atema/core/file_stream.hpp>
 #include <atema/core/error.hpp>
 
 #include <vector>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 namespace at
 {
@@ -30,55 +33,29 @@ namespace at
 	//PRIVATE
 	GLuint Shader::load_from_file(const char *filename, GLenum shader_type)
 	{
-		const char* buffer = nullptr;
+		std::string shader_code;
+		FileStream file;
 		
-		std::ifstream shader_stream;
+		if (!filename)
+			ATEMA_ERROR("No filename given.")
 		
-		try
-		{
-			std::string shader_code;
-			std::string line;
-			
-			glGetError();
-			
-			if (!filename)
-				ATEMA_ERROR("No filename given.")
-			
-			shader_stream.open(filename, std::ios::in);
-			
-			if(!shader_stream.is_open())
-				ATEMA_ERROR("Invalid filename.")
-			
-			line = "";
-			
-			while(getline(shader_stream, line))
-			{
-				shader_code += "\n" + line;
-			}
-			
-			shader_stream.close();
-			
-			buffer = shader_code.c_str();
-			
-			return (load_from_memory(buffer, shader_type));
-		}
-		catch (const Error& e)
-		{
-			if(!shader_stream.is_open())
-			{
-				try {shader_stream.close();}
-				catch (...) {}
-			}
-			
-			throw;
-		}
+		file.open(filename, static_cast<Flags>(FileStream::options::read));
 		
-		return (0);
+		if(!file)
+			ATEMA_ERROR("Error while opening file.")
+		
+		while(!file.end_of_file())
+			shader_code += file.get_line() + "\n";
+		
+		file.close();
+		
+		return (load_from_memory(shader_code.c_str(), shader_type));
 	}
 
 	GLuint Shader::load_from_memory(const char *data, GLenum shader_type)
 	{
 		GLuint shader_id = 0;
+		std::string shader_code(data);
 		
 		try
 		{
@@ -89,21 +66,30 @@ namespace at
 			if (!data)
 				ATEMA_ERROR("No data given.")
 			
-			glGetError();
+			complete_shader(shader_code, shader_type);
 			
 			shader_id = glCreateShader(shader_type);
 			
 			if ((glGetError() != GL_NO_ERROR) || (shader_id == 0))
 				ATEMA_ERROR("OpenGL internal error: Shader creation failed.")
 			
-			glShaderSource(shader_id, 1, &(data), nullptr);
+			const char *tmp_data = shader_code.c_str();
+			
+			if (shader_type == GL_VERTEX_SHADER)
+			{
+				FileStream file;
+				file.open("test.vert", static_cast<Flags>(FileStream::options::write));
+				file.write(tmp_data);
+			}
+			
+			glShaderSource(shader_id, 1, &(tmp_data), nullptr);
 			
 			if (glGetError() != GL_NO_ERROR)
 				ATEMA_ERROR("OpenGL internal error: Shader allocation failed.")
 			
 			glCompileShader(shader_id);
 			
-			//TODO: r�cup�rer les cha�nes d'erreur de la compilation OpenGL.
+			//TODO: get the OpenGL compilation errors.
 			glGetShaderiv(shader_id, GL_COMPILE_STATUS, &result);
 			
 			// /*
@@ -132,6 +118,60 @@ namespace at
 		}
 		
 		return (0);
+	}
+	
+	void Shader::complete_shader(std::string& shader, GLenum shader_type)
+	{
+		std::stringstream program(shader.c_str());
+		std::string line;
+		std::string new_shader;
+		
+		while (std::getline(program, line, '\n'))
+		{
+			if (line.compare(0, 8, "#version", 8) == 0)
+			{
+				new_shader += line + "\n";
+				
+				new_shader += std::string(get_glsl_header()) + "\n";
+				
+				continue;
+			}
+			
+			if (line.compare(0, 23, "ATEMA_MODEL_VERTEX_DATA", 23) == 0)
+			{
+				size_t name_begin = line.find_first_of(" ");
+				size_t name_end = line.find_first_of(";");
+				
+				std::string basename = line.substr(name_begin+1, name_end-name_begin-1);
+				
+				new_shader += std::string("in vec3 at_") + basename + "_position;\n";
+				new_shader += std::string("in vec3 at_") + basename + "_normal;\n";
+				new_shader += std::string("in vec2 at_") + basename + "_tex_coords;\n";
+				new_shader += std::string("AtemaModel ") + basename + " = { at_" + basename + "_position, at_" + basename + "_normal, at_" + basename + "_tex_coords };\n";
+				
+				line = line.substr(name_end+1, std::string::npos); //If something is after the ';'
+				
+				continue;
+			}
+			
+			if (line.compare(0, 25, "ATEMA_MODEL_FRAGMENT_DATA", 25) == 0)
+			{
+				size_t name_begin = line.find_first_of(" ");
+				size_t name_end = line.find_first_of(";");
+				
+				std::string basename = line.substr(name_begin+1, name_end-name_begin-1);
+				
+				new_shader += std::string("uniform AtemaMaterial ") + basename + ";\n";
+				
+				line = line.substr(name_end+1, std::string::npos); //If something is after the ';'
+				
+				continue;
+			}
+			
+			new_shader += line + "\n";
+		}
+		
+		shader = new_shader;
 	}
 
 	GLuint Shader::load(GLuint vert, GLuint frag)
@@ -185,50 +225,14 @@ namespace at
 		return (0);
 	}
 
-	GLint Shader::get_location(const char *name)
-	{
-		bool exists = false;
-		GLint location;
-		
-		if (!name)
-			ATEMA_ERROR("No variable name given.")
-		
-		exists = (m_locations.find(std::string(name)) != m_locations.end());
-		
-		if (exists)
-		{
-			location = m_locations[std::string(name)];
-		}
-		else
-		{
-			location = glGetUniformLocation(m_program, name);
-			
-			if (location < 0)
-			{
-				location = glGetAttribLocation(m_program, name);
-				
-				if (location < 0)
-					ATEMA_ERROR("Invalid variable name.")
-			}
-			
-			m_locations[std::string(name)] = location;
-		}
-		
-		return (location);
-	}
-
 	void Shader::clear()
 	{
 		m_tex_units = 0;
 		
-		m_locations.clear();
+		m_uniform_locations.clear();
+		m_varying_locations.clear();
 		
 		m_texs.clear();
-		
-		for (auto& pair : m_variables)
-			pair.second->m_valid = false;
-		
-		m_variables.clear();
 		
 		/*
 		m_arr_float.clear();
@@ -263,11 +267,12 @@ namespace at
 		m_program(0),
 		m_vert(0),
 		m_frag(0),
+		m_entry_name(),
 		m_entry(0),
 		m_tex_units(0),
-		m_locations(),
+		m_uniform_locations(),
+		m_varying_locations(),
 		m_texs(),
-		m_variables(),
 		m_vao(0),
 		m_vao_ok(false)
 	{
@@ -279,7 +284,7 @@ namespace at
 	{
 		try
 		{
-			create_from_file(vert_sh_filename, frag_sh_filename, entry_name);
+			create_from_file(entry_name, vert_sh_filename, frag_sh_filename);
 		}
 		catch (const Error& e)
 		{
@@ -291,7 +296,7 @@ namespace at
 	{
 		clear();
 		
-		glUseProgram(0);
+		// glUseProgram(0);
 
 		if (glIsProgram(m_program))
 			glDeleteProgram(m_program);
@@ -337,6 +342,8 @@ namespace at
 			if (!vert && !frag)
 				ATEMA_ERROR("No filenames given.")
 			
+			m_entry_name = entry_name;
+			
 			prog = load(vert, frag);
 			
 			m_vert = vert;
@@ -344,10 +351,29 @@ namespace at
 			
 			m_program = prog;
 			
-			if (std::string(entry_name).compare("gl_Position") == 0)
+			if (m_entry_name.compare("gl_Position") == 0)
+			{
 				m_entry = 0;
+			}
 			else
-				m_entry = get_location(entry_name);
+			{
+				try
+				{
+					try
+					{
+						m_entry = get_varying_location(entry_name);
+					}
+					catch(...)
+					{
+						m_entry = get_varying_location((std::string("at_") + entry_name + "_position").c_str());
+						// m_entry_name = std::string("at_") + entry_name + "_position";
+					}
+				}
+				catch(...)
+				{
+					ATEMA_ERROR("Invalid mesh location.")
+				}
+			}
 			
 			if (m_entry < 0)
 				ATEMA_ERROR("Invalid mesh location.")
@@ -393,6 +419,8 @@ namespace at
 			if (!vert && !frag)
 				ATEMA_ERROR("No filenames given.")
 			
+			m_entry_name = entry_name;
+			
 			prog = load(vert, frag);
 			
 			m_vert = vert;
@@ -400,10 +428,29 @@ namespace at
 			
 			m_program = prog;
 			
-			if (std::string(entry_name).compare("gl_Position") == 0)
+			if (m_entry_name.compare("gl_Position") == 0)
+			{
 				m_entry = 0;
+			}
 			else
-				m_entry = get_location(entry_name);
+			{
+				try
+				{
+					try
+					{
+						m_entry = get_varying_location(entry_name);
+					}
+					catch(...)
+					{
+						m_entry = get_varying_location((std::string("at_") + entry_name + "_position").c_str());
+						// m_entry_name = std::string("at_") + entry_name + "_position";
+					}
+				}
+				catch(...)
+				{
+					ATEMA_ERROR("Invalid mesh location.")
+				}
+			}
 			
 			if (m_entry < 0)
 				ATEMA_ERROR("Invalid mesh location.")
@@ -424,7 +471,66 @@ namespace at
 			throw;
 		}
 	}
-
+	
+	GLint Shader::get_uniform_location(const char *name)
+	{
+		bool exists = false;
+		GLint location;
+		
+		if (!name)
+			ATEMA_ERROR("No variable name given.")
+		
+		exists = (m_uniform_locations.find(std::string(name)) != m_uniform_locations.end());
+		
+		if (exists)
+		{
+			location = m_uniform_locations[std::string(name)];
+		}
+		else
+		{
+			location = glGetUniformLocation(m_program, name);
+			
+			if (location < 0)
+				ATEMA_ERROR("Invalid variable name.")
+			
+			m_uniform_locations[std::string(name)] = location;
+		}
+		
+		return (location);
+	}
+	
+	GLint Shader::get_varying_location(const char *name)
+	{
+		bool exists = false;
+		GLint location;
+		
+		if (!name)
+			ATEMA_ERROR("No variable name given.")
+		
+		exists = (m_varying_locations.find(std::string(name)) != m_varying_locations.end());
+		
+		if (exists)
+		{
+			location = m_varying_locations[std::string(name)];
+		}
+		else
+		{
+			location = glGetAttribLocation(m_program, name);
+			
+			if (location < 0)
+				ATEMA_ERROR("Invalid variable name.")
+			
+			m_varying_locations[std::string(name)] = location;
+		}
+		
+		return (location);
+	}
+	
+	const char* Shader::get_entry_name() const
+	{
+		return (m_entry_name.c_str());
+	}
+	
 	GLint Shader::get_gl_entry_location() const
 	{
 		return (m_entry);
@@ -446,11 +552,11 @@ namespace at
 		if (!name)
 			ATEMA_ERROR("No variable name given.")
 		
-		exists = (m_locations.find(std::string(name)) != m_locations.end());
+		exists = (m_uniform_locations.find(std::string(name)) != m_uniform_locations.end());
 		
 		if (exists)
 		{
-			location = m_locations[std::string(name)];
+			location = m_uniform_locations[std::string(name)];
 			
 			m_texs[location].second = &texture;
 		}
@@ -464,7 +570,7 @@ namespace at
 			if (location < 0)
 				ATEMA_ERROR("Invalid variable name.")
 			
-			m_locations[std::string(name)] = location;
+			m_uniform_locations[std::string(name)] = location;
 			
 			m_texs[location].first = static_cast<int>(m_tex_units);
 			m_texs[location].second = &texture;
@@ -481,77 +587,109 @@ namespace at
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), color);
+		set_parameter(get_uniform_location(name), color);
 	}
 
 	void Shader::set_uniform(const char *name, float arg)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), arg);
+		set_parameter(get_uniform_location(name), arg);
 	}
 
 	void Shader::set_uniform(const char *name, const Vector2f& arg)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), arg);
+		set_parameter(get_uniform_location(name), arg);
 	}
 
 	void Shader::set_uniform(const char *name, const Vector3f& arg)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), arg);
+		set_parameter(get_uniform_location(name), arg);
 	}
 	
 	void Shader::set_uniform(const char *name, const Vector4f& arg)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), arg);
+		set_parameter(get_uniform_location(name), arg);
 	}
 	
 	void Shader::set_uniform(const char *name, const Matrix4f& arg)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), arg);
+		set_parameter(get_uniform_location(name), arg);
+	}
+	
+	void Shader::set_uniform(const char *name, const Material& arg)
+	{
+		std::string tmp(name);
+		
+		if (tmp.empty())
+			ATEMA_ERROR("Invalid variable name.")
+		
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_uniform((tmp + ".ambient_color").c_str(), arg.ambient_color);
+		set_uniform((tmp + ".diffuse_color").c_str(), arg.diffuse_color);
+		set_uniform((tmp + ".specular_color").c_str(), arg.specular_color);
+		set_uniform((tmp + ".shininess").c_str(), arg.shininess);
+		set_uniform((tmp + ".ambient_texture").c_str(), arg.ambient_texture);
+		set_uniform((tmp + ".diffuse_texture").c_str(), arg.diffuse_texture);
+		set_uniform((tmp + ".specular_texture").c_str(), arg.specular_texture);
+	}
+	void Shader::set_uniform(const char *name, const PointLight& arg)
+	{
+		std::string tmp(name);
+		
+		if (tmp.empty())
+			ATEMA_ERROR("Invalid variable name.")
+		
+		ensure_vao(); //At this point VAO is created or an exception is thrown
+		
+		set_uniform((tmp + ".position").c_str(), arg.position);
+		set_uniform((tmp + ".color").c_str(), arg.color);
+		set_uniform((tmp + ".radius").c_str(), arg.radius);
+		set_uniform((tmp + ".intensity").c_str(), arg.intensity);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<float>& array)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), array);
+		set_parameter(get_varying_location(name), array);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<Vector2f>& array)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), array);
+		set_parameter(get_varying_location(name), array);
 	}
 
 	void Shader::set_varying(const char *name, const Buffer<Vector3f>& array)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), array);
+		set_parameter(get_varying_location(name), array);
 	}
 	
 	void Shader::set_varying(const char *name, const Buffer<Vector4f>& array)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), array);
+		set_parameter(get_varying_location(name), array);
 	}
 	
 	void Shader::set_varying(const char *name, const Buffer<Color>& array)
 	{
 		ensure_vao(); //At this point VAO is created or an exception is thrown
 		
-		set_parameter(get_location(name), array);
+		set_parameter(get_varying_location(name), array);
 	}
 	
 	void Shader::delete_varying(const char *name)
@@ -563,7 +701,7 @@ namespace at
 			if (!m_vao_ok)
 				return;
 			
-			location = get_location(name);
+			location = get_varying_location(name);
 			
 			glBindVertexArray(m_vao);
 			glDisableVertexAttribArray(location);
@@ -584,8 +722,8 @@ namespace at
 		
 		for (auto& pair : m_texs)
 		{
-			if (!pair.second.second->is_valid())
-				ATEMA_ERROR("Invalid texture.")
+			// if (!pair.second.second || !pair.second.second->is_valid())
+				// ATEMA_ERROR("Invalid texture.")
 			
 			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(pair.second.first));
 			
@@ -595,7 +733,7 @@ namespace at
 
 	void Shader::unbind() const
 	{
-		glUseProgram(0);
+		// glUseProgram(0);
 		
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -620,51 +758,107 @@ namespace at
 	//PARAMETERS
 	void Shader::set_parameter(GLint location, const Texture& texture)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform1i(location, m_texs[location].first);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 	
 	void Shader::set_parameter(GLint location, const Color& color)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform4f(location, color.r, color.g, color.b, color.a);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 
 	void Shader::set_parameter(GLint location, float arg)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform1f(location, arg);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 
 	void Shader::set_parameter(GLint location, const Vector2f& arg)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform2f(location, arg.data[0], arg.data[1]);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 
 	void Shader::set_parameter(GLint location, const Vector3f& arg)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform3f(location, arg.data[0], arg.data[1], arg.data[2]);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 	
 	void Shader::set_parameter(GLint location, const Vector4f& arg)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniform4f(location, arg.data[0], arg.data[1], arg.data[2], arg.data[3]);
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 	
 	void Shader::set_parameter(GLint location, const Matrix4f& arg)
 	{
-		glUseProgram(m_program);
+		//TODO: Optimize this ugly stuff
+		GLint current_program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(m_program);
+		
 		glUniformMatrix4fv(location, 1, GL_FALSE, arg.get());
-		glUseProgram(0);
+		
+		if (m_program != static_cast<GLuint>(current_program))
+			glUseProgram(static_cast<GLuint>(current_program));
 	}
 
 	void Shader::set_parameter(GLint location, const Buffer<float>& array)
@@ -731,29 +925,37 @@ namespace at
 	
 	const char* Shader::get_glsl_header()
 	{
-		static const char * header = ""; /*ATEMA_STRINGIFY( //ATEMA Definitions
-			struct AtemaMaterial
-			{
-				vec4 ambient_color;
-				vec4 diffuse_color;
-				vec4 specular_color;
-				
-				float shininess;
-				
-				sampler2D ambient_texture;
-				sampler2D diffuse_texture;
-				sampler2D specular_texture;
-			};
-			
-			struct AtemaModel
-			{
-				vec3 position;
-				vec3 normal;
-				vec2 tex_coords;
-				AtemaMaterial material;
-			};
-		);
-		//*/
+		static const char * header = "\n"
+			"//ATEMA types definition\n"
+			"struct AtemaMaterial\n"
+			"{\n"
+				"\tvec4 ambient_color;\n"
+				"\tvec4 diffuse_color;\n"
+				"\tvec4 specular_color;\n"
+				"\t\n"
+				"\tfloat shininess;\n"
+				"\t\n"
+				"\tsampler2D ambient_texture;\n"
+				"\tsampler2D diffuse_texture;\n"
+				"\tsampler2D specular_texture;\n"
+			"};\n"
+			"\n"
+			"struct AtemaModel\n"
+			"{\n"
+				"\tvec3 position;\n"
+				"\tvec3 normal;\n"
+				"\tvec2 tex_coords;\n"
+			"};\n"
+			"\n"
+			"struct AtemaPointLight\n"
+			"{\n"
+				"\tvec3 position;\n"
+				"\tvec4 color;\n"
+				"\tfloat radius;\n"
+				"\tfloat intensity;\n"
+			"};\n"
+			"//End of ATEMA types definition\n"
+		"";
 		
 		return (header);
 	}

@@ -42,9 +42,11 @@ namespace at
 			virtual ~Renderer() noexcept;
 			
 			void set_target(RenderTarget *target);
+			RenderTarget* get_target();
 			const RenderTarget* get_target() const;
 			
 			void set_shader(Shader *shader);
+			Shader* get_shader();
 			const Shader* get_shader() const;
 			
 			void set_polygon_mode(polygon_mode mode);
