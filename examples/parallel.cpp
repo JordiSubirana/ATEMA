@@ -9,8 +9,8 @@ using namespace std;
 using namespace at;
 
 
-#define POINTS_X 256
-#define POINTS_Y 256
+#define POINTS_X 128
+#define POINTS_Y 128
 
 const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 		layout(location = 0) in vec3 position;
@@ -20,7 +20,7 @@ const char *vertex_shader = "#version 330 core\n" ATEMA_STRINGIFY(
 		void main() {
 			frag_color = color;
 			gl_Position = vec4(position.x, position.y, position.z, 4.0)/4;
-			gl_PointSize = 1.0;
+			gl_PointSize = 2.0;
 		}
 );
 
@@ -61,18 +61,54 @@ static string code = ATEMA_STRINGIFY(
 			uint id = gl_GlobalInvocationID.x;
 			c[id].r *= 1;
 
+			float k = 0.5+0.5*cos(3.141592+t);
 			float r = mesh[id].x;
 			float i = mesh[id].y;
 			float m = sqrt(r*r + i*i);
 			float a = atan(i, r);
 
-
-			if (cmd == 0) {
-				float k = 1.5+0.5*cos(3.141592+t);
+			if (cmd == 0) { // power
+				k = k+1;
 				m = pow(m, k);
 				a = a*k;
 				r = m*cos(a);
 				i = m*sin(a);
+			}
+			else if (cmd == 1) { // cos
+				float cr = cos(r)*cosh(i);
+				float ci = -sin(r)*sinh(i);
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
+			}
+			else if (cmd == 2) { // sin
+				float cr = sin(r)*cosh(i);
+				float ci = cos(r)*sinh(i);
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
+			}
+			else if (cmd == 3) { // cosh
+				float cr = cosh(r)*cos(i);
+				float ci = sinh(r)*sin(i);
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
+			}
+			else if (cmd == 4) { // sinh
+				float cr = sinh(r)*cos(i);
+				float ci = cosh(r)*sin(i);
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
+			}
+			else if (cmd == 5) { // ln
+				float cr = r*cos(i);
+				float ci = r*sin(i);
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
+			}
+			else if (cmd == 6) { // exp
+				float cr = log(m);
+				float ci = a;
+				r = (k)*cr + (1-k)*r;
+				i = (k)*ci + (1-k)*i;
 			}
 
 
@@ -100,7 +136,7 @@ int main() {
 		version.minor = 3;
 
 		Window window;
-		window.create(512, 512, "Particle", Window::options::visible | Window::options::frame | Window::options::resizable , version);
+		window.create(512, 512, "complex function exploration", Window::options::visible | Window::options::frame | Window::options::resizable , version);
 		window.set_viewport(Rect(0, 0, window.get_width(), window.get_height()));
 		window.set_clear_color(Color(0.3,0.3,0.3,1.0));
 
@@ -123,7 +159,13 @@ int main() {
 		cout << "GL_VENDOR   : " << (char const*)glGetString(GL_VENDOR) << endl;
 		cout << "GL_RENDERER : " << (char const*)glGetString(GL_RENDERER) << endl;
 		cout << "==================================================\n";
-		cout << "  [arrows] :   navigate\n";
+		cout << "  [0] :   z^[1-2]\n";
+		cout << "  [1] :   cos(z)\n";
+		cout << "  [2] :   sin(z)\n";
+		cout << "  [3] :   cosh(z)\n";
+		cout << "  [4] :   sinh(z)\n";
+		cout << "  [5] :   exp(z)\n";
+		cout << "  [6] :   ln(z)\n";
 		cout << "==================================================\n";
 
 
@@ -175,7 +217,7 @@ int main() {
 		cpt.set_range(ComputeSize(POINTS_X * POINTS_Y / 64), ComputeSize(64));//*/
 
 		// parametres controle
-		unsigned cmd = 0;
+		unsigned cmd = 6;
 
 		cout << toc() << "s" << endl;
 
@@ -187,13 +229,14 @@ int main() {
 			tic();
 			window.clear();
 
-			/*
-			if (keyboard.is_pressed(Keyboard::key::left)) 		os.x -= 0.05*zoom;
-			if (keyboard.is_pressed(Keyboard::key::right)) 		os.x += 0.05*zoom;
-			if (keyboard.is_pressed(Keyboard::key::down)) 		os.y -= 0.05*zoom;
-			if (keyboard.is_pressed(Keyboard::key::up)) 		os.y += 0.05*zoom;
-			if (keyboard.is_pressed(Keyboard::key::page_down)) 	zoom *= 1.1;
-			if (keyboard.is_pressed(Keyboard::key::page_up)) 	zoom *= 0.9;//*/
+
+			if (keyboard.is_pressed(Keyboard::key::kp_0)) 		cmd = 0;
+			if (keyboard.is_pressed(Keyboard::key::kp_1)) 		cmd = 1;
+			if (keyboard.is_pressed(Keyboard::key::kp_2)) 		cmd = 2;
+			if (keyboard.is_pressed(Keyboard::key::kp_3)) 		cmd = 3;
+			if (keyboard.is_pressed(Keyboard::key::kp_4)) 		cmd = 4;
+			if (keyboard.is_pressed(Keyboard::key::kp_5)) 		cmd = 5;
+			if (keyboard.is_pressed(Keyboard::key::kp_6)) 		cmd = 6;
 			if (keyboard.is_pressed(Keyboard::key::r))  {
 				colors.to_gpu();
 				mesh.elements.to_gpu();
@@ -209,7 +252,13 @@ int main() {
 
 			if (!pause) {
 				t += 1.0f/fps;
-				mesh.elements.to_gpu();
+				if (cmd == 0) mesh.elements.to_gpu();
+				if (cmd == 1) mesh.elements.to_gpu();
+				if (cmd == 2) mesh.elements.to_gpu();
+				if (cmd == 3) mesh.elements.to_gpu();
+				if (cmd == 4) mesh.elements.to_gpu();
+				if (cmd == 5) mesh.elements.to_gpu();
+				if (cmd == 6) mesh.elements.to_gpu();
 				cpt(t, mesh.elements, colors, cmd);
 			}
 

@@ -86,12 +86,12 @@ namespace at
 	
 	unsigned int Context::get_width() const
 	{
-		return (m_infos.x2);
+		return (unsigned int) (m_infos.x2);
 	}
 	
 	unsigned int Context::get_height() const
 	{
-		return (m_infos.y2);
+		return (unsigned int) (m_infos.y2);
 	}
 	
 	GLuint Context::get_gl_framebuffer_id() const
