@@ -18,11 +18,16 @@ int main()
 		Context context;
 		context.create(512, 512, version);
 		
-		Texture tex;
+		string file = "3d/Spider-Man_Symbiote.obj";
 		
-		tex.create("images/lena-diagonals.png");
+		cout << File::get_path(file) << " --- " << File::get_extension(file) << endl;
 		
-		tex.save("outputs/main_lena_save.jpeg");
+		if (File::extension_match(file, "obj"))
+			cout << "Extension match !!" << endl;
+		
+		Model model;
+		
+		model.create("3d/Spider-Man_Symbiote.obj");
 	}
 	catch (Error& e)
 	{

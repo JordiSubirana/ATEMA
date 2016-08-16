@@ -33,7 +33,7 @@ namespace at
 			virtual ~Drawable() = default;
 			
 		protected:
-			virtual void draw(const Renderer& renderer) = 0;
+			virtual void draw(Renderer& renderer) = 0;
 	};
 }
 

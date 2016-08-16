@@ -26,10 +26,15 @@
 #include <atema/core/non_copyable.hpp>
 #include <atema/math/vector.hpp>
 #include <atema/graphics/texture.hpp>
-#include "buffer.hpp"
+#include <atema/graphics/buffer.hpp>
 #include <atema/graphics/color.hpp>
+#include <atema/graphics/mesh.hpp>
+#include <atema/graphics/material.hpp>
+#include <atema/graphics/light.hpp>
+#include <atema/math/matrix.hpp>
 
 #include <map>
+#include <string>
 
 namespace at
 {
@@ -43,16 +48,22 @@ namespace at
 			void create_from_file(const char *entry_name, const char *vert_sh_filename, const char *frag_sh_filename);
 			void create_from_memory(const char *entry_name, const char *vert_sh, const char *frag_sh);
 			
+			GLint get_uniform_location(const char *name);
+			GLint get_varying_location(const char *name);
+			const char *get_entry_name() const;
 			GLint get_gl_entry_location() const;
 			GLuint get_gl_vao_id() const;
 			
 			void set_uniform(const char *name, const Texture& texture);
-			// void set_uniform(const char *name, const Transform& transform);
 			void set_uniform(const char *name, const Color& color);
 			void set_uniform(const char *name, float arg);
 			void set_uniform(const char *name, const Vector2f& arg);
 			void set_uniform(const char *name, const Vector3f& arg);
 			void set_uniform(const char *name, const Vector4f& arg);
+			void set_uniform(const char *name, const Matrix4f& arg);
+			void set_uniform(const char *name, const Material& arg);
+			void set_uniform(const char *name, const PointLight& arg);
+			
 			void set_varying(const char *name, const Buffer<float>& array);
 			void set_varying(const char *name, const Buffer<Vector2f>& array);
 			void set_varying(const char *name, const Buffer<Vector3f>& array);
@@ -72,10 +83,30 @@ namespace at
 		private:
 			GLuint load_from_file(const char *filename, GLenum shader_type);
 			GLuint load_from_memory(const char *data, GLenum shader_type);
+			void complete_shader(std::string& shader, GLenum shader_type);
 			GLuint load(GLuint vert, GLuint frag);
-			GLint get_location(const char *name);
+			
 			void clear();
 			void ensure_vao();
+			
+			//---PARAMETERS
+			void set_parameter(GLint location, const Texture& texture);
+			void set_parameter(GLint location, const Color& color);
+			void set_parameter(GLint location, float arg);
+			void set_parameter(GLint location, const Vector2f& arg);
+			void set_parameter(GLint location, const Vector3f& arg);
+			void set_parameter(GLint location, const Vector4f& arg);
+			void set_parameter(GLint location, const Matrix4f& arg);
+			void set_parameter(GLint location, const Buffer<float>& array);
+			void set_parameter(GLint location, const Buffer<Vector2f>& array);
+			void set_parameter(GLint location, const Buffer<Vector3f>& array);
+			void set_parameter(GLint location, const Buffer<Vector4f>& array);
+			void set_parameter(GLint location, const Buffer<Color>& array);
+			//ShaderVariable specific
+			void set_parameter(GLint location, const Mesh& mesh);
+			//---
+			
+			static const char* get_glsl_header();
 			
 			bool m_valid;
 			
@@ -84,20 +115,15 @@ namespace at
 			GLuint m_vert;
 			GLuint m_frag;
 			
+			std::string m_entry_name;			
 			GLint m_entry;
 			
 			size_t m_tex_units;
 			
-			std::map<std::string, GLint> m_locations;
+			std::map<std::string, GLint> m_uniform_locations;
+			std::map<std::string, GLint> m_varying_locations;
 			
 			std::map< GLint, std::pair<int, const Texture*> > m_texs;
-			
-			/*
-			std::map<GLint, const Buffer<float>*> m_arr_float;
-			std::map<GLint, const Buffer<Vector2f>*> m_arr_vec2;
-			std::map<GLint, const Buffer<Vector3f>*> m_arr_vec3;
-			#warning create Vector4f container
-			//*/
 			
 			GLuint m_vao;
 			bool m_vao_ok;

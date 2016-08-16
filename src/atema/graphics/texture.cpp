@@ -19,6 +19,7 @@
 
 #include <atema/graphics/texture.hpp>
 #include <atema/core/error.hpp>
+#include <atema/core/file.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
@@ -188,7 +189,6 @@ namespace at
 	
 	void Texture::save(const char *filename)
 	{
-		std::string file;
 		int error;
 		std::vector<unsigned char> data;
 		
@@ -205,17 +205,14 @@ namespace at
 			}
 		}
 		
-		file = filename;
-		
-		if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("png") == 0)
+		if (File::extension_match(filename, "png"))
 			error = stbi_write_png(filename, m_width, m_height, 4, data.data(), 0);
-		else if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("bmp") == 0)
-			error = stbi_write_bmp(filename, m_width, m_height, 4, data.data());
-		else if (file.size() >= 5 && file.substr(file.size()-3, 3).compare("tga") == 0)
-			error = stbi_write_tga(filename, m_width, m_height, 4, data.data());
-		else if ((file.size() >= 5 && file.substr(file.size()-3, 3).compare("jpg") == 0) ||
-				(file.size() >= 6 && file.substr(file.size()-4, 4).compare("jpeg") == 0))
+		else if (File::extension_match(filename, "jpg") || File::extension_match(filename, "jpeg"))
 			error = tje_encode_to_file(filename, m_width, m_height, 4, data.data());
+		else if (File::extension_match(filename, "bmp"))
+			error = stbi_write_bmp(filename, m_width, m_height, 4, data.data());
+		else if (File::extension_match(filename, "tga"))
+			error = stbi_write_tga(filename, m_width, m_height, 4, data.data());
 		else
 			ATEMA_ERROR("Invalid filename or extension.")
 		
@@ -288,9 +285,9 @@ namespace at
 			
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); //GL_CLAMP_TO_EDGE - GL_REPEAT
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
 			
 			glBindTexture(GL_TEXTURE_2D, 0);
 			

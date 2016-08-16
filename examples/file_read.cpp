@@ -9,8 +9,8 @@ int main(int argc, char ** argv)
 {
 	try
 	{
-		File input_file;
-		File output_file;
+		FileStream input_file;
+		FileStream output_file;
 		string tmp;
 		
 		//Open input & output files (a file is created if it doesn't exist)
@@ -18,7 +18,7 @@ int main(int argc, char ** argv)
 		output_file.open("outputs/file_read_output.txt");
 		
 		//When opened, a file is pointing on the first line
-		cout << "File current line : " << input_file.get_current_line_index() << endl;
+		cout << "FileStream current line : " << input_file.get_current_line_index() << endl;
 		
 		//Loop : read each line of input, checking its size then write it in output
 		while (!input_file.end_of_file())
@@ -32,13 +32,13 @@ int main(int argc, char ** argv)
 				output_file.write("\n");
 		}
 		
-		cout << "File current line : " << input_file.get_current_line_index() << endl;
+		cout << "FileStream current line : " << input_file.get_current_line_index() << endl;
 		
 		//Checking for a specific line
 		cout << "Specific line 7 (8th line) :" << endl;
 		cout << input_file.get_line(7) << endl;
 		
-		cout << "File current line : " << input_file.get_current_line_index() << endl;
+		cout << "FileStream current line : " << input_file.get_current_line_index() << endl;
 	}
 	catch (const std::exception& e)
 	{

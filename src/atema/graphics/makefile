@@ -1,5 +1,5 @@
 # list of dependances
-DEPENDS = 
+DEPENDS = tinyxml2
 
 ###################################
 

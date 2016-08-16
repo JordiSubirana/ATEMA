@@ -40,6 +40,11 @@ namespace at
 		m_target = target;
 	}
 	
+	RenderTarget* Renderer::get_target()
+	{
+		return (m_target);
+	}
+	
 	const RenderTarget* Renderer::get_target() const
 	{
 		return (m_target);
@@ -48,6 +53,11 @@ namespace at
 	void Renderer::set_shader(Shader *shader)
 	{
 		m_shader = shader;
+	}
+	
+	Shader* Renderer::get_shader()
+	{
+		return (m_shader);
 	}
 	
 	const Shader* Renderer::get_shader() const

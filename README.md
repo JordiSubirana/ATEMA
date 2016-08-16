@@ -10,8 +10,13 @@ The goal of **ATEMA** is to provide a simple, intuitive and efficient API in ord
 
 ## Developers
 
-_**Jordi SUBIRANA**_, main developer. (Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr))  
-_**schlog**_, helper and developer of Parallel module.
+_**Jordi SUBIRANA**_  
+Main developer.  
+Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr)  
+
+_**Guillaume SCHLOTTERBECK**_ aka _**schlog**_  
+Helper and developer of Parallel module.  
+Contact: [guillaume.schlotterbeck@gmail.com](mailto:guillaume.schlotterbeck@gmail.com)  
 
 ## Dependencies
 
@@ -20,6 +25,7 @@ As many dependencies as possible are header-only libraries. The exhaustive list 
  * stb_image (see [nothings/stb](https://github.com/nothings/stb) on GitHub)
  * stb_image_write (see [nothings/stb](https://github.com/nothings/stb) on GitHub)
  * TinyJPEG (see [serge-rgb/TinyJPEG](https://github.com/serge-rgb/TinyJPEG) on GitHub)
+ * tinyobjloader (see [syoyo/tinyobjloader](https://github.com/syoyo/tinyobjloader) on GitHub)
 * Compiled dependencies
  * GLFW (see [GLFW website](http://www.glfw.org/))
  * glad (see [Dav1dde/glad](https://github.com/Dav1dde/glad) on GitHub)
@@ -46,4 +52,10 @@ The only prerequisite is a compatible C++11 compiler.
 ## Examples
 
 You can find in the [examples directory](https://github.com/JordiSubirana/ATEMA/tree/master/examples) a lot of sources showing different ways to use **ATEMA**.  
-_Some screenshots will appear there soon._
+
+![Test Model Example](https://raw.githubusercontent.com/JordiSubirana/ATEMA/master/screenshots/test_model.png)  
+3D model loaded from an OBJ file. Use of lights.  
+See the [test program](https://github.com/JordiSubirana/ATEMA/blob/master/examples/test_model.cpp) in the [examples directory](https://github.com/JordiSubirana/ATEMA/tree/master/examples).  
+(Credit for the 3D model : [MattiaRuffo](http://mattiaruffo.deviantart.com/art/SPIDERMAN-CIVIL-WAR-3D-DOWNLOAD-614858846?ga_submit_new=10%3A1465736939) on Deviant Art)
+
+_Some more screenshots will appear there soon._

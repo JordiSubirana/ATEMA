@@ -196,7 +196,7 @@ namespace at
 			
 			if (!m_window)
 			{
-				ATEMA_ERROR("GLFW could not create window.")
+				ATEMA_ERROR("GLFW could not create the context.")
 			}
 			
 			glfwMakeContextCurrent(m_window);
@@ -241,7 +241,7 @@ namespace at
 			
 			if ((m_infos.x2 != static_cast<int>(w)) || (m_infos.y2 != static_cast<int>(h)))
 			{
-				ATEMA_ERROR("Window size not available.")
+				ATEMA_ERROR("Framebuffer size not available.")
 			}
 			
 			set_viewport(Rect(0, 0, bw-1, bh-1));

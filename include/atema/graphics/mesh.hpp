@@ -29,9 +29,12 @@
 namespace at
 {
 	class Renderer;
+	class Model;
 	
 	class ATEMA_GRAPHICS_API Mesh : public IndexedArray<Vector3f>, public Drawable
 	{
+		friend class at::Model;
+		
 		public:
 			using IndexedArray<Vector3f>::create;
 			
@@ -73,7 +76,8 @@ namespace at
 			
 		private:
 			bool ensure_indices();
-			void draw(const Renderer& renderer);
+			void draw(Renderer& renderer);
+			void draw(Renderer& renderer, GLint forced_location);
 			
 			draw_mode m_draw_mode;
 	};
