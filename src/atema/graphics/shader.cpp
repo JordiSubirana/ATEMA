@@ -75,13 +75,6 @@ namespace at
 			
 			const char *tmp_data = shader_code.c_str();
 			
-			if (shader_type == GL_VERTEX_SHADER)
-			{
-				FileStream file;
-				file.open("test.vert", static_cast<Flags>(FileStream::options::write));
-				file.write(tmp_data);
-			}
-			
 			glShaderSource(shader_id, 1, &(tmp_data), nullptr);
 			
 			if (glGetError() != GL_NO_ERROR)
