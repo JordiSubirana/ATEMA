@@ -17,42 +17,45 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-
-#include <atema/core/timer.hpp>
+#include <Atema/Core/Timer.hpp>
 #include <thread>
 
-
-namespace at {
-
+namespace at
+{
     static const Timer from_start;
     static thread_local Timer chrono;
-
-    Timer::Timer() noexcept {
+	
+    Timer::Timer() noexcept
+	{
         reset();
     }
-
-    void Timer::reset() noexcept {
+	
+    void Timer::reset() noexcept
+	{
         t0 = std::chrono::high_resolution_clock::now();
     }
-
-    Duration Timer::elapsed() const {
+	
+    Duration Timer::elapsed() const
+	{
         auto t1 =  std::chrono::high_resolution_clock::now();
-
+		
         std::chrono::duration<unsigned long long, std::micro> time_span = std::chrono::duration_cast<std::chrono::duration<unsigned long long, std::micro>>(t1-t0);
-
+		
         return usecond<unsigned long long>(time_span.count());
     }
-
-
-    Duration Timer::elapsed_from_start() {
+	
+    Duration Timer::elapsed_from_start()
+	{
         return from_start.elapsed();
     }
-
-    void tic() noexcept {
+	
+    void tic() noexcept
+	{
         chrono.reset();
     }
-
-    float toc() {
+	
+    float toc()
+	{
         return chrono.elapsed().s();
     }
 }

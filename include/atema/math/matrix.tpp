@@ -20,7 +20,7 @@
 #ifndef ATEMA_MATH_MATRIX_IMPLEMENTATION
 #define ATEMA_MATH_MATRIX_IMPLEMENTATION
 
-#include <atema/core/error.hpp>
+#include <Atema/Core/Error.hpp>
 
 namespace at
 {

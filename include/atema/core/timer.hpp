@@ -20,36 +20,31 @@
 #ifndef ATEMA_CORE_TIMER_HPP
 #define ATEMA_CORE_TIMER_HPP
 
-#include <atema/core/duration.hpp>
+#include <Atema/Core/Config.hpp>
+#include <Atema/Core/Duration.hpp>
 
 #include <chrono>
 
-namespace at {
-
-
-    class Timer {
-        std::chrono::high_resolution_clock::time_point t0;
-
-    public:
-
-        Timer() noexcept ;
-
-        void reset() noexcept ;
-
-        Duration elapsed() const ;
-
-        static Duration elapsed_from_start();
-
+namespace at
+{
+	class ATEMA_CORE_API Timer
+	{
+        public:
+			Timer() noexcept;
+			
+			void reset() noexcept;
+			
+			Duration elapsed() const;
+			
+			static Duration elapsed_from_start();
+			
+		private:
+			std::chrono::high_resolution_clock::time_point t0;
     };
-
-    void tic() noexcept ;
+	
+    void tic() noexcept;
     float toc();
-
 }
-
-
-
-
 
 #endif
 

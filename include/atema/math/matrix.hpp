@@ -20,8 +20,8 @@
 #ifndef ATEMA_MATH_MATRIX_HEADER
 #define ATEMA_MATH_MATRIX_HEADER
 
-#include <atema/math/config.hpp>
-#include <atema/math/vector.hpp>
+#include <Atema/Math/Config.hpp>
+#include <Atema/Math/Vector.hpp>
 
 #include <iostream>
 
@@ -134,8 +134,8 @@ namespace at
 }
 
 //IMPLEMENTATIONS
-#include <atema/math/matrix.tpp>
-#include <atema/math/matrix_tools.tpp>
+#include <Atema/Math/Matrix.tpp>
+#include <Atema/Math/MatrixTools.tpp>
 
 //STANDARD OUTPUT
 template <size_t COL, size_t ROW, typename T>

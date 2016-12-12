@@ -17,30 +17,34 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-
-#include <atema/core/duration.hpp>
+#include <Atema/Core/Duration.hpp>
 #include <thread>
 
-float at::Duration::s() const noexcept {
-    return _d*1e-6f;
-}
-
-float at::Duration::ms() const noexcept {
-    return _d*1e-3f;
-}
-
-unsigned long long at::Duration::us() const noexcept {
-    return _d;
-}
-
-
-void ::at::sleep(const at::Duration &d) {
-
-    std::this_thread::sleep_for(d.to_std_duration());
-}
-
-
-std::chrono::duration<unsigned long long, std::micro> at::Duration::to_std_duration() const noexcept {
-    std::chrono::duration<unsigned long long, std::micro> std_d(_d);
-    return std_d;
+namespace at
+{
+	float Duration::s() const noexcept
+	{
+		return _d*1e-6f;
+	}
+	
+	float Duration::ms() const noexcept
+	{
+		return _d*1e-3f;
+	}
+	
+	unsigned long long Duration::us() const noexcept
+	{
+		return _d;
+	}
+	
+	void sleep(const Duration &d)
+	{
+		std::this_thread::sleep_for(d.to_std_duration());
+	}
+	
+	std::chrono::duration<unsigned long long, std::micro> Duration::to_std_duration() const noexcept
+	{
+		std::chrono::duration<unsigned long long, std::micro> std_d(_d);
+		return (std_d);
+	}
 }

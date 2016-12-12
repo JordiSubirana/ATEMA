@@ -20,14 +20,17 @@
 #ifndef ATEMA_GLOBAL_CORE_HEADER
 #define ATEMA_GLOBAL_CORE_HEADER
 
-#include <atema/core/config.hpp>
-#include <atema/core/duration.hpp>
-#include <atema/core/error.hpp>
-#include <atema/core/file.hpp>
-#include <atema/core/file_stream.hpp>
-#include <atema/core/flags.hpp>
-#include <atema/core/non_copyable.hpp>
-#include <atema/core/timer.hpp>
-#include <atema/core/utility.hpp>
+#include <Atema/Core/Config.hpp>
+#include <Atema/Core/Color.hpp>
+#include <Atema/Core/Duration.hpp>
+#include <Atema/Core/Error.hpp>
+#include <Atema/Core/File.hpp>
+#include <Atema/Core/FileStream.hpp>
+#include <Atema/Core/Flags.hpp>
+#include <Atema/Core/Interface.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Ref.hpp>
+#include <Atema/Core/Timer.hpp>
+#include <Atema/Core/WindowHandle.hpp>
 
 #endif

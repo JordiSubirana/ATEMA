@@ -20,19 +20,16 @@
 #ifndef ATEMA_CORE_FILE_HEADER
 #define ATEMA_CORE_FILE_HEADER
 
-#include <atema/core/config.hpp>
+#include <Atema/Core/Config.hpp>
+#include <Atema/Core/Interface.hpp>
 
 #include <string>
 
 namespace at
 {
-	class ATEMA_CORE_API File
+	class ATEMA_CORE_API File : public Interface
 	{
 		public:
-			File() = delete;
-			File(const File& file) = delete;
-			virtual ~File() = delete;
-			
 			static std::string get_extension(const std::string& str);
 			static std::string get_path(const std::string& str);
 			

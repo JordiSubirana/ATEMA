@@ -11,7 +11,7 @@ DEBUG_MODE = ON
 # DYNAMIC_LINK = ON
 
 # default target. You can specify the target: make NAME=atema
-NAME?=atema
+NAME?=Atema
 
 
 ###########################################
@@ -37,7 +37,7 @@ ifeq ($(DEBUG_MODE), ON)
 endif
 
 
-ATEMA_LIB = -latema-window -latema-graphics -latema-context -latema-core -latema-parallel
+ATEMA_LIB = -lAtema-OpenGL -lAtema-Renderer -lAtema-HMI -lAtema-Core
 
 ifeq ($(OS),Windows_NT)
   EXTERNAL_LIB = -lglfw3 -lOpenCL -lopengl32 -lgdi32 

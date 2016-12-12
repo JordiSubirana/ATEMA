@@ -1,41 +1,25 @@
-#include <atema/atema.hpp>
-
+#include <Atema/Atema.hpp>
 #include <iostream>
-#include <cstdio>
 
 using namespace std;
 using namespace at;
 
-int main()
+int main(int argc, char ** argv)
 {
 	try
 	{
-		//Setup OpenGL version
-		Context::gl_version version;
-		version.major = 3;
-		version.minor = 3;
+		OpenGLRenderer renderer;
+		Ref<Window> window = Window::create(640, 480, "Hello World");
 		
-		Context context;
-		context.create(512, 512, version);
-		
-		string file = "3d/Spider-Man_Symbiote.obj";
-		
-		cout << File::get_path(file) << " --- " << File::get_extension(file) << endl;
-		
-		if (File::extension_match(file, "obj"))
-			cout << "Extension match !!" << endl;
-		
-		Model model;
-		
-		model.create("3d/Spider-Man_Symbiote.obj");
+		while (!window->should_close())
+		{
+			window->update();
+		}
 	}
-	catch (Error& e)
+	catch (const exception& e)
 	{
-		printf("ERROR\n");
-		printf("%s", e.what());
+		cout << e.what() << endl;
 	}
 	
-	return 0;
+	return (0);
 }
-
-

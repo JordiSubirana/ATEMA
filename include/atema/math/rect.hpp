@@ -20,7 +20,8 @@
 #ifndef ATEMA_MATH_RECT_HEADER
 #define ATEMA_MATH_RECT_HEADER
 
-#include <atema/math/config.hpp>
+#include <Atema/Math/Config.hpp>
+
 #include <cmath>
 
 namespace at

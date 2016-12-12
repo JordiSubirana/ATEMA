@@ -20,7 +20,8 @@
 #ifndef ATEMA_MATH_VECTOR_IMPLEMENTATION
 #define ATEMA_MATH_VECTOR_IMPLEMENTATION
 
-#include <atema/core/error.hpp>
+#include <Atema/Core/Error.hpp>
+
 #include <cmath>
 
 namespace at

@@ -20,7 +20,7 @@
 #ifndef ATEMA_MATH_VECTOR_HEADER
 #define ATEMA_MATH_VECTOR_HEADER
 
-#include <atema/math/config.hpp>
+#include <Atema/Math/Config.hpp>
 
 #include <iostream>
 
@@ -154,8 +154,8 @@ namespace at
 }
 
 //IMPLEMENTATIONS
-#include <atema/math/vector.tpp>
-#include <atema/math/vector_tools.tpp>
+#include <Atema/Math/Vector.tpp>
+#include <Atema/Math/VectorTools.tpp>
 
 //STANDARD OUTPUT
 template <size_t N, typename T>

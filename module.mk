@@ -9,6 +9,7 @@ OBJ = $(subst .cpp,.o,$(SRC))
 
 # ajoute les dependances cpp
 SRC_DEP = $(foreach dep,$(DEPENDS),$(wildcard ../../../extlibs/src/$(dep)/*.c) $(wildcard ../../../extlibs/src/$(dep)/*.cpp))
+# SRC_DEP = $(foreach dep,$(DEPENDS),$(wildcard ../../../extlibs/src/dep))
 OBJ += $(subst .c,.o,$(subst .cpp,.o,$(SRC_DEP)))
 
 

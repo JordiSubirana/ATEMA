@@ -59,10 +59,8 @@
 	#define ATEMA_FUNCTION __FUNCSIG__
 
 	#pragma warning(disable: 4251)
-#else
 	
-	#define ATEMA_COMPILER_UNKNOWN
-	#define ATEMA_FUNCTION ""
+#else
 	
 	#error Unsupported compiler
 	
@@ -76,14 +74,12 @@
 
 
 // Operating System
-#ifdef _WIN32
+#if defined(_WIN32)
 
 	#define ATEMA_SYSTEM_WINDOWS
 	
 	#define ATEMA_EXPORT __declspec(dllexport)
 	#define ATEMA_IMPORT __declspec(dllimport)
-	// #define ATEMA_EXPORT
-	// #define ATEMA_IMPORT
 	
 	#ifndef NOMINMAX
 		
@@ -91,7 +87,7 @@
 		
 	#endif
 
-#elif __APPLE__
+#elif defined(__APPLE__) && defined(__MACH__)
 
 	#include "TargetConditionals.h"
 	
@@ -106,16 +102,16 @@
 		
 		#define ATEMA_SYSTEM_UNKNOWN
 		
-		#define ATEMA_EXPORT __attribute__((visibility ("default")))
-		#define ATEMA_IMPORT __attribute__((visibility ("default")))
+		#define ATEMA_EXPORT
+		#define ATEMA_IMPORT
 		
 		#error Apple operating system not supported by ATEMA
 		
 	#endif
 	
-#elif __unix__
+#elif defined(__unix__)
 	
-	#if __linux__
+	#if defined(__linux__)
 		
 		#define ATEMA_SYSTEM_LINUX
 		
@@ -143,5 +139,7 @@
 	#error Operating system not supported by ATEMA
 
 #endif
+
+#include <Atema/Misc.hpp>
 
 #endif

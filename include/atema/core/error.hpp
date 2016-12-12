@@ -20,7 +20,7 @@
 #ifndef ATEMA_ERROR_HEADER
 #define ATEMA_ERROR_HEADER
 
-#include <atema/core/config.hpp>
+#include <Atema/Core/Config.hpp>
 
 #include <exception>
 #include <stdexcept>

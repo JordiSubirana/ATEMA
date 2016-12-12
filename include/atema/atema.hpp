@@ -17,14 +17,13 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_GLOBAL_HEADER
-#define ATEMA_GLOBAL_HEADER
+#ifndef ATEMA_GLOBAL_ATEMA_HEADER
+#define ATEMA_GLOBAL_ATEMA_HEADER
 
-#include <atema/context.hpp>
-#include <atema/core.hpp>
-#include <atema/graphics.hpp>
-#include <atema/math.hpp>
-#include <atema/parallel.hpp>
-#include <atema/window.hpp>
+#include <Atema/Config.hpp>
+#include <Atema/Core.hpp>
+#include <Atema/HMI.hpp>
+#include <Atema/OpenGL.hpp>
+#include <Atema/Renderer.hpp>
 
 #endif

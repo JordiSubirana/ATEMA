@@ -17,8 +17,8 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <atema/core/file.hpp>
-#include <atema/core/error.hpp>
+#include <Atema/Core/File.hpp>
+#include <Atema/Core/Error.hpp>
 
 namespace at
 {

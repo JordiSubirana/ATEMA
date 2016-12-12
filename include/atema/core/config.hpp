@@ -20,7 +20,7 @@
 #ifndef ATEMA_CORE_CONFIG
 #define ATEMA_CORE_CONFIG
 
-#include <atema/config.hpp>
+#include <Atema/Config.hpp>
 
 #if defined(ATEMA_STATIC)
 	
