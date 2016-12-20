@@ -30,12 +30,12 @@
 
 namespace at
 {
-	class ATEMA_RENDERER_API VertexBuffer : public AbstractBuffer, public RendererDependent, public NonCopyable
+	class ATEMA_RENDERER_API VertexBuffer : public virtual AbstractBuffer, public RendererDependent, public NonCopyable
 	{
 		public:
 			static Ref<VertexBuffer> create(Renderer *renderer = nullptr);
 			static Ref<VertexBuffer> create(const Ref<VertexBuffer>& buffer, Renderer *renderer = nullptr);
-			static Ref<VertexBuffer> create(void *data, size_t size, const VertexFormat& format, Renderer *renderer = nullptr);
+			static Ref<VertexBuffer> create(const void *data, size_t size, const VertexFormat& format, Renderer *renderer = nullptr);
 			template <typename T>
 			static Ref<VertexBuffer> create(const VertexBufferStorage<T>& storage, const VertexFormat& format = VertexFormat::get<T>(), Renderer *renderer = nullptr);
 			
@@ -43,7 +43,7 @@ namespace at
 			virtual ~VertexBuffer() = default;
 			
 			virtual void reset(const Ref<VertexBuffer>& buffer) = 0;
-			virtual void reset(void *data, size_t size, const VertexFormat& format) = 0;
+			virtual void reset(const void *data, size_t size, const VertexFormat& format) = 0;
 			template <typename T>
 			void reset(const VertexBufferStorage<T>& storage, const VertexFormat& format = VertexFormat::get<T>());
 			
@@ -53,11 +53,10 @@ namespace at
 			void download(VertexBufferStorage<T>& storage) const;
 			
 			virtual const VertexFormat& get_vertex_format() const = 0;
-			virtual size_t get_size() const = 0;
 			
 		protected:
 			VertexBuffer() = default;
-			virtual void upload(void *data, size_t size, const VertexFormat& format) = 0;
+			virtual void upload(const void *data, size_t size, const VertexFormat& format) = 0;
 			virtual void download(void *data) const = 0;
 	};
 }

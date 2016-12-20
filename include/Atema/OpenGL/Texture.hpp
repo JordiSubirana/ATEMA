@@ -17,32 +17,42 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
-#define ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
+#ifndef ATEMA_OPENGL_TEXTURE_HEADER
+#define ATEMA_OPENGL_TEXTURE_HEADER
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Ref.hpp>
+#include <Atema/OpenGL/Config.hpp>
+#include <Atema/Renderer/Texture.hpp>
 
 namespace at
-{
-	class ATEMA_RENDERER_API AbstractBuffer
+{	
+	class OpenGLRenderer;
+	
+	class ATEMA_OPENGL_API OpenGLTexture : public Texture
 	{
+		friend class OpenGLRenderer;
+		
 		public:
-			AbstractBuffer() = default;
-			virtual ~AbstractBuffer() = default;
+			~OpenGLTexture();
 			
-			virtual size_t get_byte_size() const = 0;
+			void reset(const Ref<Texture>& texture);
+			void reset(const TextureStorage& storage);
+			void reset(unsigned int width, unsigned int height);
 			
-			virtual bool is_mapped() const = 0;
+			void upload(const TextureStorage& storage);
+			void download(TextureStorage& storage) const;
 			
-			virtual void* map() = 0;
-			virtual void unmap() const = 0;
+			unsigned int get_width() const;
+			unsigned int get_height() const;
 			
-			template <typename T>
-			T* map();
+			unsigned int get_gl_id() const;
+			
+		private:
+			OpenGLTexture();
+			
+			unsigned int m_id;
+			unsigned int m_width;
+			unsigned int m_height;
 	};
 }
-
-#include <Atema/Renderer/AbstractBuffer.tpp>
 
 #endif

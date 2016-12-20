@@ -41,12 +41,10 @@ namespace at
 			
 			void swap_buffers();
 			
-		protected:
+		private:
 			OpenGLContext();
 			
-		private:
 			class Impl;
-			
 			OpenGLContext::Impl *m_impl;
 	};
 }

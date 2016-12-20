@@ -17,32 +17,33 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
-#define ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
+#ifndef ATEMA_OPENGL_INDEX_BUFFER_HEADER
+#define ATEMA_OPENGL_INDEX_BUFFER_HEADER
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Ref.hpp>
+#include <Atema/OpenGL/Config.hpp>
+#include <Atema/OpenGL/Buffer.hpp>
+#include <Atema/Renderer/IndexBuffer.hpp>
 
 namespace at
 {
-	class ATEMA_RENDERER_API AbstractBuffer
+	class OpenGLRenderer;
+	
+	class ATEMA_OPENGL_API OpenGLIndexBuffer : public IndexBuffer, public OpenGLBuffer
 	{
+		friend class OpenGLRenderer;
+		
 		public:
-			AbstractBuffer() = default;
-			virtual ~AbstractBuffer() = default;
+			~OpenGLIndexBuffer();
 			
-			virtual size_t get_byte_size() const = 0;
+			void reset(const Ref<IndexBuffer>& buffer);
+			void reset(const IndexBufferStorage& storage);
 			
-			virtual bool is_mapped() const = 0;
+			void upload(const IndexBufferStorage& storage);
+			void download(IndexBufferStorage& storage) const;
 			
-			virtual void* map() = 0;
-			virtual void unmap() const = 0;
-			
-			template <typename T>
-			T* map();
+		private:
+			OpenGLIndexBuffer();
 	};
 }
-
-#include <Atema/Renderer/AbstractBuffer.tpp>
 
 #endif

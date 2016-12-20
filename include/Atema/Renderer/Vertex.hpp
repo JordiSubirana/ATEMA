@@ -85,7 +85,7 @@ namespace at
 	class ATEMA_RENDERER_API VertexFormat
 	{
 		public:
-			VertexFormat() = delete;
+			VertexFormat() = default;
 			virtual ~VertexFormat() = default;
 			
 			template <typename T>

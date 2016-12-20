@@ -17,40 +17,52 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <Atema/Renderer/VertexBuffer.hpp>
-#include <Atema/Renderer/Renderer.hpp>
+#include <Atema/OpenGL/VertexBuffer.hpp>
 #include <Atema/Core/Error.hpp>
+
+#include <glad/glad.h>
 
 namespace at
 {
-	Ref<VertexBuffer> VertexBuffer::create(Renderer *renderer)
+	OpenGLVertexBuffer::OpenGLVertexBuffer() :
+		OpenGLBuffer(GL_ARRAY_BUFFER)
 	{
-		if (!renderer)
-		{
-			renderer = Renderer::get_current();
-			
-			if (!renderer)
-				ATEMA_ERROR("No Renderer is currently active.")
-		}
 		
-		Ref<VertexBuffer> ref = renderer->create_vertex_buffer();
-		
-		return (ref);
 	}
 	
-	Ref<VertexBuffer> VertexBuffer::create(const Ref<VertexBuffer>& buffer, Renderer *renderer)
+	OpenGLVertexBuffer::~OpenGLVertexBuffer()
 	{
-		Ref<VertexBuffer> ref = VertexBuffer::create(renderer);
-		ref->reset(buffer);
 		
-		return (ref);
 	}
 	
-	Ref<VertexBuffer> VertexBuffer::create(const void *data, size_t size, const VertexFormat& format, Renderer *renderer)
+	void OpenGLVertexBuffer::reset(const Ref<VertexBuffer>& buffer)
 	{
-		Ref<VertexBuffer> ref = VertexBuffer::create(renderer);
-		ref->reset(data, size, format);
+		VertexBufferStorage<char> storage;
+		buffer->download(storage);
 		
-		return (ref);
+		VertexBuffer::reset(storage, buffer->get_vertex_format());
+	}
+	
+	void OpenGLVertexBuffer::reset(const void *data, size_t size, const VertexFormat& format)
+	{
+		m_format = format;
+		
+		set_data(data, size*format.get_byte_size(), GL_STATIC_DRAW); //TODO: Add custom usage
+	}
+	
+	const VertexFormat& OpenGLVertexBuffer::get_vertex_format() const
+	{
+		return (m_format);
+	}
+	
+	//PRIVATE
+	void OpenGLVertexBuffer::upload(const void *data, size_t size, const VertexFormat& format)
+	{
+		reset(data, size*format.get_byte_size(), format);
+	}
+	
+	void OpenGLVertexBuffer::download(void *data) const
+	{
+		get_data(data);
 	}
 }

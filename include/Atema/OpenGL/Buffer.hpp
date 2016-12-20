@@ -17,32 +17,41 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
-#define ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
+#ifndef ATEMA_OPENGL_BUFFER_HEADER
+#define ATEMA_OPENGL_BUFFER_HEADER
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Ref.hpp>
+#include <Atema/OpenGL/Config.hpp>
+#include <Atema/Renderer/AbstractBuffer.hpp>
 
 namespace at
 {
-	class ATEMA_RENDERER_API AbstractBuffer
+	class ATEMA_OPENGL_API OpenGLBuffer : public virtual AbstractBuffer
 	{
 		public:
-			AbstractBuffer() = default;
-			virtual ~AbstractBuffer() = default;
+			~OpenGLBuffer();
 			
-			virtual size_t get_byte_size() const = 0;
+			bool is_mapped() const;
 			
-			virtual bool is_mapped() const = 0;
+			void* map();
+			void unmap() const;
 			
-			virtual void* map() = 0;
-			virtual void unmap() const = 0;
+			size_t get_byte_size() const noexcept;
 			
-			template <typename T>
-			T* map();
+		protected:
+			OpenGLBuffer() = delete;
+			OpenGLBuffer(int usage);
+			
+			void set_data(const void *data, size_t size, int update_mode);
+			void get_data(void *data) const;
+			
+			unsigned int m_id;
+			
+		private:
+			int m_usage;
+			int m_update_mode;
+			size_t m_byte_size;
+			mutable void* m_mapped_data;
 	};
 }
-
-#include <Atema/Renderer/AbstractBuffer.tpp>
 
 #endif

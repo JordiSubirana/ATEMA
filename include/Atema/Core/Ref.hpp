@@ -101,14 +101,10 @@ namespace at
 					
 					if (m_count)
 					{
-						try
-						{
-							m_ptr = dynamic_cast<T*>(ptr);
-						}
-						catch (...)
+						m_ptr = dynamic_cast<T*>(ptr);
+						if (!m_ptr)
 						{
 							m_count = nullptr;
-							m_ptr = nullptr;
 							
 							ATEMA_ERROR("Types are not compatible.")
 						}
@@ -155,15 +151,11 @@ namespace at
 				
 				if (ref)
 				{
-					try
-					{
-						m_count = ref.m_count;
-						m_ptr = dynamic_cast<T*>(ref.m_ptr);
-					}
-					catch (...)
+					m_count = ref.m_count;
+					m_ptr = dynamic_cast<T*>(ref.m_ptr);
+					if (!m_ptr)
 					{
 						m_count = nullptr;
-						m_ptr = nullptr;
 						
 						ref.decrement();
 						

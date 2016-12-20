@@ -29,7 +29,7 @@
 
 namespace at
 {
-	class ATEMA_RENDERER_API IndexBuffer : public AbstractBuffer, public RendererDependent, public NonCopyable
+	class ATEMA_RENDERER_API IndexBuffer : public virtual AbstractBuffer, public RendererDependent, public NonCopyable
 	{
 		public:
 			static Ref<IndexBuffer> create(Renderer *renderer = nullptr);

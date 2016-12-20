@@ -20,8 +20,12 @@
 #ifndef ATEMA_GLOBAL_OPENGL_HEADER
 #define ATEMA_GLOBAL_OPENGL_HEADER
 
+#include <Atema/OpenGL/Buffer.hpp>
 #include <Atema/OpenGL/Config.hpp>
 #include <Atema/OpenGL/Context.hpp>
+#include <Atema/OpenGL/IndexBuffer.hpp>
 #include <Atema/OpenGL/Renderer.hpp>
+#include <Atema/OpenGL/Texture.hpp>
+#include <Atema/OpenGL/VertexBuffer.hpp>
 
 #endif

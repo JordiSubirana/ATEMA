@@ -17,40 +17,48 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#include <Atema/Renderer/VertexBuffer.hpp>
-#include <Atema/Renderer/Renderer.hpp>
+#include <Atema/OpenGL/IndexBuffer.hpp>
 #include <Atema/Core/Error.hpp>
+
+#include <glad/glad.h>
 
 namespace at
 {
-	Ref<VertexBuffer> VertexBuffer::create(Renderer *renderer)
+	OpenGLIndexBuffer::OpenGLIndexBuffer() :
+		OpenGLBuffer(GL_ELEMENT_ARRAY_BUFFER)
 	{
-		if (!renderer)
-		{
-			renderer = Renderer::get_current();
-			
-			if (!renderer)
-				ATEMA_ERROR("No Renderer is currently active.")
-		}
 		
-		Ref<VertexBuffer> ref = renderer->create_vertex_buffer();
-		
-		return (ref);
 	}
 	
-	Ref<VertexBuffer> VertexBuffer::create(const Ref<VertexBuffer>& buffer, Renderer *renderer)
+	OpenGLIndexBuffer::~OpenGLIndexBuffer()
 	{
-		Ref<VertexBuffer> ref = VertexBuffer::create(renderer);
-		ref->reset(buffer);
 		
-		return (ref);
 	}
 	
-	Ref<VertexBuffer> VertexBuffer::create(const void *data, size_t size, const VertexFormat& format, Renderer *renderer)
+	void OpenGLIndexBuffer::reset(const Ref<IndexBuffer>& buffer)
 	{
-		Ref<VertexBuffer> ref = VertexBuffer::create(renderer);
-		ref->reset(data, size, format);
+		IndexBufferStorage storage;
+		storage.data.resize(buffer->get_byte_size());
 		
-		return (ref);
+		buffer->download(storage);
+		
+		reset(storage);
+	}
+	
+	void OpenGLIndexBuffer::reset(const IndexBufferStorage& storage)
+	{
+		set_data(reinterpret_cast<const void*>(storage.data.data()), sizeof(unsigned int)*storage.data.size(), GL_STATIC_DRAW); //TODO: Add custom usage
+	}
+	
+	void OpenGLIndexBuffer::upload(const IndexBufferStorage& storage)
+	{
+		reset(storage);
+	}
+	
+	void OpenGLIndexBuffer::download(IndexBufferStorage& storage) const
+	{
+		storage.data.resize(get_byte_size()/sizeof(unsigned int));
+		
+		get_data(reinterpret_cast<void*>(storage.data.data()));
 	}
 }

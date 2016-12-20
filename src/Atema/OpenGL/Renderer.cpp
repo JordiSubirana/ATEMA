@@ -19,9 +19,9 @@
 
 #include <Atema/OpenGL/Renderer.hpp>
 #include <Atema/OpenGL/Context.hpp>
-#include <Atema/Renderer/VertexBuffer.hpp>
-#include <Atema/Renderer/IndexBuffer.hpp>
-#include <Atema/Renderer/Texture.hpp>
+#include <Atema/OpenGL/VertexBuffer.hpp>
+#include <Atema/OpenGL/IndexBuffer.hpp>
+#include <Atema/OpenGL/Texture.hpp>
 
 namespace at
 {
@@ -55,21 +55,21 @@ namespace at
 	
 	Ref<VertexBuffer> OpenGLRenderer::create_vertex_buffer()
 	{
-		Ref<VertexBuffer> ref;
+		Ref<VertexBuffer> ref(new OpenGLVertexBuffer());
 		
 		return (ref);
 	}
 	
 	Ref<IndexBuffer> OpenGLRenderer::create_index_buffer()
 	{
-		Ref<IndexBuffer> ref;
+		Ref<IndexBuffer> ref(new OpenGLIndexBuffer());
 		
 		return (ref);
 	}
 	
 	Ref<Texture> OpenGLRenderer::create_texture()
 	{
-		Ref<Texture> ref;
+		Ref<Texture> ref(new OpenGLTexture());
 		
 		return (ref);
 	}

@@ -40,6 +40,8 @@ namespace at
 		{
 			return (ref); //Let Ref class try dynamic_cast
 		}
+		
+		return (Ref<D>());
 	}
 }
 

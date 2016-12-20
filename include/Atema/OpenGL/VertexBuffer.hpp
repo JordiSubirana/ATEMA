@@ -17,32 +17,36 @@
 // along with ATEMA.  If not, see <http://www.gnu.org/licenses/>.
 // ----------------------------------------------------------------------
 
-#ifndef ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
-#define ATEMA_RENDERER_ABSTRACT_BUFFER_HEADER
+#ifndef ATEMA_OPENGL_VERTEX_BUFFER_HEADER
+#define ATEMA_OPENGL_VERTEX_BUFFER_HEADER
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Ref.hpp>
+#include <Atema/OpenGL/Config.hpp>
+#include <Atema/OpenGL/Buffer.hpp>
+#include <Atema/Renderer/VertexBuffer.hpp>
 
 namespace at
 {
-	class ATEMA_RENDERER_API AbstractBuffer
+	class OpenGLRenderer;
+	
+	class ATEMA_OPENGL_API OpenGLVertexBuffer : public VertexBuffer, public OpenGLBuffer
 	{
+		friend class OpenGLRenderer;
+		
 		public:
-			AbstractBuffer() = default;
-			virtual ~AbstractBuffer() = default;
+			~OpenGLVertexBuffer();
 			
-			virtual size_t get_byte_size() const = 0;
+			void reset(const Ref<VertexBuffer>& buffer);
+			void reset(const void *data, size_t size, const VertexFormat& format);
 			
-			virtual bool is_mapped() const = 0;
+			const VertexFormat& get_vertex_format() const;
 			
-			virtual void* map() = 0;
-			virtual void unmap() const = 0;
+		private:
+			OpenGLVertexBuffer();
+			void upload(const void *data, size_t size, const VertexFormat& format);
+			void download(void *data) const;
 			
-			template <typename T>
-			T* map();
+			VertexFormat m_format;
 	};
 }
-
-#include <Atema/Renderer/AbstractBuffer.tpp>
 
 #endif

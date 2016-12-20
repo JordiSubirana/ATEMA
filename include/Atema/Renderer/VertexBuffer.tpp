@@ -41,7 +41,7 @@ namespace at
 		if (format.get_byte_size() != sizeof(T))
 			ATEMA_ERROR("Invalid vertex format.")
 		
-		reset(static_cast<void*>(storage.data.data()), storage.data.size(), format);
+		reset(reinterpret_cast<const void*>(storage.data.data()), storage.data.size(), format);
 	}
 	
 	template <typename T>
@@ -52,15 +52,15 @@ namespace at
 		if (format.get_byte_size() != sizeof(T))
 			ATEMA_ERROR("Invalid data format.")
 		
-		upload(static_cast<void*>(storage.data.data()), storage.data.size(), format);
+		upload(reinterpret_cast<const void*>(storage.data.data()), storage.data.size()*sizeof(T), format);
 	}
 	
 	template <typename T>
 	void VertexBuffer::download(VertexBufferStorage<T>& storage) const
 	{
-		storage.data.resize(get_size()*get_vertex_format().get_byte_size() / sizeof(T));
+		storage.data.resize(get_byte_size() / sizeof(T));
 		
-		download(static_cast<void*>(storage.data.data()));
+		download(reinterpret_cast<void*>(storage.data.data()));
 	}
 }
 
