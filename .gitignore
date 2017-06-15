@@ -1,39 +1,10 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-bin/*.so
-*.dylib
-bin/*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-lib/*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+AtemaBuild/*
+bin/*
 
 # Autosave files
 *~
 
-# Dependance files
-*.d
-
-# perso CMakeListe.txt
+# CMake (just in case)
 CMakeLists.txt
 .idea
 *.so.*
