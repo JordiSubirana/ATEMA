@@ -23,7 +23,7 @@
 #include <glad/glad.h>
 
 #if defined ATEMA_SYSTEM_WINDOWS
-#include "Win32/WindowImpl.hpp"
+#include "Win32/WindowImplWin32.hpp"
 #else
 #define ATEMA_OPENGL_OS_NOT_HANDLED
 #endif

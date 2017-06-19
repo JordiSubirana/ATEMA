@@ -61,7 +61,7 @@ namespace at
 			size_t index_offset = 0;
 			for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
 			{
-				int fv = shapes[s].mesh.num_face_vertices[f];
+				size_t fv = shapes[s].mesh.num_face_vertices[f];
 
 				if (fv != 3)
 					ATEMA_ERROR("Incompatible OBJ file.");
