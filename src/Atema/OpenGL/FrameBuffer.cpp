@@ -70,7 +70,7 @@ namespace at
 	void OpenGLFrameBuffer::bind() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_id);
-		glDrawBuffers(m_drawBuffers.size(), m_drawBuffers.data());
+		glDrawBuffers(static_cast<GLsizei>(m_drawBuffers.size()), m_drawBuffers.data());
 		glViewport(m_viewport.x, m_viewport.y, m_viewport.w, m_viewport.h);
 	}
 

@@ -128,7 +128,7 @@ namespace at
 			VertexFormat format;
 			auto init = { getAttributeInfos<Attributes>()... };
 
-			int offset = 0;
+			size_t offset = 0;
 
 			for (auto& attrib : init)
 			{
