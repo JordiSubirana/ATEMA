@@ -53,7 +53,7 @@ namespace at
 	{
 		auto object = this->createIndexBufferImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -62,7 +62,7 @@ namespace at
 	{
 		auto object = this->createRendererImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -71,7 +71,7 @@ namespace at
 	{
 		auto object = this->createRenderTargetImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -80,7 +80,7 @@ namespace at
 	{
 		auto object = this->createShaderImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -89,7 +89,7 @@ namespace at
 	{
 		auto object = this->createTextureImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -98,7 +98,7 @@ namespace at
 	{
 		auto object = this->createVertexBufferImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}
@@ -107,7 +107,7 @@ namespace at
 	{
 		auto object = this->createWindowImpl();
 
-		object->m_renderer = this;
+		object->m_system = this;
 
 		return object;
 	}

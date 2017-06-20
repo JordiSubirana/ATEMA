@@ -28,15 +28,16 @@ namespace at
 	{
 	}
 
-	Window::Window(unsigned width, unsigned height, const std::string& title) :
+	Window::Window(unsigned width, unsigned height, const std::string& title, RenderSystem* system) :
 		m_impl(nullptr)
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+		if (!system)
+			system = RenderSystem::getCurrent();
+		
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
-
-		m_impl = renderer->createWindow();
+		m_impl = system->createWindow();
 		m_abstractImpl = m_impl;
 
 		m_impl->setTitle(title);

@@ -58,7 +58,7 @@ namespace at
 		};
 
 		Window() = delete;
-		Window(unsigned width, unsigned height, const std::string& title);
+		Window(unsigned width, unsigned height, const std::string& title, RenderSystem *system = nullptr);
 		virtual ~Window();
 
 		void setPosition(int x, int y);

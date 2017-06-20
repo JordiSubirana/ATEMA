@@ -29,14 +29,16 @@ namespace at
 
 	}
 
-	IndexBuffer::IndexBuffer() : m_impl(nullptr)
+	IndexBuffer::IndexBuffer() : IndexBuffer(RenderSystem::getCurrent())
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+	}
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+	IndexBuffer::IndexBuffer(RenderSystem *system) : m_impl(nullptr)
+	{
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createIndexBuffer();
+		m_impl = system->createIndexBuffer();
 	}
 
 	IndexBuffer::~IndexBuffer()

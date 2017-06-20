@@ -75,6 +75,7 @@ namespace at
 		};
 
 		Shader();
+		explicit Shader(RenderSystem *system);
 		virtual ~Shader();
 
 		Implementation* getImplementation();

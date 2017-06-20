@@ -29,14 +29,16 @@ namespace at
 		
 	}
 
-	VertexBuffer::VertexBuffer() : m_impl(nullptr)
+	VertexBuffer::VertexBuffer() : VertexBuffer(RenderSystem::getCurrent())
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+	}
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+	VertexBuffer::VertexBuffer(RenderSystem* system) : m_impl(nullptr)
+	{
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createVertexBuffer();
+		m_impl = system->createVertexBuffer();
 
 		setDrawMode(DrawMode::Triangles);
 	}

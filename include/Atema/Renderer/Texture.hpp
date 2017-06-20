@@ -47,7 +47,8 @@ namespace at
 		};
 
 		Texture();
-		Texture(unsigned width, unsigned height);
+		explicit Texture(RenderSystem *system);
+		Texture(unsigned width, unsigned height, RenderSystem *system = nullptr);
 		virtual ~Texture();
 
 		Implementation* getImplementation();

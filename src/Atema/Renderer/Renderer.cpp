@@ -29,14 +29,16 @@ namespace at
 	{
 	}
 
-	Renderer::Renderer() : m_impl(nullptr)
+	Renderer::Renderer() : Renderer(RenderSystem::getCurrent())
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+	}
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+	Renderer::Renderer(RenderSystem *system) : m_impl(nullptr)
+	{
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createRenderer();
+		m_impl = system->createRenderer();
 	}
 
 	Renderer::~Renderer()

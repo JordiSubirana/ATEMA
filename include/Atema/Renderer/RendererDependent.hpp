@@ -38,7 +38,7 @@ namespace at
 		RendererDependent() noexcept;
 		virtual ~RendererDependent() noexcept;
 
-		RenderSystem* getRenderer() const noexcept;
+		RenderSystem* getRenderSystem() const noexcept;
 
 	protected:
 		template <typename T, typename U>
@@ -47,7 +47,7 @@ namespace at
 			static_assert(std::is_base_of<RendererDependent, U>::value, "RendererDependent objects can only cast other RendererDependents.");
 			static_assert(std::is_base_of<RendererDependent, T>::value, "RendererDependent objects can only cast to RendererDependent objects.");
 
-			if (m_renderer && m_renderer == static_cast<RendererDependent*>(obj)->m_renderer)
+			if (m_system && m_system == static_cast<RendererDependent*>(obj)->m_system)
 				return static_cast<T*>(obj);
 
 			ATEMA_ERROR("The objects must share the same RenderSystem.");
@@ -59,14 +59,14 @@ namespace at
 			static_assert(std::is_base_of<RendererDependent, U>::value, "RendererDependent objects can only cast other RendererDependents.");
 			static_assert(std::is_base_of<RendererDependent, T>::value, "RendererDependent objects can only cast to RendererDependent objects.");
 
-			if (m_renderer && m_renderer == static_cast<const RendererDependent*>(obj)->m_renderer)
+			if (m_system && m_system == static_cast<const RendererDependent*>(obj)->m_system)
 				return static_cast<const T*>(obj);
 
 			ATEMA_ERROR("The objects must share the same RenderSystem.");
 		}
 
 	private:
-		RenderSystem *m_renderer;
+		RenderSystem *m_system;
 	};
 }
 

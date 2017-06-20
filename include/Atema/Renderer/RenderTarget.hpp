@@ -77,7 +77,8 @@ namespace at
 			virtual bool isValid(int index) const = 0;
 		};
 
-		RenderTarget(RenderSystem *renderer = nullptr);
+		RenderTarget();
+		explicit RenderTarget(RenderSystem *system);
 		virtual ~RenderTarget();
 
 		Implementation* getImplementation();

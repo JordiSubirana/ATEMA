@@ -52,6 +52,7 @@ namespace at
 		};
 
 		IndexBuffer();
+		explicit IndexBuffer(RenderSystem *system);
 		virtual ~IndexBuffer();
 
 		Implementation* getImplementation();

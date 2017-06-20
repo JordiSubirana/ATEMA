@@ -40,20 +40,24 @@ namespace at
 	{
 	}
 
-	Texture::Texture()
-		: Texture(32, 32) //32x32 is the default texture size
+	Texture::Texture() : Texture(nullptr)
 	{
 	}
 
-	Texture::Texture(unsigned width, unsigned height)
+	Texture::Texture(RenderSystem *system) : Texture(32, 32, system) //32x32 is the default texture size
+	{
+	}
+
+	Texture::Texture(unsigned width, unsigned height, RenderSystem *system)
 		: m_impl(nullptr)
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+		if (!system)
+			system = RenderSystem::getCurrent();
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createTexture();
+		m_impl = system->createTexture();
 
 		resize(width, height);
 	}

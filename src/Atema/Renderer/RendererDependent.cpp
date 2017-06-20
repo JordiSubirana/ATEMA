@@ -24,7 +24,7 @@
 namespace at
 {
 	RendererDependent::RendererDependent() noexcept
-		: m_renderer(nullptr)
+		: m_system(nullptr)
 	{
 	}
 
@@ -32,8 +32,8 @@ namespace at
 	{
 	}
 
-	RenderSystem* RendererDependent::getRenderer() const noexcept
+	RenderSystem* RendererDependent::getRenderSystem() const noexcept
 	{
-		return m_renderer;
+		return m_system;
 	}
 }

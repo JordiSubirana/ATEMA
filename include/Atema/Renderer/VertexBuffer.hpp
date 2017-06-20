@@ -58,6 +58,7 @@ namespace at
 		};
 
 		VertexBuffer();
+		explicit VertexBuffer(RenderSystem *system);
 		virtual ~VertexBuffer();
 
 		Implementation* getImplementation();

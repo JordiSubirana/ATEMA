@@ -61,6 +61,7 @@ namespace at
 		};
 
 		Renderer();
+		explicit Renderer(RenderSystem *system);
 		virtual ~Renderer();
 
 		void setTarget(RenderTarget* target);

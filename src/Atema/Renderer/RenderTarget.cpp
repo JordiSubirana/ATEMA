@@ -29,7 +29,7 @@ namespace at
 	{
 	}
 
-	AbstractRenderTarget::AbstractRenderTarget()
+	AbstractRenderTarget::AbstractRenderTarget(): m_abstractImpl(nullptr)
 	{
 	}
 
@@ -51,15 +51,16 @@ namespace at
 	{
 	}
 
-	RenderTarget::RenderTarget(RenderSystem *renderer) : m_impl(nullptr)
+	RenderTarget::RenderTarget() : RenderTarget(RenderSystem::getCurrent())
 	{
-		if (!renderer)
-			renderer = RenderSystem::getCurrent();
+	}
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+	RenderTarget::RenderTarget(RenderSystem *system) : m_impl(nullptr)
+	{
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createRenderTarget();
+		m_impl = system->createRenderTarget();
 		m_abstractImpl = m_impl;
 	}
 

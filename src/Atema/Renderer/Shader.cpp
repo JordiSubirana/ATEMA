@@ -31,14 +31,16 @@ namespace at
 	{
 	}
 
-	Shader::Shader() : m_impl(nullptr)
+	Shader::Shader() : Shader(RenderSystem::getCurrent())
 	{
-		RenderSystem *renderer = RenderSystem::getCurrent();
+	}
 
-		if (!renderer)
-			ATEMA_ERROR("There is no current RenderSystem.");
+	Shader::Shader(RenderSystem *system) : m_impl(nullptr)
+	{
+		if (!system)
+			ATEMA_ERROR("Invalid RenderSystem.");
 
-		m_impl = renderer->createShader();
+		m_impl = system->createShader();
 	}
 
 	Shader::~Shader()
