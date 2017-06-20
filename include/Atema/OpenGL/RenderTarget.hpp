@@ -53,10 +53,13 @@ namespace at
 
 		bool isValid(int index) const override;
 
+		static std::shared_ptr<RenderTarget> fromFrameBuffer(RenderSystem *system, unsigned glId);
+
 	private:
 		int getFirstAvailable() const;
 
 		std::map<int, unsigned> m_rbos;
+		bool m_ownsFbo;
 	};
 }
 

@@ -27,16 +27,24 @@
 
 namespace at
 {
-	OpenGLRenderTarget::OpenGLRenderTarget()
+	OpenGLRenderTarget::OpenGLRenderTarget() : m_ownsFbo(true)
 	{
-		initialize(false);
+		OpenGLContext::getCurrent(); // Ensure there is a context
+		
+		unsigned id = 0;
+		glGenFramebuffers(1, &id);
+		
+		initialize(id);
 	}
 
 	OpenGLRenderTarget::~OpenGLRenderTarget()
 	{
-		OpenGLRenderTarget::removeAttachments();
+		if (m_ownsFbo)
+		{
+			OpenGLRenderTarget::removeAttachments();
 
-		getContext()->deleteFBO(getId());
+			getContext()->deleteFBO(getId());
+		}
 	}
 
 	int OpenGLRenderTarget::addAttachment(const Texture& texture, int index)
@@ -134,6 +142,22 @@ namespace at
 	bool OpenGLRenderTarget::isValid(int index) const
 	{
 		return OpenGLFrameBuffer::isValid(index);
+	}
+
+	std::shared_ptr<RenderTarget> OpenGLRenderTarget::fromFrameBuffer(RenderSystem* system, unsigned glId)
+	{
+		auto target = std::make_shared<RenderTarget>(system);
+
+		auto impl = static_cast<OpenGLRenderTarget*>(target->getImplementation());
+
+		impl->getContext()->deleteFBO(impl->getId());
+
+		impl->initialize(glId);
+
+		impl->m_drawBuffers[0] = GL_COLOR_ATTACHMENT0;
+		impl->m_ownsFbo = false;
+
+		return target;
 	}
 
 	int OpenGLRenderTarget::getFirstAvailable() const

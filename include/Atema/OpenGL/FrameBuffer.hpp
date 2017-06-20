@@ -47,7 +47,7 @@ namespace at
 
 	protected:
 		OpenGLFrameBuffer();
-		void initialize(bool isDefault);
+		void initialize(unsigned id);
 		bool isValid(int index) const;
 
 		std::vector<unsigned> m_drawBuffers;

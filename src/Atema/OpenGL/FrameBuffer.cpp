@@ -33,7 +33,7 @@ namespace at
 	{
 	}
 
-	void OpenGLFrameBuffer::initialize(bool isDefault)
+	void OpenGLFrameBuffer::initialize(unsigned id)
 	{
 		m_context = OpenGLContext::getCurrent();
 
@@ -43,16 +43,15 @@ namespace at
 		int max = 0;
 		glGetIntegerv(GL_MAX_DRAW_BUFFERS, &max);
 
-		m_drawBuffers.resize(max);
-
-		if (!m_drawBuffers.size())
+		if (!max)
 			ATEMA_ERROR("No available color attachments.");
+
+		m_drawBuffers.resize(max);
 
 		for (auto& attachment : m_drawBuffers)
 			attachment = GL_NONE;
 
-		if (!isDefault)
-			glGenFramebuffers(1, &m_id);
+		m_id = id;
 
 		m_viewport = { 0, 0, 0, 0 };
 	}

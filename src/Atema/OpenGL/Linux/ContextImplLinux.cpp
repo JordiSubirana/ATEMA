@@ -25,7 +25,7 @@
 
 namespace at
 {
-	OpenGLContext::Impl::Impl()
+	OpenGLContext::Impl::Impl(Handle handle) : m_handle(handle);
 	{
 	}
 

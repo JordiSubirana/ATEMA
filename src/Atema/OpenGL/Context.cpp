@@ -37,7 +37,7 @@ namespace at
 {
 	std::map<OpenGLContext::Handle, std::unique_ptr<OpenGLContext>> OpenGLContext::s_contexts;
 
-	OpenGLContext::OpenGLContext(Handle handle) : m_impl(new Impl())
+	OpenGLContext::OpenGLContext(Handle handle) : m_impl(new Impl(handle))
 	{
 		if (!gladLoadGL())
 			ATEMA_ERROR("Failed to load OpenGL functions.");

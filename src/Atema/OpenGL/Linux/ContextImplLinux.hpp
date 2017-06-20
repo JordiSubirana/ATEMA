@@ -54,7 +54,8 @@ namespace at
 	class OpenGLContext::Impl
 	{
 	public:
-		Impl();
+		Impl() = delete;
+		explicit Impl(Handle handle);
 		virtual ~Impl();
 
 		void makeCurrent(bool current);
