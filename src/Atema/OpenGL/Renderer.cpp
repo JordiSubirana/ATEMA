@@ -131,16 +131,16 @@ namespace at
 			m_instanceData->unmap();
 
 			if (m_ibo)
-				glDrawElementsInstanced(drawMode, m_ibo->getSize(), m_ibo->getOpenGLType(), nullptr, m_instanceData->getSize());
+				glDrawElementsInstanced(drawMode, static_cast<GLsizei>(m_ibo->getSize()), m_ibo->getOpenGLType(), nullptr, static_cast<GLsizei>(m_instanceData->getSize()));
 			else
-				glDrawArraysInstanced(drawMode, 0, m_vbo->getSize(), m_instanceData->getSize());
+				glDrawArraysInstanced(drawMode, 0, static_cast<GLsizei>(m_vbo->getSize()), static_cast<GLsizei>(m_instanceData->getSize()));
 		}
 		else
 		{
 			if (m_ibo)
-				glDrawElements(drawMode, m_ibo->getSize(), m_ibo->getOpenGLType(), nullptr);
+				glDrawElements(drawMode, static_cast<GLsizei>(m_ibo->getSize()), m_ibo->getOpenGLType(), nullptr);
 			else
-				glDrawArrays(drawMode, 0, m_vbo->getSize());
+				glDrawArrays(drawMode, 0, static_cast<GLsizei>(m_vbo->getSize()));
 		}
 	}
 
@@ -230,16 +230,16 @@ namespace at
 			instanceData->unmap();
 
 			if (ibo)
-				glDrawElementsInstanced(drawMode, ibo->getSize(), ibo->getOpenGLType(), nullptr, instanceData->getSize());
+				glDrawElementsInstanced(drawMode, static_cast<GLsizei>(ibo->getSize()), ibo->getOpenGLType(), nullptr, static_cast<GLsizei>(instanceData->getSize()));
 			else
-				glDrawArraysInstanced(drawMode, 0, vbo->getSize(), instanceData->getSize());
+				glDrawArraysInstanced(drawMode, 0, static_cast<GLsizei>(vbo->getSize()), static_cast<GLsizei>(instanceData->getSize()));
 		}
 		else
 		{
 			if (ibo)
-				glDrawElements(drawMode, ibo->getSize(), ibo->getOpenGLType(), nullptr);
+				glDrawElements(drawMode, static_cast<GLsizei>(ibo->getSize()), ibo->getOpenGLType(), nullptr);
 			else
-				glDrawArrays(drawMode, 0, vbo->getSize());
+				glDrawArrays(drawMode, 0, static_cast<GLsizei>(vbo->getSize()));
 		}
 	}
 }
