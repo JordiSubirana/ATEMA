@@ -66,7 +66,7 @@ namespace at
 
 		void setData(const void *vertices, size_t byteSize, const VertexFormat& format);
 		template <typename T>
-		void setData(const std::vector<T>& vertices, const VertexFormat& format = T::getFormat());
+		void setData(const std::vector<T>& vertices, const VertexFormat& format);
 		void getData(void* vertices);
 		template <typename T>
 		void getData(std::vector<T>& vertices);

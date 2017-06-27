@@ -24,94 +24,144 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace at
 {
 	//--------------------------
-	// VERTEX ATTRIBUTE INFOS
+	// VERTEX ATTRIBUTE
 	//--------------------------
 
-	VertexAttributeInfos::VertexAttributeInfos()
-		: type(VertexAttributeType::Undefined), usage(VertexAttributeUsage::Undefined), size(0), byteSize(0), offset(0)
+	VertexAttribute::VertexAttribute() : VertexAttribute("", Type::Undefined, Usage::Undefined)
 	{
 	}
 
-	bool VertexAttributeInfos::operator==(const VertexAttributeInfos& attribute) const
+	VertexAttribute::VertexAttribute(const std::string& name, Type type, Usage usage) :
+		name(name), type(type), usage(usage), m_offset(0)
 	{
-		if (type != attribute.type)
-			return false;
-
-		if (usage != attribute.usage)
-			return false;
-
-		if (size != attribute.size)
-			return false;
-
-		if (byteSize != attribute.byteSize)
-			return false;
-
-		if (offset != attribute.offset)
-			return false;
-
-		if (name.compare(attribute.name) != 0)
-			return false;
-
-		return true;
 	}
 
-	bool VertexAttributeInfos::operator!=(const VertexAttributeInfos& attribute) const
+	void VertexAttribute::setByteOffset(size_t byteOffset)
+	{
+		m_offset = byteOffset;
+	}
+
+	size_t VertexAttribute::getByteOffset() const
+	{
+		return m_offset;
+	}
+
+	size_t VertexAttribute::count() const
+	{
+		if (type == Type::Undefined)
+			return 0;
+
+		return static_cast<size_t>(type) % 4 + 1;
+	}
+
+	size_t VertexAttribute::getByteSize() const
+	{
+		static size_t byteSizes[] =
+		{
+			sizeof(int), 2*sizeof(int), 3*sizeof(int), 4*sizeof(int),
+			sizeof(unsigned), 2*sizeof(unsigned), 3*sizeof(unsigned), 4*sizeof(unsigned),
+			sizeof(float), 2*sizeof(float), 3*sizeof(float), 4*sizeof(float),
+			sizeof(double), 2*sizeof(double), 3*sizeof(double), 4*sizeof(double),
+			0
+		};
+
+		return byteSizes[static_cast<size_t>(type)];
+	}
+
+	bool VertexAttribute::operator==(const VertexAttribute& a) const
+	{
+		return name.compare(a.name) == 0 && type == a.type;
+	}
+
+	bool VertexAttribute::operator!=(const VertexAttribute& attribute) const
 	{
 		return !operator==(attribute);
 	}
-
+	
 	//--------------------------
 	// VERTEX FORMAT
 	//--------------------------
 
+	VertexFormat::VertexFormat(): m_valid(true), m_byteSize(0)
+	{
+	}
+
+	VertexFormat::VertexFormat(std::initializer_list<VertexAttribute> attributes) :
+		m_attributes(attributes), m_valid(false), m_byteSize(0)
+	{
+		update();
+	}
+
 	VertexFormat::Iterator VertexFormat::begin()
 	{
-		return m_format.begin();
+		return m_attributes.begin();
 	}
 
 	VertexFormat::ConstIterator VertexFormat::begin() const
 	{
-		return m_format.begin();
+		return m_attributes.begin();
 	}
 
 	VertexFormat::Iterator VertexFormat::end()
 	{
-		return m_format.end();
+		return m_attributes.end();
 	}
 
 	VertexFormat::ConstIterator VertexFormat::end() const
 	{
-		return m_format.end();
+		return m_attributes.end();
 	}
 
-	void VertexFormat::add(const VertexAttributeInfos& info)
+	void VertexFormat::add(const VertexAttribute& info)
 	{
-		m_format.push_back(info);
+		m_attributes.push_back(info);
+
+		update();
+	}
+
+	void VertexFormat::clear()
+	{
+		m_attributes.clear();
+
+		m_byteSize = 0;
 	}
 
 	size_t VertexFormat::getSize() const
 	{
-		return m_format.size();
+		return m_attributes.size();
 	}
 
 	size_t VertexFormat::getByteSize() const
 	{
-		size_t byteSize = 0;
-
-		for (auto& attrib : m_format)
-			byteSize += attrib.byteSize;
-
-		return byteSize;
+		return m_byteSize;
 	}
 
-	VertexAttributeInfos& VertexFormat::operator[](size_t index)
+	VertexFormat& VertexFormat::operator=(std::initializer_list<VertexAttribute> attributes)
 	{
-		return m_format[index];
+		m_attributes = attributes;
+
+		update();
+
+		return *this;
 	}
 
-	const VertexAttributeInfos& VertexFormat::operator[](size_t index) const
+	VertexFormat& VertexFormat::operator=(const VertexFormat& format)
 	{
-		return m_format[index];
+		m_attributes = format.m_attributes;
+
+		update();
+
+		return *this;
+	}
+
+	VertexAttribute& VertexFormat::operator[](size_t index)
+	{
+		return m_attributes[index];
+	}
+
+	const VertexAttribute& VertexFormat::operator[](size_t index) const
+	{
+		return m_attributes[index];
 	}
 
 	bool VertexFormat::operator==(const VertexFormat& format) const
@@ -122,7 +172,7 @@ namespace at
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				if (m_format[i] != format.m_format[i])
+				if (m_attributes[i] != format.m_attributes[i])
 					return false;
 			}
 		}
@@ -137,5 +187,16 @@ namespace at
 	bool VertexFormat::operator!=(const VertexFormat& format) const
 	{
 		return !operator==(format);
+	}
+
+	void VertexFormat::update()
+	{
+		m_byteSize = 0;
+
+		for (auto& attrib : m_attributes)
+		{
+			attrib.setByteOffset(m_byteSize);
+			m_byteSize += attrib.getByteSize();
+		}
 	}
 }

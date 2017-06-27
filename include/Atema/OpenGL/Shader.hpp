@@ -37,7 +37,7 @@ namespace at
 		struct VertexAttribute
 		{
 			std::string name;
-			VertexAttributeType type;
+			at::VertexAttribute::Type type;
 			int glBaseType;
 			int location;
 		};

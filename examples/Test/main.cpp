@@ -13,12 +13,12 @@ using namespace at;
 static const string vertexShader =
 "#version 330 core\n" \
 "in vec3 pos;\n" \
-"in vec4 offset;\n" \
+"in vec3 offset;\n" \
 "in vec4 color;\n" \
 "out vec4 fcolor;\n" \
 "void main() {\n" \
 "fcolor = color;\n" \
-"gl_Position = vec4(pos.xyz+offset.xyz, 1);}";
+"gl_Position = vec4(pos + offset, 1);}";
 
 static const string fragmentShader =
 "#version 330 core\n" \
@@ -27,45 +27,13 @@ static const string fragmentShader =
 "void main() {\n" \
 "out_color = fcolor; }";
 
-struct Position : VertexAttribute<float>
+struct VertexParticle
 {
-	float x, y, z;
-};
-const string VertexAttributeName<Position>::value = "pos";
+	VertexParticle() : position{ 0, 0, 0 }, color{ 1.0f, 0.0f, 0.0f, 1.0f } {}
 
-struct Offset : VertexAttribute<float>
-{
-	float x, y, z, w;
+	Vector3f position;
+	Vector4f color;
 };
-const string VertexAttributeName<Offset>::value = "offset";
-
-struct Col : VertexAttribute<float>
-{
-	float r, g, b, a;
-};
-const string VertexAttributeName<Col>::value = "color";
-
-struct VertexPosition : Vertex<Position>
-{
-	VertexPosition(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
-	float x, y, z;
-};
-VertexFormat Vertex<Position>::format = getDefaultFormat();
-
-struct VertexParticle : Vertex<Offset, Col>
-{
-	VertexParticle() : position{ 0, 0, 0, 0 }, color{ 1.0f, 0.0f, 0.0f, 1.0f } {}
-
-	struct
-	{
-		float x, y, z, w;
-	} position;
-	struct
-	{
-		float r, g, b, a;
-	} color;
-};
-VertexFormat Vertex<Offset, Col>::format = getDefaultFormat();
 
 struct Particle
 {
@@ -100,17 +68,17 @@ void initVBO(VertexBuffer& vbo, Vector3f origin, float s)
 	float oy = origin.y;
 	float oz = origin.z;
 
-	vector<VertexPosition> vertices =
+	vector<Vector3f> vertices =
 	{
-		VertexPosition(ox - s, oy + s, oz),
-		VertexPosition(ox - s, oy - s, oz),
-		VertexPosition(ox + s, oy + s, oz),
-		VertexPosition(ox + s, oy + s, oz),
-		VertexPosition(ox - s, oy - s, oz),
-		VertexPosition(ox + s, oy - s, oz)
+		Vector3f(ox - s, oy + s, oz),
+		Vector3f(ox - s, oy - s, oz),
+		Vector3f(ox + s, oy + s, oz),
+		Vector3f(ox + s, oy + s, oz),
+		Vector3f(ox - s, oy - s, oz),
+		Vector3f(ox + s, oy - s, oz)
 	};
 
-	vbo.setData(vertices);
+	vbo.setData(vertices, { {"pos", VertexAttribute::Type::Float3} });
 }
 
 int main(int argc, char **argv)
@@ -133,14 +101,14 @@ int main(int argc, char **argv)
 
 		//shader.setUniform("color", 0.0f, 1.0f, 0.0f, 1.0f);
 
-		vector<VertexPosition> vertices =
+		vector<Vector3f> vertices =
 		{
-			VertexPosition(-0.02f, 0.5f + 0.02f, 0.0f),
-			VertexPosition(-0.02f, 0.5f - 0.02f, 0.0f),
-			VertexPosition(+0.02f, 0.5f + 0.02f, 0.0f),
-			VertexPosition(+0.02f, 0.5f + 0.02f, 0.0f),
-			VertexPosition(-0.02f, 0.5f - 0.02f, 0.0f),
-			VertexPosition(+0.02f, 0.5f - 0.02f, 0.0f)
+			Vector3f(-0.02f, 0.5f + 0.02f, 0.0f),
+			Vector3f(-0.02f, 0.5f - 0.02f, 0.0f),
+			Vector3f(+0.02f, 0.5f + 0.02f, 0.0f),
+			Vector3f(+0.02f, 0.5f + 0.02f, 0.0f),
+			Vector3f(-0.02f, 0.5f - 0.02f, 0.0f),
+			Vector3f(+0.02f, 0.5f - 0.02f, 0.0f)
 		};
 
 		VertexBuffer vbo1, vbo2, vbo3;
@@ -158,8 +126,14 @@ int main(int argc, char **argv)
 		vector<VertexParticle> offsets;
 		offsets.resize(size);
 
+		VertexFormat particleFormat =
+		{
+			{"offset", VertexAttribute::Type::Float3},
+			{"color", VertexAttribute::Type::Float4}
+		};
+
 		VertexBuffer instanceData;
-		instanceData.setData(offsets);
+		instanceData.setData(offsets, particleFormat);
 
 		Renderer pass;
 		pass.setTarget(&window);

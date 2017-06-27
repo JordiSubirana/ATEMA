@@ -51,7 +51,7 @@ namespace at
 				{
 					glEnableVertexAttribArray(attrib.location);
 
-					glVertexAttribPointer(attrib.location, static_cast<GLint>(vertexAttrib.size), attrib.glBaseType, GL_FALSE, static_cast<GLsizei>(vertexFormat.getByteSize()), (void*)vertexAttrib.offset);
+					glVertexAttribPointer(attrib.location, static_cast<GLint>(vertexAttrib.count()), attrib.glBaseType, GL_FALSE, static_cast<GLsizei>(vertexFormat.getByteSize()), (void*)vertexAttrib.getByteOffset());
 
 					if (instanceData)
 						glVertexAttribDivisor(attrib.location, 0);
@@ -76,8 +76,8 @@ namespace at
 					if (!vertexAttrib.name.compare(attrib.name))
 					{
 						glEnableVertexAttribArray(attrib.location);
-
-						glVertexAttribPointer(attrib.location, static_cast<GLint>(vertexAttrib.size), attrib.glBaseType, GL_FALSE, static_cast<GLsizei>(instanceFormat.getByteSize()), (void*)vertexAttrib.offset);
+						
+						glVertexAttribPointer(attrib.location, static_cast<GLint>(vertexAttrib.count()), attrib.glBaseType, GL_FALSE, static_cast<GLsizei>(instanceFormat.getByteSize()), (void*)vertexAttrib.getByteOffset());
 
 						glVertexAttribDivisor(attrib.location, 1);
 

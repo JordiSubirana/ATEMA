@@ -59,47 +59,47 @@ namespace at
 			GL_VERTEX_SHADER, GL_FRAGMENT_SHADER
 		};
 
-		VertexAttributeType getAtemaType(GLenum glType)
+		at::VertexAttribute::Type getAtemaType(GLenum glType)
 		{
 			switch (glType)
 			{
 				case GL_INT:
-					return VertexAttributeType::Int;
+					return at::VertexAttribute::Type::Int;
 				case GL_INT_VEC2:
-					return VertexAttributeType::Int2;
+					return at::VertexAttribute::Type::Int2;
 				case GL_INT_VEC3:
-					return VertexAttributeType::Int3;
+					return at::VertexAttribute::Type::Int3;
 				case GL_INT_VEC4:
-					return VertexAttributeType::Int4;
+					return at::VertexAttribute::Type::Int4;
 				case GL_UNSIGNED_INT:
-					return VertexAttributeType::Unsigned;
+					return at::VertexAttribute::Type::Unsigned;
 				case GL_UNSIGNED_INT_VEC2:
-					return VertexAttributeType::Unsigned2;
+					return at::VertexAttribute::Type::Unsigned2;
 				case GL_UNSIGNED_INT_VEC3:
-					return VertexAttributeType::Unsigned3;
+					return at::VertexAttribute::Type::Unsigned3;
 				case GL_UNSIGNED_INT_VEC4:
-					return VertexAttributeType::Unsigned4;
+					return at::VertexAttribute::Type::Unsigned4;
 				case GL_FLOAT:
-					return VertexAttributeType::Float;
+					return at::VertexAttribute::Type::Float;
 				case GL_FLOAT_VEC2:
-					return VertexAttributeType::Float2;
+					return at::VertexAttribute::Type::Float2;
 				case GL_FLOAT_VEC3:
-					return VertexAttributeType::Float3;
+					return at::VertexAttribute::Type::Float3;
 				case GL_FLOAT_VEC4:
-					return VertexAttributeType::Float4;
+					return at::VertexAttribute::Type::Float4;
 				case GL_DOUBLE:
-					return VertexAttributeType::Double;
+					return at::VertexAttribute::Type::Double;
 				case GL_DOUBLE_VEC2:
-					return VertexAttributeType::Double2;
+					return at::VertexAttribute::Type::Double2;
 				case GL_DOUBLE_VEC3:
-					return VertexAttributeType::Double3;
+					return at::VertexAttribute::Type::Double3;
 				case GL_DOUBLE_VEC4:
-					return VertexAttributeType::Double4;
+					return at::VertexAttribute::Type::Double4;
 				default:
 					break;
 			}
 
-			return VertexAttributeType::Undefined;
+			return at::VertexAttribute::Type::Undefined;
 		}
 
 		GLenum getOpenGLBaseType(GLenum glType)

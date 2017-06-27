@@ -28,135 +28,84 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace at
 {
-	// Type of VertexAttribute
-	enum class VertexAttributeType
+	// VertexAttribute
+	class ATEMA_RENDERER_API VertexAttribute
 	{
-		Int, Int2, Int3, Int4,
-		Unsigned, Unsigned2, Unsigned3, Unsigned4,
-		Float, Float2, Float3, Float4,
-		Double, Double2, Double3, Double4,
-		Undefined
-	};
+	public:
+		enum class Type
+		{
+			Int, Int2, Int3, Int4,
+			Unsigned, Unsigned2, Unsigned3, Unsigned4,
+			Float, Float2, Float3, Float4,
+			Double, Double2, Double3, Double4,
+			Undefined
+		};
 
-	// Usage of VertexAttribute
-	enum class VertexAttributeUsage
-	{
-		Position, Color, Texture, Normal, Tangent, Binormal,
-		BoneID, BoneWeight, Undefined
-	};
+		enum class Usage
+		{
+			Position, Normal, Tangent, Binormal,
+			Color, Texture,
+			BoneID, BoneWeight,
+			Undefined
+		};
 
-	// Type to enum converter
-	namespace detail
-	{
-		template <typename T> struct VertexTypeToEnum {};
-		template <> struct VertexTypeToEnum<int> { static constexpr VertexAttributeType type = VertexAttributeType::Int; };
-		template <> struct VertexTypeToEnum<unsigned> { static constexpr VertexAttributeType type = VertexAttributeType::Unsigned; };
-		template <> struct VertexTypeToEnum<float> { static constexpr VertexAttributeType type = VertexAttributeType::Float; };
-		template <> struct VertexTypeToEnum<double> { static constexpr VertexAttributeType type = VertexAttributeType::Double; };
-	}
+		VertexAttribute();
+		VertexAttribute(const std::string& name, Type type, Usage usage = Usage::Undefined);
 
-	// VertexAttribute class
-	template <typename T, VertexAttributeUsage U = VertexAttributeUsage::Undefined>
-	struct VertexAttribute
-	{
-		static const VertexAttributeType baseType = detail::VertexTypeToEnum<T>::type;
-		static const size_t baseTypeSize = sizeof(T);
-		static const VertexAttributeUsage usage = U;
-	};
+		void setByteOffset(size_t byteOffset);
+		size_t getByteOffset() const;
 
-	// VertexAttribute name
-	template <typename T>
-	struct VertexAttributeName { static const std::string value; };
+		size_t count() const;
+		size_t getByteSize() const;
 
-	// VertexAttribute informations
-	struct ATEMA_RENDERER_API VertexAttributeInfos
-	{
-		VertexAttributeInfos();
+		bool operator==(const VertexAttribute& attribute) const;
+		bool operator!=(const VertexAttribute& attribute) const;
 
-		bool operator==(const VertexAttributeInfos& attribute) const;
-		bool operator!=(const VertexAttributeInfos& attribute) const;
-
-		VertexAttributeType type;
-		VertexAttributeUsage usage;
 		std::string name;
-		size_t size;
-		size_t byteSize;
-		size_t offset;
+		Type type;
+		Usage usage;
+
+	private:
+		size_t m_offset;
 	};
 
 	// VertexFormat
 	class ATEMA_RENDERER_API VertexFormat
 	{
 	public:
-		using Iterator = std::vector<VertexAttributeInfos>::iterator;
-		using ConstIterator = std::vector<VertexAttributeInfos>::const_iterator;
+		using Iterator = std::vector<VertexAttribute>::iterator;
+		using ConstIterator = std::vector<VertexAttribute>::const_iterator;
 
-		VertexFormat() = default;
+		VertexFormat();
+		VertexFormat(std::initializer_list<VertexAttribute> attributes);
 		virtual ~VertexFormat() = default;
 
-		Iterator begin();
-		ConstIterator begin() const;
-		Iterator end();
-		ConstIterator end() const;
+		Iterator begin(); // Need to call update on attribute change
+		ConstIterator begin() const; // Need to call update on attribute change
+		Iterator end(); // Need to call update on attribute change
+		ConstIterator end() const; // Need to call update on attribute change
 
-		void add(const VertexAttributeInfos& info);
+		void add(const VertexAttribute& info);
+		void clear();
 
 		size_t getSize() const;
 		size_t getByteSize() const;
 
-		VertexAttributeInfos& operator[](size_t index);
-		const VertexAttributeInfos& operator[](size_t index) const;
+		VertexFormat& operator=(std::initializer_list<VertexAttribute> attributes);
+		VertexFormat& operator=(const VertexFormat& format);
+
+		VertexAttribute& operator[](size_t index); // Need to call update on attribute change
+		const VertexAttribute& operator[](size_t index) const; // Need to call update on attribute change
 
 		bool operator==(const VertexFormat& format) const;
 		bool operator!=(const VertexFormat& format) const;
 
-	private:
-		std::vector<VertexAttributeInfos> m_format;
-	};
-
-	// Vertex class
-	template <typename...Attributes>
-	struct Vertex
-	{
-		static VertexFormat& getFormat()
-		{
-			return format;
-		}
-
-		static VertexFormat getDefaultFormat()
-		{
-			VertexFormat format;
-			auto init = { getAttributeInfos<Attributes>()... };
-
-			size_t offset = 0;
-
-			for (auto& attrib : init)
-			{
-				auto attribute = attrib;
-				attribute.offset = offset;
-				offset += attrib.byteSize;
-				format.add(attribute);
-			}
-
-			return format;
-		}
+		void update();
 
 	private:
-		template <typename T>
-		static VertexAttributeInfos getAttributeInfos()
-		{
-			VertexAttributeInfos infos;
-
-			infos.type = static_cast<VertexAttributeType>(static_cast<int>(T::baseType) + (sizeof(T) / T::baseTypeSize - 1));
-			infos.usage = T::usage;
-			infos.size = sizeof(T) / T::baseTypeSize;
-			infos.byteSize = sizeof(T);
-			infos.name = VertexAttributeName<T>::value;
-
-			return infos;
-		}
-
-		static VertexFormat format;
+		std::vector<VertexAttribute> m_attributes;
+		bool m_valid;
+		size_t m_byteSize;
 	};
 }
 
