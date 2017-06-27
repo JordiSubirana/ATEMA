@@ -26,6 +26,7 @@
 #include <functional>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 namespace at
 {
@@ -187,6 +188,12 @@ namespace at
 
 			std::shared_ptr<std::vector<Slot*>> m_slots;
 		};
+
+		template <>
+		class AbstractSignal<void> : public AbstractSignal<>
+		{
+			
+		};
 	}
 
 	template <typename...Args>
@@ -215,7 +222,7 @@ namespace at
 	};
 
 	template <>
-	class Signal<void> : public detail::AbstractSignal<void>
+	class Signal<> : public detail::AbstractSignal<>
 	{
 	public:
 		Signal() = default;
@@ -227,6 +234,12 @@ namespace at
 		Connection connect(R(*function)());
 		template <typename R>
 		Connection connect(std::function<R()>& function);
+	};
+
+	template <>
+	class Signal<void> : public Signal<>
+	{
+		
 	};
 }
 

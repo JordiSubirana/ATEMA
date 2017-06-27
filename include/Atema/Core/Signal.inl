@@ -124,15 +124,6 @@ namespace at
 				s->operator()(args...);
 		}
 
-		template <>
-		inline void detail::AbstractSignal<void>::operator()(void)
-		{
-			std::vector<Slot*>& slotList = *m_slots;
-
-			for (auto s : slotList)
-				s->operator()();
-		}
-
 		template <typename ... Args>
 		Connection AbstractSignal<Args...>::doConnect(Slot* s)
 		{
@@ -204,21 +195,21 @@ namespace at
 		return doConnect(function);
 	}
 
-	// SIGNAL (specialized for type void)
+	// SIGNAL (specialized for empty Args)
 	template <typename O, typename R>
-	Connection Signal<void>::connect(O* object, R( O::* method)())
+	Connection Signal<>::connect(O* object, R( O::* method)())
 	{
 		return doConnect(object, method);
 	}
 
 	template <typename R>
-	Connection Signal<void>::connect(R(* function)())
+	Connection Signal<>::connect(R(* function)())
 	{
 		return doConnect(function);
 	}
 
 	template <typename R>
-	Connection Signal<void>::connect(std::function<R()>& function)
+	Connection Signal<>::connect(std::function<R()>& function)
 	{
 		return doConnect(function);
 	}

@@ -113,36 +113,12 @@ void initVBO(VertexBuffer& vbo, Vector3f origin, float s)
 	vbo.setData(vertices);
 }
 
-class Obj : public Object
-{
-public:
-	Obj()
-		: m_i(0)
-	{
-	}
-
-	void slot(int i)
-	{
-		m_i = i;
-	}
-
-private:
-	int m_i;
-};
-
 int main(int argc, char **argv)
 {
 	try
 	{
 		srand(42);
-		Obj o;
-		Signal<int> s;
-		auto c = s.connect(o, &Obj::slot);
 
-		c.disconnect();
-
-		s(42);
-		
 		OpenGLRenderSystem renderer;
 
 		Window window(750, 750, "Hello World");
