@@ -71,7 +71,7 @@ namespace at
 		template <typename...Args>
 		Vector(Args...args)
 		{
-			auto tmp = { args... };
+			auto tmp = { static_cast<T>(args)... };
 
 			size_t size = tmp.size();
 			if (size == 1)
