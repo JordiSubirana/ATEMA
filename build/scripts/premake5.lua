@@ -46,7 +46,7 @@ end
 
 print "Generating workspace"
 local AtemaLibKind = "SharedLib" -- StaticLib or SharedLib
-local WorkspaceDir = "../AtemaProject/"
+local WorkspaceDir = projectDir .. "AtemaProject/"
 
 workspace "Atema"
 	configurations { "Debug", "Release" }
