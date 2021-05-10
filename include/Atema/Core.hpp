@@ -24,6 +24,7 @@
 
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Error.hpp>
+#include <Atema/Core/Hash.hpp>
 #include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
