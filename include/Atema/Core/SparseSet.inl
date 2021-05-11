@@ -159,15 +159,18 @@ namespace at
 
 				m_data.pop_back();
 				m_indices.pop_back();
-			}
 
-			// We just removed an element to this page
-			page->size--;
+				// Don't forget to invalidate erased page index
+				page->indices[offset] = InvalidIndex;
 
-			// If the page does not track anything anymore, remove it
-			if (page->size == 0)
-			{
-				page.reset();
+				// We just removed an element to this page
+				page->size--;
+
+				// If the page does not track anything anymore, remove it
+				if (page->size == 0)
+				{
+					page.reset();
+				}
 			}
 		}
 	}
