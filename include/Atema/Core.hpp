@@ -28,6 +28,7 @@
 #include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/SparseSet.hpp>
 #include <Atema/Core/Traits.hpp>
 #include <Atema/Core/TypeInfo.hpp>
 #include <Atema/Core/Vector.hpp>
