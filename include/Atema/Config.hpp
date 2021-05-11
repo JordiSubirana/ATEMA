@@ -27,18 +27,24 @@
 	
 	#define ATEMA_COMPILER_BORDLAND
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __FUNC__
 	
 #elif defined(__clang__)
 	
 	#define ATEMA_COMPILER_CLANG
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__GNUC__)
 	
 	#define ATEMA_COMPILER_GCC
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__MINGW32__)
@@ -46,18 +52,24 @@
 	#define ATEMA_COMPILER_GCC
 	#define ATEMA_COMPILER_MINGW
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__INTEL_COMPILER) || defined(__ICL)
 	
 	#define ATEMA_COMPILER_INTEL
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __FUNCTION__
 	
 #elif defined(_MSC_VER)
 	
 	#define ATEMA_COMPILER_MSVC
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (_MSC_VER >= 1900)
+	#define ATEMA_COMPILER_SUPPORTS_CPP14 (_MSVC_LANG >= 201402L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (_MSVC_LANG >= 201703L)
 	#define ATEMA_FUNCTION __FUNCSIG__
 
 	#pragma warning(disable: 4251)
@@ -68,9 +80,9 @@
 	
 #endif
 
-#if !ATEMA_COMPILER_SUPPORTS_CPP11
+#if !ATEMA_COMPILER_SUPPORTS_CPP17
 	
-	#error A c++11 compatible compiler is required for ATEMA
+	#error A c++17 compatible compiler is required for ATEMA
 	
 #endif
 
