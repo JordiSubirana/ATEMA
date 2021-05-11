@@ -25,6 +25,7 @@
 #include <Atema/Core/Config.hpp>
 
 #include <cstdint>
+#include <cstddef>
 
 #ifndef ATEMA_HASH_SIZE
 #define ATEMA_HASH_SIZE 32
