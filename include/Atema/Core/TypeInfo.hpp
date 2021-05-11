@@ -19,17 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_TYPEINFO_HPP
+#define ATEMA_CORE_TYPEINFO_HPP
 
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/Error.hpp>
 #include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
+
+namespace at
+{
+	template <typename T>
+	struct TypeInfo
+	{
+		static constexpr HashType getID()
+		{
+			return stringHash(ATEMA_FUNCTION);
+		}
+		
+		static constexpr HashType id = getID();
+		static constexpr size_t size = sizeof(T);
+	};
+}
 
 #endif
