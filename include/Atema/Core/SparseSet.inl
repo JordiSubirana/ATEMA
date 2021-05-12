@@ -133,7 +133,7 @@ namespace at
 		const auto offset = getOffset(index);
 
 		// Ensure index validity
-		if (pageIndex < m_pages.size())
+		if (pageIndex < m_pages.size() && m_pages[pageIndex])
 		{
 			auto& page = m_pages[pageIndex];
 
