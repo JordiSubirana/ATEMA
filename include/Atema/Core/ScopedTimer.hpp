@@ -19,19 +19,30 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_SCOPEDTIMER_HPP
+#define ATEMA_CORE_SCOPEDTIMER_HPP
 
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
+
+#include <functional>
+#include <chrono>
+
+namespace at
+{
+	class ATEMA_CORE_API ScopedTimer : public NonCopyable
+	{
+	public:
+		using TimeCount = long long;
+		
+		ScopedTimer();
+		ScopedTimer(const std::function<void(TimeCount)>& callback);
+		virtual ~ScopedTimer();
+
+	private:
+		std::function<void(TimeCount)> m_callback;
+		std::chrono::high_resolution_clock::time_point m_start;
+	};
+}
 
 #endif

@@ -19,19 +19,40 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
-
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
 
-#endif
+#include <iostream>
+
+using namespace at;
+
+namespace
+{
+	void defaultCallback(ScopedTimer::TimeCount time)
+	{
+		std::cout << "ScopedTimer : " << time << " ns\n";
+	}
+}
+
+ScopedTimer::ScopedTimer() :
+	m_callback(defaultCallback)
+{
+	m_start = std::chrono::high_resolution_clock::now();
+}
+
+ScopedTimer::ScopedTimer(const std::function<void(TimeCount)>& callback) :
+	ScopedTimer()
+{
+	m_callback = callback;
+}
+
+ScopedTimer::~ScopedTimer()
+{
+	if (m_callback)
+	{
+		const auto end = std::chrono::high_resolution_clock::now();
+
+		const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
+
+		m_callback(delta);
+	}
+}
