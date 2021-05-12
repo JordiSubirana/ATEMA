@@ -36,6 +36,30 @@ namespace at
 	}
 
 	template <typename T>
+	T* SparseSet<T>::data() noexcept
+	{
+		return m_data.data();
+	}
+
+	template <typename T>
+	const T* SparseSet<T>::data() const noexcept
+	{
+		return m_data.data();
+	}
+
+	template <typename T>
+	typename SparseSet<T>::size_type* SparseSet<T>::indices() noexcept
+	{
+		return m_indices.data();
+	}
+
+	template <typename T>
+	const typename SparseSet<T>::size_type* SparseSet<T>::indices() const noexcept
+	{
+		return m_indices.data();
+	}
+
+	template <typename T>
 	typename SparseSet<T>::size_type SparseSet<T>::size() const
 	{
 		return size();

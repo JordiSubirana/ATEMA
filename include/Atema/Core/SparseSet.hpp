@@ -48,6 +48,11 @@ namespace at
 		SparseSet();
 		~SparseSet();
 
+		T* data() noexcept;
+		const T* data() const noexcept;
+		size_type* indices() noexcept;
+		const size_type* indices() const noexcept;
+
 		size_type size() const;
 		size_type getSize() const;
 		size_type capacity() const;
@@ -98,7 +103,7 @@ namespace at
 		
 		std::vector<T> m_data;
 		std::vector<size_t> m_indices;
-		std::vector<UPtr<Page>> m_pages;
+		std::vector<Ptr<Page>> m_pages;
 	};
 }
 
