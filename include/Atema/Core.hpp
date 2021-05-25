@@ -23,6 +23,7 @@
 #define ATEMA_GLOBAL_CORE_HPP
 
 #include <Atema/Core/Config.hpp>
+#include <Atema/Core/EntityManager.hpp>
 #include <Atema/Core/Error.hpp>
 #include <Atema/Core/Hash.hpp>
 #include <Atema/Core/Matrix.hpp>
