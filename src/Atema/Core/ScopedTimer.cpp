@@ -29,7 +29,7 @@ namespace
 {
 	void defaultCallback(ScopedTimer::TimeCount time)
 	{
-		std::cout << "ScopedTimer : " << time << " ns\n";
+		std::cout << "ScopedTimer : " << static_cast<float>(time) * 0.001f << " ms\n";
 	}
 }
 
@@ -51,7 +51,7 @@ ScopedTimer::~ScopedTimer()
 	{
 		const auto end = std::chrono::high_resolution_clock::now();
 
-		const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
+		const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start).count();
 
 		m_callback(delta);
 	}
