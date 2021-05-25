@@ -30,6 +30,7 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
 #include <Atema/Core/SparseSet.hpp>
+#include <Atema/Core/SparseSetUnion.hpp>
 #include <Atema/Core/Traits.hpp>
 #include <Atema/Core/TypeInfo.hpp>
 #include <Atema/Core/Vector.hpp>
