@@ -62,7 +62,7 @@ namespace at
 	template <typename T>
 	typename SparseSet<T>::size_type SparseSet<T>::size() const
 	{
-		return size();
+		return getSize();
 	}
 
 	template <typename T>
