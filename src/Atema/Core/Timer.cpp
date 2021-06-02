@@ -19,23 +19,22 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
-
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
 #include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
 
-#endif
+using namespace at;
+
+Timer::Timer()
+{
+	m_start = std::chrono::high_resolution_clock::now();
+}
+
+TimeStep Timer::getStep() noexcept
+{
+	auto end = std::chrono::high_resolution_clock::now();
+
+	auto step = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start).count();
+
+	m_start = end;
+
+	return TimeStep(static_cast<float>(step) * 0.001f);
+}

@@ -19,23 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
-
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/Timer.hpp>
 #include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
 
-#endif
+using namespace at;
+
+TimeStep::TimeStep(float ms) : m_time(ms)
+{
+}
+
+float TimeStep::getSeconds() const noexcept
+{
+	return m_time / 1000.0f;
+}
+
+float TimeStep::getMilliSeconds() const noexcept
+{
+	return m_time;
+}
