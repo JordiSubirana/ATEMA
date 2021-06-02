@@ -27,19 +27,18 @@ using namespace at;
 
 namespace
 {
-	void defaultCallback(ScopedTimer::TimeCount time)
+	void defaultCallback(TimeStep time)
 	{
-		std::cout << "ScopedTimer : " << static_cast<float>(time) * 0.001f << " ms\n";
+		std::cout << "ScopedTimer : " << time.getMilliSeconds() << " ms\n";
 	}
 }
 
 ScopedTimer::ScopedTimer() :
 	m_callback(defaultCallback)
 {
-	m_start = std::chrono::high_resolution_clock::now();
 }
 
-ScopedTimer::ScopedTimer(const std::function<void(TimeCount)>& callback) :
+ScopedTimer::ScopedTimer(const std::function<void(TimeStep)>& callback) :
 	ScopedTimer()
 {
 	m_callback = callback;
@@ -49,10 +48,6 @@ ScopedTimer::~ScopedTimer()
 {
 	if (m_callback)
 	{
-		const auto end = std::chrono::high_resolution_clock::now();
-
-		const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start).count();
-
-		m_callback(delta);
+		m_callback(m_timer.getStep());
 	}
 }

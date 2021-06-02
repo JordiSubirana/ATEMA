@@ -23,25 +23,22 @@
 #define ATEMA_CORE_SCOPEDTIMER_HPP
 
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Timer.hpp>
 
 #include <functional>
-#include <chrono>
 
 namespace at
 {
-	class ATEMA_CORE_API ScopedTimer : public NonCopyable
+	class ATEMA_CORE_API ScopedTimer
 	{
 	public:
-		using TimeCount = long long;
-		
 		ScopedTimer();
-		ScopedTimer(const std::function<void(TimeCount)>& callback);
+		ScopedTimer(const std::function<void(TimeStep)>& callback);
 		virtual ~ScopedTimer();
 
 	private:
-		std::function<void(TimeCount)> m_callback;
-		std::chrono::high_resolution_clock::time_point m_start;
+		std::function<void(TimeStep)> m_callback;
+		Timer m_timer;
 	};
 }
 
