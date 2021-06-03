@@ -19,26 +19,53 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_APPLICATION_HPP
+#define ATEMA_CORE_APPLICATION_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/ApplicationLayer.hpp>
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
+#include <Atema/Core/Event.hpp>
+
+#include <vector>
+#include <queue>
+
+namespace at
+{
+	class ApplicationLayer;
+	class TimeStep;
+	
+	class ATEMA_CORE_API Application final : public NonCopyable
+	{
+	public:
+		~Application();
+
+		static Application& instance();
+
+		// The user must manage layers lifetime
+		void addLayer(ApplicationLayer* layer);
+		void removeLayer(ApplicationLayer* layer);
+
+		// Runs the main loop
+		void run();
+
+		// Request the application to close after the current loop execution
+		void close();
+
+		// Push an event that will be executed on the next loop
+		void pushEvent(Event& event);
+		
+	private:
+		Application();
+
+		void processEvents();
+
+		void updateLayers(TimeStep timeStep);
+
+		bool m_close;
+		std::vector<ApplicationLayer*> m_layers;
+		std::queue<Event> m_currentEvents;
+		std::queue<Event> m_nextEvents;
+	};
+}
 
 #endif

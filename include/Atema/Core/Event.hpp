@@ -19,26 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_EVENT_HPP
+#define ATEMA_CORE_EVENT_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/ApplicationLayer.hpp>
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
+
+namespace at
+{
+	class ATEMA_CORE_API Event
+	{
+	public:
+		Event();
+		virtual ~Event();
+
+		void setHandled(bool value);
+		bool isHandled() const noexcept;
+
+	private:
+		bool m_isHandled;
+	};
+}
 
 #endif

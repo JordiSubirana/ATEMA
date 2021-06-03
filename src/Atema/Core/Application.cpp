@@ -19,26 +19,84 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
-
 #include <Atema/Core/Application.hpp>
 #include <Atema/Core/ApplicationLayer.hpp>
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
 #include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
 
-#endif
+using namespace at;
+
+Application::Application() : m_close(false)
+{
+}
+
+Application::~Application()
+{
+}
+
+Application& Application::instance()
+{
+	static Application s_instance;
+
+	return s_instance;
+}
+
+void Application::addLayer(ApplicationLayer* layer)
+{
+	m_layers.push_back(layer);
+}
+
+void Application::removeLayer(ApplicationLayer* layer)
+{
+	auto it = std::find(m_layers.begin(), m_layers.end(), layer);
+
+	if (it != m_layers.end())
+		m_layers.erase(it);
+}
+
+void Application::run()
+{
+	Timer timer;
+
+	while (!m_close)
+	{
+		processEvents();
+
+		updateLayers(timer.getStep());
+	}
+}
+
+void Application::close()
+{
+	m_close = true;
+}
+
+void Application::pushEvent(Event& event)
+{
+	m_nextEvents.push(event);
+}
+
+void Application::processEvents()
+{
+	while (!m_currentEvents.empty())
+	{
+		auto& event = m_currentEvents.front();
+
+		for (auto& layer : m_layers)
+		{
+			if (!event.isHandled())
+				layer->onEvent(event);
+		}
+
+		m_currentEvents.pop();
+	}
+
+	m_currentEvents.swap(m_nextEvents);
+}
+
+void Application::updateLayers(TimeStep timeStep)
+{
+	for (auto& layer : m_layers)
+	{
+		layer->update(timeStep);
+	}
+}
