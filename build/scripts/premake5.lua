@@ -3,6 +3,10 @@
 -------------------
 local buildExamples = true
 
+-- Use specific versions of third party libraries
+-- You can add a custom folder in "thirdparty/bin/[CUSTOM_NAME]" and/or in "thirdparty/lib/[CUSTOM_NAME]" with "x86" and "x64" subfolders
+local thirdPartyCompiler = "" -- "default", "mingw", "msvc", or your custom folder. If empty, will take a coherent folder depending on the required action
+
 --------------
 -- GCC TOOL --
 --------------
@@ -50,6 +54,7 @@ local WorkspaceDir = projectDir .. "AtemaProject/"
 
 workspace "Atema"
 	configurations { "Debug", "Release" }
+	platforms { "x86", "x64" }
 	cppdialect "C++17"
 	setDefaultFlags()
 	location (WorkspaceDir)
@@ -70,7 +75,7 @@ for k, moduleFile in pairs(modulesFiles) do
 	MODULE = {}
 	
 	MODULE.defines = {}
-	MODULE.extlibs = {}
+	MODULE.thirdparty = {}
 	MODULE.dependencies = {}
 	MODULE.osDependencies = {}
 	MODULE.osDependencies.windows = {}
@@ -88,7 +93,7 @@ for k, moduleFile in pairs(modulesFiles) do
 			language "C++"
 			setDefaultFlags()
 			targetname(projectName)
-			targetdir(projectDir .. "bin/%{cfg.buildcfg}")
+			targetdir(projectDir .. "bin/%{cfg.buildcfg}/%{cfg.platform}")
 			location(WorkspaceDir .. projectName)
 			
 			-- Source files
@@ -104,17 +109,17 @@ for k, moduleFile in pairs(modulesFiles) do
 				(projectDir .. "src/Atema/" .. moduleName .. "/**.cpp")
 			}
 			
-			for k, extlib in pairs(MODULE.extlibs) do
-				table.insert(moduleFiles, (projectDir .. "extlibs/include/" .. extlib .. "/**.hpp"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/include/" .. extlib .. "/**.h"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/include/" .. extlib .. "/**.inl"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/include/" .. extlib .. "/**.tpp"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.hpp"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.h"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.inl"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.tpp"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.cpp"))
-				table.insert(moduleFiles, (projectDir .. "extlibs/src/" .. extlib .. "/**.c"))
+			for k, extlib in pairs(MODULE.thirdparty) do
+				table.insert(moduleFiles, (projectDir .. "thirdparty/include/" .. extlib .. "/**.hpp"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/include/" .. extlib .. "/**.h"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/include/" .. extlib .. "/**.inl"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/include/" .. extlib .. "/**.tpp"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.hpp"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.h"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.inl"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.tpp"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.cpp"))
+				table.insert(moduleFiles, (projectDir .. "thirdparty/src/" .. extlib .. "/**.c"))
 			end
 			
 			files(moduleFiles)
@@ -123,7 +128,7 @@ for k, moduleFile in pairs(modulesFiles) do
 			includedirs
 			{
 				(projectDir .. "include/"),
-				(projectDir .. "extlibs/include/")
+				(projectDir .. "thirdparty/include/")
 			}
 			
 			-- Dependencies
@@ -142,13 +147,32 @@ for k, moduleFile in pairs(modulesFiles) do
 			
 			links(moduleLinks)
 			
+			local defaultThirdPartyCompiler = "default"
+			
+			filter "action:vs*"
+				defaultThirdPartyCompiler = "msvc"
+			
+			if (thirdPartyCompiler ~= "") then
+				if (os.isdir(projectDir .. "thirdparty/lib/" .. thirdPartyCompiler) or os.isdir(projectDir .. "thirdparty/lib/" .. thirdPartyCompiler)) then
+					defaultThirdPartyCompiler = thirdPartyCompiler
+				else
+					print("Invalid third party compiler override : " .. thirdPartyCompiler .. ", falling back to : " .. defaultThirdPartyCompiler)
+				end
+			end
+			
 			libdirs
 			{
-				(projectDir .. "extlibs/lib/"),
-				(projectDir .. "extlibs/bin/")
+				(projectDir .. "thirdparty/lib/" .. defaultThirdPartyCompiler .. "/%{cfg.platform}"),
+				(projectDir .. "thirdparty/bin/" .. defaultThirdPartyCompiler .. "/%{cfg.platform}")
 			}
 			
 			-- Specific actions
+			filter "platforms:x86"
+				architecture "x86"
+			
+			filter "platforms:x64"
+				architecture "x86_64"
+			
 			filter "configurations:Debug"
 				defines { "ATEMA_DEBUG" }
 				symbols "On"
@@ -182,7 +206,7 @@ if (buildExamples == true) then
 			kind "ConsoleApp"
 			language "C++"
 			setDefaultFlags()
-			targetdir(projectDir .. "bin/%{cfg.buildcfg}")
+			targetdir(projectDir .. "bin/%{cfg.buildcfg}/%{cfg.platform}")
 			targetname(exampleName)
 			location(WorkspaceDir .. "Examples")
 			
@@ -200,6 +224,12 @@ if (buildExamples == true) then
 			links(modulesLibs)
 			
 			-- Specific actions
+			filter "platforms:x86"
+				architecture "x86"
+			
+			filter "platforms:x64"
+				architecture "x86_64"
+			
 			filter "configurations:Debug"
 				defines { "ATEMA_DEBUG" }
 				symbols "On"

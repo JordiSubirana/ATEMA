@@ -1,10 +1,10 @@
 -- Additionnal defines of the module
 MODULE.defines = {}
 
--- Extlibs (third party embedded sources)
-MODULE.extlibs = {}
+-- Thirdparty embedded sources
+MODULE.thirdparty = {}
 
--- Dependencies (Atema modules & compiled extlibs)
+-- Dependencies (Atema modules & compiled thirdparty libraries)
 MODULE.dependencies = {"AtemaCore"}
 
 -- OS specific dependencies (compiled)
