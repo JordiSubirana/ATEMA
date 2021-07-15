@@ -275,11 +275,6 @@ void benchmarkSparseSetUnion()
 // Application
 
 // #4 - Basic application
-void basicApplication()
-{
-	
-}
-
 class TestLayer : public ApplicationLayer
 {
 public:
@@ -287,6 +282,10 @@ public:
 	{
 		c = 1;
 		count = 0.0f;
+
+		Window::Description windowDescription;
+		
+		window = Window::create(windowDescription);
 	}
 	
 	void onEvent(Event& event) override
@@ -296,26 +295,47 @@ public:
 	
 	void update(TimeStep ms) override
 	{
-		//std::cout << ms.getMilliSeconds() << std::endl;
-		//std::cout << ms.getSeconds() << std::endl;
-		//std::cout << count << std::endl;
-		std::cout << ".";
 		count += ms.getSeconds();
 
 		if (count >= (float)c)
 		{
 			c++;
-			std::cout << std::endl << count << std::endl;
+			std::cout << count << std::endl;
 		}
 		
 		if (count >= 10.0f)
 			Application::instance().close();
+
+		if (window->shouldClose())
+		{
+			Application::instance().close();
+			return;
+		}
+
+		window->processEvents();
+
+		window->swapBuffers();
 	}
 
 	int c;
 	float count;
+	Ptr<Window> window;
 };
 
+void basicApplication()
+{
+	auto layer = new TestLayer();
+
+	auto& app = Application::instance();
+
+	app.addLayer(layer);
+
+	app.run();
+
+	delete layer;
+}
+
+// MAIN
 int main(int argc, char** argv)
 {
 	try
@@ -326,17 +346,7 @@ int main(int argc, char** argv)
 
 		//benchmarkSparseSetUnion();
 
-		//basicApplication();
-
-		auto layer = new TestLayer();
-
-		auto& app = Application::instance();
-		
-		app.addLayer(layer);
-
-		app.run();
-
-		delete layer;
+		basicApplication();
 	}
 	catch (const std::exception& e)
 	{
