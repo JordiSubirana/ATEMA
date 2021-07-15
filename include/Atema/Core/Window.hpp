@@ -19,27 +19,55 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_WINDOW_HPP
+#define ATEMA_CORE_WINDOW_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/ApplicationLayer.hpp>
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
-#include <Atema/Core/Window.hpp>
+
+#include <string>
+
+namespace at
+{
+	class ATEMA_CORE_API Window : NonCopyable
+	{
+	public:
+		struct Description
+		{
+			Description()
+			{
+				width = 640;
+				height = 480;
+
+				title = "Atema";
+			}
+
+			unsigned width;
+			unsigned height;
+
+			std::string title;
+		};
+		
+		virtual ~Window();
+
+		static Ptr<Window> create(const Description& description);
+
+		bool shouldClose() const noexcept;
+
+		void processEvents();
+
+		void swapBuffers();
+		
+	private:
+		Window();
+
+		void initialize(const Description& description);
+
+		class Implementation;
+
+		UPtr<Implementation> m_implementation;
+	};
+}
 
 #endif
