@@ -210,9 +210,11 @@ if (buildExamples == true) then
 			targetname(exampleName)
 			location(WorkspaceDir .. "Examples")
 			
+			-- Include directories
 			includedirs
 			{
-				(projectDir .. "include/")
+				(projectDir .. "include/"),
+				(projectDir .. "thirdparty/include/")
 			}
 			
 			files
