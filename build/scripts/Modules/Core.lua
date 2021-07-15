@@ -5,8 +5,8 @@ MODULE.defines = {}
 MODULE.thirdparty = {}
 
 -- Dependencies (Atema modules & compiled thirdparty libraries)
-MODULE.dependencies = {}
+MODULE.dependencies = {"glfw3"}
 
 -- OS specific dependencies (compiled)
-MODULE.osDependencies.windows = {}
+MODULE.osDependencies.windows = {"gdi32"}
 MODULE.osDependencies.posix = {}
