@@ -30,6 +30,8 @@ namespace at
 	template <size_t N, typename T>
 	Vector<N, T>::Vector()
 	{
+		for (auto& value : this->data)
+			value = static_cast<T>(0);
 	}
 
 	template <size_t N, typename T>
