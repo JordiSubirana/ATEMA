@@ -3,6 +3,7 @@
 #include <entt/entt.hpp>
 
 #include <map>
+#include <iostream>
 
 using namespace at;
 
@@ -283,9 +284,21 @@ public:
 		c = 1;
 		count = 0.0f;
 
-		Window::Description windowDescription;
+		Renderer::Settings settings;
+		//settings.mainWindowSettings.width = 1920;
+		//settings.mainWindowSettings.height = 1080;
+
+		renderer = std::make_shared<VulkanRenderer>(settings);
 		
-		window = Window::create(windowDescription);
+		window = renderer->getMainWindow();
+
+		renderer->initialize();
+	}
+
+	~TestLayer()
+	{
+		window.reset();
+		renderer.reset();
 	}
 	
 	void onEvent(Event& event) override
@@ -300,11 +313,11 @@ public:
 		if (count >= (float)c)
 		{
 			c++;
-			std::cout << count << std::endl;
+			//std::cout << count << std::endl;
 		}
 		
-		if (count >= 10.0f)
-			Application::instance().close();
+		/*if (count >= 10.0f)
+			Application::instance().close();*/
 
 		if (window->shouldClose())
 		{
@@ -314,12 +327,15 @@ public:
 
 		window->processEvents();
 
+		renderer->drawFrame();
+
 		window->swapBuffers();
 	}
 
 	int c;
 	float count;
 	Ptr<Window> window;
+	Ptr<VulkanRenderer> renderer;
 };
 
 void basicApplication()
