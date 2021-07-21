@@ -25,48 +25,66 @@
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Vector.hpp>
 
 #include <string>
+#include <vector>
 
 namespace at
 {
 	class ATEMA_CORE_API Window : NonCopyable
 	{
 	public:
-		struct Description
+		struct Settings
 		{
-			Description()
+			Settings()
 			{
 				width = 640;
 				height = 480;
 
+				resizable = true;
+				
 				title = "Atema";
 			}
 
-			unsigned width;
-			unsigned height;
+			unsigned int width;
+			unsigned int height;
+
+			bool resizable;
 
 			std::string title;
 		};
 		
 		virtual ~Window();
 
-		static Ptr<Window> create(const Description& description);
+		static Ptr<Window> create(const Settings& description);
 
 		bool shouldClose() const noexcept;
 
 		void processEvents();
 
 		void swapBuffers();
+
+		Vector2u getSize() const noexcept;
+
+		// Platform specific
+		void* getHandle() const;
+		
+		// Vulkan specific
+		static const std::vector<const char*>& getVulkanExtensions();
 		
 	private:
 		Window();
 
-		void initialize(const Description& description);
+		void initialize(const Settings& description);
 
+		void resizedCallback(unsigned int width, unsigned int height);
+		
 		class Implementation;
 
 		UPtr<Implementation> m_implementation;
+
+		Vector2u m_size;
 	};
 }
 

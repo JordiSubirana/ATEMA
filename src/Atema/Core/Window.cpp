@@ -25,6 +25,13 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#ifdef ATEMA_SYSTEM_WINDOWS
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
+
+#include <functional>
+
 using namespace at;
 
 // Implementation
@@ -59,10 +66,18 @@ public:
 			glfwTerminate();
 	}
 
-	void create(const Window::Description& description)
+	void setResizedCallback(const std::function<void(unsigned, unsigned)>& callback)
+	{
+		m_resizedCallback = callback;
+	}
+
+	void create(const Window::Settings& description)
 	{
 		destroy(); // Ensure there is no previous window
 
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_RESIZABLE, description.resizable ? GLFW_TRUE : GLFW_FALSE);
+		
 		m_window = glfwCreateWindow(
 			description.width,
 			description.height,
@@ -74,6 +89,15 @@ public:
 		{
 			ATEMA_ERROR("Window creation failed");
 		}
+
+		glfwSetWindowUserPointer(m_window, this);
+
+		glfwSetFramebufferSizeCallback(m_window, onFramebufferResized);
+
+		int w, h;
+		glfwGetWindowSize(m_window, &w, &h);
+
+		m_resizedCallback(static_cast<unsigned>(w), static_cast<unsigned>(h));
 	}
 
 	void destroy()
@@ -84,6 +108,17 @@ public:
 
 			m_window = nullptr;
 		}
+	}
+
+	void* getHandle() const
+	{
+#ifdef ATEMA_SYSTEM_WINDOWS
+		HWND handle = glfwGetWin32Window(m_window);
+		
+		return handle;
+#endif
+
+		return nullptr;
 	}
 
 	bool shouldClose() const noexcept
@@ -101,21 +136,38 @@ public:
 		glfwSwapBuffers(m_window);
 	}
 
+	void framebufferResized(int width, int height)
+	{
+		m_resizedCallback(static_cast<unsigned>(width), static_cast<unsigned>(height));
+	}
+
+	static void onFramebufferResized(GLFWwindow* window, int width, int height)
+	{
+		auto w = reinterpret_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
+
+		w->framebufferResized(width, height);
+	}
+
 private:
 	GLFWwindow* m_window;
+	std::function<void(unsigned, unsigned)> m_resizedCallback;
 };
 
 // Window
 Window::Window()
 {
 	m_implementation.reset(new Window::Implementation());
+	m_implementation->setResizedCallback([this](unsigned int w, unsigned int h)
+		{
+			resizedCallback(w, h);
+		});
 }
 
 Window::~Window()
 {
 }
 
-Ptr<Window> Window::create(const Window::Description& description)
+Ptr<Window> Window::create(const Window::Settings& description)
 {
 	Ptr<Window> window(new Window());
 
@@ -124,9 +176,15 @@ Ptr<Window> Window::create(const Window::Description& description)
 	return window;
 }
 
-void Window::initialize(const Description& description)
+void Window::initialize(const Settings& description)
 {
 	m_implementation->create(description);
+}
+
+void Window::resizedCallback(unsigned width, unsigned height)
+{
+	m_size.x = width;
+	m_size.y = height;
 }
 
 bool Window::shouldClose() const noexcept
@@ -142,4 +200,30 @@ void Window::processEvents()
 void Window::swapBuffers()
 {
 	m_implementation->swapBuffers();
+}
+
+Vector2u Window::getSize() const noexcept
+{
+	return m_size;
+}
+
+void* Window::getHandle() const
+{
+	return m_implementation->getHandle();
+}
+
+const std::vector<const char*>& Window::getVulkanExtensions()
+{
+	static std::vector<const char*> requiredExtensions;
+
+	if (requiredExtensions.empty())
+	{
+		uint32_t requiredExtensionCount = 0;
+		auto requiredExtensionNames = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
+
+		for (uint32_t i = 0; i < requiredExtensionCount; i++)
+			requiredExtensions.push_back(requiredExtensionNames[i]);
+	}
+
+	return requiredExtensions;
 }
