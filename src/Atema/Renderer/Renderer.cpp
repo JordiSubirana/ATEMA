@@ -19,10 +19,26 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Core/Window.hpp>
 
-#endif
+using namespace at;
+
+Renderer::Renderer(const Settings& settings) : m_settings(settings)
+{
+	m_mainWindow = Window::create(settings.mainWindowSettings);
+}
+
+Renderer::~Renderer()
+{
+}
+
+const Renderer::Settings& Renderer::getSettings() const noexcept
+{
+	return m_settings;
+}
+
+Ptr<Window> Renderer::getMainWindow() const noexcept
+{
+	return m_mainWindow;
+}

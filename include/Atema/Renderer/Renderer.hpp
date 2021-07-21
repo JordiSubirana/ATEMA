@@ -19,10 +19,43 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_RENDERER_HPP
+#define ATEMA_RENDERER_RENDERER_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Window.hpp>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Renderer
+	{
+	public:
+		struct Settings
+		{
+			Window::Settings mainWindowSettings;
+
+			size_t maxFramesInFlight = 2;
+
+			bool sampleShading = true;
+		};
+		
+		Renderer() = delete;
+		virtual ~Renderer();
+
+		virtual void initialize() = 0;
+
+		const Settings& getSettings() const noexcept;
+		
+		Ptr<Window> getMainWindow() const noexcept;
+
+	protected:
+		Renderer(const Settings& settings);
+
+	private:
+		Settings m_settings;
+		Ptr<Window> m_mainWindow;
+	};
+}
 
 #endif
