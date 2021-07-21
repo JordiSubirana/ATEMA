@@ -8,5 +8,5 @@ MODULE.thirdparty = {}
 MODULE.dependencies = {"AtemaCore", "AtemaRenderer"}
 
 -- OS specific dependencies (compiled)
-MODULE.osDependencies.windows = {}
+MODULE.osDependencies.windows = {"vulkan-1"}
 MODULE.osDependencies.posix = {}
