@@ -19,10 +19,24 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-
-#include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 
+using namespace at;
+
+#define ATEMA_VULKAN_LOAD(AT_FUNCTION) \
+	AT_FUNCTION = reinterpret_cast<PFN_ ## AT_FUNCTION>(vkGetInstanceProcAddr(instance, #AT_FUNCTION))
+
+Vulkan::Vulkan(VkInstance instance)
+{
+	ATEMA_VULKAN_LOAD(vkCreateDebugUtilsMessengerEXT);
+	ATEMA_VULKAN_LOAD(vkDestroyDebugUtilsMessengerEXT);
+
+#ifdef ATEMA_SYSTEM_WINDOWS
+	ATEMA_VULKAN_LOAD(vkCreateWin32SurfaceKHR);
 #endif
+}
+
+Vulkan::~Vulkan()
+{
+}
+

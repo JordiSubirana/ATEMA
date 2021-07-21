@@ -19,10 +19,47 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKAN_HPP
+#define ATEMA_VULKANRENDERER_VULKAN_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/Error.hpp>
+
+#include <vulkan/vulkan.h>
+
+#define ATEMA_VK_CHECK(functionCall) \
+	{ \
+		auto result = (functionCall); \
+		if (result != VK_SUCCESS) \
+		{ \
+			ATEMA_ERROR("Vulkan result invalid"); \
+		} \
+	}
+
+#ifdef ATEMA_SYSTEM_WINDOWS
+#define NOMINMAX
+#include <windows.h>
+
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan_win32.h>
+#endif
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API Vulkan
+	{
+	public:
+		Vulkan() = delete;
+		Vulkan(VkInstance instance);
+		~Vulkan();
+
+		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+
+#ifdef ATEMA_SYSTEM_WINDOWS
+		PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
+#endif
+	};
+}
 
 #endif
