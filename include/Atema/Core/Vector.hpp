@@ -123,6 +123,8 @@ namespace at
 
 		T& operator[](size_t index);
 		const T& operator[](size_t index) const;
+
+		T dot(const Vector<N, T>& other) const;
 	};
 
 	template <typename T>
@@ -146,6 +148,26 @@ namespace at
 	using Vector4u = Vector4<unsigned>;
 	using Vector4f = Vector4<float>;
 	using Vector4d = Vector4<double>;
+
+	template <typename T>
+	Vector3<T> cross(const Vector2<T>& v1, const Vector2<T>& v2)
+	{
+		T z = v1.x * v2.y - v1.y * v2.x;
+
+		return (Vector3<T>(0, 0, z));
+	}
+
+	template <typename T>
+	Vector3<T> cross(const Vector3<T>& v1, const Vector3<T>& v2)
+	{
+		Vector3<T> tmp;
+
+		tmp.x = v1.y * v2.z - v1.z * v2.y;
+		tmp.y = v1.z * v2.x - v1.x * v2.z;
+		tmp.z = v1.x * v2.y - v1.y * v2.x;
+
+		return (tmp);
+	}
 }
 
 #include <Atema/Core/Vector.inl>

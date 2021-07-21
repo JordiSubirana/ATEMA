@@ -30,11 +30,10 @@ namespace at
 	template <size_t COL, size_t ROW, typename T>
 	Matrix<COL, ROW, T>::Matrix()
 	{
-		T tmp = static_cast<T>(0);
 		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] = tmp;
+			this->m_data[i] = static_cast<T>(0);
 	}
 
 	template <size_t COL, size_t ROW, typename T>
@@ -63,13 +62,9 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<ROW, COL, T>& Matrix<COL, ROW, T>::identity()
+	Matrix<ROW, COL, T> Matrix<COL, ROW, T>::identity()
 	{
-		for (size_t c = 0; c < COL; c++)
-			for (size_t r = 0; r < ROW; r++)
-				this->m_columns[c][r] = (c == r ? 1 : 0);
-
-		return *this;
+		return Matrix<ROW, COL, T>(1);
 	}
 
 	template <size_t COL, size_t ROW, typename T>

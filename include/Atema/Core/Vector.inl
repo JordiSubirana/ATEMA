@@ -227,7 +227,7 @@ namespace at
 		if (index >= N)
 			ATEMA_ERROR("Index is out of range.");
 
-			return (this->data[index]);
+		return (this->data[index]);
 	}
 
 	template <size_t N, typename T>
@@ -236,7 +236,18 @@ namespace at
 		if (index >= N)
 			ATEMA_ERROR("Index is out of range.");
 
-			return (this->data[index]);
+		return (this->data[index]);
+	}
+
+	template <size_t N, typename T>
+	T Vector<N, T>::dot(const Vector<N, T>& other) const
+	{
+		T length = 0;
+
+		for (size_t i = 0; i < N; i++)
+			length += this->data[i] * other.data[i];
+
+		return length;
 	}
 }
 
