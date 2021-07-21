@@ -24,5 +24,6 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
 #endif
