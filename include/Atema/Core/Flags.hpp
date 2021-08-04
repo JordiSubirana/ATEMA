@@ -22,6 +22,8 @@
 #ifndef ATEMA_CORE_FLAGS_HPP
 #define ATEMA_CORE_FLAGS_HPP
 
+#include <type_traits>
+
 #define ATEMA_DECLARE_FLAGS(at_type) \
 	inline at::Flags<at_type> operator|(at_type a, at_type b) \
 	{ \
