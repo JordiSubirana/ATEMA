@@ -28,6 +28,7 @@
 #include <Atema/Core/EntityManager.hpp>
 #include <Atema/Core/Error.hpp>
 #include <Atema/Core/Event.hpp>
+#include <Atema/Core/Flags.hpp>
 #include <Atema/Core/Hash.hpp>
 #include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
