@@ -154,4 +154,21 @@
 
 #endif
 
+// Architecture
+#include <cstdint>
+
+#if INTPTR_MAX == INT64_MAX
+
+#define ATEMA_SYSTEM_64
+
+#elif INTPTR_MAX == INT32_MAX
+
+#define ATEMA_SYSTEM_32
+
+#else
+
+#error Unknown architecture size
+
+#endif
+
 #endif
