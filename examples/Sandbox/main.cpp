@@ -288,20 +288,58 @@ public:
 		//settings.mainWindowSettings.width = 1920;
 		//settings.mainWindowSettings.height = 1080;
 
-		renderer = std::make_shared<VulkanRenderer>(settings);
+		Renderer::create<VulkanRenderer>(settings);
 		
-		window = renderer->getMainWindow();
+		window = Renderer::getInstance().getMainWindow();
 
-		renderer->initialize();
+		auto windowSize = window->getSize();
+
+		swapChain = SwapChain::create({ window, ImageFormat::BGRA8_SRGB });
+
+		RenderPass::Settings renderPassSettings;
+		renderPassSettings.attachments.resize(2);
+		renderPassSettings.attachments[0].format = ImageFormat::BGRA8_SRGB;
+		renderPassSettings.attachments[0].finalLayout = ImageLayout::Present;
+		renderPassSettings.attachments[1].format = ImageFormat::D32F;
+
+		renderPass = RenderPass::create(renderPassSettings);
+
+		Image::Settings depthSettings;
+		depthSettings.width = windowSize.x;
+		depthSettings.height = windowSize.y;
+		depthSettings.format = ImageFormat::D32F;
+		depthSettings.usages = ImageUsage::RenderTarget;
+		
+		depthImage = Image::create(depthSettings);
+		
+		Framebuffer::Settings framebufferSettings;
+		framebufferSettings.renderPass = renderPass;
+		framebufferSettings.width = windowSize.x;
+		framebufferSettings.height = windowSize.y;
+
+		for (auto& image : swapChain->getImages())
+		{
+			framebufferSettings.images =
+			{
+				image,
+				depthImage
+			};
+
+			framebuffers.push_back(Framebuffer::create(framebufferSettings));
+		}
 	}
 
 	~TestLayer()
 	{
 		window.reset();
-		renderer.reset();
 	}
 	
 	void onEvent(Event& event) override
+	{
+		
+	}
+
+	void drawFrame()
 	{
 		
 	}
@@ -327,7 +365,7 @@ public:
 
 		window->processEvents();
 
-		renderer->drawFrame();
+		//static_cast<VulkanRenderer&>(Renderer::getInstance()).drawFrame();
 
 		window->swapBuffers();
 	}
@@ -335,7 +373,10 @@ public:
 	int c;
 	float count;
 	Ptr<Window> window;
-	Ptr<VulkanRenderer> renderer;
+	Ptr<SwapChain> swapChain;
+	Ptr<RenderPass> renderPass;
+	Ptr<Image> depthImage;
+	std::vector<Ptr<Framebuffer>> framebuffers;
 };
 
 void basicApplication()
