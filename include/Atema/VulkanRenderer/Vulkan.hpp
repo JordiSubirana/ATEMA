@@ -24,6 +24,7 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Core/Error.hpp>
+#include <Atema/Renderer/Enums.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -33,6 +34,15 @@
 		if (result != VK_SUCCESS) \
 		{ \
 			ATEMA_ERROR("Vulkan result invalid"); \
+		} \
+	}
+
+#define ATEMA_VK_DESTROY(device, deleterFunc, resource) \
+	{ \
+		if (resource != VK_NULL_HANDLE) \
+		{ \
+			deleterFunc(device, resource, nullptr); \
+			resource = VK_NULL_HANDLE; \
 		} \
 	}
 
@@ -59,6 +69,22 @@ namespace at
 #ifdef ATEMA_SYSTEM_WINDOWS
 		PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 #endif
+
+		static VkFormat getFormat(ImageFormat format);
+
+		static VkImageAspectFlags getAspect(ImageFormat format);
+
+		static VkImageTiling getTiling(ImageTiling tiling);
+
+		static VkImageUsageFlags getUsages(Flags<ImageUsage> usages, bool isDepth);
+
+		static VkImageLayout getLayout(ImageLayout layout, bool isDepth);
+		
+		static VkSampleCountFlagBits getSamples(ImageSamples samples);
+		
+		static VkAttachmentLoadOp getAttachmentLoading(AttachmentLoading value);
+		
+		static VkAttachmentStoreOp getAttachmentStoring(AttachmentStoring value);
 	};
 }
 
