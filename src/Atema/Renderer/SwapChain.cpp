@@ -19,15 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/SwapChain.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 
-#endif
+using namespace at;
+
+SwapChain::SwapChain()
+{
+}
+
+SwapChain::~SwapChain()
+{
+}
+
+Ptr<SwapChain> SwapChain::create(const Settings& settings)
+{
+	return Renderer::getInstance().createSwapChain(settings);
+}

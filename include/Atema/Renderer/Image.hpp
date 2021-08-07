@@ -19,15 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_IMAGE_HPP
+#define ATEMA_RENDERER_IMAGE_HPP
 
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Image : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			uint32_t width = 8;
+			uint32_t height = 8;
+			uint32_t mipLevels = 1;
+
+			ImageFormat format = ImageFormat::RGBA8_SRGB;
+			ImageSamples samples = ImageSamples::S1;
+			ImageTiling tiling = ImageTiling::Optimal;
+			Flags<ImageUsage> usages = ImageUsage::All;
+		};
+		
+		virtual ~Image();
+
+		static Ptr<Image> create(const Settings& settings);
+		
+	protected:
+		Image();
+	};
+}
 
 #endif

@@ -19,15 +19,45 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_RENDERPASS_HPP
+#define ATEMA_RENDERER_RENDERPASS_HPP
 
 #include <Atema/Renderer/Config.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
+
+#include <vector>
+
+namespace at
+{
+	struct ATEMA_RENDERER_API AttachmentDescription
+	{
+		AttachmentDescription() = default;
+
+		ImageFormat format = ImageFormat::RGBA8_SRGB;
+		ImageSamples samples = ImageSamples::S1;
+		AttachmentLoading loading = AttachmentLoading::Clear;
+		AttachmentStoring storing = AttachmentStoring::Store;
+		ImageLayout initialLayout = ImageLayout::Undefined;
+		ImageLayout finalLayout = ImageLayout::Attachment;
+	};
+
+	class ATEMA_RENDERER_API RenderPass : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			std::vector<AttachmentDescription> attachments;
+		};
+		
+		virtual ~RenderPass();
+
+		static Ptr<RenderPass> create(const Settings& settings);
+
+	protected:
+		RenderPass();
+	};
+}
 
 #endif

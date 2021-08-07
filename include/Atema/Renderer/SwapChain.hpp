@@ -19,15 +19,39 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_SWAPCHAIN_HPP
+#define ATEMA_RENDERER_SWAPCHAIN_HPP
 
 #include <Atema/Renderer/Config.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
+
+#include <vector>
+
+namespace at
+{
+	class Window;
+	class Image;
+	
+	class ATEMA_RENDERER_API SwapChain
+	{
+	public:
+		struct Settings
+		{
+			Ptr<Window> window;
+			ImageFormat format;
+		};
+		
+		virtual ~SwapChain();
+
+		static Ptr<SwapChain> create(const Settings& settings);
+
+		virtual std::vector<Ptr<Image>>& getImages() noexcept = 0;
+		virtual const std::vector<Ptr<Image>>& getImages() const noexcept = 0;
+		
+	protected:
+		SwapChain();
+	};
+}
 
 #endif

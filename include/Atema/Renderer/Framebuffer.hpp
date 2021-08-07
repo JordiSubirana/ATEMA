@@ -19,15 +19,37 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
+#define ATEMA_RENDERER_FRAMEBUFFER_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
+#include <Atema/Core/Pointer.hpp>
+
+#include <vector>
+
+namespace at
+{
+	class RenderPass;
+	class Image;
+	
+	class ATEMA_RENDERER_API Framebuffer
+	{
+	public:
+		struct Settings
+		{
+			Ptr<RenderPass> renderPass;
+			std::vector<Ptr<Image>> images;
+			uint32_t width = 0;
+			uint32_t height = 0;
+		};
+		
+		virtual ~Framebuffer();
+
+		static Ptr<Framebuffer> create(const Settings& settings);
+
+	protected:
+		Framebuffer();
+	};
+}
 
 #endif

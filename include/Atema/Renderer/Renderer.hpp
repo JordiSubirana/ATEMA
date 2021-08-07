@@ -25,6 +25,10 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/Window.hpp>
+#include <Atema/Renderer/Image.hpp>
+#include <Atema/Renderer/SwapChain.hpp>
+#include <Atema/Renderer/RenderPass.hpp>
+#include <Atema/Renderer/Framebuffer.hpp>
 
 namespace at
 {
@@ -43,19 +47,53 @@ namespace at
 		Renderer() = delete;
 		virtual ~Renderer();
 
+		template <typename T>
+		static Renderer& create(const Settings& settings);
+
+		static Renderer& getInstance();
+		
 		virtual void initialize() = 0;
 
 		const Settings& getSettings() const noexcept;
 		
 		Ptr<Window> getMainWindow() const noexcept;
 
+		virtual void registerWindow(Ptr<Window> window) = 0;
+		virtual void unregisterWindow(Ptr<Window> window) = 0;
+
+		// Object creation
+		virtual Ptr<Image> createImage(const Image::Settings& settings) = 0;
+		virtual Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) = 0;
+		virtual Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) = 0;
+		virtual Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) = 0;
+
 	protected:
 		Renderer(const Settings& settings);
 
 	private:
+		static Ptr<Renderer> s_renderer;
 		Settings m_settings;
 		Ptr<Window> m_mainWindow;
 	};
+
+	template <typename T>
+	Renderer& Renderer::create(const Settings& settings)
+	{
+		static_assert(std::is_base_of<Renderer, T>::value, "Invalid Renderer type");
+
+		if (s_renderer)
+		{
+			ATEMA_ERROR("A Renderer already exists");
+
+			return *s_renderer;
+		}
+
+		s_renderer.reset(new T(settings));
+
+		s_renderer->initialize();
+
+		return *s_renderer;
+	}
 }
 
 #endif

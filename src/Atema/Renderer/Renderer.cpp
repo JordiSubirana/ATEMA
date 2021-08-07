@@ -24,6 +24,8 @@
 
 using namespace at;
 
+Ptr<Renderer> Renderer::s_renderer = nullptr;
+
 Renderer::Renderer(const Settings& settings) : m_settings(settings)
 {
 	m_mainWindow = Window::create(settings.mainWindowSettings);
@@ -31,6 +33,16 @@ Renderer::Renderer(const Settings& settings) : m_settings(settings)
 
 Renderer::~Renderer()
 {
+}
+
+Renderer& Renderer::getInstance()
+{
+	if (!s_renderer)
+	{
+		ATEMA_ERROR("No Renderer available");
+	}
+
+	return *s_renderer;
 }
 
 const Renderer::Settings& Renderer::getSettings() const noexcept

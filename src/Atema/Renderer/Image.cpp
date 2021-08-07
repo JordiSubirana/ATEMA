@@ -19,15 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
 
-#endif
+using namespace at;
+
+Image::Image()
+{
+}
+
+Image::~Image()
+{
+}
+
+Ptr<Image> Image::create(const Settings& settings)
+{
+	return Renderer::getInstance().createImage(settings);
+}
