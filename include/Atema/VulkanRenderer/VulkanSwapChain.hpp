@@ -19,15 +19,43 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANSWAPCHAIN_HPP
+#define ATEMA_VULKANRENDERER_VULKANSWAPCHAIN_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+#include <vector>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanSwapChain final : public SwapChain
+	{
+	public:
+		struct SupportDetails
+		{
+			VkSurfaceCapabilitiesKHR capabilities;
+			std::vector<VkSurfaceFormatKHR> formats;
+			std::vector<VkPresentModeKHR> presentModes;
+		};
+		
+		VulkanSwapChain() = delete;
+		VulkanSwapChain(const SwapChain::Settings& settings);
+		virtual ~VulkanSwapChain();
+
+		static SupportDetails getSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface);
+		
+		std::vector<Ptr<Image>>& getImages() noexcept override;
+		const std::vector<Ptr<Image>>& getImages() const noexcept override;
+		
+	private:
+		VkSurfaceKHR m_surface;
+		VkSwapchainKHR m_swapChain;
+		std::vector<Ptr<Image>> m_images;
+		VkExtent2D m_extent;
+		VkFormat m_format;
+	};
+}
 
 #endif

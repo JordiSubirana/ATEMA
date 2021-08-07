@@ -19,15 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANFRAMEBUFFER_HPP
+#define ATEMA_VULKANRENDERER_VULKANFRAMEBUFFER_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanFramebuffer final : public Framebuffer
+	{
+	public:
+		VulkanFramebuffer() = delete;
+		VulkanFramebuffer(const Framebuffer::Settings& settings);
+		virtual ~VulkanFramebuffer();
+
+	private:
+		VkFramebuffer m_framebuffer;
+	};
+}
 
 #endif

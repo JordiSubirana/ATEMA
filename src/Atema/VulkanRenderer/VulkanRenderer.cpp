@@ -22,6 +22,11 @@
 #include <Atema/Core/Window.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/Core/Matrix.hpp>
+#include <Atema/Core/ScopedTimer.hpp>
+#include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
+#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -34,15 +39,6 @@
 #include <chrono>
 #include <fstream>
 #include <unordered_map>
-
-#define ATEMA_VK_DESTROY(deleterFunc, resource) \
-	{ \
-		if (resource != VK_NULL_HANDLE) \
-		{ \
-			deleterFunc(m_device, resource, nullptr); \
-			resource = VK_NULL_HANDLE; \
-		} \
-	}
 
 using namespace at;
 
@@ -176,60 +172,100 @@ VulkanRenderer::VulkanRenderer(const Renderer::Settings& settings) :
 
 VulkanRenderer::~VulkanRenderer()
 {
+	unregisterWindows();
+
 	destroy();
+}
+
+VulkanRenderer& VulkanRenderer::getInstance()
+{
+	return static_cast<VulkanRenderer&>(Renderer::getInstance());
 }
 
 void VulkanRenderer::initialize()
 {
-	createInstance();
+	{
+		std::cout << "Vulkan initialization\n";
+		
+		ScopedTimer timer;
 
-	createSurface();
+		createInstance();
 
-	getPhysicalDevice();
+		registerWindow(getMainWindow());
+		createSurface();
 
-	createDevice();
+		getPhysicalDevice();
 
-	createSwapChain();
+		createDevice();
 
-	createImageViews();
+		return;
+		
+		createSwapChain();
 
-	createRenderPass();
+		createImageViews();
 
-	createDescriptorSetLayout();
+		createRenderPass();
 
-	createGraphicsPipeline();
+		createDescriptorSetLayout();
 
-	createCommandPool();
+		createGraphicsPipeline();
 
-	createColorResources();
+		createCommandPool();
 
-	createDepthResources();
+		createColorResources();
 
-	createFramebuffers();
+		createDepthResources();
 
-	createTextureImage();
+		createFramebuffers();
+	}
 
-	createTextureImageView();
+	{
+		std::cout << "Material loading\n";
 
-	createTextureSampler();
+		ScopedTimer timer;
 
-	loadModel();
+		createTextureImage();
 
-	createVertexBuffer();
+		createTextureImageView();
 
-	createIndexBuffer();
+		createTextureSampler();
+	}
 
-	createUniformBuffers();
+	{
+		std::cout << "Mesh loading\n";
 
-	createDescriptorPool();
+		ScopedTimer timer;
 
-	createDescriptorSets();
+		loadModel();
+	}
 
-	createCommandBuffers();
+	{
+		std::cout << "Buffers creation\n";
 
-	createSemaphores();
+		ScopedTimer timer;
 
-	createFences();
+		createVertexBuffer();
+
+		createIndexBuffer();
+
+		createUniformBuffers();
+	}
+
+	{
+		std::cout << "Descriptors / command buffers\n";
+
+		ScopedTimer timer;
+
+		createDescriptorPool();
+
+		createDescriptorSets();
+
+		createCommandBuffers();
+
+		createSemaphores();
+
+		createFences();
+	}
 }
 
 bool VulkanRenderer::checkValidationLayerSupport()
@@ -348,16 +384,17 @@ void VulkanRenderer::createInstance()
 
 void VulkanRenderer::createSurface()
 {
-#ifdef ATEMA_SYSTEM_WINDOWS
-	VkWin32SurfaceCreateInfoKHR createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = static_cast<HWND>(getMainWindow()->getHandle());
-	createInfo.hinstance = GetModuleHandle(nullptr);
-
-	ATEMA_VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &m_surface));
-#else
-#error VulkanRenderer is not available on this OS
-#endif
+//#ifdef ATEMA_SYSTEM_WINDOWS
+//	VkWin32SurfaceCreateInfoKHR createInfo{};
+//	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+//	createInfo.hwnd = static_cast<HWND>(getMainWindow()->getHandle());
+//	createInfo.hinstance = GetModuleHandle(nullptr);
+//
+//	ATEMA_VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &m_surface));
+//#else
+//#error VulkanRenderer is not available on this OS
+//#endif
+	m_surface = getWindowSurface(getMainWindow());
 }
 
 VulkanRenderer::QueueFamilyData VulkanRenderer::getQueueFamilyData(VkPhysicalDevice device)
@@ -769,7 +806,7 @@ VkImageView VulkanRenderer::createImageView(VkImage image, VkFormat format, VkIm
 
 void VulkanRenderer::createImageViews()
 {
-	//TODO: Make this custom
+	//TODO: Make this custom	
 
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 
@@ -1288,7 +1325,8 @@ uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 	{
 		if ((typeFilter & (1 << i)) &&
-			(memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
 			return i;
 		}
 	}
@@ -1710,7 +1748,16 @@ void VulkanRenderer::createTextureImage()
 
 	// Load the texture data
 	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(model_texture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = nullptr;
+
+	{
+		std::cout << "Texture loading\n";
+
+		ScopedTimer timer;
+
+		pixels = stbi_load(model_texture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	}
+
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 	// std::max for the largest dimension, std::log2 to find how many times we can divide by 2
@@ -2243,7 +2290,7 @@ void VulkanRenderer::destroy()
 
 	destroyDevice();
 
-	destroySurface();
+	//destroySurface();
 
 	destroyInstance();
 }
@@ -2284,7 +2331,7 @@ void VulkanRenderer::destroyDevice()
 
 void VulkanRenderer::destroySwapChain()
 {
-	ATEMA_VK_DESTROY(vkDestroySwapchainKHR, m_swapChain);
+	ATEMA_VK_DESTROY(m_device, vkDestroySwapchainKHR, m_swapChain);
 
 	m_swapChainImages.clear();
 }
@@ -2292,43 +2339,43 @@ void VulkanRenderer::destroySwapChain()
 void VulkanRenderer::destroyImageViews()
 {
 	for (auto& imageView : m_swapChainImageViews)
-		ATEMA_VK_DESTROY(vkDestroyImageView, imageView);
+		ATEMA_VK_DESTROY(m_device, vkDestroyImageView, imageView);
 
 	m_swapChainImageViews.clear();
 }
 
 void VulkanRenderer::destroyRenderPass()
 {
-	ATEMA_VK_DESTROY(vkDestroyRenderPass, m_renderPass);
+	ATEMA_VK_DESTROY(m_device, vkDestroyRenderPass, m_renderPass);
 }
 
 void VulkanRenderer::destroyDescriptorSetLayout()
 {
-	ATEMA_VK_DESTROY(vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
+	ATEMA_VK_DESTROY(m_device, vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
 }
 
 void VulkanRenderer::destroyDescriptorPool()
 {
-	ATEMA_VK_DESTROY(vkDestroyDescriptorPool, m_descriptorPool);
+	ATEMA_VK_DESTROY(m_device, vkDestroyDescriptorPool, m_descriptorPool);
 }
 
 void VulkanRenderer::destroyGraphicsPipeline()
 {
-	ATEMA_VK_DESTROY(vkDestroyPipeline, m_graphicsPipeline);
-	ATEMA_VK_DESTROY(vkDestroyPipelineLayout, m_pipelineLayout);
+	ATEMA_VK_DESTROY(m_device, vkDestroyPipeline, m_graphicsPipeline);
+	ATEMA_VK_DESTROY(m_device, vkDestroyPipelineLayout, m_pipelineLayout);
 }
 
 void VulkanRenderer::destroyFramebuffers()
 {
 	for (auto& framebuffer : m_swapChainFramebuffers)
-		ATEMA_VK_DESTROY(vkDestroyFramebuffer, framebuffer);
+		ATEMA_VK_DESTROY(m_device, vkDestroyFramebuffer, framebuffer);
 
 	m_swapChainFramebuffers.clear();
 }
 
 void VulkanRenderer::destroyCommandPool()
 {
-	ATEMA_VK_DESTROY(vkDestroyCommandPool, m_commandPool);
+	ATEMA_VK_DESTROY(m_device, vkDestroyCommandPool, m_commandPool);
 }
 
 void VulkanRenderer::destroyCommandBuffers()
@@ -2344,12 +2391,12 @@ void VulkanRenderer::destroyCommandBuffers()
 void VulkanRenderer::destroySemaphores()
 {
 	for (auto& semaphore : m_imageAvailableSemaphores)
-		ATEMA_VK_DESTROY(vkDestroySemaphore, semaphore);
+		ATEMA_VK_DESTROY(m_device, vkDestroySemaphore, semaphore);
 
 	m_imageAvailableSemaphores.clear();
 
 	for (auto& semaphore : m_renderFinishedSemaphores)
-		ATEMA_VK_DESTROY(vkDestroySemaphore, semaphore);
+		ATEMA_VK_DESTROY(m_device, vkDestroySemaphore, semaphore);
 
 	m_renderFinishedSemaphores.clear();
 }
@@ -2357,7 +2404,7 @@ void VulkanRenderer::destroySemaphores()
 void VulkanRenderer::destroyFences()
 {
 	for (auto& fence : m_inFlightFences)
-		ATEMA_VK_DESTROY(vkDestroyFence, fence);
+		ATEMA_VK_DESTROY(m_device, vkDestroyFence, fence);
 
 	m_inFlightFences.clear();
 	m_imagesInFlight.clear();
@@ -2365,59 +2412,169 @@ void VulkanRenderer::destroyFences()
 
 void VulkanRenderer::destroyColorResources()
 {
-	ATEMA_VK_DESTROY(vkDestroyImageView, m_colorImageView);
-	ATEMA_VK_DESTROY(vkDestroyImage, m_colorImage);
-	ATEMA_VK_DESTROY(vkFreeMemory, m_colorImageMemory);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImageView, m_colorImageView);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImage, m_colorImage);
+	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_colorImageMemory);
 }
 
 void VulkanRenderer::destroyDepthResources()
 {
-	ATEMA_VK_DESTROY(vkDestroyImageView, m_depthImageView);
-	ATEMA_VK_DESTROY(vkDestroyImage, m_depthImage);
-	ATEMA_VK_DESTROY(vkFreeMemory, m_depthImageMemory);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImageView, m_depthImageView);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImage, m_depthImage);
+	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_depthImageMemory);
 }
 
 void VulkanRenderer::destroyTextureImage()
 {
-	ATEMA_VK_DESTROY(vkDestroyImage, m_textureImage);
-	ATEMA_VK_DESTROY(vkFreeMemory, m_textureImageMemory);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImage, m_textureImage);
+	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_textureImageMemory);
 }
 
 void VulkanRenderer::destroyTextureImageView()
 {
-	ATEMA_VK_DESTROY(vkDestroyImageView, m_textureImageView);
+	ATEMA_VK_DESTROY(m_device, vkDestroyImageView, m_textureImageView);
 }
 
 void VulkanRenderer::destroyTextureSampler()
 {
-	ATEMA_VK_DESTROY(vkDestroySampler, m_textureSampler);
+	ATEMA_VK_DESTROY(m_device, vkDestroySampler, m_textureSampler);
 }
 
 void VulkanRenderer::destroyVertexBuffer()
 {
-	ATEMA_VK_DESTROY(vkDestroyBuffer, m_vertexBuffer);
-	ATEMA_VK_DESTROY(vkFreeMemory, m_vertexBufferMemory);
+	ATEMA_VK_DESTROY(m_device, vkDestroyBuffer, m_vertexBuffer);
+	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_vertexBufferMemory);
 }
 
 void VulkanRenderer::destroyIndexBuffer()
 {
-	ATEMA_VK_DESTROY(vkDestroyBuffer, m_indexBuffer);
-	ATEMA_VK_DESTROY(vkFreeMemory, m_indexBufferMemory);
+	ATEMA_VK_DESTROY(m_device, vkDestroyBuffer, m_indexBuffer);
+	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_indexBufferMemory);
 }
 
 void VulkanRenderer::destroyUniformBuffers()
 {
 	for (auto& buffer : m_uniformBuffers)
-		ATEMA_VK_DESTROY(vkDestroyBuffer, buffer);
+		ATEMA_VK_DESTROY(m_device, vkDestroyBuffer, buffer);
 
 	m_uniformBuffers.clear();
 
 	for (auto& memory : m_uniformBuffersMemory)
-		ATEMA_VK_DESTROY(vkFreeMemory, memory);
+		ATEMA_VK_DESTROY(m_device, vkFreeMemory, memory);
 
 	m_uniformBuffersMemory.clear();
 }
 
+VkInstance VulkanRenderer::getInstanceHandle() const noexcept
+{
+	return m_instance;
+}
+
+VkPhysicalDevice VulkanRenderer::getPhysicalDeviceHandle() const noexcept
+{
+	return m_physicalDevice;
+}
+
+VkDevice VulkanRenderer::getLogicalDeviceHandle() const noexcept
+{
+	return m_device;
+}
+
+void VulkanRenderer::registerWindow(Ptr<Window> window)
+{
+	if (!window)
+		return;
+
+	// Create surface
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
+	
+#ifdef ATEMA_SYSTEM_WINDOWS
+	VkWin32SurfaceCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.hwnd = static_cast<HWND>(window->getHandle());
+	createInfo.hinstance = GetModuleHandle(nullptr);
+
+	ATEMA_VK_CHECK(vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &surface));
+#else
+#error VulkanRenderer is not available on this OS
+#endif
+
+	m_windowSurfaces[window.get()] = surface;
+}
+
+void VulkanRenderer::unregisterWindow(Ptr<Window> window)
+{
+	auto it = m_windowSurfaces.find(window.get());
+
+	if (it != m_windowSurfaces.end())
+	{
+		vkDestroySurfaceKHR(m_instance, it->second, nullptr);
+
+		m_windowSurfaces.erase(it);
+	}
+}
+
+void VulkanRenderer::unregisterWindows()
+{
+	for (auto& it : m_windowSurfaces)
+	{
+		vkDestroySurfaceKHR(m_instance, it.second, nullptr);
+	}
+
+	m_windowSurfaces.clear();
+}
+
+VkSurfaceKHR VulkanRenderer::getWindowSurface(Ptr<Window> window) const
+{
+	auto it = m_windowSurfaces.find(window.get());
+
+	if (it == m_windowSurfaces.end())
+	{
+		ATEMA_ERROR("Windows need to be registered in the Renderer in order to access their surface");
+
+		return VK_NULL_HANDLE;
+	}
+
+	return it->second;
+}
+
+uint32_t VulkanRenderer::getGraphicsQueueIndex() const noexcept
+{
+	return m_queueFamilyData.graphicsIndex;
+}
+
+uint32_t VulkanRenderer::getPresentQueueIndex() const noexcept
+{
+	return m_queueFamilyData.presentIndex;
+}
+
+Ptr<Image> VulkanRenderer::createImage(const Image::Settings& settings)
+{
+	auto object = std::make_shared<VulkanImage>(settings);
+	
+	return std::static_pointer_cast<Image>(object);
+}
+
+Ptr<SwapChain> VulkanRenderer::createSwapChain(const SwapChain::Settings& settings)
+{
+	auto object = std::make_shared<VulkanSwapChain>(settings);
+
+	return std::static_pointer_cast<SwapChain>(object);
+}
+
+Ptr<RenderPass> VulkanRenderer::createRenderPass(const RenderPass::Settings& settings)
+{
+	auto object = std::make_shared<VulkanRenderPass>(settings);
+
+	return std::static_pointer_cast<RenderPass>(object);
+}
+
+Ptr<Framebuffer> VulkanRenderer::createFramebuffer(const Framebuffer::Settings& settings)
+{
+	auto object = std::make_shared<VulkanFramebuffer>(settings);
+
+	return std::static_pointer_cast<Framebuffer>(object);
+}
 
 void VulkanRenderer::drawFrame()
 {

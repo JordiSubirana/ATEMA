@@ -24,10 +24,12 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Renderer/Vertex.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 
 #include <vector>
 #include <array>
+#include <unordered_map>
 
 namespace at
 {
@@ -101,12 +103,16 @@ namespace at
 		}
 	};
 
+	
+
 	class ATEMA_VULKANRENDERER_API VulkanRenderer final : public Renderer
 	{
 	public:
 		VulkanRenderer() = delete;
 		VulkanRenderer(const Renderer::Settings& settings);
 		virtual ~VulkanRenderer();
+
+		static VulkanRenderer& getInstance();
 		
 		void initialize() override;
 
@@ -164,7 +170,6 @@ namespace at
 		void createCommandBuffers();
 		void createSemaphores();
 		void createFences();
-		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void createBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
@@ -220,6 +225,28 @@ namespace at
 		void destroyIndexBuffer();
 		void destroyUniformBuffers();
 
+	public:
+		VkInstance getInstanceHandle() const noexcept;
+		VkPhysicalDevice getPhysicalDeviceHandle() const noexcept;
+		VkDevice getLogicalDeviceHandle() const noexcept;
+
+		void registerWindow(Ptr<Window> window) override;
+		void unregisterWindow(Ptr<Window> window) override;
+		void unregisterWindows();
+		VkSurfaceKHR getWindowSurface(Ptr<Window> window) const;
+		
+		uint32_t getGraphicsQueueIndex() const noexcept;
+		uint32_t getPresentQueueIndex() const noexcept;
+		
+		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+	public:
+		Ptr<Image> createImage(const Image::Settings& settings) override;
+		Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) override;
+		Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) override;
+		Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) override;
+		
+	private:
 		size_t m_currentFrame;
 		bool m_framebufferResized;
 
@@ -276,6 +303,8 @@ namespace at
 		VkImage m_depthImage;
 		VkDeviceMemory m_depthImageMemory;
 		VkImageView m_depthImageView;
+
+		std::unordered_map<Window*, VkSurfaceKHR> m_windowSurfaces;
 	};
 }
 

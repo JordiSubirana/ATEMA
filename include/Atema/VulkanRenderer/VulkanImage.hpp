@@ -19,15 +19,34 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANIMAGE_HPP
+#define ATEMA_VULKANRENDERER_VULKANIMAGE_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/Image.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanImage final : public Image
+	{
+	public:
+		VulkanImage() = delete;
+		VulkanImage(const Image::Settings& settings);
+		VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
+		virtual ~VulkanImage();
+
+		VkImage getImageHandle() const noexcept;
+		VkImage getViewHandle() const noexcept;
+
+	private:
+		void createView(VkDevice device, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
+
+		bool m_ownsImage;
+		VkImage m_image;
+		VkImageView m_view;
+		VkDeviceMemory m_memory;
+	};
+}
 
 #endif
