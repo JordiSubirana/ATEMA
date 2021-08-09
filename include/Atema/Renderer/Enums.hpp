@@ -174,6 +174,95 @@ namespace at
 		Undefined,
 		Store
 	};
+
+	enum class PrimitiveTopology
+	{
+		PointList,
+		LineList,
+		LineStrip,
+		TriangleList,
+		TriangleStrip,
+		TriangleFan,
+		LineListAdjacency,
+		LineStripAdjacency,
+		TriangleListAdjacency,
+		TriangleStripAdjacency,
+		PatchList
+	};
+
+	enum class PolygonMode
+	{
+		Fill,
+		Line,
+		Point
+	};
+
+	enum class CullMode
+	{
+		None = 0x0000,
+		Front = 0x0001,
+		Back = 0x0002,
+		All = Front | Back
+	};
+
+	ATEMA_DECLARE_FLAGS(CullMode);
+
+	enum class FrontFace
+	{
+		Clockwise,
+		CounterClockwise
+	};
+
+	enum class BlendOperation
+	{
+		Add,
+		Subtract,
+		ReverseSubtract,
+		Min,
+		Max
+	};
+
+	enum class BlendFactor
+	{
+		Zero,
+		One,
+		SrcColor,
+		OneMinusSrcColor,
+		DstColor,
+		OneMinusDstColor,
+		SrcAlpha,
+		OneMinusSrcAlpha,
+		DstAlpha,
+		OneMinusDstAlpha,
+		ConstantColor,
+		OneMinusConstantColor,
+		ConstantAlpha,
+		OneMinusConstantAlpha
+	};
+
+	enum class CompareOperation
+	{
+		Never,
+		Less,
+		Equal,
+		LessOrEqual,
+		Greater,
+		NotEqual,
+		GreaterOrEqual,
+		Always
+	};
+
+	enum class StencilOperation
+	{
+		Keep,
+		Zero,
+		Replace,
+		IncrementAndClamp,
+		DecrementAndClamp,
+		Invert,
+		IncrementAndWrap,
+		DecrementAndWrap
+	};
 }
 
 #endif
