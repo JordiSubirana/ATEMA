@@ -237,3 +237,158 @@ VkAttachmentStoreOp Vulkan::getAttachmentStoring(AttachmentStoring value)
 	return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
+VkPrimitiveTopology Vulkan::getPrimitiveTopology(PrimitiveTopology value)
+{
+	switch (value)
+	{
+		case PrimitiveTopology::PointList: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		case PrimitiveTopology::LineList: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		case PrimitiveTopology::LineStrip: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+		case PrimitiveTopology::TriangleList: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		case PrimitiveTopology::TriangleStrip: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+		case PrimitiveTopology::TriangleFan: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+		case PrimitiveTopology::LineListAdjacency: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+		case PrimitiveTopology::LineStripAdjacency: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+		case PrimitiveTopology::TriangleListAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+		case PrimitiveTopology::TriangleStripAdjacency: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+		case PrimitiveTopology::PatchList: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		default:
+		{
+			ATEMA_ERROR("Invalid primitive topology");
+		}
+	}
+
+	return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+}
+
+VkPolygonMode Vulkan::getPolygonMode(PolygonMode value)
+{
+	switch (value)
+	{
+		case PolygonMode::Fill: return VK_POLYGON_MODE_FILL;
+		case PolygonMode::Line: return VK_POLYGON_MODE_LINE;
+		case PolygonMode::Point: return VK_POLYGON_MODE_POINT;
+		default:
+		{
+			ATEMA_ERROR("Invalid polygon mode");
+		}
+	}
+
+	return VK_POLYGON_MODE_FILL;
+}
+
+VkCullModeFlags Vulkan::getCullMode(Flags<CullMode> value)
+{
+	VkCullModeFlags flags = 0;
+
+	if (value & CullMode::Front)
+		flags |= VK_CULL_MODE_FRONT_BIT;
+
+	if (value & CullMode::Back)
+		flags |= VK_CULL_MODE_BACK_BIT;
+
+	return flags;
+}
+
+VkFrontFace Vulkan::getFrontFace(FrontFace value)
+{
+	switch (value)
+	{
+		case FrontFace::Clockwise: return VK_FRONT_FACE_CLOCKWISE;
+		case FrontFace::CounterClockwise: return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		default:
+		{
+			ATEMA_ERROR("Invalid front face");
+		}
+	}
+
+	return VK_FRONT_FACE_CLOCKWISE;
+}
+
+VkBlendOp Vulkan::getBlendOperation(BlendOperation value)
+{
+	switch (value)
+	{
+		case BlendOperation::Add: return VK_BLEND_OP_ADD;
+		case BlendOperation::Subtract: return VK_BLEND_OP_SUBTRACT;
+		case BlendOperation::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
+		case BlendOperation::Min: return VK_BLEND_OP_MIN;
+		case BlendOperation::Max: return VK_BLEND_OP_MAX;
+		default:
+		{
+			ATEMA_ERROR("Invalid blend operation");
+		}
+	}
+
+	return VK_BLEND_OP_ADD;
+}
+
+VkBlendFactor Vulkan::getBlendFactor(BlendFactor value)
+{
+	switch (value)
+	{
+		case BlendFactor::Zero: return VK_BLEND_FACTOR_ZERO;
+		case BlendFactor::One: return VK_BLEND_FACTOR_ONE;
+		case BlendFactor::SrcColor: return VK_BLEND_FACTOR_SRC_COLOR;
+		case BlendFactor::OneMinusSrcColor: return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+		case BlendFactor::DstColor: return VK_BLEND_FACTOR_DST_COLOR;
+		case BlendFactor::OneMinusDstColor: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+		case BlendFactor::SrcAlpha: return VK_BLEND_FACTOR_SRC_ALPHA;
+		case BlendFactor::OneMinusSrcAlpha: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		case BlendFactor::DstAlpha: return VK_BLEND_FACTOR_DST_ALPHA;
+		case BlendFactor::OneMinusDstAlpha: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		case BlendFactor::ConstantColor: return VK_BLEND_FACTOR_CONSTANT_COLOR;
+		case BlendFactor::OneMinusConstantColor: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+		case BlendFactor::ConstantAlpha: return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+		case BlendFactor::OneMinusConstantAlpha: return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+		default:
+		{
+			ATEMA_ERROR("Invalid blend factor");
+		}
+	}
+
+	return VK_BLEND_FACTOR_ZERO;
+}
+
+VkCompareOp Vulkan::getCompareOperation(CompareOperation value)
+{
+	switch (value)
+	{
+		case CompareOperation::Never: return VK_COMPARE_OP_NEVER;
+		case CompareOperation::Less: return VK_COMPARE_OP_LESS;
+		case CompareOperation::Equal: return VK_COMPARE_OP_EQUAL;
+		case CompareOperation::LessOrEqual: return VK_COMPARE_OP_LESS_OR_EQUAL;
+		case CompareOperation::Greater: return VK_COMPARE_OP_GREATER;
+		case CompareOperation::NotEqual: return VK_COMPARE_OP_NOT_EQUAL;
+		case CompareOperation::GreaterOrEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		case CompareOperation::Always: return VK_COMPARE_OP_ALWAYS;
+		default:
+		{
+			ATEMA_ERROR("Invalid compare operation");
+		}
+	}
+
+	return VK_COMPARE_OP_LESS;
+}
+
+VkStencilOp Vulkan::getStencilOperation(StencilOperation value)
+{
+	switch (value)
+	{
+		case StencilOperation::Keep: return VK_STENCIL_OP_KEEP;
+		case StencilOperation::Zero: return VK_STENCIL_OP_ZERO;
+		case StencilOperation::Replace: return VK_STENCIL_OP_REPLACE;
+		case StencilOperation::IncrementAndClamp: return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+		case StencilOperation::DecrementAndClamp: return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+		case StencilOperation::Invert: return VK_STENCIL_OP_INVERT;
+		case StencilOperation::IncrementAndWrap: return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+		case StencilOperation::DecrementAndWrap: return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+		default:
+		{
+			ATEMA_ERROR("Invalid stencil operation");
+		}
+	}
+
+	return VK_STENCIL_OP_KEEP;
+}
+

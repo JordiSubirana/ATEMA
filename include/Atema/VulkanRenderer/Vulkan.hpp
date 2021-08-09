@@ -85,6 +85,22 @@ namespace at
 		static VkAttachmentLoadOp getAttachmentLoading(AttachmentLoading value);
 		
 		static VkAttachmentStoreOp getAttachmentStoring(AttachmentStoring value);
+
+		static VkPrimitiveTopology getPrimitiveTopology(PrimitiveTopology value);
+
+		static VkPolygonMode getPolygonMode(PolygonMode value);
+
+		static VkCullModeFlags getCullMode(Flags<CullMode> value);
+
+		static VkFrontFace getFrontFace(FrontFace value);
+
+		static VkBlendOp getBlendOperation(BlendOperation value);
+
+		static VkBlendFactor getBlendFactor(BlendFactor value);
+
+		static VkCompareOp getCompareOperation(CompareOperation value);
+
+		static VkStencilOp getStencilOperation(StencilOperation value);
 	};
 }
 
