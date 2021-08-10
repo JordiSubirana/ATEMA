@@ -245,6 +245,9 @@ namespace at
 		Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) override;
 		Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) override;
 		Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) override;
+		Ptr<Shader> createShader(const Shader::Settings& settings) override;
+		Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) override;
+		Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) override;
 		
 	private:
 		size_t m_currentFrame;

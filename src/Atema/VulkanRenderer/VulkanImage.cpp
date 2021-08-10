@@ -99,8 +99,11 @@ VulkanImage::~VulkanImage()
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyImageView, m_view);
-	ATEMA_VK_DESTROY(device, vkDestroyImage, m_image);
-	ATEMA_VK_DESTROY(device, vkFreeMemory, m_memory);
+	if (m_ownsImage)
+	{
+		ATEMA_VK_DESTROY(device, vkDestroyImage, m_image);
+		ATEMA_VK_DESTROY(device, vkFreeMemory, m_memory);
+	}
 }
 
 VkImage VulkanImage::getImageHandle() const noexcept

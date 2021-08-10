@@ -19,18 +19,27 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANDESCRIPTORSET_HPP
+#define ATEMA_VULKANRENDERER_VULKANDESCRIPTORSET_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+#include <Atema/Renderer/DescriptorSet.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanDescriptorSetLayout final : public DescriptorSetLayout
+	{
+	public:
+		VulkanDescriptorSetLayout() = delete;
+		VulkanDescriptorSetLayout(const DescriptorSetLayout::Settings& settings);
+		virtual ~VulkanDescriptorSetLayout();
+		
+		VkDescriptorSetLayout getHandle() const noexcept;
+
+	private:
+		VkDescriptorSetLayout m_descriptorSetLayout;
+	};
+}
 
 #endif

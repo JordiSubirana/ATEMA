@@ -19,18 +19,26 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANGRAPHICSPIPELINE_HPP
+#define ATEMA_VULKANRENDERER_VULKANGRAPHICSPIPELINE_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanGraphicsPipeline final : public GraphicsPipeline
+	{
+	public:
+		VulkanGraphicsPipeline() = delete;
+		VulkanGraphicsPipeline(const GraphicsPipeline::Settings& settings);
+		virtual ~VulkanGraphicsPipeline();
+		
+	private:
+		VkPipelineLayout m_pipelineLayout;
+		VkPipeline m_pipeline;
+	};
+}
 
 #endif

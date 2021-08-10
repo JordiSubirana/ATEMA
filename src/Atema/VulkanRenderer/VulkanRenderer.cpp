@@ -27,6 +27,9 @@
 #include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
+#include <Atema/VulkanRenderer/VulkanShader.hpp>
+#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
+#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -971,7 +974,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// Vertex input (format of vertex data passed to the shader)
-	// Bindings : spacing bewteen data & per-vertex/per-instance
+	// Bindings : spacing between data & per-vertex/per-instance
 	// Attributes : types, binding to load them from, at which offset
 	// TODO: Make custom vertex input
 	auto bindingDescription = BaseVertex::getBindingDescription();
@@ -2574,6 +2577,27 @@ Ptr<Framebuffer> VulkanRenderer::createFramebuffer(const Framebuffer::Settings& 
 	auto object = std::make_shared<VulkanFramebuffer>(settings);
 
 	return std::static_pointer_cast<Framebuffer>(object);
+}
+
+Ptr<Shader> VulkanRenderer::createShader(const Shader::Settings& settings)
+{
+	auto object = std::make_shared<VulkanShader>(settings);
+
+	return std::static_pointer_cast<Shader>(object);
+}
+
+Ptr<DescriptorSetLayout> VulkanRenderer::createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings)
+{
+	auto object = std::make_shared<VulkanDescriptorSetLayout>(settings);
+
+	return std::static_pointer_cast<DescriptorSetLayout>(object);
+}
+
+Ptr<GraphicsPipeline> VulkanRenderer::createGraphicsPipeline(const GraphicsPipeline::Settings& settings)
+{
+	auto object = std::make_shared<VulkanGraphicsPipeline>(settings);
+
+	return std::static_pointer_cast<GraphicsPipeline>(object);
 }
 
 void VulkanRenderer::drawFrame()
