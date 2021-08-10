@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/Window.hpp>
+#include <Atema/Renderer/CommandPool.hpp>
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
@@ -73,6 +74,7 @@ namespace at
 		virtual Ptr<Shader> createShader(const Shader::Settings& settings) = 0;
 		virtual Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) = 0;
 		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
+		virtual Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) = 0;
 
 	protected:
 		Renderer(const Settings& settings);
