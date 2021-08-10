@@ -31,6 +31,7 @@
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -2608,6 +2609,13 @@ Ptr<CommandPool> VulkanRenderer::createCommandPool(const CommandPool::Settings& 
 	return std::static_pointer_cast<CommandPool>(object);
 }
 
+Ptr<CommandBuffer> VulkanRenderer::createCommandBuffer(const CommandBuffer::Settings& settings)
+{
+	auto object = std::make_shared<VulkanCommandBuffer>(settings);
+
+	return std::static_pointer_cast<CommandBuffer>(object);
+}
+
 void VulkanRenderer::drawFrame()
 {
 	//TODO: Make this custom
@@ -2634,7 +2642,7 @@ void VulkanRenderer::drawFrame()
 		return;
 	}
 	// Check for errors
-	// Suboptimal swapchains can still be used but we can change this to recrate it anyway
+	// Suboptimal swapchains can still be used but we can change this to recreate it anyway
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		ATEMA_ERROR("Failed to acquire swapchain image");

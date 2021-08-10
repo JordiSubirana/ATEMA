@@ -19,20 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANCOMMANDBUFFER_HPP
+#define ATEMA_VULKANRENDERER_VULKANCOMMANDBUFFER_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanCommandBuffer final : public CommandBuffer
+	{
+	public:
+		VulkanCommandBuffer() = delete;
+		VulkanCommandBuffer(const CommandBuffer::Settings& settings);
+		virtual ~VulkanCommandBuffer();
+
+		VkCommandBuffer getHandle() const noexcept;
+
+		void begin() override;
+
+		void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues) override;
+
+		void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) override;
+
+		void endRenderPass() override;
+
+		void end() override;
+		
+	private:
+		VkCommandBuffer m_commandBuffer;
+		VkCommandPool m_commandPool;
+	};
+}
 
 #endif
