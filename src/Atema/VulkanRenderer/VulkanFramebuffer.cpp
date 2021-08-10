@@ -53,6 +53,9 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 	framebufferInfo.layers = 1;
 
 	ATEMA_VK_CHECK(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_framebuffer));
+
+	m_size.x = settings.width;
+	m_size.y = settings.height;
 }
 
 VulkanFramebuffer::~VulkanFramebuffer()
@@ -61,4 +64,14 @@ VulkanFramebuffer::~VulkanFramebuffer()
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyFramebuffer, m_framebuffer);
+}
+
+VkFramebuffer VulkanFramebuffer::getHandle() const noexcept
+{
+	return m_framebuffer;
+}
+
+Vector2u VulkanFramebuffer::getSize() const noexcept
+{
+	return m_size;
 }

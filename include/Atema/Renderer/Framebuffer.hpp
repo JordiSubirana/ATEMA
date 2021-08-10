@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Vector.hpp>
 
 #include <vector>
 
@@ -48,6 +49,8 @@ namespace at
 
 		static Ptr<Framebuffer> create(const Settings& settings);
 
+		virtual Vector2u getSize() const noexcept = 0;
+		
 	protected:
 		Framebuffer();
 	};

@@ -35,8 +35,13 @@ namespace at
 		VulkanFramebuffer(const Framebuffer::Settings& settings);
 		virtual ~VulkanFramebuffer();
 
+		VkFramebuffer getHandle() const noexcept;
+
+		Vector2u getSize() const noexcept override;
+		
 	private:
 		VkFramebuffer m_framebuffer;
+		Vector2u m_size;
 	};
 }
 
