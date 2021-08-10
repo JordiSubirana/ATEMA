@@ -30,6 +30,7 @@
 #include <Atema/VulkanRenderer/VulkanShader.hpp>
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
+#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -2598,6 +2599,13 @@ Ptr<GraphicsPipeline> VulkanRenderer::createGraphicsPipeline(const GraphicsPipel
 	auto object = std::make_shared<VulkanGraphicsPipeline>(settings);
 
 	return std::static_pointer_cast<GraphicsPipeline>(object);
+}
+
+Ptr<CommandPool> VulkanRenderer::createCommandPool(const CommandPool::Settings& settings)
+{
+	auto object = std::make_shared<VulkanCommandPool>(settings);
+
+	return std::static_pointer_cast<CommandPool>(object);
 }
 
 void VulkanRenderer::drawFrame()

@@ -248,6 +248,7 @@ namespace at
 		Ptr<Shader> createShader(const Shader::Settings& settings) override;
 		Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) override;
 		Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) override;
+		Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) override;
 		
 	private:
 		size_t m_currentFrame;
