@@ -19,21 +19,55 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_COMMANDBUFFER_HPP
+#define ATEMA_RENDERER_COMMANDBUFFER_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Vector.hpp>
+
+#include <vector>
+
+namespace at
+{
+	class CommandPool;
+	class RenderPass;
+	class Framebuffer;
+	class GraphicsPipeline;
+
+	class ATEMA_RENDERER_API CommandBuffer : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			Ptr<CommandPool> commandPool;
+		};
+		
+		struct ClearValue
+		{
+			Vector4f color = Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
+			float depth = 1.0f;
+			uint32_t stencil = 0;
+		};
+		
+		virtual ~CommandBuffer();
+
+		static Ptr<CommandBuffer> create(const Settings& settings);
+
+		virtual void begin() = 0;
+
+		virtual void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues) = 0;
+
+		virtual void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) = 0;
+
+		virtual void endRenderPass() = 0;
+
+		virtual void end() = 0;
+		
+	protected:
+		CommandBuffer();
+	};
+}
 
 #endif

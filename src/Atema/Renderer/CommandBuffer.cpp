@@ -19,21 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
 
-#endif
+using namespace at;
+
+CommandBuffer::CommandBuffer()
+{
+}
+
+CommandBuffer::~CommandBuffer()
+{
+}
+
+Ptr<CommandBuffer> CommandBuffer::create(const Settings& settings)
+{
+	return Renderer::getInstance().createCommandBuffer(settings);
+}
