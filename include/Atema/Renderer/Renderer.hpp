@@ -51,7 +51,9 @@ namespace at
 		static Renderer& create(const Settings& settings);
 
 		static Renderer& getInstance();
-		
+
+		static void destroy();
+
 		virtual void initialize() = 0;
 
 		const Settings& getSettings() const noexcept;
@@ -88,7 +90,9 @@ namespace at
 			return *s_renderer;
 		}
 
-		s_renderer.reset(new T(settings));
+		auto renderer = std::make_shared<T>(settings);
+		
+		s_renderer = std::static_pointer_cast<Renderer>(renderer);
 
 		s_renderer->initialize();
 

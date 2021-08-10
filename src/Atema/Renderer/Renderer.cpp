@@ -45,6 +45,11 @@ Renderer& Renderer::getInstance()
 	return *s_renderer;
 }
 
+void Renderer::destroy()
+{
+	s_renderer.reset();
+}
+
 const Renderer::Settings& Renderer::getSettings() const noexcept
 {
 	return m_settings;
