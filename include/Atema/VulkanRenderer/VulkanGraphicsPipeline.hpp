@@ -34,6 +34,8 @@ namespace at
 		VulkanGraphicsPipeline() = delete;
 		VulkanGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		virtual ~VulkanGraphicsPipeline();
+
+		VkPipeline getHandle() const noexcept;
 		
 	private:
 		VkPipelineLayout m_pipelineLayout;

@@ -335,3 +335,8 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 	ATEMA_VK_DESTROY(device, vkDestroyPipeline, m_pipeline);
 	ATEMA_VK_DESTROY(device, vkDestroyPipelineLayout, m_pipelineLayout);
 }
+
+VkPipeline VulkanGraphicsPipeline::getHandle() const noexcept
+{
+	return m_pipeline;
+}
