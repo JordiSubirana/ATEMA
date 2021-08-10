@@ -263,6 +263,36 @@ namespace at
 		IncrementAndWrap,
 		DecrementAndWrap
 	};
+
+	enum class DescriptorType
+	{
+		Sampler,
+		CombinedImageSampler,
+		SampledImage,
+		StorageImage,
+		UniformTexelBuffer,
+		StorageTexelBuffer,
+		UniformBuffer,
+		StorageBuffer,
+		UniformBufferDynamic,
+		StorageBufferDynamic,
+		InputAttachment
+	};
+
+	enum class ShaderStage
+	{
+		Vertex = 0x0001,
+		TessellationControl = 0x0002,
+		TessellationEvaluation = 0x0004,
+		Geometry = 0x0008,
+		Fragment = 0x0010,
+		Compute = 0x0020,
+
+		AllGraphics = Vertex | TessellationControl | TessellationEvaluation | Geometry | Fragment,
+		All = 0xFFFF
+	};
+
+	ATEMA_DECLARE_FLAGS(ShaderStage);
 }
 
 #endif
