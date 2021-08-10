@@ -25,6 +25,7 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Core/Error.hpp>
 #include <Atema/Renderer/Enums.hpp>
+#include <Atema/Renderer/Vertex.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -71,6 +72,7 @@ namespace at
 #endif
 
 		static VkFormat getFormat(ImageFormat format);
+		static VkFormat getFormat(VertexAttribute::Format format);
 
 		static VkImageAspectFlags getAspect(ImageFormat format);
 
@@ -101,6 +103,10 @@ namespace at
 		static VkCompareOp getCompareOperation(CompareOperation value);
 
 		static VkStencilOp getStencilOperation(StencilOperation value);
+
+		static VkDescriptorType getDescriptorType(DescriptorType value);
+
+		static VkShaderStageFlags getShaderStages(Flags<ShaderStage> value);
 	};
 }
 

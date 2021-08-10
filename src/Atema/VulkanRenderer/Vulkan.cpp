@@ -98,6 +98,63 @@ VkFormat Vulkan::getFormat(ImageFormat format)
 	return VK_FORMAT_UNDEFINED;
 }
 
+VkFormat Vulkan::getFormat(VertexAttribute::Format format)
+{
+	switch (format)
+	{
+		case VertexAttribute::Format::R8_UINT: return VK_FORMAT_R8_UINT;
+		case VertexAttribute::Format::R8_SINT: return VK_FORMAT_R8_SINT;
+		case VertexAttribute::Format::RG8_UINT: return VK_FORMAT_R8G8_UINT;
+		case VertexAttribute::Format::RG8_SINT: return VK_FORMAT_R8G8_SINT;
+		case VertexAttribute::Format::RGB8_UINT: return VK_FORMAT_R8G8B8_UINT;
+		case VertexAttribute::Format::RGB8_SINT: return VK_FORMAT_R8G8B8_SINT;
+		case VertexAttribute::Format::RGBA8_UINT: return VK_FORMAT_R8G8B8A8_UINT;
+		case VertexAttribute::Format::RGBA8_SINT: return VK_FORMAT_R8G8B8A8_SINT;
+		case VertexAttribute::Format::R16_UINT: return VK_FORMAT_R16_UINT;
+		case VertexAttribute::Format::R16_SINT: return VK_FORMAT_R16_SINT;
+		case VertexAttribute::Format::R16_SFLOAT: return VK_FORMAT_R16_SFLOAT;
+		case VertexAttribute::Format::RG16_UINT: return VK_FORMAT_R16G16_UINT;
+		case VertexAttribute::Format::RG16_SINT: return VK_FORMAT_R16G16_SINT;
+		case VertexAttribute::Format::RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT;
+		case VertexAttribute::Format::RGB16_UINT: return VK_FORMAT_R16G16B16_UINT;
+		case VertexAttribute::Format::RGB16_SINT: return VK_FORMAT_R16G16B16_SINT;
+		case VertexAttribute::Format::RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT;
+		case VertexAttribute::Format::RGBA16_UINT: return VK_FORMAT_R16G16B16A16_UINT;
+		case VertexAttribute::Format::RGBA16_SINT: return VK_FORMAT_R16G16B16A16_SINT;
+		case VertexAttribute::Format::RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
+		case VertexAttribute::Format::R32_UINT: return VK_FORMAT_R32_UINT;
+		case VertexAttribute::Format::R32_SINT: return VK_FORMAT_R32_SINT;
+		case VertexAttribute::Format::R32_SFLOAT: return VK_FORMAT_R32_SFLOAT;
+		case VertexAttribute::Format::RG32_UINT: return VK_FORMAT_R32G32_UINT;
+		case VertexAttribute::Format::RG32_SINT: return VK_FORMAT_R32G32_SINT;
+		case VertexAttribute::Format::RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT;
+		case VertexAttribute::Format::RGB32_UINT: return VK_FORMAT_R32G32B32_UINT;
+		case VertexAttribute::Format::RGB32_SINT: return VK_FORMAT_R32G32B32_SINT;
+		case VertexAttribute::Format::RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT;
+		case VertexAttribute::Format::RGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT;
+		case VertexAttribute::Format::RGBA32_SINT: return VK_FORMAT_R32G32B32A32_SINT;
+		case VertexAttribute::Format::RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
+		case VertexAttribute::Format::R64_UINT: return VK_FORMAT_R64_UINT;
+		case VertexAttribute::Format::R64_SINT: return VK_FORMAT_R64_SINT;
+		case VertexAttribute::Format::R64_SFLOAT: return VK_FORMAT_R64_SFLOAT;
+		case VertexAttribute::Format::RG64_UINT: return VK_FORMAT_R64G64_UINT;
+		case VertexAttribute::Format::RG64_SINT: return VK_FORMAT_R64G64_SINT;
+		case VertexAttribute::Format::RG64_SFLOAT: return VK_FORMAT_R64G64_SFLOAT;
+		case VertexAttribute::Format::RGB64_UINT: return VK_FORMAT_R64G64B64_UINT;
+		case VertexAttribute::Format::RGB64_SINT: return VK_FORMAT_R64G64B64_SINT;
+		case VertexAttribute::Format::RGB64_SFLOAT: return VK_FORMAT_R64G64B64_SFLOAT;
+		case VertexAttribute::Format::RGBA64_UINT: return VK_FORMAT_R64G64B64A64_UINT;
+		case VertexAttribute::Format::RGBA64_SINT: return VK_FORMAT_R64G64B64A64_SINT;
+		case VertexAttribute::Format::RGBA64_SFLOAT: return VK_FORMAT_R64G64B64A64_SFLOAT;
+		default:
+		{
+			ATEMA_ERROR("Invalid vertex attribute format");
+		}
+	}
+
+	return VK_FORMAT_UNDEFINED;
+}
+
 VkImageAspectFlags Vulkan::getAspect(ImageFormat format)
 {
 	VkImageAspectFlags aspect = 0;
@@ -390,5 +447,54 @@ VkStencilOp Vulkan::getStencilOperation(StencilOperation value)
 	}
 
 	return VK_STENCIL_OP_KEEP;
+}
+
+VkDescriptorType Vulkan::getDescriptorType(DescriptorType value)
+{
+	switch (value)
+	{
+		case DescriptorType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
+		case DescriptorType::CombinedImageSampler: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		case DescriptorType::SampledImage: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		case DescriptorType::StorageImage: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		case DescriptorType::UniformTexelBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+		case DescriptorType::StorageTexelBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+		case DescriptorType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		case DescriptorType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		case DescriptorType::UniformBufferDynamic: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		case DescriptorType::StorageBufferDynamic: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+		case DescriptorType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+		default:
+		{
+			ATEMA_ERROR("Invalid descriptor type");
+		}
+	}
+
+	return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+}
+
+VkShaderStageFlags Vulkan::getShaderStages(Flags<ShaderStage> value)
+{
+	VkShaderStageFlags flags = 0;
+
+	if (value & ShaderStage::Vertex)
+		flags |= VK_SHADER_STAGE_VERTEX_BIT;
+
+	if (value & ShaderStage::TessellationControl)
+		flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+
+	if (value & ShaderStage::TessellationEvaluation)
+		flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
+	if (value & ShaderStage::Geometry)
+		flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+
+	if (value & ShaderStage::Fragment)
+		flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	if (value & ShaderStage::Compute)
+		flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+
+	return flags;
 }
 
