@@ -24,6 +24,7 @@
 
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/NonCopyable.hpp>
 
 #include <vector>
 
@@ -32,7 +33,7 @@ namespace at
 	class RenderPass;
 	class Image;
 	
-	class ATEMA_RENDERER_API Framebuffer
+	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
 	{
 	public:
 		struct Settings

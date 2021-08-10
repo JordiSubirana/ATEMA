@@ -23,6 +23,7 @@
 #define ATEMA_RENDERER_GRAPHICSPIPELINE_HPP
 
 #include <Atema/Renderer/Config.hpp>
+#include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/Vector.hpp>
 #include <Atema/Renderer/Enums.hpp>
@@ -36,7 +37,7 @@ namespace at
 	class RenderPass;
 	class Shader;
 
-	class ATEMA_RENDERER_API GraphicsPipeline
+	class ATEMA_RENDERER_API GraphicsPipeline : public NonCopyable
 	{
 	public:
 		struct VertexInputState

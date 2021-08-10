@@ -24,6 +24,7 @@
 
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Enums.hpp>
+#include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 
 #include <vector>
@@ -41,7 +42,7 @@ namespace at
 		Flags<ShaderStage> shaderStages;
 	};
 
-	class ATEMA_RENDERER_API DescriptorSetLayout
+	class ATEMA_RENDERER_API DescriptorSetLayout : public NonCopyable
 	{
 	public:
 		struct Settings
