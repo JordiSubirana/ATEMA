@@ -19,19 +19,43 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_DESCRIPTORSET_HPP
+#define ATEMA_RENDERER_DESCRIPTORSET_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Core/Pointer.hpp>
+
+#include <vector>
+
+namespace at
+{
+	struct ATEMA_RENDERER_API DescriptorSetBinding
+	{
+		DescriptorSetBinding();
+		DescriptorSetBinding(DescriptorType type, uint32_t binding, uint32_t count, Flags<ShaderStage> shaderStages);
+		
+		DescriptorType type;
+		uint32_t binding;
+		uint32_t count;
+		Flags<ShaderStage> shaderStages;
+	};
+
+	class ATEMA_RENDERER_API DescriptorSetLayout
+	{
+	public:
+		struct Settings
+		{
+			std::vector<DescriptorSetBinding> bindings;
+		};
+
+		virtual ~DescriptorSetLayout();
+
+		static Ptr<DescriptorSetLayout> create(const Settings& settings);
+
+	protected:
+		DescriptorSetLayout();
+	};
+}
 
 #endif

@@ -19,19 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
 
-#endif
+using namespace at;
+
+// DescriptorSetBinding
+DescriptorSetBinding::DescriptorSetBinding() :
+	type(DescriptorType::UniformBuffer),
+	binding(0),
+	count(1),
+	shaderStages(ShaderStage::Vertex)
+{
+}
+
+DescriptorSetBinding::DescriptorSetBinding(DescriptorType type, uint32_t binding, uint32_t count, Flags<ShaderStage> shaderStages) :
+	type(type),
+	binding(binding),
+	count(count),
+	shaderStages(shaderStages)
+{
+}
+
+// DescriptorSetLayout
+DescriptorSetLayout::DescriptorSetLayout()
+{
+}
+
+DescriptorSetLayout::~DescriptorSetLayout()
+{
+}
+
+Ptr<DescriptorSetLayout> DescriptorSetLayout::create(const Settings& settings)
+{
+	return Renderer::getInstance().createDescriptorSetLayout(settings);
+}

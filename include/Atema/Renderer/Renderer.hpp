@@ -29,6 +29,8 @@
 #include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
+#include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Renderer/Shader.hpp>
 
 namespace at
 {
@@ -68,6 +70,9 @@ namespace at
 		virtual Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) = 0;
 		virtual Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) = 0;
 		virtual Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) = 0;
+		virtual Ptr<Shader> createShader(const Shader::Settings& settings) = 0;
+		virtual Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) = 0;
+		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
 
 	protected:
 		Renderer(const Settings& settings);

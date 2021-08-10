@@ -19,19 +19,32 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_SHADER_HPP
+#define ATEMA_RENDERER_SHADER_HPP
 
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+
+#include <filesystem>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Shader : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			std::filesystem::path path;
+		};
+
+		virtual ~Shader();
+
+		static Ptr<Shader> create(const Settings& settings);
+
+	protected:
+		Shader();
+	};
+}
 
 #endif
