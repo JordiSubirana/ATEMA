@@ -7,6 +7,8 @@
 
 using namespace at;
 
+const std::filesystem::path rsc_path = "../../examples/Sandbox/Resources/";
+
 // #1 - BENCHMARK SPARSE SET
 void benchmarkSparseSet()
 {
@@ -284,18 +286,44 @@ public:
 		c = 1;
 		count = 0.0f;
 
+		initialize();
+	}
+
+	~TestLayer()
+	{
+		pipeline.reset();
+
+		descriptorSetLayout.reset();
+
+		framebuffers.clear();
+
+		depthImage.reset();
+
+		renderPass.reset();
+
+		swapChain.reset();
+
+		window.reset();
+		
+		Renderer::destroy();
+	}
+
+	void initialize()
+	{
 		Renderer::Settings settings;
 		//settings.mainWindowSettings.width = 1920;
 		//settings.mainWindowSettings.height = 1080;
 
 		Renderer::create<VulkanRenderer>(settings);
-		
+
+		// Window / SwapChain
 		window = Renderer::getInstance().getMainWindow();
 
 		auto windowSize = window->getSize();
 
 		swapChain = SwapChain::create({ window, ImageFormat::BGRA8_SRGB });
 
+		// RenderPass
 		RenderPass::Settings renderPassSettings;
 		renderPassSettings.attachments.resize(2);
 		renderPassSettings.attachments[0].format = ImageFormat::BGRA8_SRGB;
@@ -304,14 +332,16 @@ public:
 
 		renderPass = RenderPass::create(renderPassSettings);
 
+		// Depth image
 		Image::Settings depthSettings;
 		depthSettings.width = windowSize.x;
 		depthSettings.height = windowSize.y;
 		depthSettings.format = ImageFormat::D32F;
 		depthSettings.usages = ImageUsage::RenderTarget;
-		
+
 		depthImage = Image::create(depthSettings);
-		
+
+		// Framebuffers (one per swapchain image)
 		Framebuffer::Settings framebufferSettings;
 		framebufferSettings.renderPass = renderPass;
 		framebufferSettings.width = windowSize.x;
@@ -327,11 +357,40 @@ public:
 
 			framebuffers.push_back(Framebuffer::create(framebufferSettings));
 		}
-	}
 
-	~TestLayer()
-	{
-		window.reset();
+		// Descriptor set layout
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
+			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment }
+		};
+
+		descriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+
+		// Graphics pipeline
+		GraphicsPipeline::Settings pipelineSettings;
+		pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
+		pipelineSettings.viewport.size.y = static_cast<float>(windowSize.y);
+		pipelineSettings.scissor.size = windowSize;
+		pipelineSettings.vertexShader = Shader::create({ rsc_path / "Shaders/vert.spv" });
+		pipelineSettings.fragmentShader = Shader::create({ rsc_path / "Shaders/frag.spv" });
+		pipelineSettings.renderPass = renderPass;
+		pipelineSettings.descriptorSetLayout = descriptorSetLayout;
+		pipelineSettings.vertexInput.attributes =
+		{
+			{ VertexAttribute::Role::Position, VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Role::Color, VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Role::Texture, VertexAttribute::Format::RG32_SFLOAT }
+		};
+		pipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0 },
+			{ 0, 1 },
+			{ 0, 2 }
+		};
+
+		pipeline = GraphicsPipeline::create(pipelineSettings);
 	}
 	
 	void onEvent(Event& event) override
@@ -377,6 +436,8 @@ public:
 	Ptr<RenderPass> renderPass;
 	Ptr<Image> depthImage;
 	std::vector<Ptr<Framebuffer>> framebuffers;
+	Ptr<DescriptorSetLayout> descriptorSetLayout;
+	Ptr<GraphicsPipeline> pipeline;
 };
 
 void basicApplication()
