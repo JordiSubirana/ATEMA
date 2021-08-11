@@ -32,7 +32,7 @@
 #define ATEMA_ASSERT(condition, desc)
 #else
 #define ATEMA_ASSERT(condition, desc) \
-	if ((condition) == false) \
+	if (!(condition)) \
 	{ \
 		ATEMA_ERROR(desc); \
 	}
