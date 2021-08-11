@@ -19,23 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_SEMAPHORE_HPP
+#define ATEMA_RENDERER_SEMAPHORE_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Fence.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Semaphore.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Semaphore : public NonCopyable
+	{
+	public:
+		virtual ~Semaphore();
+
+		static Ptr<Semaphore> create();
+
+	protected:
+		Semaphore();
+	};
+}
 
 #endif

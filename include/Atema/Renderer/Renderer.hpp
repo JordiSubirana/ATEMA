@@ -27,11 +27,13 @@
 #include <Atema/Core/Window.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
+#include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
 
 namespace at
@@ -77,6 +79,8 @@ namespace at
 		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
 		virtual Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) = 0;
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) = 0;
+		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;
+		virtual Ptr<Semaphore> createSemaphore() = 0;
 
 	protected:
 		Renderer(const Settings& settings);
