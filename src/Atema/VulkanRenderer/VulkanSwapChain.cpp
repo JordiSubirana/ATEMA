@@ -21,8 +21,10 @@
 
 #include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
 #include <Atema/Core/Window.hpp>
+#include <Atema/VulkanRenderer/VulkanFence.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
+#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 
 using namespace at;
 
@@ -81,6 +83,7 @@ namespace
 
 VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 	SwapChain(),
+	m_device(VK_NULL_HANDLE),
 	m_surface(VK_NULL_HANDLE),
 	m_swapChain(VK_NULL_HANDLE),
 	m_extent({0, 0}),
@@ -96,7 +99,7 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 	auto& renderer = VulkanRenderer::getInstance();
 	auto instance = renderer.getInstanceHandle();
 	auto physicalDevice = renderer.getPhysicalDeviceHandle();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	m_surface = renderer.getWindowSurface(settings.window);
 
@@ -162,17 +165,17 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 		createInfo.clipped = VK_TRUE; // Best performance but we won't be able to get pixels if another window is in front of this one
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		ATEMA_VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapChain));
+		ATEMA_VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
 	}
 
 	// Create images
 	{
 		// Get images created within the swapchain (will be cleaned up at swapchain's destruction)
-		vkGetSwapchainImagesKHR(device, m_swapChain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
 
 		std::vector<VkImage> swapChainImages(imageCount, VK_NULL_HANDLE);
 
-		vkGetSwapchainImagesKHR(device, m_swapChain, &imageCount, swapChainImages.data());
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapChainImages.data());
 
 		for (auto& swapChainImage : swapChainImages)
 		{
@@ -185,13 +188,10 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 
 VulkanSwapChain::~VulkanSwapChain()
 {
-	auto& renderer = VulkanRenderer::getInstance();
-	auto device = renderer.getLogicalDeviceHandle();
-
 	// Ensure the images are deleted
 	m_images.clear();
 	
-	ATEMA_VK_DESTROY(device, vkDestroySwapchainKHR, m_swapChain);
+	ATEMA_VK_DESTROY(m_device, vkDestroySwapchainKHR, m_swapChain);
 }
 
 VulkanSwapChain::SupportDetails VulkanSwapChain::getSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -229,4 +229,50 @@ std::vector<Ptr<Image>>& VulkanSwapChain::getImages() noexcept
 const std::vector<Ptr<Image>>& VulkanSwapChain::getImages() const noexcept
 {
 	return m_images;
+}
+
+SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence)
+{
+	ATEMA_ASSERT(fence, "Invalid Fence");
+
+	auto vkFence = std::static_pointer_cast<VulkanFence>(fence);
+	
+	return acquireNextImage(imageIndex, VK_NULL_HANDLE, vkFence->getHandle());
+}
+
+SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore)
+{
+	ATEMA_ASSERT(semaphore, "Invalid Semaphore");
+
+	auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(semaphore);
+
+	return acquireNextImage(imageIndex, vkSemaphore->getHandle(), VK_NULL_HANDLE);
+}
+
+SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence)
+{
+	auto result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
+
+	switch (result)
+	{
+		case VK_SUCCESS: return AcquireResult::Success;
+		case VK_NOT_READY: return AcquireResult::NotReady;
+		case VK_SUBOPTIMAL_KHR: return AcquireResult::Suboptimal;
+		case VK_ERROR_OUT_OF_DATE_KHR:
+		case VK_ERROR_SURFACE_LOST_KHR:
+		{
+			return AcquireResult::OutOfDate;
+		}
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		case VK_ERROR_DEVICE_LOST:
+		case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
+		case VK_TIMEOUT:
+		default:
+		{
+			break;
+		}
+	}
+
+	return AcquireResult::Error;
 }
