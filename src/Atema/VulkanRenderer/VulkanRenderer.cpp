@@ -32,6 +32,8 @@
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
+#include <Atema/VulkanRenderer/VulkanFence.hpp>
+#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -2614,6 +2616,20 @@ Ptr<CommandBuffer> VulkanRenderer::createCommandBuffer(const CommandBuffer::Sett
 	auto object = std::make_shared<VulkanCommandBuffer>(settings);
 
 	return std::static_pointer_cast<CommandBuffer>(object);
+}
+
+Ptr<Fence> VulkanRenderer::createFence(const Fence::Settings& settings)
+{
+	auto object = std::make_shared<VulkanFence>(settings);
+
+	return std::static_pointer_cast<Fence>(object);
+}
+
+Ptr<Semaphore> VulkanRenderer::createSemaphore()
+{
+	auto object = std::make_shared<VulkanSemaphore>();
+
+	return std::static_pointer_cast<Semaphore>(object);
 }
 
 void VulkanRenderer::drawFrame()

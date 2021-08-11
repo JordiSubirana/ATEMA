@@ -19,22 +19,32 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANFENCE_HPP
+#define ATEMA_VULKANRENDERER_VULKANFENCE_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/Renderer/Fence.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanFence final : public Fence
+	{
+	public:
+		VulkanFence() = delete;
+		VulkanFence(const Fence::Settings& settings);
+		virtual ~VulkanFence();
+
+		VkFence getHandle() const noexcept;
+		
+		void wait() override;
+
+		void reset() override;
+
+	private:
+		VkDevice m_device;
+		VkFence m_fence;
+	};
+}
 
 #endif

@@ -19,22 +19,31 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-
-#include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
-#include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
-#endif
+using namespace at;
+
+VulkanSemaphore::VulkanSemaphore() :
+	Semaphore(),
+	m_device(VK_NULL_HANDLE),
+	m_semaphore(VK_NULL_HANDLE)
+{
+	auto& renderer = VulkanRenderer::getInstance();
+	m_device = renderer.getLogicalDeviceHandle();
+
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	ATEMA_VK_CHECK(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_semaphore));
+}
+
+VulkanSemaphore::~VulkanSemaphore()
+{
+	ATEMA_VK_DESTROY(m_device, vkDestroySemaphore, m_semaphore);
+}
+
+VkSemaphore VulkanSemaphore::getHandle() const noexcept
+{
+	return m_semaphore;
+}

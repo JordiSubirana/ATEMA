@@ -250,6 +250,8 @@ namespace at
 		Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) override;
 		Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) override;
 		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) override;
+		Ptr<Fence> createFence(const Fence::Settings& settings) override;
+		Ptr<Semaphore> createSemaphore() override;
 		
 	private:
 		size_t m_currentFrame;

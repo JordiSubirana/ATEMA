@@ -19,22 +19,42 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-
-#include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
-#include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
 
-#endif
+using namespace at;
+
+VulkanFence::VulkanFence(const Fence::Settings& settings) :
+	Fence(),
+	m_device(VK_NULL_HANDLE),
+	m_fence(VK_NULL_HANDLE)
+{
+	auto& renderer = VulkanRenderer::getInstance();
+	m_device = renderer.getLogicalDeviceHandle();
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = settings.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0; // Specify initial state
+
+	ATEMA_VK_CHECK(vkCreateFence(m_device, &fenceInfo, nullptr, &m_fence));
+}
+
+VulkanFence::~VulkanFence()
+{
+	ATEMA_VK_DESTROY(m_device, vkDestroyFence, m_fence);
+}
+
+VkFence VulkanFence::getHandle() const noexcept
+{
+	return m_fence;
+}
+
+void VulkanFence::wait()
+{
+	vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
+}
+
+void VulkanFence::reset()
+{
+	vkResetFences(m_device, 1, &m_fence);
+}
