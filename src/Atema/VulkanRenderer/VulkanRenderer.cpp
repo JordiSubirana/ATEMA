@@ -179,6 +179,8 @@ VulkanRenderer::VulkanRenderer(const Renderer::Settings& settings) :
 
 VulkanRenderer::~VulkanRenderer()
 {
+	waitForIdle();
+
 	unregisterWindows();
 
 	destroy();
@@ -2487,6 +2489,11 @@ VkDevice VulkanRenderer::getLogicalDeviceHandle() const noexcept
 	return m_device;
 }
 
+void VulkanRenderer::waitForIdle()
+{
+	vkDeviceWaitIdle(m_device);
+}
+
 void VulkanRenderer::registerWindow(Ptr<Window> window)
 {
 	if (!window)
@@ -2630,6 +2637,106 @@ Ptr<Semaphore> VulkanRenderer::createSemaphore()
 	auto object = std::make_shared<VulkanSemaphore>();
 
 	return std::static_pointer_cast<Semaphore>(object);
+}
+
+void VulkanRenderer::submit(
+	const std::vector<Ptr<CommandBuffer>>& commandBuffers,
+	const std::vector<Ptr<Semaphore>>& waitSemaphores,
+	const std::vector<Flags<PipelineStage>>& waitStages,
+	const std::vector<Ptr<Semaphore>>& signalSemaphores,
+	Ptr<Fence> fence)
+{
+	ATEMA_ASSERT(!commandBuffers.empty(), "At least one command buffer must be submitted");
+	ATEMA_ASSERT(waitSemaphores.size() == waitStages.size(), "Each wait semaphore must have a corresponding wait stage");
+
+	std::vector<VkCommandBuffer> vkCommandBuffers(commandBuffers.size());
+	std::vector<VkSemaphore> vkWaitSemaphores(waitSemaphores.size());
+	std::vector<VkPipelineStageFlags> vkWaitStages(waitStages.size());
+	std::vector<VkSemaphore> vkSignalSemaphores(signalSemaphores.size());
+
+	for (size_t i = 0; i < vkCommandBuffers.size(); i++)
+	{
+		auto vkCommandBuffer = std::static_pointer_cast<VulkanCommandBuffer>(commandBuffers[i]);
+
+		vkCommandBuffers[i] = vkCommandBuffer->getHandle();
+	}
+
+	for (size_t i = 0; i < vkWaitSemaphores.size(); i++)
+	{
+		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(waitSemaphores[i]);
+
+		vkWaitSemaphores[i] = vkSemaphore->getHandle();
+		vkWaitStages[i] = Vulkan::getPipelineStages(waitStages[i]);
+	}
+
+	for (size_t i = 0; i < vkSignalSemaphores.size(); i++)
+	{
+		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(signalSemaphores[i]);
+
+		vkSignalSemaphores[i] = vkSemaphore->getHandle();
+	}
+	
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	// Which semaphores to wait, and on which pipeline stages
+	submitInfo.waitSemaphoreCount = static_cast<uint32_t>(vkWaitSemaphores.size());
+	submitInfo.pWaitSemaphores = vkWaitSemaphores.data();
+	submitInfo.pWaitDstStageMask = vkWaitStages.data();
+
+	// Command buffers to be submitted
+	submitInfo.commandBufferCount = static_cast<uint32_t>(vkCommandBuffers.size());
+	submitInfo.pCommandBuffers = vkCommandBuffers.data();
+
+	// Specify what semaphore will be used as the signal that command buffers were executed
+	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(vkSignalSemaphores.size());
+	submitInfo.pSignalSemaphores = vkSignalSemaphores.data();
+
+	VkFence vkFence = VK_NULL_HANDLE;
+
+	if (fence)
+		vkFence = std::static_pointer_cast<VulkanFence>(fence)->getHandle();
+	
+	ATEMA_VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, vkFence));
+}
+
+void VulkanRenderer::present(
+	const Ptr<SwapChain>& swapChain,
+	uint32_t imageIndex,
+	const std::vector<Ptr<Semaphore>>& waitSemaphores)
+{
+	ATEMA_ASSERT(swapChain, "Invalid SwapChain");
+
+	std::vector<VkSemaphore> vkSemaphores(waitSemaphores.size());
+
+	for (size_t i = 0; i < vkSemaphores.size(); i++)
+	{
+		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(waitSemaphores[i]);
+
+		vkSemaphores[i] = vkSemaphore->getHandle();
+	}
+	
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	// Which semaphores to wait on before presentation can happen
+	presentInfo.waitSemaphoreCount = static_cast<uint32_t>(vkSemaphores.size());
+	presentInfo.pWaitSemaphores = vkSemaphores.data();
+
+	auto vkSwapChain = std::static_pointer_cast<VulkanSwapChain>(swapChain);
+	
+	VkSwapchainKHR swapChains[] = { vkSwapChain->getHandle() };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+	// Array of VkResult values to check for every individual swap chain if presentation was successful
+	//presentInfo.pResults = nullptr; // Optional
+
+	auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		ATEMA_ERROR("SwapChain presentation failed");
+	}
 }
 
 void VulkanRenderer::drawFrame()

@@ -230,6 +230,8 @@ namespace at
 		VkPhysicalDevice getPhysicalDeviceHandle() const noexcept;
 		VkDevice getLogicalDeviceHandle() const noexcept;
 
+		void waitForIdle() override;
+		
 		void registerWindow(Ptr<Window> window) override;
 		void unregisterWindow(Ptr<Window> window) override;
 		void unregisterWindows();
@@ -252,6 +254,9 @@ namespace at
 		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) override;
 		Ptr<Fence> createFence(const Fence::Settings& settings) override;
 		Ptr<Semaphore> createSemaphore() override;
+
+		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<Ptr<Semaphore>>& waitSemaphores, const std::vector<Flags<PipelineStage>>& waitStages, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr) override;
+		void present(const Ptr<SwapChain>& swapChain, uint32_t imageIndex, const std::vector<Ptr<Semaphore>>& waitSemaphores) override;
 		
 	private:
 		size_t m_currentFrame;
