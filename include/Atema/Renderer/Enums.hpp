@@ -293,6 +293,27 @@ namespace at
 	};
 
 	ATEMA_DECLARE_FLAGS(ShaderStage);
+
+	enum class PipelineStage
+	{
+		TopOfPipe = 0x0001,
+		DrawIndirect = 0x0002,
+		VertexInput = 0x0004,
+		VertexShader = 0x0008,
+		TessellationControl = 0x0010,
+		TessellationEvaluation = 0x0020,
+		GeometryShader = 0x0040,
+		FragmentShader = 0x0080,
+		EarlyFragmentTests = 0x0100,
+		LateFragmentTests = 0x0200,
+		ColorAttachmentOutput = 0x0400,
+		ComputeShader = 0x0800,
+		Transfer = 0x1000,
+		BottomOfPipe = 0x2000,
+		Host = 0x4000
+	};
+
+	ATEMA_DECLARE_FLAGS(PipelineStage);
 }
 
 #endif
