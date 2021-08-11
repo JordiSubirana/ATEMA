@@ -98,6 +98,64 @@ VkFormat Vulkan::getFormat(ImageFormat format)
 	return VK_FORMAT_UNDEFINED;
 }
 
+ImageFormat Vulkan::getFormat(VkFormat format)
+{
+	switch (format)
+	{
+		case VK_FORMAT_R8_UNORM: return ImageFormat::R8_UNORM;
+		case VK_FORMAT_R8_SNORM: return ImageFormat::R8_SNORM;
+		case VK_FORMAT_R8_USCALED: return ImageFormat::R8_USCALED;
+		case VK_FORMAT_R8_SSCALED: return ImageFormat::R8_SSCALED;
+		case VK_FORMAT_R8_UINT: return ImageFormat::R8_UINT;
+		case VK_FORMAT_R8_SINT: return ImageFormat::R8_SINT;
+		case VK_FORMAT_R8_SRGB: return ImageFormat::R8_SRGB;
+		case VK_FORMAT_R8G8_UNORM: return ImageFormat::RG8_UNORM;
+		case VK_FORMAT_R8G8_SNORM: return ImageFormat::RG8_SNORM;
+		case VK_FORMAT_R8G8_USCALED: return ImageFormat::RG8_USCALED;
+		case VK_FORMAT_R8G8_SSCALED: return ImageFormat::RG8_SSCALED;
+		case VK_FORMAT_R8G8_UINT: return ImageFormat::RG8_UINT;
+		case VK_FORMAT_R8G8_SINT: return ImageFormat::RG8_SINT;
+		case VK_FORMAT_R8G8_SRGB: return ImageFormat::RG8_SRGB;
+		case VK_FORMAT_R8G8B8_UNORM: return ImageFormat::RGB8_UNORM;
+		case VK_FORMAT_R8G8B8_SNORM: return ImageFormat::RGB8_SNORM;
+		case VK_FORMAT_R8G8B8_USCALED: return ImageFormat::RGB8_USCALED;
+		case VK_FORMAT_R8G8B8_SSCALED: return ImageFormat::RGB8_SSCALED;
+		case VK_FORMAT_R8G8B8_UINT: return ImageFormat::RGB8_UINT;
+		case VK_FORMAT_R8G8B8_SINT: return ImageFormat::RGB8_SINT;
+		case VK_FORMAT_R8G8B8_SRGB: return ImageFormat::RGB8_SRGB;
+		case VK_FORMAT_B8G8R8_UNORM: return ImageFormat::BGR8_UNORM;
+		case VK_FORMAT_B8G8R8_SNORM: return ImageFormat::BGR8_SNORM;
+		case VK_FORMAT_B8G8R8_USCALED: return ImageFormat::BGR8_USCALED;
+		case VK_FORMAT_B8G8R8_SSCALED: return ImageFormat::BGR8_SSCALED;
+		case VK_FORMAT_B8G8R8_UINT: return ImageFormat::BGR8_UINT;
+		case VK_FORMAT_B8G8R8_SINT: return ImageFormat::BGR8_SINT;
+		case VK_FORMAT_B8G8R8_SRGB: return ImageFormat::BGR8_SRGB;
+		case VK_FORMAT_R8G8B8A8_UNORM: return ImageFormat::RGBA8_UNORM;
+		case VK_FORMAT_R8G8B8A8_SNORM: return ImageFormat::RGBA8_SNORM;
+		case VK_FORMAT_R8G8B8A8_USCALED: return ImageFormat::RGBA8_USCALED;
+		case VK_FORMAT_R8G8B8A8_SSCALED: return ImageFormat::RGBA8_SSCALED;
+		case VK_FORMAT_R8G8B8A8_UINT: return ImageFormat::RGBA8_UINT;
+		case VK_FORMAT_R8G8B8A8_SINT: return ImageFormat::RGBA8_SINT;
+		case VK_FORMAT_R8G8B8A8_SRGB: return ImageFormat::RGBA8_SRGB;
+		case VK_FORMAT_B8G8R8A8_UNORM: return ImageFormat::BGRA8_UNORM;
+		case VK_FORMAT_B8G8R8A8_SNORM: return ImageFormat::BGRA8_SNORM;
+		case VK_FORMAT_B8G8R8A8_USCALED: return ImageFormat::BGRA8_USCALED;
+		case VK_FORMAT_B8G8R8A8_SSCALED: return ImageFormat::BGRA8_SSCALED;
+		case VK_FORMAT_B8G8R8A8_UINT: return ImageFormat::BGRA8_UINT;
+		case VK_FORMAT_B8G8R8A8_SINT: return ImageFormat::BGRA8_SINT;
+		case VK_FORMAT_B8G8R8A8_SRGB: return ImageFormat::BGRA8_SRGB;
+		case VK_FORMAT_D32_SFLOAT: return ImageFormat::D32F;
+		case VK_FORMAT_D32_SFLOAT_S8_UINT: return ImageFormat::D32F_S8U;
+		case VK_FORMAT_D24_UNORM_S8_UINT: return ImageFormat::D24U_S8U;
+		default:
+		{
+			ATEMA_ERROR("Invalid image format");
+		}
+	}
+
+	return ImageFormat::RGBA8_SRGB;
+}
+
 VkFormat Vulkan::getFormat(VertexAttribute::Format format)
 {
 	switch (format)
@@ -494,6 +552,58 @@ VkShaderStageFlags Vulkan::getShaderStages(Flags<ShaderStage> value)
 
 	if (value & ShaderStage::Compute)
 		flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+
+	return flags;
+}
+
+VkPipelineStageFlags Vulkan::getPipelineStages(Flags<PipelineStage> value)
+{
+	VkShaderStageFlags flags = 0;
+
+	if (value & PipelineStage::TopOfPipe)
+		flags |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+	if (value & PipelineStage::DrawIndirect)
+		flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+
+	if (value & PipelineStage::VertexInput)
+		flags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+
+	if (value & PipelineStage::VertexShader)
+		flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+
+	if (value & PipelineStage::TessellationControl)
+		flags |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+
+	if (value & PipelineStage::TessellationEvaluation)
+		flags |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+
+	if (value & PipelineStage::GeometryShader)
+		flags |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+
+	if (value & PipelineStage::FragmentShader)
+		flags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	if (value & PipelineStage::EarlyFragmentTests)
+		flags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+	if (value & PipelineStage::LateFragmentTests)
+		flags |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+	if (value & PipelineStage::ColorAttachmentOutput)
+		flags |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	if (value & PipelineStage::ComputeShader)
+		flags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+	if (value & PipelineStage::Transfer)
+		flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	if (value & PipelineStage::BottomOfPipe)
+		flags |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+	if (value & PipelineStage::Host)
+		flags |= VK_PIPELINE_STAGE_HOST_BIT;
 
 	return flags;
 }

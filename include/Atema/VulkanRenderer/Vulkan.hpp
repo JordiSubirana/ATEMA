@@ -72,6 +72,7 @@ namespace at
 #endif
 
 		static VkFormat getFormat(ImageFormat format);
+		static ImageFormat getFormat(VkFormat format);
 		static VkFormat getFormat(VertexAttribute::Format format);
 
 		static VkImageAspectFlags getAspect(ImageFormat format);
@@ -107,6 +108,8 @@ namespace at
 		static VkDescriptorType getDescriptorType(DescriptorType value);
 
 		static VkShaderStageFlags getShaderStages(Flags<ShaderStage> value);
+
+		static VkPipelineStageFlags getPipelineStages(Flags<PipelineStage> value);
 	};
 }
 
