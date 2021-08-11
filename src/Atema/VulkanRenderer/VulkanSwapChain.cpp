@@ -221,6 +221,11 @@ VulkanSwapChain::SupportDetails VulkanSwapChain::getSupportDetails(VkPhysicalDev
 	return swapChainSupportDetails;
 }
 
+VkSwapchainKHR VulkanSwapChain::getHandle() const noexcept
+{
+	return m_swapChain;
+}
+
 std::vector<Ptr<Image>>& VulkanSwapChain::getImages() noexcept
 {
 	return m_images;

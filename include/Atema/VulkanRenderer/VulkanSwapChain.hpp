@@ -45,6 +45,8 @@ namespace at
 		virtual ~VulkanSwapChain();
 
 		static SupportDetails getSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+		VkSwapchainKHR getHandle() const noexcept;
 		
 		std::vector<Ptr<Image>>& getImages() noexcept override;
 		const std::vector<Ptr<Image>>& getImages() const noexcept override;
