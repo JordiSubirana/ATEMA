@@ -283,14 +283,25 @@ class TestLayer : public ApplicationLayer
 public:
 	TestLayer()
 	{
-		c = 1;
-		count = 0.0f;
-
 		initialize();
 	}
 
 	~TestLayer()
 	{
+		Renderer::getInstance().waitForIdle();
+
+		renderFinishedSemaphores.clear();
+
+		imageAvailableSemaphores.clear();
+
+		imageFences.clear();
+		
+		fences.clear();
+		
+		commandBuffers.clear();
+
+		commandPools.clear();
+
 		pipeline.reset();
 
 		descriptorSetLayout.reset();
@@ -310,7 +321,11 @@ public:
 
 	void initialize()
 	{
+		maxFramesInFlight = 2;
+		currentFrame = 0;
+
 		Renderer::Settings settings;
+		settings.maxFramesInFlight = maxFramesInFlight;
 		//settings.mainWindowSettings.width = 1920;
 		//settings.mainWindowSettings.height = 1080;
 
@@ -323,6 +338,8 @@ public:
 
 		swapChain = SwapChain::create({ window, ImageFormat::BGRA8_SRGB });
 
+		auto swapChainImageCount = swapChain->getImages().size();
+		
 		// RenderPass
 		RenderPass::Settings renderPassSettings;
 		renderPassSettings.attachments.resize(2);
@@ -391,6 +408,35 @@ public:
 		};
 
 		pipeline = GraphicsPipeline::create(pipelineSettings);
+
+		// Command pools (1 per frame in flight per thread)
+		for (uint32_t i = 0; i < maxFramesInFlight; i++)
+		{
+			commandPools.push_back(CommandPool::create({}));
+		}
+
+		// Command buffers
+		commandBuffers.resize(maxFramesInFlight);
+
+		// Fences (1 per frame in flight per thread)
+		for (uint32_t i = 0; i < maxFramesInFlight; i++)
+		{
+			fences.push_back(Fence::create({ true }));
+		}
+
+		imageFences.resize(swapChainImageCount);
+
+		// Semaphores (1 per frame in flight per thread)
+		for (uint32_t i = 0; i < maxFramesInFlight; i++)
+		{
+			imageAvailableSemaphores.push_back(Semaphore::create());
+			renderFinishedSemaphores.push_back(Semaphore::create());
+		}
+	}
+
+	void recreateSwapChain()
+	{
+		
 	}
 	
 	void onEvent(Event& event) override
@@ -400,22 +446,92 @@ public:
 
 	void drawFrame()
 	{
+		// Wait on fence to be signaled (max frames in flight)
+		auto& fence = fences[currentFrame];
+
+		fence->wait();
+
+		// Acquire next available swapchain image
+		auto& imageAvailableSemaphore = imageAvailableSemaphores[currentFrame];
 		
+		uint32_t imageIndex;
+		auto acquireResult = swapChain->acquireNextImage(imageIndex, imageAvailableSemaphore);
+
+		if (acquireResult == SwapChain::AcquireResult::OutOfDate ||
+			acquireResult == SwapChain::AcquireResult::Suboptimal)
+		{
+			recreateSwapChain();
+			return;
+		}
+		else if (acquireResult != SwapChain::AcquireResult::Success)
+		{
+			ATEMA_ERROR("Failed to acquire a valid swapchain image");
+		}
+		
+		// Check if a previous frame is using this image (i.e. there is its fence to wait on)
+		if (imageFences[imageIndex])
+			imageFences[imageIndex]->wait();
+
+		// Mark the image as now being in use by this frame
+		imageFences[imageIndex] = fence;
+
+		// Update frame data if needed
+		
+		// Prepare command buffer
+		auto& commandPool = commandPools[currentFrame];
+		auto& framebuffer = framebuffers[imageIndex];
+
+		auto commandBuffer = CommandBuffer::create({ commandPool });
+
+		commandBuffer->begin();
+
+		std::vector<CommandBuffer::ClearValue> clearValues =
+		{
+			{ 0.0f, 0.0f, 0.0f, 1.0f },
+			{ 1.0f, 0 }
+		};
+		commandBuffer->beginRenderPass(renderPass, framebuffer, clearValues);
+
+		commandBuffer->bindPipeline(pipeline);
+
+		commandBuffer->endRenderPass();
+
+		commandBuffer->end();
+
+		// Submit command buffer
+		auto& renderFinishedSemaphore = renderFinishedSemaphores[currentFrame];
+		
+		std::vector<Ptr<CommandBuffer>> submitCommandBuffers = { commandBuffer };
+		std::vector<Ptr<Semaphore>> submitWaitSemaphores = { imageAvailableSemaphore };
+		std::vector<Flags<PipelineStage>> submitWaitStages = { PipelineStage::ColorAttachmentOutput };
+		std::vector<Ptr<Semaphore>> submitSignalSemaphores = { renderFinishedSemaphore };
+		
+		// Reset fence & submit command buffers to the target queue (works with arrays for performance)
+		fence->reset();
+
+		Renderer::getInstance().submit(
+			submitCommandBuffers,
+			submitWaitSemaphores,
+			submitWaitStages,
+			submitSignalSemaphores,
+			fence);
+
+		// Present swapchain image
+		Renderer::getInstance().present(
+			swapChain,
+			imageIndex,
+			submitSignalSemaphores
+		);
+		
+		// Save command buffer
+		commandBuffers[currentFrame] = commandBuffer;
+		
+		// Advance frame
+		currentFrame = (currentFrame + 1) % maxFramesInFlight;
 	}
 	
 	void update(TimeStep ms) override
 	{
-		count += ms.getSeconds();
-
-		if (count >= (float)c)
-		{
-			c++;
-			//std::cout << count << std::endl;
-		}
-		
-		/*if (count >= 10.0f)
-			Application::instance().close();*/
-
 		if (window->shouldClose())
 		{
 			Application::instance().close();
@@ -424,13 +540,13 @@ public:
 
 		window->processEvents();
 
-		//static_cast<VulkanRenderer&>(Renderer::getInstance()).drawFrame();
-
+		drawFrame();
+		
 		window->swapBuffers();
 	}
 
-	int c;
-	float count;
+	uint32_t maxFramesInFlight;
+	uint32_t currentFrame;
 	Ptr<Window> window;
 	Ptr<SwapChain> swapChain;
 	Ptr<RenderPass> renderPass;
@@ -438,6 +554,12 @@ public:
 	std::vector<Ptr<Framebuffer>> framebuffers;
 	Ptr<DescriptorSetLayout> descriptorSetLayout;
 	Ptr<GraphicsPipeline> pipeline;
+	std::vector<Ptr<CommandPool>> commandPools;
+	std::vector<Ptr<CommandBuffer>> commandBuffers;
+	std::vector<Ptr<Fence>> fences;
+	std::vector<Ptr<Fence>> imageFences;
+	std::vector<Ptr<Semaphore>> imageAvailableSemaphores;
+	std::vector<Ptr<Semaphore>> renderFinishedSemaphores;
 };
 
 void basicApplication()
