@@ -28,4 +28,14 @@
 
 #define ATEMA_ERROR(desc) throw std::runtime_error(desc)
 
+#ifdef ATEMA_DISABLE_ASSERT
+#define ATEMA_ASSERT(condition, desc)
+#else
+#define ATEMA_ASSERT(condition, desc) \
+	if ((condition) == false) \
+	{ \
+		ATEMA_ERROR(desc); \
+	}
+#endif
+
 #endif
