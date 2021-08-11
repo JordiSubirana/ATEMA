@@ -87,17 +87,11 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 	auto vkRenderPass = std::static_pointer_cast<VulkanRenderPass>(renderPass);
 	auto vkFramebuffer = std::static_pointer_cast<VulkanFramebuffer>(framebuffer);
 
-	if (!vkRenderPass)
-	{
-		ATEMA_ERROR("Invalid RenderPass");
-	}
-
-	if (!vkFramebuffer)
-	{
-		ATEMA_ERROR("Invalid Framebuffer");
-	}
+	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
+	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
 	
 	auto framebufferSize = vkFramebuffer->getSize();
+	auto& attachments = vkRenderPass->getAttachments();
 	
 	// Start render pass
 	std::vector<VkClearValue> vkClearValues(clearValues.size());
@@ -105,9 +99,20 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 	for (size_t i = 0; i < vkClearValues.size(); i++)
 	{
 		auto& value = clearValues[i];
+		auto& attachment = attachments[i];
 
-		vkClearValues[i].color = { value.color.x, value.color.y, value.color.z, value.color.w };
-		vkClearValues[i].depthStencil = { value.depth, value.stencil };
+		if (hasDepth(attachment.format) || hasStencil(attachment.format))
+		{
+			vkClearValues[i].depthStencil.depth = value.depthStencil.depth;
+			vkClearValues[i].depthStencil.stencil = value.depthStencil.stencil;
+		}
+		else
+		{
+			vkClearValues[i].color.float32[0] = value.color[0];
+			vkClearValues[i].color.float32[1] = value.color[1];
+			vkClearValues[i].color.float32[2] = value.color[2];
+			vkClearValues[i].color.float32[3] = value.color[3];
+		}
 	}
 
 	VkRenderPassBeginInfo renderPassInfo{};
