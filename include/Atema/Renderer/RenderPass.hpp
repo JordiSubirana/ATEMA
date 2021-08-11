@@ -55,6 +55,8 @@ namespace at
 
 		static Ptr<RenderPass> create(const Settings& settings);
 
+		virtual const std::vector<AttachmentDescription>& getAttachments() const noexcept = 0;
+
 	protected:
 		RenderPass();
 	};

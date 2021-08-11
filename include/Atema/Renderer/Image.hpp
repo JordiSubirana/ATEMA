@@ -47,6 +47,8 @@ namespace at
 		virtual ~Image();
 
 		static Ptr<Image> create(const Settings& settings);
+
+		virtual ImageFormat getFormat() const noexcept = 0;
 		
 	protected:
 		Image();
