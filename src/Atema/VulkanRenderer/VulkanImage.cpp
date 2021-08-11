@@ -29,7 +29,8 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 	m_ownsImage(true),
 	m_image(VK_NULL_HANDLE),
 	m_view(VK_NULL_HANDLE),
-	m_memory(VK_NULL_HANDLE)
+	m_memory(VK_NULL_HANDLE),
+	m_format(settings.format)
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -85,7 +86,8 @@ VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlag
 	m_ownsImage(false),
 	m_image(imageHandle),
 	m_view(VK_NULL_HANDLE),
-	m_memory(VK_NULL_HANDLE)
+	m_memory(VK_NULL_HANDLE),
+	m_format(Vulkan::getFormat(format))
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -111,9 +113,14 @@ VkImage VulkanImage::getImageHandle() const noexcept
 	return m_image;
 }
 
-VkImage VulkanImage::getViewHandle() const noexcept
+VkImageView VulkanImage::getViewHandle() const noexcept
 {
 	return m_view;
+}
+
+ImageFormat VulkanImage::getFormat() const noexcept
+{
+	return m_format;
 }
 
 void VulkanImage::createView(VkDevice device, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels)

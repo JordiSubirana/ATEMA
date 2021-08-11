@@ -26,7 +26,8 @@ using namespace at;
 
 VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 	RenderPass(),
-	m_renderPass(VK_NULL_HANDLE)
+	m_renderPass(VK_NULL_HANDLE),
+	m_attachments(settings.attachments)
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -121,4 +122,9 @@ VulkanRenderPass::~VulkanRenderPass()
 VkRenderPass VulkanRenderPass::getHandle() const noexcept
 {
 	return m_renderPass;
+}
+
+const std::vector<AttachmentDescription>& VulkanRenderPass::getAttachments() const noexcept
+{
+	return m_attachments;
 }

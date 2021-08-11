@@ -36,9 +36,12 @@ namespace at
 		virtual ~VulkanRenderPass();
 
 		VkRenderPass getHandle() const noexcept;
+
+		const std::vector<AttachmentDescription>& getAttachments() const noexcept override;
 		
 	private:
 		VkRenderPass m_renderPass;
+		std::vector<AttachmentDescription> m_attachments;
 	};
 }
 

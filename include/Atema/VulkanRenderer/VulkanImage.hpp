@@ -37,7 +37,9 @@ namespace at
 		virtual ~VulkanImage();
 
 		VkImage getImageHandle() const noexcept;
-		VkImage getViewHandle() const noexcept;
+		VkImageView getViewHandle() const noexcept;
+
+		ImageFormat getFormat() const noexcept override;
 
 	private:
 		void createView(VkDevice device, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
@@ -46,6 +48,7 @@ namespace at
 		VkImage m_image;
 		VkImageView m_view;
 		VkDeviceMemory m_memory;
+		ImageFormat m_format;
 	};
 }
 
