@@ -69,6 +69,8 @@ namespace at
 		virtual void registerWindow(Ptr<Window> window) = 0;
 		virtual void unregisterWindow(Ptr<Window> window) = 0;
 
+		virtual void waitForIdle() = 0;
+		
 		// Object creation
 		virtual Ptr<Image> createImage(const Image::Settings& settings) = 0;
 		virtual Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) = 0;
@@ -82,6 +84,19 @@ namespace at
 		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;
 		virtual Ptr<Semaphore> createSemaphore() = 0;
 
+		// Rendering
+		virtual void submit(
+			const std::vector<Ptr<CommandBuffer>>& commandBuffers,
+			const std::vector<Ptr<Semaphore>>& waitSemaphores,
+			const std::vector<Flags<PipelineStage>>& waitStages,
+			const std::vector<Ptr<Semaphore>>& signalSemaphores,
+			Ptr<Fence> fence = nullptr) = 0;
+
+		virtual void present(
+			const Ptr<SwapChain>& swapChain,
+			uint32_t imageIndex,
+			const std::vector<Ptr<Semaphore>>& waitSemaphores) = 0;
+		
 	protected:
 		Renderer(const Settings& settings);
 
