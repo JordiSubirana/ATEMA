@@ -32,6 +32,8 @@ namespace at
 {
 	class Window;
 	class Image;
+	class Fence;
+	class Semaphore;
 	
 	class ATEMA_RENDERER_API SwapChain
 	{
@@ -41,6 +43,20 @@ namespace at
 			Ptr<Window> window;
 			ImageFormat format;
 		};
+
+		enum class AcquireResult
+		{
+			// Success
+			Success,
+			// Fence/Semaphore/Query not completed yet
+			NotReady,
+			// Can still be used but the swapchain and the window surface properties don't match
+			Suboptimal,
+			// Need to recreate the swapchain
+			OutOfDate,
+			// Unknown error
+			Error
+		};
 		
 		virtual ~SwapChain();
 
@@ -48,6 +64,9 @@ namespace at
 
 		virtual std::vector<Ptr<Image>>& getImages() noexcept = 0;
 		virtual const std::vector<Ptr<Image>>& getImages() const noexcept = 0;
+
+		virtual AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) = 0;
+		virtual AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) = 0;
 		
 	protected:
 		SwapChain();
