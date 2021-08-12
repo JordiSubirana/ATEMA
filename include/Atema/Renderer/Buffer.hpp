@@ -19,24 +19,36 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_BUFFER_HPP
+#define ATEMA_RENDERER_BUFFER_HPP
 
-#include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Fence.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Semaphore.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Buffer : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			BufferUsage usage = BufferUsage::Vertex;
+			size_t byteSize = 0;
+		};
+
+		virtual ~Buffer();
+
+		static Ptr<Buffer> create(const Settings& settings);
+
+		// For transfer buffers only
+		virtual void* map(size_t byteOffset = 0, size_t byteSize = 0) = 0;
+		virtual void unmap() = 0;
+
+	protected:
+		Buffer();
+	};
+}
 
 #endif

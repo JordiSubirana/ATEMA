@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/Window.hpp>
+#include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
 #include <Atema/Renderer/Fence.hpp>
@@ -83,6 +84,7 @@ namespace at
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) = 0;
 		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;
 		virtual Ptr<Semaphore> createSemaphore() = 0;
+		virtual Ptr<Buffer> createBuffer(const Buffer::Settings& settings) = 0;
 
 		// Rendering
 		virtual void submit(
