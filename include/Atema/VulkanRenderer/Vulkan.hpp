@@ -110,6 +110,12 @@ namespace at
 		static VkShaderStageFlags getShaderStages(Flags<ShaderStage> value);
 
 		static VkPipelineStageFlags getPipelineStages(Flags<PipelineStage> value);
+
+		static VkBufferUsageFlags getBufferUsages(BufferUsage value);
+
+		static VkMemoryPropertyFlags getMemoryProperties(BufferUsage value);
+
+		static VkIndexType getIndexType(IndexType value);
 	};
 }
 

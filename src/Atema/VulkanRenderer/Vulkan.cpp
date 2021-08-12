@@ -608,3 +608,58 @@ VkPipelineStageFlags Vulkan::getPipelineStages(Flags<PipelineStage> value)
 	return flags;
 }
 
+VkBufferUsageFlags Vulkan::getBufferUsages(BufferUsage value)
+{
+	switch (value)
+	{
+		case BufferUsage::Vertex:
+			return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		case BufferUsage::Index:
+			return VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		case BufferUsage::Uniform:
+			return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		case BufferUsage::Transfer:
+			return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		default:
+		{
+			ATEMA_ERROR("Invalid buffer usage");
+		}
+	}
+
+	return 0;
+}
+
+VkMemoryPropertyFlags Vulkan::getMemoryProperties(BufferUsage value)
+{
+	switch (value)
+	{
+		case BufferUsage::Vertex:
+		case BufferUsage::Index:
+		case BufferUsage::Uniform:
+			return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		case BufferUsage::Transfer:
+			return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		default:
+		{
+			ATEMA_ERROR("Invalid buffer usage");
+		}
+	}
+
+	return 0;
+}
+
+VkIndexType Vulkan::getIndexType(IndexType value)
+{
+	switch (value)
+	{
+		case IndexType::U16: return VK_INDEX_TYPE_UINT16;
+		case IndexType::U32: return VK_INDEX_TYPE_UINT32;
+		default:
+		{
+			ATEMA_ERROR("Invalid index type");
+		}
+	}
+
+	return VK_INDEX_TYPE_UINT32;
+}
+
