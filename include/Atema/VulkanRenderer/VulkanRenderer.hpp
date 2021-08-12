@@ -254,7 +254,8 @@ namespace at
 		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) override;
 		Ptr<Fence> createFence(const Fence::Settings& settings) override;
 		Ptr<Semaphore> createSemaphore() override;
-
+		Ptr<Buffer> createBuffer(const Buffer::Settings& settings) override;
+		
 		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<Ptr<Semaphore>>& waitSemaphores, const std::vector<Flags<PipelineStage>>& waitStages, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr) override;
 		void present(const Ptr<SwapChain>& swapChain, uint32_t imageIndex, const std::vector<Ptr<Semaphore>>& waitSemaphores) override;
 		

@@ -19,23 +19,33 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANBUFFER_HPP
+#define ATEMA_VULKANRENDERER_VULKANBUFFER_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/Renderer/Buffer.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanBuffer final : public Buffer
+	{
+	public:
+		VulkanBuffer() = delete;
+		VulkanBuffer(const Buffer::Settings& settings);
+		virtual ~VulkanBuffer();
+
+		VkBuffer getHandle() const noexcept;
+
+		void* map(size_t byteOffset, size_t byteSize) override;
+		void unmap() override;
+		
+	private:
+		VkDevice m_device;
+		VkBuffer m_buffer;
+		VkDeviceMemory m_memory;
+		BufferUsage m_usage;
+	};
+}
 
 #endif
