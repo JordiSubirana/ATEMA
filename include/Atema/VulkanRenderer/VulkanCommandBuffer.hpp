@@ -45,11 +45,22 @@ namespace at
 
 		void endRenderPass() override;
 
+		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;
+
+		void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) override;
+
+		void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) override;
+
+		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
+
+		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
+		
 		void end() override;
 		
 	private:
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;
+		bool m_singleUse;
 	};
 }
 
