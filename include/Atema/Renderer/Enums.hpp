@@ -314,6 +314,20 @@ namespace at
 	};
 
 	ATEMA_DECLARE_FLAGS(PipelineStage);
+
+	enum class BufferUsage
+	{
+		Vertex,
+		Index,
+		Uniform,
+		Transfer
+	};
+
+	enum class IndexType
+	{
+		U16,
+		U32
+	};
 }
 
 #endif
