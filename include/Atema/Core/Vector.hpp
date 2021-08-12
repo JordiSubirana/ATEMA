@@ -121,6 +121,8 @@ namespace at
 		Vector<N, T>& operator *=(T arg);
 		Vector<N, T>& operator /=(T arg);
 
+		bool operator==(const Vector<N, T>& other) const;
+
 		T& operator[](size_t index);
 		const T& operator[](size_t index) const;
 

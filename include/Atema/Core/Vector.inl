@@ -224,6 +224,18 @@ namespace at
 	}
 
 	template <size_t N, typename T>
+	bool Vector<N, T>::operator==(const Vector<N, T>& other) const
+	{
+		for (size_t i = 0; i < N; i++)
+		{
+			if (this->data[i] != other.data[i])
+				return false;
+		}
+
+		return true;
+	}
+
+	template <size_t N, typename T>
 	T& Vector<N, T>::operator[](size_t index)
 	{
 		if (index >= N)
