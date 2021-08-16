@@ -19,25 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANSAMPLER_HPP
+#define ATEMA_VULKANRENDERER_VULKANSAMPLER_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/Renderer/Sampler.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSampler.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanSampler : public Sampler
+	{
+	public:
+		VulkanSampler() = delete;
+		VulkanSampler(const Sampler::Settings& settings);
+		virtual ~VulkanSampler();
+
+		VkSampler getHandle() const noexcept;
+		
+	private:
+		VkDevice m_device;
+		VkSampler m_sampler;
+	};
+}
 
 #endif

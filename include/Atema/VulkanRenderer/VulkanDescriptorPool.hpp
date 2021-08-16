@@ -19,25 +19,55 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANDESCRIPTORPOOL_HPP
+#define ATEMA_VULKANRENDERER_VULKANDESCRIPTORPOOL_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSampler.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+
+#include <queue>
+
+namespace at
+{
+	class ATEMA_VULKANRENDERER_API VulkanDescriptorPool final : public DescriptorPool
+	{
+	public:
+		VulkanDescriptorPool() = delete;
+		VulkanDescriptorPool(const DescriptorPool::Settings& settings);
+		virtual ~VulkanDescriptorPool();
+
+		Ptr<DescriptorSet> createSet() override;
+
+	private:
+		class Pool
+		{
+		public:
+			Pool() = delete;
+			Pool(VkDevice device, VkDescriptorSetLayout layout, const VkDescriptorPoolCreateInfo& settings);
+			~Pool();
+
+			bool isFull() const noexcept;
+
+			Ptr<DescriptorSet> createSet();
+
+		private:
+			VkDevice m_device;
+			VkDescriptorPool m_pool;
+			VkDescriptorSetLayout m_layout;
+			std::queue<VkDescriptorSet> m_unusedSets;
+			uint32_t m_size;
+			uint32_t m_maxSize;
+		};
+		
+		void addPool();
+		
+		VkDevice m_device;
+		std::vector<VkDescriptorPoolSize> m_poolSizes;
+		VkDescriptorPoolCreateInfo m_poolSettings;
+		std::vector<Ptr<Pool>> m_pools;
+		VkDescriptorSetLayout m_layout;
+	};
+}
 
 #endif

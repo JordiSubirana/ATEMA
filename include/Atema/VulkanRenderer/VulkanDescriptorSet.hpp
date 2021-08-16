@@ -26,6 +26,8 @@
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
 
+#include <functional>
+
 namespace at
 {
 	class ATEMA_VULKANRENDERER_API VulkanDescriptorSetLayout final : public DescriptorSetLayout
@@ -37,8 +39,37 @@ namespace at
 		
 		VkDescriptorSetLayout getHandle() const noexcept;
 
+		const std::vector<DescriptorSetBinding>& getBindings() const noexcept override;
+		
 	private:
 		VkDescriptorSetLayout m_descriptorSetLayout;
+
+		std::vector<DescriptorSetBinding> m_bindings;
+	};
+
+	class ATEMA_VULKANRENDERER_API VulkanDescriptorSet final : public DescriptorSet
+	{
+	public:
+		VulkanDescriptorSet() = delete;
+		VulkanDescriptorSet(VkDescriptorSet descriptorSet, std::function<void()> destroyCallback);
+		
+		virtual ~VulkanDescriptorSet();
+
+		VkDescriptorSet getHandle() const noexcept;
+
+		void update(
+			const std::vector<uint32_t>& bufferBindings,
+			const std::vector<uint32_t>& bufferIndices,
+			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<uint32_t>& imageSamplerBindings,
+			const std::vector<uint32_t>& imageSamplerIndices,
+			const std::vector<std::vector<Ptr<Image>>>& images,
+			const std::vector<std::vector<Ptr<Sampler>>>& samplers) override;
+		
+	private:
+		VkDevice m_device;
+		VkDescriptorSet m_descriptorSet;
+		std::function<void()> m_destroyCallback;
 	};
 }
 

@@ -244,11 +244,13 @@ namespace at
 
 	public:
 		Ptr<Image> createImage(const Image::Settings& settings) override;
+		Ptr<Sampler> createSampler(const Sampler::Settings& settings) override;
 		Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) override;
 		Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) override;
 		Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) override;
 		Ptr<Shader> createShader(const Shader::Settings& settings) override;
 		Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) override;
+		Ptr<DescriptorPool> createDescriptorPool(const DescriptorPool::Settings& settings) override;
 		Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) override;
 		Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) override;
 		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) override;

@@ -24,6 +24,7 @@
 #include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanSampler.hpp>
 #include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
@@ -47,6 +48,7 @@
 #include <chrono>
 #include <fstream>
 #include <unordered_map>
+#include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
 
 using namespace at;
 
@@ -2570,6 +2572,13 @@ Ptr<Image> VulkanRenderer::createImage(const Image::Settings& settings)
 	return std::static_pointer_cast<Image>(object);
 }
 
+Ptr<Sampler> VulkanRenderer::createSampler(const Sampler::Settings& settings)
+{
+	auto object = std::make_shared<VulkanSampler>(settings);
+
+	return std::static_pointer_cast<Sampler>(object);
+}
+
 Ptr<SwapChain> VulkanRenderer::createSwapChain(const SwapChain::Settings& settings)
 {
 	auto object = std::make_shared<VulkanSwapChain>(settings);
@@ -2603,6 +2612,13 @@ Ptr<DescriptorSetLayout> VulkanRenderer::createDescriptorSetLayout(const Descrip
 	auto object = std::make_shared<VulkanDescriptorSetLayout>(settings);
 
 	return std::static_pointer_cast<DescriptorSetLayout>(object);
+}
+
+Ptr<DescriptorPool> VulkanRenderer::createDescriptorPool(const DescriptorPool::Settings& settings)
+{
+	auto object = std::make_shared<VulkanDescriptorPool>(settings);
+
+	return std::static_pointer_cast<DescriptorPool>(object);
 }
 
 Ptr<GraphicsPipeline> VulkanRenderer::createGraphicsPipeline(const GraphicsPipeline::Settings& settings)
