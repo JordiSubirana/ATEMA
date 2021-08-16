@@ -366,7 +366,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 	const auto format = Vulkan::getFormat(vkImage->getFormat());
 	const auto size = vkImage->getSize();
 	const auto imageHandle = vkImage->getImageHandle();
-	const auto& layouts = vkImage->getLayouts();
+	auto& layouts = vkImage->getLayouts();
 	auto oldLayouts = layouts;
 
 	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
@@ -417,6 +417,8 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 			0, nullptr,
 			1, &barrier);
 
+		layouts[i - 1] = barrier.newLayout;
+
 		// Which regions will be used for the blit
 		VkImageBlit blit{};
 		blit.srcOffsets[0] = { 0, 0, 0 };
@@ -455,6 +457,8 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 			0, nullptr,
 			1, &barrier);
 
+		layouts[i - 1] = barrier.newLayout;
+
 		if (mipWidth > 1)
 			mipWidth /= 2;
 
@@ -475,6 +479,8 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 		0, nullptr,
 		0, nullptr,
 		1, &barrier);
+
+	layouts[mipLevels - 1] = barrier.newLayout;
 }
 
 void VulkanCommandBuffer::end()
