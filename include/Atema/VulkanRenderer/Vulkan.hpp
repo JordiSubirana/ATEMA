@@ -113,7 +113,7 @@ namespace at
 
 		static VkBufferUsageFlags getBufferUsages(BufferUsage value);
 
-		static VkMemoryPropertyFlags getMemoryProperties(BufferUsage value);
+		static VkMemoryPropertyFlags getMemoryProperties(bool mappable);
 
 		static VkIndexType getIndexType(IndexType value);
 

@@ -629,23 +629,13 @@ VkBufferUsageFlags Vulkan::getBufferUsages(BufferUsage value)
 	return 0;
 }
 
-VkMemoryPropertyFlags Vulkan::getMemoryProperties(BufferUsage value)
+VkMemoryPropertyFlags Vulkan::getMemoryProperties(bool mappable)
 {
-	switch (value)
-	{
-		case BufferUsage::Vertex:
-		case BufferUsage::Index:
-		case BufferUsage::Uniform:
-			return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		case BufferUsage::Transfer:
-			return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		default:
-		{
-			ATEMA_ERROR("Invalid buffer usage");
-		}
-	}
+	// Try to go for device memory unless we need to be mappable
+	if (mappable)
+		return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-	return 0;
+	return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 }
 
 VkIndexType Vulkan::getIndexType(IndexType value)
