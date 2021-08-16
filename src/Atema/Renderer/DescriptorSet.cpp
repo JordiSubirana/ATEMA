@@ -54,3 +54,32 @@ Ptr<DescriptorSetLayout> DescriptorSetLayout::create(const Settings& settings)
 {
 	return Renderer::getInstance().createDescriptorSetLayout(settings);
 }
+
+// DescriptorSet
+DescriptorSet::DescriptorSet()
+{
+}
+
+DescriptorSet::~DescriptorSet()
+{
+}
+
+void DescriptorSet::update(uint32_t binding, const Ptr<Buffer>& buffer)
+{
+	update({ binding }, { 0 }, { { buffer } }, {}, {}, {}, {});
+}
+
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers)
+{
+	update({ binding }, { index }, { buffers }, {}, {}, {}, {});
+}
+
+void DescriptorSet::update(uint32_t binding, const Ptr<Image>& image, const Ptr<Sampler>& sampler)
+{
+	update({}, {}, {}, { binding }, { 0 }, { { image } }, { { sampler } });
+}
+
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<Image>>& images, const std::vector<Ptr<Sampler>>& samplers)
+{
+	update({}, {}, {}, { binding }, { index }, { images }, { samplers });
+}

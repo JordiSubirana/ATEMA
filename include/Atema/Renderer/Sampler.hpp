@@ -19,26 +19,46 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_SAMPLER_HPP
+#define ATEMA_RENDERER_SAMPLER_HPP
 
-#include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorPool.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Fence.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Sampler.hpp>
-#include <Atema/Renderer/Semaphore.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+
+namespace at
+{
+	class ATEMA_RENDERER_API Sampler : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			Settings() = default;
+			Settings(SamplerFilter filter, bool anisotropy = false);
+
+			SamplerFilter minFilter = SamplerFilter::Nearest;
+			SamplerFilter magFilter = SamplerFilter::Nearest;
+
+			SamplerAddressMode addressModeU = SamplerAddressMode::Repeat;
+			SamplerAddressMode addressModeV = SamplerAddressMode::Repeat;
+			SamplerAddressMode addressModeW = SamplerAddressMode::Repeat;
+
+			bool anisotropyEnable = false;
+
+			SamplerFilter mipmapFilter = SamplerFilter::Nearest;
+			float minLod = 0.0f;
+			float maxLod = -1.0f;
+			float loadBias = 0.0f;
+		};
+		
+		virtual ~Sampler();
+
+		static Ptr<Sampler> create(const Settings& settings);
+		
+	protected:
+		Sampler();
+	};
+}
 
 #endif

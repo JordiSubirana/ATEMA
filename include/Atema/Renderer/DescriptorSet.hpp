@@ -31,6 +31,10 @@
 
 namespace at
 {
+	class Buffer;
+	class Image;
+	class Sampler;
+
 	struct ATEMA_RENDERER_API DescriptorSetBinding
 	{
 		DescriptorSetBinding();
@@ -54,8 +58,33 @@ namespace at
 
 		static Ptr<DescriptorSetLayout> create(const Settings& settings);
 
+		virtual const std::vector<DescriptorSetBinding>& getBindings() const noexcept = 0;
+		
 	protected:
 		DescriptorSetLayout();
+	};
+
+	class ATEMA_RENDERER_API DescriptorSet : public NonCopyable
+	{
+	public:
+		virtual ~DescriptorSet();
+
+		void update(uint32_t binding, const Ptr<Buffer>& buffer);
+		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers);
+		void update(uint32_t binding, const Ptr<Image>& image, const Ptr<Sampler>& sampler);
+		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Image>>& images, const std::vector<Ptr<Sampler>>& samplers);
+
+		virtual void update(
+			const std::vector<uint32_t>& bufferBindings,
+			const std::vector<uint32_t>& bufferIndices,
+			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<uint32_t>& imageSamplerBindings,
+			const std::vector<uint32_t>& imageSamplerIndices,
+			const std::vector<std::vector<Ptr<Image>>>& images,
+			const std::vector<std::vector<Ptr<Sampler>>>& samplers) = 0;
+		
+	protected:
+		DescriptorSet();
 	};
 }
 

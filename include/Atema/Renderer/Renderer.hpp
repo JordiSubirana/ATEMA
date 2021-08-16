@@ -28,12 +28,14 @@
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
+#include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
 
@@ -74,11 +76,13 @@ namespace at
 		
 		// Object creation
 		virtual Ptr<Image> createImage(const Image::Settings& settings) = 0;
+		virtual Ptr<Sampler> createSampler(const Sampler::Settings& settings) = 0;
 		virtual Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) = 0;
 		virtual Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) = 0;
 		virtual Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) = 0;
 		virtual Ptr<Shader> createShader(const Shader::Settings& settings) = 0;
 		virtual Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) = 0;
+		virtual Ptr<DescriptorPool> createDescriptorPool(const DescriptorPool::Settings& settings) = 0;
 		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
 		virtual Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) = 0;
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) = 0;
