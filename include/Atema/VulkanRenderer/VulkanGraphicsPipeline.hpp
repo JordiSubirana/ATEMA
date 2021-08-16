@@ -36,6 +36,7 @@ namespace at
 		virtual ~VulkanGraphicsPipeline();
 
 		VkPipeline getHandle() const noexcept;
+		VkPipelineLayout getLayoutHandle() const noexcept;
 		
 	private:
 		VkPipelineLayout m_pipelineLayout;

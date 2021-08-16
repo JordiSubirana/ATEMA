@@ -340,3 +340,8 @@ VkPipeline VulkanGraphicsPipeline::getHandle() const noexcept
 {
 	return m_pipeline;
 }
+
+VkPipelineLayout VulkanGraphicsPipeline::getLayoutHandle() const noexcept
+{
+	return m_pipelineLayout;
+}
