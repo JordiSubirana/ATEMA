@@ -22,8 +22,10 @@
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
+#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
+#include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 
@@ -32,7 +34,8 @@ using namespace at;
 VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings) :
 	CommandBuffer(),
 	m_commandBuffer(VK_NULL_HANDLE),
-	m_singleUse(settings.singleUse)
+	m_singleUse(settings.singleUse),
+	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -136,6 +139,8 @@ void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
 	auto vkPipeline = std::static_pointer_cast<VulkanGraphicsPipeline>(pipeline);
 
 	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->getHandle());
+
+	m_currentPipelineLayout = vkPipeline->getLayoutHandle();
 }
 
 void VulkanCommandBuffer::endRenderPass()
@@ -159,6 +164,42 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buf
 	vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer->getHandle(), vkDstBuffer->getHandle(), 1, &copyRegion);
 }
 
+void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage)
+{
+	ATEMA_ASSERT(srcBuffer, "Invalid source buffer");
+	ATEMA_ASSERT(dstImage, "Invalid destination image");
+
+	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(srcBuffer);
+	const auto vkImage = std::static_pointer_cast<VulkanImage>(dstImage);
+	const auto layout = vkImage->getLayouts()[0];
+	
+	ATEMA_ASSERT(layout == VK_IMAGE_LAYOUT_GENERAL || layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid image layout");
+
+	const auto size = vkImage->getSize();
+	
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+
+	region.imageSubresource.aspectMask = Vulkan::getAspect(vkImage->getFormat());
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { size.x, size.y, 1 };
+
+	vkCmdCopyBufferToImage(
+		m_commandBuffer,
+		vkBuffer->getHandle(),
+		vkImage->getImageHandle(),
+		layout,
+		1,
+		&region
+	);
+}
+
 void VulkanCommandBuffer::bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding)
 {
 	ATEMA_ASSERT(buffer, "Invalid buffer");
@@ -179,6 +220,15 @@ void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType i
 	vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
 }
 
+void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet)
+{
+	ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
+
+	const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet)->getHandle();
+
+	vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_currentPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
+}
+
 void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
 	vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -187,6 +237,244 @@ void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uin
 void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
 	vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel, uint32_t levelCount)
+{
+	ATEMA_ASSERT(image, "Invalid image");
+
+	const auto vkImage = std::static_pointer_cast<VulkanImage>(image);
+	const auto format = vkImage->getFormat();
+	auto& layouts = vkImage->getLayouts();
+
+	if (levelCount == 0)
+		levelCount = layouts.size() - firstMipLevel;
+
+	const auto oldLayout = layouts[firstMipLevel];
+	const auto newLayout = Vulkan::getLayout(layout, hasDepth(format));
+	
+	if (oldLayout == newLayout)
+		return;
+
+	// Pipeline barriers are used to synchronize resources (ensure we are not writing & reading at the same time)
+	// We can also change layout or change queue family ownership for a resource (when VK_SHARING_MODE_EXCLUSIVE is used)
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+
+	// Change layout
+	barrier.oldLayout = oldLayout; // or VK_IMAGE_LAYOUT_UNDEFINED if we don't care about previous content
+	barrier.newLayout = newLayout;
+
+	// Change queue ownership (indices of the queue families if we want to use it)
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	// Specify image & subResourceRange (used for mipmaps or arrays)
+	barrier.image = vkImage->getImageHandle();
+	barrier.subresourceRange.baseMipLevel = firstMipLevel;
+	barrier.subresourceRange.levelCount = levelCount;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+		if (hasStencil(format))
+		{
+			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+		}
+	}
+	else
+	{
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	}
+
+	// Depends on what happens before and after the barrier
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	// Undefined to transfer destination : we don't need to wait on anything
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		// We don't need to wait : empty access mask
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		// We don't need to wait : earliest possible pipeline stage
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		// Not a real stage for graphics & compute pipelines
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	// Transfer destination to shader reading : shader reads should wait on transfer writes (here fragment shader)
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		// Earliest stage when we'll need to use the depth buffer (here to read)
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+	else
+	{
+		ATEMA_ERROR("Unsupported layout transition");
+	}
+
+	vkCmdPipelineBarrier(
+		m_commandBuffer,
+		// Depends on what happens before and after the barrier
+		sourceStage, // In which pipeline stage the operations occur (before the barrier)
+		destinationStage, // The pipeline stage in which operations will wait on the barrier
+
+		0,
+
+		// All types of pipeline barriers can be used
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	for (uint32_t i = 0; i < levelCount; i++)
+		layouts[i] = newLayout;
+}
+
+void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
+{
+	//TODO: Use mipmaps in different files, to avoid generating it a runtime
+
+	ATEMA_ASSERT(image, "Invalid image");
+
+	const auto vkImage = std::static_pointer_cast<VulkanImage>(image);
+	const auto mipLevels = vkImage->getMipLevels();
+	const auto format = Vulkan::getFormat(vkImage->getFormat());
+	const auto size = vkImage->getSize();
+	const auto imageHandle = vkImage->getImageHandle();
+	const auto& layouts = vkImage->getLayouts();
+	auto oldLayouts = layouts;
+
+	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
+	auto& renderer = VulkanRenderer::getInstance();
+	const auto physicalDevice = renderer.getPhysicalDeviceHandle();
+
+	VkFormatProperties formatProperties;
+	vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+
+	// Here we check in optimal tiling features because our image is in optimal tiling
+	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+	{
+		//TODO: Instead of throwing an error, make a custom mipmap generation without using vkCmdBlitImage
+		ATEMA_ERROR("Texture image format does not support linear blitting");
+	}
+
+	// Set image layout to TransferDst, then we'll transition each mip level to src when needed
+	setImageLayout(image, ImageLayout::TransferDst);
+
+	// Generate mip levels
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = vkImage->getImageHandle();
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage->getFormat());
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = static_cast<int32_t>(size.x);
+	int32_t mipHeight = static_cast<int32_t>(size.y);
+
+	for (uint32_t i = 1; i < mipLevels; i++)
+	{
+		// Transition level i-1 to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+		// Will wait for this level to be filled by previous blit or vkCmdCopyBufferToImage
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(
+			m_commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+		// Which regions will be used for the blit
+		VkImageBlit blit{};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		// Blit (must be submitted to a queue with graphics capability)
+		vkCmdBlitImage(
+			m_commandBuffer,
+			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1, &blit,
+			VK_FILTER_LINEAR);
+
+		// Transition level i-1 to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		// Will wait on the blit command to finish
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		vkCmdPipelineBarrier(
+			m_commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+		if (mipWidth > 1)
+			mipWidth /= 2;
+
+		if (mipHeight > 1)
+			mipHeight /= 2;
+	}
+
+	// Transition the last level to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(
+		m_commandBuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier);
 }
 
 void VulkanCommandBuffer::end()

@@ -47,13 +47,21 @@ namespace at
 
 		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;
 
+		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage) override;
+		
 		void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) override;
 
 		void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) override;
 
+		void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet) override;
+		
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
+
+		void setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel = 0, uint32_t levelCount = 0) override;
+
+		void createMipmaps(const Ptr<Image>& image) override;
 		
 		void end() override;
 		
@@ -61,6 +69,7 @@ namespace at
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;
 		bool m_singleUse;
+		VkPipelineLayout m_currentPipelineLayout;
 	};
 }
 
