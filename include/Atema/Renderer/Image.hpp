@@ -24,6 +24,7 @@
 
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Vector.hpp>
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Enums.hpp>
 
@@ -49,6 +50,10 @@ namespace at
 		static Ptr<Image> create(const Settings& settings);
 
 		virtual ImageFormat getFormat() const noexcept = 0;
+
+		virtual Vector2u getSize() const noexcept = 0;
+
+		virtual uint32_t getMipLevels() const noexcept = 0;
 		
 	protected:
 		Image();
