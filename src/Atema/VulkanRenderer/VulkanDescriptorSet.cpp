@@ -154,19 +154,16 @@ void VulkanDescriptorSet::update(
 		descriptorImages.resize(descriptorImages.size() + 1);
 
 		auto& descriptors = descriptorImages.back();
-		descriptors.reserve(images[i].size());
+		descriptors.resize(images[i].size());
 
 		for (size_t j = 0; j < descriptors.size(); j++)
 		{
 			auto image = std::static_pointer_cast<VulkanImage>(images[i][j]);
 			auto sampler = std::static_pointer_cast<VulkanSampler>(samplers[i][j]);
 
-			VkDescriptorImageInfo descriptor{};
-			descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptor.imageView = image->getViewHandle();
-			descriptor.sampler = sampler->getHandle();
-
-			descriptors.push_back(descriptor);
+			descriptors[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			descriptors[j].imageView = image->getViewHandle();
+			descriptors[j].sampler = sampler->getHandle();
 		}
 
 		VkWriteDescriptorSet descriptorWrite{};
