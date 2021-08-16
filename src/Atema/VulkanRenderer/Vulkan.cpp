@@ -663,3 +663,50 @@ VkIndexType Vulkan::getIndexType(IndexType value)
 	return VK_INDEX_TYPE_UINT32;
 }
 
+VkFilter Vulkan::getSamplerFilter(SamplerFilter value)
+{
+	switch (value)
+	{
+		case SamplerFilter::Nearest: return VK_FILTER_NEAREST;
+		case SamplerFilter::Linear: return VK_FILTER_LINEAR;
+		default:
+		{
+			ATEMA_ERROR("Invalid sampler filter");
+		}
+	}
+
+	return VK_FILTER_NEAREST;
+}
+
+VkSamplerAddressMode Vulkan::getSamplerAddressMode(SamplerAddressMode value)
+{
+	switch (value)
+	{
+		case SamplerAddressMode::Repeat: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case SamplerAddressMode::MirroredRepeat: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case SamplerAddressMode::ClampToEdge: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case SamplerAddressMode::ClampToBorder: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		default:
+		{
+			ATEMA_ERROR("Invalid sampler address mode");
+		}
+	}
+
+	return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+VkSamplerMipmapMode Vulkan::getSamplerMipmapMode(SamplerFilter value)
+{
+	switch (value)
+	{
+		case SamplerFilter::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		case SamplerFilter::Linear: return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		default:
+		{
+			ATEMA_ERROR("Invalid sampler filter");
+		}
+	}
+
+	return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+}
+

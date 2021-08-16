@@ -116,6 +116,12 @@ namespace at
 		static VkMemoryPropertyFlags getMemoryProperties(BufferUsage value);
 
 		static VkIndexType getIndexType(IndexType value);
+
+		static VkFilter getSamplerFilter(SamplerFilter value);
+
+		static VkSamplerAddressMode getSamplerAddressMode(SamplerAddressMode value);
+
+		static VkSamplerMipmapMode getSamplerMipmapMode(SamplerFilter value);
 	};
 }
 
