@@ -5,9 +5,17 @@
 #include <map>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tinyobjloader/tiny_obj_loader.h>
+
 using namespace at;
 
 const std::filesystem::path rsc_path = "../../examples/Sandbox/Resources/";
+const std::filesystem::path model_path = rsc_path / "Models/LampPost.obj";
+const std::filesystem::path model_texture_path = rsc_path / "Textures/LampPost_Color.png";
 
 // #1 - BENCHMARK SPARSE SET
 void benchmarkSparseSet()
@@ -278,10 +286,71 @@ void benchmarkSparseSetUnion()
 // Application
 
 // #4 - Basic application
+struct BasicVertex
+{
+	Vector3f pos;
+	Vector3f color;
+	Vector2f texCoord;
+
+	bool operator==(const BasicVertex& other) const
+	{
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
+};
+
+struct TransformBufferElement
+{
+	Matrix4f model;
+	Matrix4f view;
+	Matrix4f proj;
+};
+
+float toRadians(float degrees)
+{
+	return degrees * 3.14159f / 180.0f;
+}
+
+float toDegrees(float radians)
+{
+	return radians * 180.0f / 3.14159f;
+}
+
+namespace std
+{
+	template<> struct hash<Vector3f>
+	{
+		size_t operator()(Vector3f const& vertex) const noexcept
+		{
+			size_t h1 = std::hash<double>()(vertex.x);
+			size_t h2 = std::hash<double>()(vertex.y);
+			size_t h3 = std::hash<double>()(vertex.z);
+			return (h1 ^ (h2 << 1)) ^ h3;
+		}
+	};
+
+	template<> struct hash<Vector2f>
+	{
+		size_t operator()(Vector2f const& vertex) const noexcept
+		{
+			return std::hash<Vector3f>()({ vertex.x, vertex.y, 0.0f });
+		}
+	};
+
+	template<> struct hash<BasicVertex>
+	{
+		size_t operator()(BasicVertex const& vertex) const noexcept
+		{
+			return ((hash<Vector3f>()(vertex.pos) ^
+				(hash<Vector3f>()(vertex.color) << 1)) >> 1) ^
+				(hash<Vector2f>()(vertex.texCoord) << 1);
+		}
+	};
+}
+
 class TestLayer : public ApplicationLayer
 {
 public:
-	TestLayer()
+	TestLayer() : totalTime(0.0f)
 	{
 		initialize();
 	}
@@ -289,6 +358,20 @@ public:
 	~TestLayer()
 	{
 		Renderer::getInstance().waitForIdle();
+
+		uniformBuffers.clear();
+
+		sampler.reset();
+
+		texture.reset();
+
+		indexBuffer.reset();
+		
+		vertexBuffer.reset();
+
+		descriptorSets.clear();
+		
+		descriptorPool.reset();
 
 		renderFinishedSemaphores.clear();
 
@@ -323,6 +406,7 @@ public:
 	{
 		maxFramesInFlight = 2;
 		currentFrame = 0;
+		indexCount = 0;
 
 		Renderer::Settings settings;
 		settings.maxFramesInFlight = maxFramesInFlight;
@@ -385,6 +469,13 @@ public:
 
 		descriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 
+		// Descriptor pool
+		DescriptorPool::Settings descriptorPoolSettings;
+		descriptorPoolSettings.layout = descriptorSetLayout;
+		descriptorPoolSettings.pageSize = maxFramesInFlight;
+		
+		descriptorPool = DescriptorPool::create(descriptorPoolSettings);
+		
 		// Graphics pipeline
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
@@ -432,11 +523,239 @@ public:
 			imageAvailableSemaphores.push_back(Semaphore::create());
 			renderFinishedSemaphores.push_back(Semaphore::create());
 		}
+
+		// Loading model & texture
+		loadModel();
+		loadTexture();
+
+		// Create uniform buffers (1 per frame in flight)
+		for (uint32_t i = 0; i < maxFramesInFlight; i++)
+		{
+			uniformBuffers.push_back(Buffer::create({ BufferUsage::Uniform, sizeof(TransformBufferElement), true }));
+		}
+
+		// Create descriptor sets
+		for (uint32_t i = 0; i < maxFramesInFlight; i++)
+		{
+			auto descriptorSet = descriptorPool->createSet();
+			
+			descriptorSet->update(0, uniformBuffers[i]);
+			descriptorSet->update(1, texture, sampler);
+
+			descriptorSets.push_back(descriptorSet);
+		}
 	}
 
 	void recreateSwapChain()
 	{
 		
+	}
+
+	void loadModel()
+	{
+		std::vector<BasicVertex> modelVertices;
+		std::vector<uint32_t> modelIndices;
+
+		tinyobj::attrib_t attrib;
+		std::vector<tinyobj::shape_t> shapes;
+		std::vector<tinyobj::material_t> materials;
+		std::string warn, err;
+
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path.string().c_str()))
+		{
+			ATEMA_ERROR(warn + err);
+		}
+
+		std::unordered_map<BasicVertex, uint32_t> uniqueVertices{};
+
+		for (const auto& shape : shapes)
+		{
+			for (const auto& index : shape.mesh.indices)
+			{
+				BasicVertex vertex;
+
+				vertex.pos =
+				{
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+				};
+
+				//vertex.texCoord =
+				//{
+				//	attrib.texcoords[2 * index.texcoord_index + 0],
+				//	attrib.texcoords[2 * index.texcoord_index + 1]
+				//};
+
+				vertex.texCoord =
+				{
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - attrib.texcoords[2 * index.texcoord_index + 1] // Flip vertical component of texcoord
+				};
+
+				vertex.color = { 1.0f, 1.0f, 1.0f };
+
+				// This method may duplicate vertices and we don't want that
+				//m_modelVertices.push_back(vertex);
+				//m_modelIndices.push_back(m_modelIndices.size());
+
+				if (uniqueVertices.count(vertex) == 0)
+				{
+					uniqueVertices[vertex] = static_cast<uint32_t>(modelVertices.size());
+					modelVertices.push_back(vertex);
+				}
+
+				modelIndices.push_back(uniqueVertices[vertex]);
+			}
+		}
+
+		// Create vertex buffer
+		{
+			// Fill staging buffer
+			size_t bufferSize = sizeof(modelVertices[0]) * modelVertices.size();
+
+			auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+
+			auto bufferData = stagingBuffer->map();
+
+			memcpy(bufferData, static_cast<void*>(modelVertices.data()), static_cast<size_t>(bufferSize));
+
+			stagingBuffer->unmap();
+
+			// Create vertex buffer
+			vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
+
+			// Copy staging buffer to vertex buffer
+			auto commandBuffer = CommandBuffer::create({ commandPools[0], true });
+
+			commandBuffer->begin();
+
+			commandBuffer->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+			
+			commandBuffer->end();
+			
+			auto fence = Fence::create({});
+
+			Renderer::getInstance().submit(
+				{ commandBuffer },
+				{},
+				{},
+				{},
+				fence);
+
+			// Wait for the command to be done
+			fence->wait();
+		}
+
+		// Create index buffer
+		{
+			// Fill staging buffer
+			size_t bufferSize = sizeof(modelIndices[0]) * modelIndices.size();
+
+			auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+
+			auto bufferData = stagingBuffer->map();
+
+			memcpy(bufferData, static_cast<void*>(modelIndices.data()), static_cast<size_t>(bufferSize));
+
+			stagingBuffer->unmap();
+
+			// Create vertex buffer
+			indexBuffer = Buffer::create({ BufferUsage::Index, bufferSize });
+
+			// Copy staging buffer to index buffer
+			auto commandBuffer = CommandBuffer::create({ commandPools[0], true });
+
+			commandBuffer->begin();
+
+			commandBuffer->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+			commandBuffer->end();
+
+			auto fence = Fence::create({});
+
+			Renderer::getInstance().submit(
+				{ commandBuffer },
+				{},
+				{},
+				{},
+				fence);
+
+			// Wait for the command to be done
+			fence->wait();
+		}
+
+		indexCount = modelIndices.size();
+	}
+
+	void loadTexture()
+	{
+		// Load the texture data
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(model_texture_path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		size_t imageSize = texWidth * texHeight * 4;
+
+		// std::max for the largest dimension, std::log2 to find how many times we can divide by 2
+		// std::floor handles the case when the dimension is not power of 2, +1 to add a mip level to the original image
+		auto textureMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
+		if (!pixels)
+			ATEMA_ERROR("Failed to load texture image");
+
+		// Fill staging buffer
+		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, imageSize, true });
+
+		auto bufferData = stagingBuffer->map();
+
+		memcpy(bufferData, pixels, imageSize);
+
+		stagingBuffer->unmap();
+
+		// Free image data
+		stbi_image_free(pixels);
+
+		// Create image
+		Image::Settings imageSettings;
+		imageSettings.format = ImageFormat::RGBA8_SRGB;
+		imageSettings.width = texWidth;
+		imageSettings.height = texHeight;
+		imageSettings.mipLevels = textureMipLevels;
+		imageSettings.usages = ImageUsage::ShaderInput | ImageUsage::TransferDst | ImageUsage::TransferSrc;
+
+		texture = Image::create(imageSettings);
+
+		// Copy staging buffer to index buffer
+		auto commandBuffer = CommandBuffer::create({ commandPools[0], true });
+
+		commandBuffer->begin();
+
+		commandBuffer->setImageLayout(texture, ImageLayout::TransferDst);
+		
+		commandBuffer->copyBuffer(stagingBuffer, texture);
+
+		commandBuffer->createMipmaps(texture);
+
+		commandBuffer->setImageLayout(texture, ImageLayout::ShaderInput);
+
+		commandBuffer->end();
+
+		auto fence = Fence::create({});
+
+		Renderer::getInstance().submit(
+			{ commandBuffer },
+			{},
+			{},
+			{},
+			fence);
+
+		// Wait for the command to be done
+		fence->wait();
+
+		// Create sampler
+		Sampler::Settings samplerSettings(SamplerFilter::Linear, true);
+
+		sampler = Sampler::create(samplerSettings);
 	}
 	
 	void onEvent(Event& event) override
@@ -480,6 +799,8 @@ public:
 		// Prepare command buffer
 		auto& commandPool = commandPools[currentFrame];
 		auto& framebuffer = framebuffers[imageIndex];
+		auto& uniformBuffer = uniformBuffers[currentFrame];
+		auto& descriptorSet = descriptorSets[currentFrame];
 
 		auto commandBuffer = CommandBuffer::create({ commandPool });
 
@@ -493,6 +814,14 @@ public:
 		commandBuffer->beginRenderPass(renderPass, framebuffer, clearValues);
 
 		commandBuffer->bindPipeline(pipeline);
+
+		commandBuffer->bindVertexBuffer(vertexBuffer, 0);
+		
+		commandBuffer->bindIndexBuffer(indexBuffer, IndexType::U32);
+
+		commandBuffer->bindDescriptorSet(descriptorSet);
+
+		commandBuffer->drawIndexed(indexCount);
 
 		commandBuffer->endRenderPass();
 
@@ -529,9 +858,35 @@ public:
 		// Advance frame
 		currentFrame = (currentFrame + 1) % maxFramesInFlight;
 	}
+
+	void updateUniformBuffer()
+	{
+		auto& buffer = uniformBuffers[currentFrame];
+		auto windowSize = window->getSize();
+
+		Vector3f rotation;
+		rotation.z = totalTime * toRadians(45.0f);
+
+		Matrix4f basisChange = rotation4f({ toRadians(90.0f), 0.0f, 0.0f });
+
+		TransformBufferElement transforms{};
+		transforms.model = rotation4f(rotation) * basisChange;
+		transforms.view = lookAt({ 80.0f, 0.0f, 80.0f }, { 0.0f, 0.0f, 15.0f }, { 0.0f, 0.0f, 1.0f });
+		transforms.proj = perspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
+
+		transforms.proj[1][1] *= -1;
+
+		void* data = buffer->map();
+
+		memcpy(data, static_cast<void*>(&transforms), sizeof(TransformBufferElement));
+
+		buffer->unmap();
+	}
 	
 	void update(TimeStep ms) override
 	{
+		totalTime += ms.getSeconds();
+
 		if (window->shouldClose())
 		{
 			Application::instance().close();
@@ -540,6 +895,8 @@ public:
 
 		window->processEvents();
 
+		updateUniformBuffer();
+		
 		drawFrame();
 		
 		window->swapBuffers();
@@ -560,6 +917,19 @@ public:
 	std::vector<Ptr<Fence>> imageFences;
 	std::vector<Ptr<Semaphore>> imageAvailableSemaphores;
 	std::vector<Ptr<Semaphore>> renderFinishedSemaphores;
+	Ptr<DescriptorPool> descriptorPool;
+
+	Ptr<Buffer> vertexBuffer;
+	Ptr<Buffer> indexBuffer;
+	Ptr<Image> texture;
+	Ptr<Sampler> sampler;
+	std::vector<Ptr<Buffer>> uniformBuffers;
+	std::vector<Ptr<DescriptorSet>> descriptorSets;
+
+	uint32_t indexCount;
+
+	float totalTime;
+
 };
 
 void basicApplication()
