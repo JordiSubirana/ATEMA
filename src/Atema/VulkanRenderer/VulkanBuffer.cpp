@@ -29,7 +29,8 @@ VulkanBuffer::VulkanBuffer(const Buffer::Settings& settings) :
 	m_device(VK_NULL_HANDLE),
 	m_buffer(VK_NULL_HANDLE),
 	m_memory(VK_NULL_HANDLE),
-	m_usage(settings.usage)
+	m_usage(settings.usage),
+	m_mappable(settings.mappable)
 {
 	ATEMA_ASSERT(settings.byteSize != 0, "Invalid buffer size");
 
@@ -54,7 +55,7 @@ VulkanBuffer::VulkanBuffer(const Buffer::Settings& settings) :
 	allocInfo.allocationSize = memRequirements.size;
 	// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : Ensure we can map the memory into CPU visible memory
 	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Ensure the memory can be written at the time we specify it
-	allocInfo.memoryTypeIndex = renderer.findMemoryType(memRequirements.memoryTypeBits, Vulkan::getMemoryProperties(settings.usage));
+	allocInfo.memoryTypeIndex = renderer.findMemoryType(memRequirements.memoryTypeBits, Vulkan::getMemoryProperties(settings.mappable));
 
 	//TODO: Should not be called for individual buffers
 	// Check physical device's maxMemoryAllocationCount
@@ -78,9 +79,9 @@ VkBuffer VulkanBuffer::getHandle() const noexcept
 
 void* VulkanBuffer::map(size_t byteOffset, size_t byteSize)
 {
-	ATEMA_ASSERT(m_usage == BufferUsage::Transfer, "Only transfer buffers can be mapped");
+	ATEMA_ASSERT(m_mappable, "Only mappable buffers can be mapped");
 	
-	if (m_usage == BufferUsage::Transfer)
+	if (m_mappable)
 	{
 		void* data = nullptr;
 
@@ -97,7 +98,7 @@ void* VulkanBuffer::map(size_t byteOffset, size_t byteSize)
 
 void VulkanBuffer::unmap()
 {
-	if (m_usage == BufferUsage::Transfer)
+	if (m_mappable)
 	{
 		vkUnmapMemory(m_device, m_memory);
 	}

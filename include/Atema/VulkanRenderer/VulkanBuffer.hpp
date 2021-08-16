@@ -45,6 +45,7 @@ namespace at
 		VkBuffer m_buffer;
 		VkDeviceMemory m_memory;
 		BufferUsage m_usage;
+		bool m_mappable;
 	};
 }
 
