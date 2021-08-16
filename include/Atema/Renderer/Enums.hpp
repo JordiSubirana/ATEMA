@@ -328,6 +328,20 @@ namespace at
 		U16,
 		U32
 	};
+
+	enum class SamplerFilter
+	{
+		Nearest,
+		Linear
+	};
+
+	enum class SamplerAddressMode
+	{
+		Repeat,
+		MirroredRepeat,
+		ClampToEdge,
+		ClampToBorder
+	};
 }
 
 #endif
