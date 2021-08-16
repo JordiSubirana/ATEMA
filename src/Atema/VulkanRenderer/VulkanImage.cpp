@@ -30,7 +30,10 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 	m_image(VK_NULL_HANDLE),
 	m_view(VK_NULL_HANDLE),
 	m_memory(VK_NULL_HANDLE),
-	m_format(settings.format)
+	m_format(settings.format),
+	m_layouts(settings.mipLevels, VK_IMAGE_LAYOUT_UNDEFINED),
+	m_size(settings.width, settings.height),
+	m_mipLevels(settings.mipLevels)
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -87,7 +90,10 @@ VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlag
 	m_image(imageHandle),
 	m_view(VK_NULL_HANDLE),
 	m_memory(VK_NULL_HANDLE),
-	m_format(Vulkan::getFormat(format))
+	m_format(Vulkan::getFormat(format)),
+	m_layouts(1, VK_IMAGE_LAYOUT_UNDEFINED),
+	m_size(0, 0),
+	m_mipLevels(1)
 {
 	auto& renderer = VulkanRenderer::getInstance();
 	auto device = renderer.getLogicalDeviceHandle();
@@ -118,9 +124,24 @@ VkImageView VulkanImage::getViewHandle() const noexcept
 	return m_view;
 }
 
+std::vector<VkImageLayout>& VulkanImage::getLayouts() noexcept
+{
+	return m_layouts;
+}
+
 ImageFormat VulkanImage::getFormat() const noexcept
 {
 	return m_format;
+}
+
+Vector2u VulkanImage::getSize() const noexcept
+{
+	return m_size;
+}
+
+uint32_t VulkanImage::getMipLevels() const noexcept
+{
+	return m_mipLevels;
 }
 
 void VulkanImage::createView(VkDevice device, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels)
