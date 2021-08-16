@@ -32,7 +32,7 @@ namespace at
 	class ATEMA_RENDERER_API Sampler : public NonCopyable
 	{
 	public:
-		struct Settings
+		struct ATEMA_RENDERER_API Settings
 		{
 			Settings() = default;
 			Settings(SamplerFilter filter, bool anisotropy = false);
