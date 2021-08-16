@@ -36,6 +36,7 @@ namespace at
 		{
 			BufferUsage usage = BufferUsage::Vertex;
 			size_t byteSize = 0;
+			bool mappable = false;
 		};
 
 		virtual ~Buffer();
