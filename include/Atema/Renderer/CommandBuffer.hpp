@@ -33,9 +33,11 @@ namespace at
 {
 	class Buffer;
 	class CommandPool;
-	class RenderPass;
+	class DescriptorSet;
 	class Framebuffer;
 	class GraphicsPipeline;
+	class Image;
+	class RenderPass;
 
 	class ATEMA_RENDERER_API CommandBuffer : public NonCopyable
 	{
@@ -72,13 +74,21 @@ namespace at
 
 		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset = 0, size_t dstOffset = 0) = 0;
 
+		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage) = 0;
+		
 		virtual void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) = 0;
 
 		virtual void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) = 0;
 
+		virtual void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet) = 0;
+		
 		virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 
 		virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
+
+		virtual void setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel = 0, uint32_t levelCount = 0) = 0;
+
+		virtual void createMipmaps(const Ptr<Image>& image) = 0;
 		
 		virtual void end() = 0;
 		
