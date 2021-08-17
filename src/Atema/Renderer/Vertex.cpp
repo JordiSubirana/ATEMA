@@ -23,14 +23,7 @@
 
 using namespace at;
 
-
-VertexAttribute::VertexAttribute(Role role, Format format) :
-	VertexAttribute(static_cast<unsigned>(role), format)
-{
-}
-
-VertexAttribute::VertexAttribute(unsigned role, Format format) :
-	role(role),
+VertexAttribute::VertexAttribute(Format format) :
 	format(format)
 {
 }

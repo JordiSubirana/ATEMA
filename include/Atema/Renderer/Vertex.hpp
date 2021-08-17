@@ -32,20 +32,6 @@ namespace at
 {
 	struct ATEMA_RENDERER_API VertexAttribute
 	{
-		enum class Role
-		{
-			Position,
-			Color,
-			Texture,
-			Normal,
-			Tangent,
-			Binormal,
-			BoneID,
-			BoneWeight,
-
-			Custom // From this value the user can define new roles
-		};
-
 		enum class Format
 		{
 			R8_UINT,
@@ -110,12 +96,10 @@ namespace at
 		};
 
 		VertexAttribute() = delete;
-		VertexAttribute(Role role, Format format);
-		VertexAttribute(unsigned role, Format format); // For custom roles
-
+		VertexAttribute(Format format);
+		
 		size_t getByteSize() const;
 		
-		unsigned role;
 		Format format;
 	};
 
