@@ -357,8 +357,10 @@ public:
 
 	~TestLayer()
 	{
-		Renderer::getInstance().waitForIdle();
+		// SwapChain resources
+		destroySwapChain();
 
+		// Frame resources
 		uniformBuffers.clear();
 
 		sampler.reset();
@@ -385,18 +387,11 @@ public:
 
 		commandPools.clear();
 
-		pipeline.reset();
-
 		descriptorSetLayout.reset();
-
-		framebuffers.clear();
-
-		depthImage.reset();
 
 		renderPass.reset();
 
-		swapChain.reset();
-
+		// Window & Renderer
 		window.reset();
 		
 		Renderer::destroy();
@@ -420,10 +415,6 @@ public:
 
 		auto windowSize = window->getSize();
 
-		swapChain = SwapChain::create({ window, ImageFormat::BGRA8_SRGB });
-
-		auto swapChainImageCount = swapChain->getImages().size();
-		
 		// RenderPass
 		RenderPass::Settings renderPassSettings;
 		renderPassSettings.attachments.resize(2);
@@ -432,32 +423,6 @@ public:
 		renderPassSettings.attachments[1].format = ImageFormat::D32F;
 
 		renderPass = RenderPass::create(renderPassSettings);
-
-		// Depth image
-		Image::Settings depthSettings;
-		depthSettings.width = windowSize.x;
-		depthSettings.height = windowSize.y;
-		depthSettings.format = ImageFormat::D32F;
-		depthSettings.usages = ImageUsage::RenderTarget;
-
-		depthImage = Image::create(depthSettings);
-
-		// Framebuffers (one per swapchain image)
-		Framebuffer::Settings framebufferSettings;
-		framebufferSettings.renderPass = renderPass;
-		framebufferSettings.width = windowSize.x;
-		framebufferSettings.height = windowSize.y;
-
-		for (auto& image : swapChain->getImages())
-		{
-			framebufferSettings.images =
-			{
-				image,
-				depthImage
-			};
-
-			framebuffers.push_back(Framebuffer::create(framebufferSettings));
-		}
 
 		// Descriptor set layout
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
@@ -476,30 +441,6 @@ public:
 		
 		descriptorPool = DescriptorPool::create(descriptorPoolSettings);
 		
-		// Graphics pipeline
-		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
-		pipelineSettings.viewport.size.y = static_cast<float>(windowSize.y);
-		pipelineSettings.scissor.size = windowSize;
-		pipelineSettings.vertexShader = Shader::create({ rsc_path / "Shaders/vert.spv" });
-		pipelineSettings.fragmentShader = Shader::create({ rsc_path / "Shaders/frag.spv" });
-		pipelineSettings.renderPass = renderPass;
-		pipelineSettings.descriptorSetLayout = descriptorSetLayout;
-		pipelineSettings.vertexInput.attributes =
-		{
-			{ VertexAttribute::Role::Position, VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Role::Color, VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Role::Texture, VertexAttribute::Format::RG32_SFLOAT }
-		};
-		pipelineSettings.vertexInput.inputs =
-		{
-			{ 0, 0 },
-			{ 0, 1 },
-			{ 0, 2 }
-		};
-
-		pipeline = GraphicsPipeline::create(pipelineSettings);
-
 		// Command pools (1 per frame in flight per thread)
 		for (uint32_t i = 0; i < maxFramesInFlight; i++)
 		{
@@ -514,8 +455,6 @@ public:
 		{
 			fences.push_back(Fence::create({ true }));
 		}
-
-		imageFences.resize(swapChainImageCount);
 
 		// Semaphores (1 per frame in flight per thread)
 		for (uint32_t i = 0; i < maxFramesInFlight; i++)
@@ -544,11 +483,104 @@ public:
 
 			descriptorSets.push_back(descriptorSet);
 		}
+
+		createSwapChain();
 	}
 
 	void recreateSwapChain()
 	{
-		
+		// If window is minimized, we just pause it until it shows again
+		auto size = window->getSize();
+
+		while (size.x == 0 || size.y == 0)
+		{
+			size = window->getSize();
+			window->processEvents();
+		}
+
+		// Destroy swap chain resources
+		destroySwapChain();
+
+		// Create swap chain resources
+		createSwapChain();
+	}
+
+	// SwapChain / DepthImage / Framebuffers / GraphicsPipeline / Image Fences
+	void createSwapChain()
+	{
+		auto windowSize = window->getSize();
+
+		swapChain = SwapChain::create({ window, ImageFormat::BGRA8_SRGB });
+
+		auto swapChainImageCount = swapChain->getImages().size();
+
+		// Depth image
+		Image::Settings depthSettings;
+		depthSettings.width = windowSize.x;
+		depthSettings.height = windowSize.y;
+		depthSettings.format = ImageFormat::D32F;
+		depthSettings.usages = ImageUsage::RenderTarget;
+
+		depthImage = Image::create(depthSettings);
+
+		// Framebuffers (one per swapchain image)
+		Framebuffer::Settings framebufferSettings;
+		framebufferSettings.renderPass = renderPass;
+		framebufferSettings.width = windowSize.x;
+		framebufferSettings.height = windowSize.y;
+
+		for (auto& image : swapChain->getImages())
+		{
+			framebufferSettings.images =
+			{
+				image,
+				depthImage
+			};
+
+			framebuffers.push_back(Framebuffer::create(framebufferSettings));
+		}
+
+		// Graphics pipeline
+		GraphicsPipeline::Settings pipelineSettings;
+		pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
+		pipelineSettings.viewport.size.y = static_cast<float>(windowSize.y);
+		pipelineSettings.scissor.size = windowSize;
+		pipelineSettings.vertexShader = Shader::create({ rsc_path / "Shaders/vert.spv" });
+		pipelineSettings.fragmentShader = Shader::create({ rsc_path / "Shaders/frag.spv" });
+		pipelineSettings.renderPass = renderPass;
+		pipelineSettings.descriptorSetLayout = descriptorSetLayout;
+		pipelineSettings.vertexInput.attributes =
+		{
+			{ VertexAttribute::Role::Position, VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Role::Color, VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Role::Texture, VertexAttribute::Format::RG32_SFLOAT }
+		};
+		pipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0 },
+			{ 0, 1 },
+			{ 0, 2 }
+		};
+
+		pipeline = GraphicsPipeline::create(pipelineSettings);
+
+		imageFences.resize(swapChainImageCount);
+	}
+
+	void destroySwapChain()
+	{
+		// Resources may be in use, wait until it's not the case anymore
+		Renderer::getInstance().waitForIdle();
+
+		//imageFences.clear();
+
+		pipeline.reset();
+
+		framebuffers.clear();
+
+		depthImage.reset();
+
+		swapChain.reset();
 	}
 
 	void loadModel()
@@ -776,13 +808,13 @@ public:
 		uint32_t imageIndex;
 		auto acquireResult = swapChain->acquireNextImage(imageIndex, imageAvailableSemaphore);
 
-		if (acquireResult == SwapChain::AcquireResult::OutOfDate ||
-			acquireResult == SwapChain::AcquireResult::Suboptimal)
+		if (acquireResult == SwapChainResult::OutOfDate ||
+			acquireResult == SwapChainResult::Suboptimal)
 		{
 			recreateSwapChain();
 			return;
 		}
-		else if (acquireResult != SwapChain::AcquireResult::Success)
+		else if (acquireResult != SwapChainResult::Success)
 		{
 			ATEMA_ERROR("Failed to acquire a valid swapchain image");
 		}
@@ -846,7 +878,7 @@ public:
 			fence);
 
 		// Present swapchain image
-		Renderer::getInstance().present(
+		acquireResult = Renderer::getInstance().present(
 			swapChain,
 			imageIndex,
 			submitSignalSemaphores
@@ -857,6 +889,16 @@ public:
 		
 		// Advance frame
 		currentFrame = (currentFrame + 1) % maxFramesInFlight;
+
+		if (acquireResult == SwapChainResult::OutOfDate ||
+			acquireResult == SwapChainResult::Suboptimal)
+		{
+			recreateSwapChain();
+		}
+		else if (acquireResult != SwapChainResult::Success)
+		{
+			ATEMA_ERROR("SwapChain presentation failed");
+		}
 	}
 
 	void updateUniformBuffer()
