@@ -551,9 +551,9 @@ public:
 		pipelineSettings.descriptorSetLayout = descriptorSetLayout;
 		pipelineSettings.vertexInput.attributes =
 		{
-			{ VertexAttribute::Role::Position, VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Role::Color, VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Role::Texture, VertexAttribute::Format::RG32_SFLOAT }
+			{ VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Format::RG32_SFLOAT }
 		};
 		pipelineSettings.vertexInput.inputs =
 		{
