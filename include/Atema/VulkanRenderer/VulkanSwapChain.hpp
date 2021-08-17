@@ -51,11 +51,11 @@ namespace at
 		std::vector<Ptr<Image>>& getImages() noexcept override;
 		const std::vector<Ptr<Image>>& getImages() const noexcept override;
 
-		AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) override;
-		AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) override;
+		SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) override;
+		SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) override;
 		
 	private:
-		AcquireResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
+		SwapChainResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
 		
 		VkDevice m_device;
 		VkSurfaceKHR m_surface;

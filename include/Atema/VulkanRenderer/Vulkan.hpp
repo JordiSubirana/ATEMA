@@ -122,6 +122,8 @@ namespace at
 		static VkSamplerAddressMode getSamplerAddressMode(SamplerAddressMode value);
 
 		static VkSamplerMipmapMode getSamplerMipmapMode(SamplerFilter value);
+
+		static SwapChainResult getSwapChainResult(VkResult value);
 	};
 }
 

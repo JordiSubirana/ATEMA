@@ -700,3 +700,30 @@ VkSamplerMipmapMode Vulkan::getSamplerMipmapMode(SamplerFilter value)
 	return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
+SwapChainResult Vulkan::getSwapChainResult(VkResult value)
+{
+	switch (value)
+	{
+		case VK_SUCCESS:
+			return SwapChainResult::Success;
+		case VK_NOT_READY:
+			return SwapChainResult::NotReady;
+		case VK_SUBOPTIMAL_KHR:
+			return SwapChainResult::Suboptimal;
+		case VK_ERROR_OUT_OF_DATE_KHR:
+		case VK_ERROR_SURFACE_LOST_KHR:
+			return SwapChainResult::OutOfDate;
+		case VK_ERROR_OUT_OF_HOST_MEMORY:
+		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		case VK_ERROR_DEVICE_LOST:
+		case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
+		case VK_TIMEOUT:
+		default:
+		{
+			break;
+		}
+	}
+
+	return SwapChainResult::Error;
+}
+

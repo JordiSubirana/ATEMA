@@ -342,6 +342,20 @@ namespace at
 		ClampToEdge,
 		ClampToBorder
 	};
+
+	enum class SwapChainResult
+	{
+		// Success
+		Success,
+		// Fence/Semaphore/Query not completed yet
+		NotReady,
+		// Can still be used but the swapchain and the window surface properties don't match
+		Suboptimal,
+		// Need to recreate the swapchain
+		OutOfDate,
+		// Unknown error
+		Error
+	};
 }
 
 #endif

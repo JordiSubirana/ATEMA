@@ -236,7 +236,7 @@ const std::vector<Ptr<Image>>& VulkanSwapChain::getImages() const noexcept
 	return m_images;
 }
 
-SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence)
+SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence)
 {
 	ATEMA_ASSERT(fence, "Invalid Fence");
 
@@ -245,7 +245,7 @@ SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex,
 	return acquireNextImage(imageIndex, VK_NULL_HANDLE, vkFence->getHandle());
 }
 
-SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore)
+SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore)
 {
 	ATEMA_ASSERT(semaphore, "Invalid Semaphore");
 
@@ -254,30 +254,9 @@ SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex,
 	return acquireNextImage(imageIndex, vkSemaphore->getHandle(), VK_NULL_HANDLE);
 }
 
-SwapChain::AcquireResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence)
+SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence)
 {
-	auto result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
+	const auto result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
 
-	switch (result)
-	{
-		case VK_SUCCESS: return AcquireResult::Success;
-		case VK_NOT_READY: return AcquireResult::NotReady;
-		case VK_SUBOPTIMAL_KHR: return AcquireResult::Suboptimal;
-		case VK_ERROR_OUT_OF_DATE_KHR:
-		case VK_ERROR_SURFACE_LOST_KHR:
-		{
-			return AcquireResult::OutOfDate;
-		}
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-		case VK_ERROR_DEVICE_LOST:
-		case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
-		case VK_TIMEOUT:
-		default:
-		{
-			break;
-		}
-	}
-
-	return AcquireResult::Error;
+	return Vulkan::getSwapChainResult(result);
 }

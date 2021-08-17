@@ -44,20 +44,6 @@ namespace at
 			ImageFormat format;
 		};
 
-		enum class AcquireResult
-		{
-			// Success
-			Success,
-			// Fence/Semaphore/Query not completed yet
-			NotReady,
-			// Can still be used but the swapchain and the window surface properties don't match
-			Suboptimal,
-			// Need to recreate the swapchain
-			OutOfDate,
-			// Unknown error
-			Error
-		};
-		
 		virtual ~SwapChain();
 
 		static Ptr<SwapChain> create(const Settings& settings);
@@ -65,8 +51,8 @@ namespace at
 		virtual std::vector<Ptr<Image>>& getImages() noexcept = 0;
 		virtual const std::vector<Ptr<Image>>& getImages() const noexcept = 0;
 
-		virtual AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) = 0;
-		virtual AcquireResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) = 0;
+		virtual SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) = 0;
+		virtual SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) = 0;
 		
 	protected:
 		SwapChain();
