@@ -98,7 +98,7 @@ namespace at
 			const std::vector<Ptr<Semaphore>>& signalSemaphores,
 			Ptr<Fence> fence = nullptr) = 0;
 
-		virtual void present(
+		virtual SwapChainResult present(
 			const Ptr<SwapChain>& swapChain,
 			uint32_t imageIndex,
 			const std::vector<Ptr<Semaphore>>& waitSemaphores) = 0;

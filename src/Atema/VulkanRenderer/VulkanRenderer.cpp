@@ -2724,7 +2724,7 @@ void VulkanRenderer::submit(
 	ATEMA_VK_CHECK(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, vkFence));
 }
 
-void VulkanRenderer::present(
+SwapChainResult VulkanRenderer::present(
 	const Ptr<SwapChain>& swapChain,
 	uint32_t imageIndex,
 	const std::vector<Ptr<Semaphore>>& waitSemaphores)
@@ -2755,12 +2755,9 @@ void VulkanRenderer::present(
 	// Array of VkResult values to check for every individual swap chain if presentation was successful
 	//presentInfo.pResults = nullptr; // Optional
 
-	auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+	const auto result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-	{
-		ATEMA_ERROR("SwapChain presentation failed");
-	}
+	return Vulkan::getSwapChainResult(result);
 }
 
 void VulkanRenderer::drawFrame()
