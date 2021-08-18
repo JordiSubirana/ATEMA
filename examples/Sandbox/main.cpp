@@ -9,7 +9,9 @@ using namespace at;
 class TestLayer : public ApplicationLayer
 {
 public:
-	TestLayer()
+	TestLayer() :
+		frameCount(0),
+		frameDuration(0.0f)
 	{
 		initialize();
 	}
@@ -54,6 +56,7 @@ public:
 	void update(TimeStep ms) override
 	{
 		totalTime += ms.getSeconds();
+		frameDuration += ms.getSeconds();
 
 		if (window->shouldClose())
 		{
@@ -66,6 +69,18 @@ public:
 		renderPipeline->update(ms);
 		
 		window->swapBuffers();
+
+		frameCount++;
+
+		if (frameDuration >= 0.5f)
+		{
+			auto fps = static_cast<unsigned>(static_cast<float>(frameCount) / frameDuration);
+
+			window->setTitle("Atema (" + std::to_string(fps) + " fps)");
+
+			frameCount = 0;
+			frameDuration = 0.0f;
+		}
 	}
 
 	uint32_t maxFramesInFlight;
@@ -97,6 +112,9 @@ public:
 	float totalTime;
 
 	Ptr<BasicRenderPipeline> renderPipeline;
+
+	int frameCount;
+	float frameDuration;
 
 };
 
