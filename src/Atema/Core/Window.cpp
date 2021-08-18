@@ -121,6 +121,11 @@ public:
 		return nullptr;
 	}
 
+	void setTitle(const std::string& title)
+	{
+		glfwSetWindowTitle(m_window, title.c_str());
+	}
+
 	bool shouldClose() const noexcept
 	{
 		return glfwWindowShouldClose(m_window);
@@ -174,6 +179,11 @@ Ptr<Window> Window::create(const Window::Settings& description)
 	window->initialize(description);
 	
 	return window;
+}
+
+void Window::setTitle(const std::string& title)
+{
+	m_implementation->setTitle(title);
 }
 
 void Window::initialize(const Settings& description)

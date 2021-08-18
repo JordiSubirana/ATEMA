@@ -59,6 +59,8 @@ namespace at
 
 		static Ptr<Window> create(const Settings& description);
 
+		void setTitle(const std::string& title);
+
 		bool shouldClose() const noexcept;
 
 		void processEvents();
