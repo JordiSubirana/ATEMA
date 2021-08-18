@@ -36,3 +36,15 @@ float TimeStep::getMilliSeconds() const noexcept
 {
 	return m_time;
 }
+
+TimeStep TimeStep::operator+(const TimeStep& other) const noexcept
+{
+	return TimeStep(m_time + other.m_time);
+}
+
+TimeStep& TimeStep::operator+=(const TimeStep& other) noexcept
+{
+	m_time += other.m_time;
+
+	return *this;
+}

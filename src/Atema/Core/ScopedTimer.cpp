@@ -51,3 +51,8 @@ ScopedTimer::~ScopedTimer()
 		m_callback(m_timer.getStep());
 	}
 }
+
+void ScopedTimer::setCallback(const std::function<void(TimeStep)>& callback)
+{
+	m_callback = callback;
+}

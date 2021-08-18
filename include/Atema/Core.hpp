@@ -24,6 +24,7 @@
 
 #include <Atema/Core/Application.hpp>
 #include <Atema/Core/ApplicationLayer.hpp>
+#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/EntityManager.hpp>
 #include <Atema/Core/Error.hpp>

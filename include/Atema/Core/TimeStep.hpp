@@ -35,6 +35,9 @@ namespace at
 		float getSeconds() const noexcept;
 		float getMilliSeconds() const noexcept;
 
+		TimeStep operator+(const TimeStep& other) const noexcept;
+		TimeStep& operator+=(const TimeStep& other) noexcept;
+
 	private:
 		float m_time;
 	};

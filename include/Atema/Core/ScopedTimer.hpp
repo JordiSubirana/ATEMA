@@ -36,6 +36,8 @@ namespace at
 		ScopedTimer(const std::function<void(TimeStep)>& callback);
 		virtual ~ScopedTimer();
 
+		void setCallback(const std::function<void(TimeStep)>& callback);
+
 	private:
 		std::function<void(TimeStep)> m_callback;
 		Timer m_timer;
