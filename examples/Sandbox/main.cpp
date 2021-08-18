@@ -55,6 +55,8 @@ public:
 	
 	void update(TimeStep ms) override
 	{
+		ATEMA_BENCHMARK("Application update")
+
 		totalTime += ms.getSeconds();
 		frameDuration += ms.getSeconds();
 
@@ -74,9 +76,13 @@ public:
 
 		if (frameDuration >= 0.5f)
 		{
-			auto fps = static_cast<unsigned>(static_cast<float>(frameCount) / frameDuration);
+			const auto frameTime = frameDuration / static_cast<float>(frameCount);
+			const auto fps = static_cast<unsigned>(1.0f / frameTime);
 
-			window->setTitle("Atema (" + std::to_string(fps) + " fps)");
+			window->setTitle("Atema (" + std::to_string(fps) + " fps / " + std::to_string(frameTime * 1000.0f) + " ms)");
+
+			BenchmarkManager::getInstance().print(frameCount);
+			BenchmarkManager::getInstance().reset();
 
 			frameCount = 0;
 			frameDuration = 0.0f;

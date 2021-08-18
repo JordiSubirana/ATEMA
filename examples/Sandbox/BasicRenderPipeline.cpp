@@ -21,7 +21,7 @@
 
 #include "BasicRenderPipeline.hpp"
 
-#define OBJECT_ROW_COUNT 11
+#define OBJECT_ROW_COUNT 10
 #define OBJECT_COUNT (OBJECT_ROW_COUNT*OBJECT_ROW_COUNT)
 
 using namespace at;
@@ -169,18 +169,26 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, TimeStep elapsedTime, 
 	updateUniformBuffers(frameIndex);
 
 	beginRenderPass();
-	
-	commandBuffer->bindPipeline(m_pipeline);
 
-	for (auto& object : m_objects)
 	{
-		commandBuffer->bindVertexBuffer(object->vertexBuffer, 0);
+		ATEMA_BENCHMARK("Bind Pipeline");
+		
+		commandBuffer->bindPipeline(m_pipeline);
+	}
 
-		commandBuffer->bindIndexBuffer(object->indexBuffer, IndexType::U32);
+	{
+		ATEMA_BENCHMARK("CommandBuffer objects commands");
+		
+		for (auto& object : m_objects)
+		{
+			commandBuffer->bindVertexBuffer(object->vertexBuffer, 0);
 
-		commandBuffer->bindDescriptorSet(object->descriptorSets[frameIndex]);
+			commandBuffer->bindIndexBuffer(object->indexBuffer, IndexType::U32);
 
-		commandBuffer->drawIndexed(object->indexCount);
+			commandBuffer->bindDescriptorSet(object->descriptorSets[frameIndex]);
+
+			commandBuffer->drawIndexed(object->indexCount);
+		}
 	}
 
 	endRenderPass();
@@ -188,6 +196,8 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, TimeStep elapsedTime, 
 
 void BasicRenderPipeline::loadResources()
 {
+	ATEMA_BENCHMARK("BasicRenderPipeline::loadResources")
+
 	auto& commandPool = getCommandPools()[0];
 	
 	m_modelData = std::make_shared<ModelData>(model_path, commandPool);
@@ -197,6 +207,8 @@ void BasicRenderPipeline::loadResources()
 
 void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 {
+	ATEMA_BENCHMARK("BasicRenderPipeline::updateUniformBuffers")
+
 	const auto windowSize = getWindow()->getSize();
 
 	const auto scale = 30.0f;
