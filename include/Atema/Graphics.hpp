@@ -23,5 +23,6 @@
 #define ATEMA_GLOBAL_GRAPHICS_HPP
 
 #include <Atema/Graphics/Config.hpp>
+#include <Atema/Graphics/RenderPipeline.hpp>
 
 #endif
