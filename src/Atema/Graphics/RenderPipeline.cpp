@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Graphics/RenderPipeline.hpp>
 #include <Atema/Core/Window.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
@@ -95,7 +96,9 @@ RenderPipeline::~RenderPipeline()
 
 void RenderPipeline::update(TimeStep elapsedTime)
 {
-	m_currentCommandBuffer.reset();
+	ATEMA_BENCHMARK_TAG(rootBenchmark, "RenderPipeline::update")
+
+		m_currentCommandBuffer.reset();
 
 	// Wait on fence to be signaled (max frames in flight)
 	auto& fence = m_fences[m_currentFrame];
@@ -106,7 +109,9 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	auto& imageAvailableSemaphore = m_imageAvailableSemaphores[m_currentFrame];
 
 	uint32_t imageIndex;
-	auto acquireResult = m_swapChain->acquireNextImage(imageIndex, imageAvailableSemaphore);
+	SwapChainResult acquireResult = SwapChainResult::Success;
+
+	m_swapChain->acquireNextImage(imageIndex, imageAvailableSemaphore);
 
 	if (acquireResult == SwapChainResult::OutOfDate ||
 		acquireResult == SwapChainResult::Suboptimal)
@@ -122,7 +127,9 @@ void RenderPipeline::update(TimeStep elapsedTime)
 
 	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 	if (m_imageFences[imageIndex])
+	{
 		m_imageFences[imageIndex]->wait();
+	}
 
 	// Mark the image as now being in use by this frame
 	m_imageFences[imageIndex] = fence;
@@ -136,7 +143,11 @@ void RenderPipeline::update(TimeStep elapsedTime)
 
 	m_currentCommandBuffer->begin();
 
-	setupFrame(m_currentFrame, elapsedTime, m_currentCommandBuffer);
+	{
+		ATEMA_BENCHMARK("RenderPipeline::setupFrame")
+
+			setupFrame(m_currentFrame, elapsedTime, m_currentCommandBuffer);
+	}
 
 	m_currentCommandBuffer->end();
 
@@ -150,21 +161,25 @@ void RenderPipeline::update(TimeStep elapsedTime)
 
 	// Reset fence & submit command buffers to the target queue (works with arrays for performance)
 	fence->reset();
-
+	
 	Renderer::getInstance().submit(
 		submitCommandBuffers,
 		submitWaitSemaphores,
 		submitWaitStages,
 		submitSignalSemaphores,
 		fence);
+	
+	{
+		ATEMA_BENCHMARK("Renderer::present")
 
-	// Present swapchain image
-	acquireResult = Renderer::getInstance().present(
-		m_swapChain,
-		imageIndex,
-		submitSignalSemaphores
-	);
-
+		// Present swapchain image
+		acquireResult = Renderer::getInstance().present(
+			m_swapChain,
+			imageIndex,
+			submitSignalSemaphores
+		);
+	}
+	
 	// Save command buffer
 	m_commandBuffers[m_currentFrame] = m_currentCommandBuffer;
 
