@@ -130,7 +130,7 @@ namespace at
 			StencilState stencilFront;
 			StencilState stencilBack;
 
-			Ptr<DescriptorSetLayout> descriptorSetLayout;
+			std::vector<Ptr<DescriptorSetLayout>> descriptorSetLayouts;
 
 			Ptr<RenderPass> renderPass;
 			
