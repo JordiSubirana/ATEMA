@@ -32,23 +32,70 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 {
 	const auto windowSize = settings.window->getSize();
 
-	// Descriptor set layout
-	DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-	descriptorSetLayoutSettings.bindings =
-	{
-		{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
-		{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment }
-	};
+	//----- OBJECT RESOURCES -----//
 
-	m_descriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	// Descriptor set layout
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
+			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment }
+		};
+
+		m_objectDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	}
 
 	// Descriptor pool
-	DescriptorPool::Settings descriptorPoolSettings;
-	descriptorPoolSettings.layout = m_descriptorSetLayout;
-	descriptorPoolSettings.pageSize = m_maxFramesInFlight * object_count;
+	{
+		DescriptorPool::Settings descriptorPoolSettings;
+		descriptorPoolSettings.layout = m_objectDescriptorSetLayout;
+		descriptorPoolSettings.pageSize = m_maxFramesInFlight * object_count;
 
-	m_descriptorPool = DescriptorPool::create(descriptorPoolSettings);
+		m_objectDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
+	}
 
+	//----- FRAME RESOURCES -----//
+
+	// Descriptor set layout
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
+		};
+
+		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	}
+
+	// Descriptor pool
+	{
+		DescriptorPool::Settings descriptorPoolSettings;
+		descriptorPoolSettings.layout = m_frameDescriptorSetLayout;
+		descriptorPoolSettings.pageSize = m_maxFramesInFlight;
+
+		m_frameDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
+	}
+
+	// Uniform buffers & descriptor sets
+	m_frameUniformBuffers.reserve(m_maxFramesInFlight);
+	m_frameDescriptorSets.reserve(m_maxFramesInFlight);
+
+	for (uint32_t j = 0; j < m_maxFramesInFlight; j++)
+	{
+		auto uniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
+
+		m_frameUniformBuffers.push_back(uniformBuffer);
+
+		auto descriptorSet = m_frameDescriptorPool->createSet();
+
+		descriptorSet->update(0, uniformBuffer);
+
+		m_frameDescriptorSets.push_back(descriptorSet);
+	}
+
+	//----- PIPELINE RESOURCES -----//
+	
 	// Graphics pipeline
 	GraphicsPipeline::Settings pipelineSettings;
 	pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
@@ -57,7 +104,7 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	pipelineSettings.vertexShader = Shader::create({ vert_shader_path });
 	pipelineSettings.fragmentShader = Shader::create({ frag_shader_path });
 	pipelineSettings.renderPass = getRenderPass();
-	pipelineSettings.descriptorSetLayout = m_descriptorSetLayout;
+	pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
 	pipelineSettings.vertexInput.attributes =
 	{
 		{ VertexAttribute::Format::RGB32_SFLOAT },
@@ -95,7 +142,7 @@ void BasicRenderPipeline::resize(const Vector2u& size)
 	pipelineSettings.vertexShader = Shader::create({ rsc_path / "Shaders/vert.spv" });
 	pipelineSettings.fragmentShader = Shader::create({ rsc_path / "Shaders/frag.spv" });
 	pipelineSettings.renderPass = getRenderPass();
-	pipelineSettings.descriptorSetLayout = m_descriptorSetLayout;
+	pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
 	pipelineSettings.vertexInput.attributes =
 	{
 		{ VertexAttribute::Format::RGB32_SFLOAT },
@@ -125,6 +172,8 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 {
 	updateUniformBuffers(frameIndex);
 
+	auto& globalDescriptorSet = m_frameDescriptorSets[frameIndex];
+	
 	beginRenderPass();
 
 	commandBuffer->bindPipeline(m_pipeline);
@@ -142,8 +191,8 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 			commandBuffer->bindVertexBuffer(object.vertexBuffer, 0);
 
 			commandBuffer->bindIndexBuffer(object.indexBuffer, IndexType::U32);
-
-			commandBuffer->bindDescriptorSet(descriptorSet);
+			
+			commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet });
 
 			commandBuffer->drawIndexed(object.indexCount);
 		}
@@ -166,7 +215,7 @@ void BasicRenderPipeline::loadScene()
 	
 	for (auto& object : objects)
 	{
-		ObjectFrameData objectFrameData(object, m_maxFramesInFlight, m_descriptorPool);
+		ObjectFrameData objectFrameData(object, m_maxFramesInFlight, m_objectDescriptorPool);
 
 		m_objectFrameData.push_back(objectFrameData);
 	}
@@ -176,32 +225,45 @@ void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 {
 	ATEMA_BENCHMARK("BasicRenderPipeline::updateUniformBuffers")
 
-	const auto windowSize = getWindow()->getSize();
-
-	const auto step = 3.14159f / 5.0f;
-
-	const auto zoom = (std::sin(m_totalTime * step) * 400.0f + 400.0f) / 2.0f + 100.0f;
-	
-	TransformBufferElement transforms{};
-	transforms.view = lookAt({ zoom, 0.0f, zoom }, { 0.0f, 0.0f, 15.0f }, { 0.0f, 0.0f, 1.0f });
-	transforms.proj = perspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
-	transforms.proj[1][1] *= -1;
-
-	Matrix4f basisChange = rotation4f({ toRadians(90.0f), 0.0f, 0.0f });
-	
-	auto& objects = m_scene->getObjects();
-	
-	for (size_t i = 0; i < objects.size(); i++)
+	// Update global buffers
 	{
-		auto& object = objects[i];
-		auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
+		const auto windowSize = getWindow()->getSize();
 
-		transforms.model = object.transform;
-		
+		const auto step = 3.14159f / 5.0f;
+
+		const auto zoom = (std::sin(m_totalTime * step) * 400.0f + 400.0f) / 2.0f + 100.0f;
+
+		UniformFrameElement frameTransforms;
+		frameTransforms.view = lookAt({ zoom, 0.0f, zoom }, { 0.0f, 0.0f, 15.0f }, { 0.0f, 0.0f, 1.0f });
+		frameTransforms.proj = perspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
+		frameTransforms.proj[1][1] *= -1;
+
+		auto buffer = m_frameUniformBuffers[frameIndex];
+
 		void* data = buffer->map();
 
-		memcpy(data, static_cast<void*>(&transforms), sizeof(TransformBufferElement));
+		memcpy(data, static_cast<void*>(&frameTransforms), sizeof(UniformFrameElement));
 
 		buffer->unmap();
+	}
+
+	// Update objects buffers
+	{
+		auto& objects = m_scene->getObjects();
+
+		for (size_t i = 0; i < objects.size(); i++)
+		{
+			auto& object = objects[i];
+			auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
+
+			UniformObjectElement objectTransforms;
+			objectTransforms.model = object.transform;
+
+			void* data = buffer->map();
+
+			memcpy(data, static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+
+			buffer->unmap();
+		}
 	}
 }

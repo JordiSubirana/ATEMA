@@ -36,7 +36,7 @@ ObjectFrameData::ObjectFrameData(const ObjectData& object, uint32_t frameCount, 
 
 	for (uint32_t j = 0; j < frameCount; j++)
 	{
-		auto uniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(TransformBufferElement), true });
+		auto uniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformObjectElement), true });
 
 		m_uniformBuffers.push_back(uniformBuffer);
 

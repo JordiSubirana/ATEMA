@@ -55,11 +55,15 @@ private:
 	std::vector<at::Ptr<at::DescriptorSet>> m_descriptorSets;
 };
 
-struct TransformBufferElement
+struct UniformFrameElement
+{
+	at::Matrix4f proj;
+	at::Matrix4f view;
+};
+
+struct UniformObjectElement
 {
 	at::Matrix4f model;
-	at::Matrix4f view;
-	at::Matrix4f proj;
 };
 
 class Scene

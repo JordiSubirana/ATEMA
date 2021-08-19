@@ -45,14 +45,20 @@ private:
 	uint32_t m_maxFramesInFlight;
 	float m_totalTime;
 	
-	// Global resources
+	// Object resources
+	at::Ptr<at::DescriptorSetLayout> m_objectDescriptorSetLayout;
+	at::Ptr<at::DescriptorPool> m_objectDescriptorPool;
 	at::Ptr<Scene> m_scene;
 	std::vector<ObjectFrameData> m_objectFrameData;
 
+	// Frame resources
+	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
+	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
+	std::vector<at::Ptr<at::Buffer>> m_frameUniformBuffers;
+	std::vector<at::Ptr<at::DescriptorSet>> m_frameDescriptorSets;
+	
 	// Pipeline resources
-	at::Ptr<at::DescriptorSetLayout> m_descriptorSetLayout;
 	at::Ptr<at::GraphicsPipeline> m_pipeline;
-	at::Ptr<at::DescriptorPool> m_descriptorPool;
 };
 
 #endif
