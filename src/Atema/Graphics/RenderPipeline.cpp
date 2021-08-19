@@ -101,10 +101,21 @@ void RenderPipeline::update(TimeStep elapsedTime)
 
 	m_currentCommandBuffer.reset();
 
+	// Update Frame
+	{
+		ATEMA_BENCHMARK("Update frame")
+
+		updateFrame(elapsedTime);
+	}
+	
 	// Wait on fence to be signaled (max frames in flight)
 	auto& fence = m_fences[m_currentFrame];
 
-	fence->wait();
+	{
+		ATEMA_BENCHMARK("Fence::wait")
+		
+		fence->wait();
+	}
 
 	// Acquire next available swapchain image
 	auto& imageAvailableSemaphore = m_imageAvailableSemaphores[m_currentFrame];
@@ -146,7 +157,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	{
 		ATEMA_BENCHMARK("RenderPipeline::setupFrame")
 
-			setupFrame(m_currentFrame, elapsedTime, m_currentCommandBuffer);
+		setupFrame(m_currentFrame, m_currentCommandBuffer);
 	}
 
 	m_currentCommandBuffer->end();
@@ -161,7 +172,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 
 	// Reset fence & submit command buffers to the target queue (works with arrays for performance)
 	fence->reset();
-	
+
 	Renderer::getInstance().submit(
 		submitCommandBuffers,
 		submitWaitSemaphores,
@@ -225,7 +236,11 @@ void RenderPipeline::resize(const Vector2u& size)
 	
 }
 
-void RenderPipeline::setupFrame(uint32_t frameIndex, TimeStep elapsedTime, Ptr<CommandBuffer> commandBuffer)
+void RenderPipeline::updateFrame(TimeStep elapsedTime)
+{
+}
+
+void RenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
 {
 }
 

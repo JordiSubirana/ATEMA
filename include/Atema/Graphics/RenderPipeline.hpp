@@ -67,7 +67,8 @@ namespace at
 		
 	protected:
 		virtual void resize(const Vector2u& size);
-		virtual void setupFrame(uint32_t frameIndex, TimeStep elapsedTime, Ptr<CommandBuffer> commandBuffer);
+		virtual void updateFrame(TimeStep elapsedTime);
+		virtual void setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer);
 
 		void beginRenderPass();
 		void endRenderPass();
