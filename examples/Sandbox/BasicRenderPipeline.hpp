@@ -24,18 +24,7 @@
 
 #include <Atema/Atema.hpp>
 
-#include "Resources.hpp"
-
-struct ObjectData
-{
-	at::Ptr<at::Buffer> vertexBuffer;
-	at::Ptr<at::Buffer> indexBuffer;
-	uint32_t indexCount = 0;
-	at::Ptr<at::Image> texture;
-	at::Ptr<at::Sampler> sampler;
-	std::vector<at::Ptr<at::Buffer>> uniformBuffers;
-	std::vector<at::Ptr<at::DescriptorSet>> descriptorSets;
-};
+#include "Scene.hpp"
 
 class BasicRenderPipeline : public at::RenderPipeline
 {
@@ -49,16 +38,15 @@ protected:
 	void setupFrame(uint32_t frameIndex, at::TimeStep elapsedTime, at::Ptr<at::CommandBuffer> commandBuffer) override;
 
 private:
-	void loadResources();
+	void loadScene();
 	void updateUniformBuffers(uint32_t frameIndex);
-	
-	std::vector<at::Ptr<ObjectData>> m_objects;
 
+	uint32_t m_maxFramesInFlight;
 	float m_totalTime;
 	
 	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
+	at::Ptr<Scene> m_scene;
+	std::vector<ObjectFrameData> m_objectFrameData;
 
 	// Pipeline resources
 	at::Ptr<at::DescriptorSetLayout> m_descriptorSetLayout;

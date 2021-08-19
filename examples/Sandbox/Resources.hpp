@@ -24,6 +24,25 @@
 
 #include <Atema/Atema.hpp>
 
+constexpr uint32_t object_row = 100;
+constexpr uint32_t object_count = object_row * object_row;
+
+const std::filesystem::path rsc_path = "../../examples/Sandbox/Resources/";
+const std::filesystem::path model_path = rsc_path / "Models/LampPost.obj";
+const std::filesystem::path model_texture_path = rsc_path / "Textures/LampPost_Color.png";
+const std::filesystem::path vert_shader_path = rsc_path / "Shaders/vert.spv";
+const std::filesystem::path frag_shader_path = rsc_path / "Shaders/frag.spv";
+
+inline float toRadians(float degrees)
+{
+	return degrees * 3.14159f / 180.0f;
+}
+
+inline float toDegrees(float radians)
+{
+	return radians * 180.0f / 3.14159f;
+}
+
 struct BasicVertex
 {
 	at::Vector3f pos;
