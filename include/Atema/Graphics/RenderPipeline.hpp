@@ -78,6 +78,7 @@ namespace at
 		
 		uint32_t m_maxFramesInFlight;
 		uint32_t m_currentFrame;
+		uint32_t m_currentSwapChainImage;
 		ImageFormat m_colorFormat;
 		ImageFormat m_depthFormat;
 		Ptr<CommandBuffer> m_currentCommandBuffer;

@@ -38,6 +38,7 @@ RenderPipeline::RenderPipeline(const Settings& settings) :
 	m_window(settings.window),
 	m_maxFramesInFlight(settings.maxFramesInFlight),
 	m_currentFrame(0),
+	m_currentSwapChainImage(0),
 	m_colorFormat(settings.colorFormat),
 	m_depthFormat(settings.depthFormat)
 {
@@ -98,7 +99,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 {
 	ATEMA_BENCHMARK_TAG(rootBenchmark, "RenderPipeline::update")
 
-		m_currentCommandBuffer.reset();
+	m_currentCommandBuffer.reset();
 
 	// Wait on fence to be signaled (max frames in flight)
 	auto& fence = m_fences[m_currentFrame];
@@ -108,10 +109,9 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	// Acquire next available swapchain image
 	auto& imageAvailableSemaphore = m_imageAvailableSemaphores[m_currentFrame];
 
-	uint32_t imageIndex;
 	SwapChainResult acquireResult = SwapChainResult::Success;
 
-	m_swapChain->acquireNextImage(imageIndex, imageAvailableSemaphore);
+	m_swapChain->acquireNextImage(m_currentSwapChainImage, imageAvailableSemaphore);
 
 	if (acquireResult == SwapChainResult::OutOfDate ||
 		acquireResult == SwapChainResult::Suboptimal)
@@ -126,13 +126,13 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	}
 
 	// Check if a previous frame is using this image (i.e. there is its fence to wait on)
-	if (m_imageFences[imageIndex])
+	if (m_imageFences[m_currentSwapChainImage])
 	{
-		m_imageFences[imageIndex]->wait();
+		m_imageFences[m_currentSwapChainImage]->wait();
 	}
 
 	// Mark the image as now being in use by this frame
-	m_imageFences[imageIndex] = fence;
+	m_imageFences[m_currentSwapChainImage] = fence;
 
 	// Update frame data if needed
 
@@ -175,7 +175,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 		// Present swapchain image
 		acquireResult = Renderer::getInstance().present(
 			m_swapChain,
-			imageIndex,
+			m_currentSwapChainImage,
 			submitSignalSemaphores
 		);
 	}
@@ -237,7 +237,7 @@ void RenderPipeline::beginRenderPass()
 		{ 1.0f, 0 }
 	};
 
-	const auto& framebuffer = m_framebuffers[m_currentFrame];
+	const auto& framebuffer = m_framebuffers[m_currentSwapChainImage];
 	
 	m_currentCommandBuffer->beginRenderPass(m_renderPass, framebuffer, clearValues);
 }
