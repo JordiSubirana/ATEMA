@@ -229,6 +229,33 @@ void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptor
 	vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_currentPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
 }
 
+void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets)
+{
+	std::vector<VkDescriptorSet> vkDescriptorSets;
+	vkDescriptorSets.reserve(descriptorSets.size());
+
+	ATEMA_ASSERT(!descriptorSets.empty(), "Invalid descriptor sets");
+
+	for (auto& descriptorSet : descriptorSets)
+	{
+		ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
+
+		const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet);
+		
+		vkDescriptorSets.push_back(vkDescriptorSet->getHandle());
+	}
+
+	vkCmdBindDescriptorSets(
+		m_commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_currentPipelineLayout,
+		0,
+		static_cast<uint32_t>(vkDescriptorSets.size()),
+		vkDescriptorSets.data(),
+		0,
+		nullptr);
+}
+
 void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
 	vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);

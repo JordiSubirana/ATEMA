@@ -286,8 +286,12 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 	{
-		auto descriptorSetLayout = std::static_pointer_cast<VulkanDescriptorSetLayout>(settings.descriptorSetLayout);
-		descriptorSetLayouts.push_back(descriptorSetLayout->getHandle());
+		for (auto& layout : settings.descriptorSetLayouts)
+		{
+			auto descriptorSetLayout = std::static_pointer_cast<VulkanDescriptorSetLayout>(layout);
+			
+			descriptorSetLayouts.push_back(descriptorSetLayout->getHandle());
+		}
 		
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
