@@ -35,7 +35,8 @@ public:
 
 protected:
 	void resize(const at::Vector2u& size) override;
-	void setupFrame(uint32_t frameIndex, at::TimeStep elapsedTime, at::Ptr<at::CommandBuffer> commandBuffer) override;
+	void updateFrame(at::TimeStep elapsedTime) override;
+	void setupFrame(uint32_t frameIndex, at::Ptr<at::CommandBuffer> commandBuffer) override;
 
 private:
 	void loadScene();

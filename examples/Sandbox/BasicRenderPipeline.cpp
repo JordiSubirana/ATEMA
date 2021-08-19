@@ -112,16 +112,17 @@ void BasicRenderPipeline::resize(const Vector2u& size)
 	m_pipeline = GraphicsPipeline::create(pipelineSettings);
 }
 
-void BasicRenderPipeline::setupFrame(uint32_t frameIndex, TimeStep elapsedTime, Ptr<CommandBuffer> commandBuffer)
+void BasicRenderPipeline::updateFrame(at::TimeStep elapsedTime)
 {
+	ATEMA_BENCHMARK("Scene::updateObjects")
+
 	m_totalTime += elapsedTime.getSeconds();
 
-	{
-		ATEMA_BENCHMARK("Scene::updateObjects");
-		
-		m_scene->updateObjects(elapsedTime);
-	}
-	
+	m_scene->updateObjects(elapsedTime);
+}
+
+void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
+{
 	updateUniformBuffers(frameIndex);
 
 	beginRenderPass();
