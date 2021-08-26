@@ -6,17 +6,17 @@
 
 using namespace at;
 
-class TestLayer : public ApplicationLayer
+class SandboxLayer : public ApplicationLayer
 {
 public:
-	TestLayer() :
+	SandboxLayer() :
 		frameCount(0),
 		frameDuration(0.0f)
 	{
 		initialize();
 	}
 
-	~TestLayer()
+	~SandboxLayer()
 	{
 		renderPipeline.reset();
 
@@ -28,12 +28,8 @@ public:
 
 	void initialize()
 	{
-		maxFramesInFlight = 2;
-		currentFrame = 0;
-		indexCount = 0;
-
 		Renderer::Settings settings;
-		settings.maxFramesInFlight = maxFramesInFlight;
+		settings.maxFramesInFlight = 2;
 		//settings.mainWindowSettings.width = 1920;
 		//settings.mainWindowSettings.height = 1080;
 
@@ -56,8 +52,7 @@ public:
 	void update(TimeStep ms) override
 	{
 		ATEMA_BENCHMARK("Application update")
-
-		totalTime += ms.getSeconds();
+		
 		frameDuration += ms.getSeconds();
 
 		if (window->shouldClose())
@@ -89,64 +84,31 @@ public:
 		}
 	}
 
-	uint32_t maxFramesInFlight;
-	uint32_t currentFrame;
 	Ptr<Window> window;
-	Ptr<SwapChain> swapChain;
-	Ptr<RenderPass> renderPass;
-	Ptr<Image> depthImage;
-	std::vector<Ptr<Framebuffer>> framebuffers;
-	Ptr<DescriptorSetLayout> descriptorSetLayout;
-	Ptr<GraphicsPipeline> pipeline;
-	std::vector<Ptr<CommandPool>> commandPools;
-	std::vector<Ptr<CommandBuffer>> commandBuffers;
-	std::vector<Ptr<Fence>> fences;
-	std::vector<Ptr<Fence>> imageFences;
-	std::vector<Ptr<Semaphore>> imageAvailableSemaphores;
-	std::vector<Ptr<Semaphore>> renderFinishedSemaphores;
-	Ptr<DescriptorPool> descriptorPool;
-
-	Ptr<Buffer> vertexBuffer;
-	Ptr<Buffer> indexBuffer;
-	Ptr<Image> texture;
-	Ptr<Sampler> sampler;
-	std::vector<Ptr<Buffer>> uniformBuffers;
-	std::vector<Ptr<DescriptorSet>> descriptorSets;
-
-	uint32_t indexCount;
-
-	float totalTime;
 
 	Ptr<BasicRenderPipeline> renderPipeline;
 
 	int frameCount;
 	float frameDuration;
-
 };
-
-void basicApplication()
-{
-	auto layer = new TestLayer();
-
-	auto& app = Application::instance();
-
-	app.addLayer(layer);
-
-	app.run();
-
-	delete layer;
-}
 
 // MAIN
 int main(int argc, char** argv)
 {
 	try
 	{
-		basicApplication();
+		auto sandboxLayer = std::make_unique<SandboxLayer>();
+
+		auto& app = Application::instance();
+
+		app.addLayer(sandboxLayer.get());
+
+		app.run();
 	}
 	catch (const std::exception& e)
 	{
 		std::cout << e.what() << std::endl;
+		
 		return -1;
 	}
 	
