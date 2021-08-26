@@ -39,7 +39,9 @@ namespace at
 
 		void begin() override;
 
-		void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues) override;
+		void beginSecondary(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer) override;
+		
+		void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands) override;
 
 		void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) override;
 
@@ -63,6 +65,8 @@ namespace at
 		void setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel = 0, uint32_t levelCount = 0) override;
 
 		void createMipmaps(const Ptr<Image>& image) override;
+
+		void executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers) override;
 		
 		void end() override;
 		
@@ -70,6 +74,8 @@ namespace at
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;
 		bool m_singleUse;
+		bool m_isSecondary;
+		bool m_secondaryBegan;
 		VkPipelineLayout m_currentPipelineLayout;
 	};
 }

@@ -35,6 +35,8 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	CommandBuffer(),
 	m_commandBuffer(VK_NULL_HANDLE),
 	m_singleUse(settings.singleUse),
+	m_isSecondary(settings.secondary),
+	m_secondaryBegan(false),
 	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::getInstance();
@@ -52,7 +54,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = m_commandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; // Primary, secondary
+	allocInfo.level = settings.secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = 1;
 
 	ATEMA_VK_CHECK(vkAllocateCommandBuffers(device, &allocInfo, &m_commandBuffer));
@@ -75,19 +77,54 @@ VkCommandBuffer VulkanCommandBuffer::getHandle() const noexcept
 
 void VulkanCommandBuffer::begin()
 {
+	if (!m_isSecondary)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		// VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : Executed once then rerecorded
+		// VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT : Secondary command buffer that will be entirely within a single render pass
+		// VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT : Can be resubmitted while it is also already pending execution
+		beginInfo.flags = m_singleUse ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0; // Optional
+		//beginInfo.pInheritanceInfo = nullptr; // Optional (for secondary command buffers)
+
+		// Start recording (and reset command buffer if it was already recorded)
+		ATEMA_VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+	}
+}
+
+void VulkanCommandBuffer::beginSecondary(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer)
+{
+	auto vkRenderPass = std::static_pointer_cast<VulkanRenderPass>(renderPass);
+	auto vkFramebuffer = std::static_pointer_cast<VulkanFramebuffer>(framebuffer);
+
+	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
+	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
+
+	auto framebufferSize = vkFramebuffer->getSize();
+
+	// Inheritance info for the secondary command buffers
+	VkCommandBufferInheritanceInfo inheritanceInfo{};
+	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	inheritanceInfo.renderPass = vkRenderPass->getHandle();
+	inheritanceInfo.subpass = 0;
+	// Secondary command buffer also use the currently active framebuffer
+	inheritanceInfo.framebuffer = vkFramebuffer->getHandle();
+	// Misc
+	inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	// VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : Executed once then rerecorded
 	// VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT : Secondary command buffer that will be entirely within a single render pass
 	// VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT : Can be resubmitted while it is also already pending execution
-	beginInfo.flags = m_singleUse ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0; // Optional
-	//beginInfo.pInheritanceInfo = nullptr; // Optional (for secondary command buffers)
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | (m_singleUse ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0); // Optional
+	beginInfo.pInheritanceInfo = &inheritanceInfo; // Optional (for secondary command buffers)
 
 	// Start recording (and reset command buffer if it was already recorded)
 	ATEMA_VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
 }
 
-void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues)
+void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands)
 {
 	auto vkRenderPass = std::static_pointer_cast<VulkanRenderPass>(renderPass);
 	auto vkFramebuffer = std::static_pointer_cast<VulkanFramebuffer>(framebuffer);
@@ -131,7 +168,10 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 	// VK_SUBPASS_CONTENTS_INLINE : render pass in primary command buffer, no secondary buffer will be used
 	// VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : render pass commands executed in secondary command buffer
-	vkCmdBeginRenderPass(m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(
+		m_commandBuffer,
+		&renderPassInfo,
+		useSecondaryCommands ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
@@ -510,7 +550,25 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 	layouts[mipLevels - 1] = barrier.newLayout;
 }
 
+void VulkanCommandBuffer::executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers)
+{
+	std::vector<VkCommandBuffer> vkCommandBuffers;
+	vkCommandBuffers.reserve(commandBuffers.size());
+
+	for (auto& commandBuffer : commandBuffers)
+	{
+		auto vkCommandBuffer = std::static_pointer_cast<VulkanCommandBuffer>(commandBuffer);
+
+		vkCommandBuffers.push_back(vkCommandBuffer->getHandle());
+	}
+
+	vkCmdExecuteCommands(m_commandBuffer, static_cast<uint32_t>(vkCommandBuffers.size()), vkCommandBuffers.data());
+}
+
 void VulkanCommandBuffer::end()
 {
+	if (m_isSecondary)
+		m_secondaryBegan = false;
+
 	ATEMA_VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
 }
