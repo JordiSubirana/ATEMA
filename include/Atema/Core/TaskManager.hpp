@@ -19,30 +19,62 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_THREADPOOL_HPP
+#define ATEMA_CORE_THREADPOOL_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/ApplicationLayer.hpp>
-#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/Flags.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/TaskManager.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
-#include <Atema/Core/Window.hpp>
+
+#include <vector>
+#include <thread>
+#include <queue>
+#include <functional>
+#include <mutex>
+
+namespace at
+{
+	class ATEMA_CORE_API Task
+	{
+	public:
+		Task() = delete;
+		Task(const std::function<void(size_t)>& function);
+		virtual ~Task();
+
+		void start(size_t threadIndex);
+
+		void wait() noexcept;
+		
+	private:
+		std::function<void(size_t)> m_function;
+		bool m_finished;
+		std::mutex m_mutex;
+		std::condition_variable m_condition;
+	};
+
+	class ATEMA_CORE_API TaskManager : public NonCopyable
+	{
+	public:
+		TaskManager();
+		TaskManager(size_t size);
+		virtual ~TaskManager();
+		
+		static TaskManager& getInstance();
+
+		size_t getSize() const noexcept;
+		
+		Ptr<Task> createTask(const std::function<void()>& function);
+		Ptr<Task> createTask(const std::function<void(size_t)>& function);
+
+	private:
+		void initialize(size_t size);
+
+		std::atomic_bool m_exit;
+		std::vector<Ptr<std::thread>> m_threads;
+		std::mutex m_taskMutex;
+		std::queue<Ptr<Task>> m_tasks;
+		std::condition_variable m_condition;
+	};
+}
 
 #endif
