@@ -226,6 +226,11 @@ const Ptr<RenderPass>& RenderPipeline::getRenderPass() const noexcept
 	return m_renderPass;
 }
 
+const Ptr<Framebuffer>& RenderPipeline::getCurrentFramebuffer() const noexcept
+{
+	return m_framebuffers[m_currentSwapChainImage];
+}
+
 const std::vector<Ptr<CommandPool>>& RenderPipeline::getCommandPools() const noexcept
 {
 	return m_commandPools;
@@ -244,7 +249,7 @@ void RenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandB
 {
 }
 
-void RenderPipeline::beginRenderPass()
+void RenderPipeline::beginRenderPass(bool useSecondaryBuffers)
 {
 	static const std::vector<CommandBuffer::ClearValue> clearValues =
 	{
@@ -254,7 +259,7 @@ void RenderPipeline::beginRenderPass()
 
 	const auto& framebuffer = m_framebuffers[m_currentSwapChainImage];
 	
-	m_currentCommandBuffer->beginRenderPass(m_renderPass, framebuffer, clearValues);
+	m_currentCommandBuffer->beginRenderPass(m_renderPass, framebuffer, clearValues, useSecondaryBuffers);
 }
 
 void RenderPipeline::endRenderPass()

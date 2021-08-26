@@ -63,6 +63,7 @@ namespace at
 		Ptr<Window> getWindow() const noexcept;
 		const Ptr<SwapChain>& getSwapChain() const noexcept;
 		const Ptr<RenderPass>& getRenderPass() const noexcept;
+		const Ptr<Framebuffer>& getCurrentFramebuffer() const noexcept;
 		const std::vector<Ptr<CommandPool>>& getCommandPools() const noexcept;
 		
 	protected:
@@ -70,7 +71,7 @@ namespace at
 		virtual void updateFrame(TimeStep elapsedTime);
 		virtual void setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer);
 
-		void beginRenderPass();
+		void beginRenderPass(bool useSecondaryBuffers = false);
 		void endRenderPass();
 		
 	private:
