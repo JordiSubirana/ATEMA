@@ -46,6 +46,7 @@ namespace at
 		{
 			Ptr<CommandPool> commandPool;
 			bool singleUse = false;
+			bool secondary = false;
 		};
 		
 		typedef union ClearValue
@@ -66,7 +67,9 @@ namespace at
 
 		virtual void begin() = 0;
 
-		virtual void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues) = 0;
+		virtual void beginSecondary(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer) = 0;
+
+		virtual void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands = false) = 0;
 
 		virtual void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) = 0;
 
@@ -90,6 +93,8 @@ namespace at
 		virtual void setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel = 0, uint32_t levelCount = 0) = 0;
 
 		virtual void createMipmaps(const Ptr<Image>& image) = 0;
+
+		virtual void executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers) = 0;
 		
 		virtual void end() = 0;
 		
