@@ -73,7 +73,7 @@ public:
 	Scene(const at::Ptr<at::CommandPool>& commandPool);
 	virtual ~Scene();
 
-	void updateObjects(at::TimeStep timeStep);
+	void updateObjects(at::TimeStep timeStep, size_t threadCount = 0);
 	
 	const std::vector<ObjectData>& getObjects() const noexcept;
 

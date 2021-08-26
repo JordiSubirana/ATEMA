@@ -25,6 +25,13 @@
 
 using namespace at;
 
+namespace
+{
+	constexpr size_t targetThreadCount = 4;
+
+	const size_t threadCount = std::min(targetThreadCount, TaskManager::getInstance().getSize());
+}
+
 BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& settings) :
 	RenderPipeline(settings),
 	m_maxFramesInFlight(settings.maxFramesInFlight),
@@ -94,6 +101,19 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 		m_frameDescriptorSets.push_back(descriptorSet);
 	}
 
+	//----- THREAD RESOURCES -----//
+	auto& taskManager = TaskManager::getInstance();
+	const auto coreCount = taskManager.getSize();
+
+	m_threadCommandBuffers.resize(coreCount);
+
+	for (auto& commandBuffers : m_threadCommandBuffers)
+		commandBuffers.resize(m_maxFramesInFlight);
+
+	m_threadCommandPools.reserve(coreCount);
+	for (size_t i = 0; i < coreCount; i++)
+		m_threadCommandPools.push_back(CommandPool::create({}));
+
 	//----- PIPELINE RESOURCES -----//
 	
 	// Graphics pipeline
@@ -126,9 +146,24 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 BasicRenderPipeline::~BasicRenderPipeline()
 {
 	Renderer::getInstance().waitForIdle();
-	
+
+	// Thread resources
+	m_threadCommandBuffers.clear();
+	m_threadCommandPools.clear();
+
+	// Frame resources
+	m_frameDescriptorSetLayout.reset();
+	m_frameDescriptorSets.clear();
+	m_frameDescriptorPool.reset();
+	m_frameUniformBuffers.clear();
+
+	// Object resources
+	m_objectDescriptorSetLayout.reset();
+	m_objectDescriptorPool.reset();
 	m_objectFrameData.clear();
 	m_scene.reset();
+
+	m_pipeline.reset();
 }
 
 void BasicRenderPipeline::resize(const Vector2u& size)
@@ -165,7 +200,7 @@ void BasicRenderPipeline::updateFrame(at::TimeStep elapsedTime)
 
 	m_totalTime += elapsedTime.getSeconds();
 
-	m_scene->updateObjects(elapsedTime);
+	m_scene->updateObjects(elapsedTime, threadCount);
 }
 
 void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
@@ -174,28 +209,81 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 
 	auto& globalDescriptorSet = m_frameDescriptorSets[frameIndex];
 	
-	beginRenderPass();
+	beginRenderPass(true);
 
-	commandBuffer->bindPipeline(m_pipeline);
-
+	// Update objects buffers
 	{
 		ATEMA_BENCHMARK("CommandBuffers fill");
 
-		auto& objects = m_scene->getObjects();
-		
-		for (size_t i = 0; i < objects.size(); i++)
+		// Clear previous command buffers
+		for (auto& threadCommandBuffers : m_threadCommandBuffers)
 		{
-			auto& object = objects[i];
-			auto descriptorSet = m_objectFrameData[i].getDescriptorSet(frameIndex);
-			
-			commandBuffer->bindVertexBuffer(object.vertexBuffer, 0);
-
-			commandBuffer->bindIndexBuffer(object.indexBuffer, IndexType::U32);
-			
-			commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet });
-
-			commandBuffer->drawIndexed(object.indexCount);
+			threadCommandBuffers[frameIndex].clear();
 		}
+
+		auto& objects = m_scene->getObjects();
+
+		auto& taskManager = TaskManager::getInstance();
+
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(threadCount);
+
+		std::vector<Ptr<CommandBuffer>> commandBuffers;
+		commandBuffers.resize(threadCount);
+
+		size_t firstIndex = 0;
+		size_t size = objects.size() / threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+		{
+			auto lastIndex = firstIndex + size;
+
+			if (taskIndex == threadCount - 1)
+			{
+				const auto remainingSize = objects.size() - lastIndex;
+
+				lastIndex += remainingSize;
+			}
+
+			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
+				{
+					auto& commandPool = m_threadCommandPools[threadIndex];
+					auto commandBuffer = CommandBuffer::create({ commandPool, true, true });
+
+					commandBuffer->beginSecondary(getRenderPass(), getCurrentFramebuffer());
+
+					commandBuffer->bindPipeline(m_pipeline);
+				
+					for (size_t i = firstIndex; i < lastIndex; i++)
+					{
+						auto& object = objects[i];
+						auto descriptorSet = m_objectFrameData[i].getDescriptorSet(frameIndex);
+
+						commandBuffer->bindVertexBuffer(object.vertexBuffer, 0);
+
+						commandBuffer->bindIndexBuffer(object.indexBuffer, IndexType::U32);
+
+						commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet });
+
+						commandBuffer->drawIndexed(object.indexCount);
+					}
+
+					commandBuffer->end();
+
+					m_threadCommandBuffers[threadIndex][frameIndex].push_back(commandBuffer);
+
+					commandBuffers[taskIndex] = commandBuffer;
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
+		}
+
+		for (auto& task : tasks)
+			task->wait();
+
+		commandBuffer->executeSecondaryCommands(commandBuffers);
 	}
 
 	endRenderPass();
@@ -251,19 +339,50 @@ void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 	{
 		auto& objects = m_scene->getObjects();
 
-		for (size_t i = 0; i < objects.size(); i++)
+		auto& taskManager = TaskManager::getInstance();
+
+		// Divide the updates in max groups
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(threadCount);
+
+		size_t firstIndex = 0;
+		size_t size = objects.size() / threadCount;
+
+		for (size_t i = 0; i < threadCount; i++)
 		{
-			auto& object = objects[i];
-			auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
+			auto lastIndex = firstIndex + size;
 
-			UniformObjectElement objectTransforms;
-			objectTransforms.model = object.transform;
+			if (i == threadCount - 1)
+			{
+				const auto remainingSize = objects.size() - lastIndex;
 
-			void* data = buffer->map();
+				lastIndex += remainingSize;
+			}
 
-			memcpy(data, static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+			auto task = taskManager.createTask([this, firstIndex, lastIndex, &objects, frameIndex]()
+				{
+					for (size_t i = firstIndex; i < lastIndex; i++)
+					{
+						auto& object = objects[i];
+						auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
 
-			buffer->unmap();
+						UniformObjectElement objectTransforms;
+						objectTransforms.model = object.transform;
+
+						void* data = buffer->map();
+
+						memcpy(data, static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+
+						buffer->unmap();
+					}
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
 		}
+
+		for (auto& task : tasks)
+			task->wait();
 	}
 }
