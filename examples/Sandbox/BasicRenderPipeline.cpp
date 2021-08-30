@@ -327,13 +327,10 @@ void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 		auto radius = modelScale * objectRow;
 		radius = sign * radius + (1.0f - sign) * zoomOffset;
-		//radius = signSlow * radius + (1.0f - signSlow) * zoomOffset;
 		
 		const auto pos = toCartesian({ radius, angle / 3.0f });
 
-		auto z = modelScale * objectRow;
-		z = signSlow * radius + (1.0f - signSlow) * zoomOffset;
-		//z = zoomOffset;
+		const auto z =  signSlow * radius + (1.0f - signSlow) * zoomOffset;
 		
 		const Vector3f cameraPos(pos.x, pos.y, z);
 		const Vector3f cameraTarget(0.0f, 0.0f, zoomOffset / 2.0f);
