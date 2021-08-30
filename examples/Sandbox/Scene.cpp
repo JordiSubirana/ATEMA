@@ -63,14 +63,13 @@ Scene::Scene(const at::Ptr<at::CommandPool>& commandPool)
 {
 	loadResources(commandPool);
 
-	m_objects.reserve(object_count);
+	m_objects.reserve(objectCount);
 
-	const auto scale = 30.0f;
-	const auto origin = -scale * (object_row / 2.0f);
+	const auto origin = -modelScale * (objectRow / 2.0f);
 
-	for (size_t i = 0; i < object_row; i++)
+	for (size_t i = 0; i < objectRow; i++)
 	{
-		for (size_t j = 0; j < object_row; j++)
+		for (size_t j = 0; j < objectRow; j++)
 		{
 			ObjectData object;
 			
@@ -80,8 +79,8 @@ Scene::Scene(const at::Ptr<at::CommandPool>& commandPool)
 			object.texture = m_materialData->texture;
 			object.sampler = m_materialData->sampler;
 
-			object.position.x = scale * static_cast<float>(i) + origin;
-			object.position.y = scale * static_cast<float>(j) + origin;
+			object.position.x = modelScale * static_cast<float>(i) + origin;
+			object.position.y = modelScale * static_cast<float>(j) + origin;
 
 			m_objects.push_back(object);
 		}
@@ -95,8 +94,7 @@ Scene::~Scene()
 
 void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 {
-	const auto scale = 30.0f;
-	const auto origin = -scale * (object_row / 2.0f);
+	const auto origin = -modelScale * (objectRow / 2.0f);
 
 	const auto basisChange = rotation4f({ toRadians(90.0f), 0.0f, 0.0f });
 
@@ -126,7 +124,7 @@ void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 			{
 				for (size_t j = firstIndex; j < lastIndex; j++)
 				{
-					const auto rotScale = 10.0f + 70.0f * (static_cast<float>(j) / object_count);
+					const auto rotScale = 10.0f + 250.0f * (static_cast<float>(j) / objectCount);
 
 					auto& object = m_objects[j];
 
@@ -155,7 +153,7 @@ const std::vector<ObjectData>& Scene::getObjects() const noexcept
 
 void Scene::loadResources(const at::Ptr<at::CommandPool>& commandPool)
 {
-	m_modelData = std::make_shared<ModelData>(model_path, commandPool);
+	m_modelData = std::make_shared<ModelData>(modelMeshPath, commandPool);
 
-	m_materialData = std::make_shared<MaterialData>(model_texture_path, commandPool);
+	m_materialData = std::make_shared<MaterialData>(modelTexturePath, commandPool);
 }

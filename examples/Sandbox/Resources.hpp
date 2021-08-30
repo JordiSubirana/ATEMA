@@ -24,14 +24,33 @@
 
 #include <Atema/Atema.hpp>
 
-constexpr uint32_t object_row = 10;
-constexpr uint32_t object_count = object_row * object_row;
+constexpr uint32_t objectRow = 30;
+constexpr uint32_t objectCount = objectRow * objectRow;
 
-const std::filesystem::path rsc_path = "../../examples/Sandbox/Resources/";
-const std::filesystem::path model_path = rsc_path / "Models/LampPost.obj";
-const std::filesystem::path model_texture_path = rsc_path / "Textures/LampPost_Color.png";
-const std::filesystem::path vert_shader_path = rsc_path / "Shaders/vert.spv";
-const std::filesystem::path frag_shader_path = rsc_path / "Shaders/frag.spv";
+const std::filesystem::path rscPath = "../../examples/Sandbox/Resources/";
+const std::filesystem::path vertShaderPath = rscPath / "Shaders/vert.spv";
+const std::filesystem::path fragShaderPath = rscPath / "Shaders/frag.spv";
+
+// LampPost
+//*
+const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
+const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost_Color.png";
+const float modelScale = 30.0f;
+const auto zoomSpeed = 3.14159f / 10.0f;
+const auto zoomRadius = 400.0f;
+const auto zoomOffset = 100.0f;
+//*/
+
+// Tardis
+/*
+const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
+const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis_blue_color.png";
+const float modelScale = 4.0f;
+const auto zoomSpeed = 3.14159f / 10.0f;
+const auto zoomRadius = 100.0f;
+const auto zoomOffset = 10.0f;
+//*/
+
 
 inline float toRadians(float degrees)
 {
@@ -41,6 +60,30 @@ inline float toRadians(float degrees)
 inline float toDegrees(float radians)
 {
 	return radians * 180.0f / 3.14159f;
+}
+
+inline at::Vector2f toPolar(const at::Vector2f& cartesian)
+{
+	const auto x = cartesian.x;
+	const auto y = cartesian.y;
+
+	at::Vector2f value;
+	value.x = std::sqrt(x * x + y * y);
+	value.y = 2.0f * std::atan2f(y, x + value.x);
+
+	return value;
+}
+
+inline at::Vector2f toCartesian(const at::Vector2f& polar)
+{
+	const auto r = polar.x;
+	const auto a = polar.y;
+
+	at::Vector2f value;
+	value.x = r * std::cos(a);
+	value.y = r * std::sin(a);
+
+	return value;
 }
 
 struct BasicVertex

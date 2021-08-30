@@ -57,7 +57,7 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	{
 		DescriptorPool::Settings descriptorPoolSettings;
 		descriptorPoolSettings.layout = m_objectDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = m_maxFramesInFlight * object_count;
+		descriptorPoolSettings.pageSize = m_maxFramesInFlight * objectCount;
 
 		m_objectDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
 	}
@@ -121,8 +121,8 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
 	pipelineSettings.viewport.size.y = static_cast<float>(windowSize.y);
 	pipelineSettings.scissor.size = windowSize;
-	pipelineSettings.vertexShader = Shader::create({ vert_shader_path });
-	pipelineSettings.fragmentShader = Shader::create({ frag_shader_path });
+	pipelineSettings.vertexShader = Shader::create({ vertShaderPath });
+	pipelineSettings.fragmentShader = Shader::create({ fragShaderPath });
 	pipelineSettings.renderPass = getRenderPass();
 	pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
 	pipelineSettings.vertexInput.attributes =
@@ -174,8 +174,8 @@ void BasicRenderPipeline::resize(const Vector2u& size)
 	pipelineSettings.viewport.size.x = static_cast<float>(size.x);
 	pipelineSettings.viewport.size.y = static_cast<float>(size.y);
 	pipelineSettings.scissor.size = size;
-	pipelineSettings.vertexShader = Shader::create({ rsc_path / "Shaders/vert.spv" });
-	pipelineSettings.fragmentShader = Shader::create({ rsc_path / "Shaders/frag.spv" });
+	pipelineSettings.vertexShader = Shader::create({ rscPath / "Shaders/vert.spv" });
+	pipelineSettings.fragmentShader = Shader::create({ rscPath / "Shaders/frag.spv" });
 	pipelineSettings.renderPass = getRenderPass();
 	pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
 	pipelineSettings.vertexInput.attributes =
@@ -313,16 +313,34 @@ void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 {
 	ATEMA_BENCHMARK("BasicRenderPipeline::updateUniformBuffers")
 
-	// Update global buffers
+		// Update global buffers
 	{
 		const auto windowSize = getWindow()->getSize();
 
-		const auto step = 3.14159f / 5.0f;
+		const auto angle = m_totalTime * zoomSpeed;
 
-		const auto zoom = (std::sin(m_totalTime * step) * 400.0f + 400.0f) / 2.0f + 100.0f;
+		const auto sin = std::sin(angle);
+		const auto sinSlow = std::sin(angle / 2.0f + 3.14159f);
 
+		const auto sign = (sin + 1.0f) / 2.0f;
+		const auto signSlow = (sinSlow + 1.0f) / 2.0f;
+
+		auto radius = modelScale * objectRow;
+		radius = sign * radius + (1.0f - sign) * zoomOffset;
+		//radius = signSlow * radius + (1.0f - signSlow) * zoomOffset;
+		
+		const auto pos = toCartesian({ radius, angle / 3.0f });
+
+		auto z = modelScale * objectRow;
+		z = signSlow * radius + (1.0f - signSlow) * zoomOffset;
+		//z = zoomOffset;
+		
+		const Vector3f cameraPos(pos.x, pos.y, z);
+		const Vector3f cameraTarget(0.0f, 0.0f, zoomOffset / 2.0f);
+		const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
+		
 		UniformFrameElement frameTransforms;
-		frameTransforms.view = lookAt({ zoom, 0.0f, zoom }, { 0.0f, 0.0f, 15.0f }, { 0.0f, 0.0f, 1.0f });
+		frameTransforms.view = lookAt(cameraPos, cameraTarget, cameraUp);
 		frameTransforms.proj = perspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
 		frameTransforms.proj[1][1] *= -1;
 
