@@ -44,6 +44,7 @@ VkFormat Vulkan::getFormat(ImageFormat format)
 {
 	switch (format)
 	{
+		// Color (8 bit components)
 		case ImageFormat::R8_UNORM: return VK_FORMAT_R8_UNORM;
 		case ImageFormat::R8_SNORM: return VK_FORMAT_R8_SNORM;
 		case ImageFormat::R8_USCALED: return VK_FORMAT_R8_USCALED;
@@ -86,6 +87,62 @@ VkFormat Vulkan::getFormat(ImageFormat format)
 		case ImageFormat::BGRA8_UINT: return VK_FORMAT_B8G8R8A8_UINT;
 		case ImageFormat::BGRA8_SINT: return VK_FORMAT_B8G8R8A8_SINT;
 		case ImageFormat::BGRA8_SRGB: return VK_FORMAT_B8G8R8A8_SRGB;
+		// Color (16 bit components)
+		case ImageFormat::R16_UNORM: return VK_FORMAT_R16_UNORM;
+		case ImageFormat::R16_SNORM: return VK_FORMAT_R16_SNORM;
+		case ImageFormat::R16_USCALED: return VK_FORMAT_R16_USCALED;
+		case ImageFormat::R16_SSCALED: return VK_FORMAT_R16_SSCALED;
+		case ImageFormat::R16_UINT: return VK_FORMAT_R16_UINT;
+		case ImageFormat::R16_SINT: return VK_FORMAT_R16_SINT;
+		case ImageFormat::R16_SFLOAT: return VK_FORMAT_R16_SFLOAT;
+		case ImageFormat::RG16_UNORM: return VK_FORMAT_R16G16_UNORM;
+		case ImageFormat::RG16_SNORM: return VK_FORMAT_R16G16_SNORM;
+		case ImageFormat::RG16_USCALED: return VK_FORMAT_R16G16_USCALED;
+		case ImageFormat::RG16_SSCALED: return VK_FORMAT_R16G16_SSCALED;
+		case ImageFormat::RG16_UINT: return VK_FORMAT_R16G16_UINT;
+		case ImageFormat::RG16_SINT: return VK_FORMAT_R16G16_SINT;
+		case ImageFormat::RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT;
+		case ImageFormat::RGB16_UNORM: return VK_FORMAT_R16G16B16_UNORM;
+		case ImageFormat::RGB16_SNORM: return VK_FORMAT_R16G16B16_SNORM;
+		case ImageFormat::RGB16_USCALED: return VK_FORMAT_R16G16B16_USCALED;
+		case ImageFormat::RGB16_SSCALED: return VK_FORMAT_R16G16B16_SSCALED;
+		case ImageFormat::RGB16_UINT: return VK_FORMAT_R16G16B16_UINT;
+		case ImageFormat::RGB16_SINT: return VK_FORMAT_R16G16B16_SINT;
+		case ImageFormat::RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT;
+		case ImageFormat::RGBA16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM;
+		case ImageFormat::RGBA16_SNORM: return VK_FORMAT_R16G16B16A16_SNORM;
+		case ImageFormat::RGBA16_USCALED: return VK_FORMAT_R16G16B16A16_USCALED;
+		case ImageFormat::RGBA16_SSCALED: return VK_FORMAT_R16G16B16A16_SSCALED;
+		case ImageFormat::RGBA16_UINT: return VK_FORMAT_R16G16B16A16_UINT;
+		case ImageFormat::RGBA16_SINT: return VK_FORMAT_R16G16B16A16_SINT;
+		case ImageFormat::RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
+		// Color (32 bit components)
+		case ImageFormat::R32_UINT: return VK_FORMAT_R32_UINT;
+		case ImageFormat::R32_SINT: return VK_FORMAT_R32_SINT;
+		case ImageFormat::R32_SFLOAT: return VK_FORMAT_R32_SFLOAT;
+		case ImageFormat::RG32_UINT: return VK_FORMAT_R32G32_UINT;
+		case ImageFormat::RG32_SINT: return VK_FORMAT_R32G32_SINT;
+		case ImageFormat::RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT;
+		case ImageFormat::RGB32_UINT: return VK_FORMAT_R32G32B32_UINT;
+		case ImageFormat::RGB32_SINT: return VK_FORMAT_R32G32B32_SINT;
+		case ImageFormat::RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT;
+		case ImageFormat::RGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT;
+		case ImageFormat::RGBA32_SINT: return VK_FORMAT_R32G32B32A32_SINT;
+		case ImageFormat::RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
+		// Color (64 bit components)
+		case ImageFormat::R64_UINT: return VK_FORMAT_R64_UINT;
+		case ImageFormat::R64_SINT: return VK_FORMAT_R64_SINT;
+		case ImageFormat::R64_SFLOAT: return VK_FORMAT_R64_SFLOAT;
+		case ImageFormat::RG64_UINT: return VK_FORMAT_R64G64_UINT;
+		case ImageFormat::RG64_SINT: return VK_FORMAT_R64G64_SINT;
+		case ImageFormat::RG64_SFLOAT: return VK_FORMAT_R64G64_SFLOAT;
+		case ImageFormat::RGB64_UINT: return VK_FORMAT_R64G64B64_UINT;
+		case ImageFormat::RGB64_SINT: return VK_FORMAT_R64G64B64_SINT;
+		case ImageFormat::RGB64_SFLOAT: return VK_FORMAT_R64G64B64_SFLOAT;
+		case ImageFormat::RGBA64_UINT: return VK_FORMAT_R64G64B64A64_UINT;
+		case ImageFormat::RGBA64_SINT: return VK_FORMAT_R64G64B64A64_SINT;
+		case ImageFormat::RGBA64_SFLOAT: return VK_FORMAT_R64G64B64A64_SFLOAT;
+		// DepthStencil
 		case ImageFormat::D32F: return VK_FORMAT_D32_SFLOAT;
 		case ImageFormat::D32F_S8U: return VK_FORMAT_D32_SFLOAT_S8_UINT;
 		case ImageFormat::D24U_S8U: return VK_FORMAT_D24_UNORM_S8_UINT;
@@ -102,6 +159,7 @@ ImageFormat Vulkan::getFormat(VkFormat format)
 {
 	switch (format)
 	{
+		// Color (8 bit components)
 		case VK_FORMAT_R8_UNORM: return ImageFormat::R8_UNORM;
 		case VK_FORMAT_R8_SNORM: return ImageFormat::R8_SNORM;
 		case VK_FORMAT_R8_USCALED: return ImageFormat::R8_USCALED;
@@ -144,6 +202,62 @@ ImageFormat Vulkan::getFormat(VkFormat format)
 		case VK_FORMAT_B8G8R8A8_UINT: return ImageFormat::BGRA8_UINT;
 		case VK_FORMAT_B8G8R8A8_SINT: return ImageFormat::BGRA8_SINT;
 		case VK_FORMAT_B8G8R8A8_SRGB: return ImageFormat::BGRA8_SRGB;
+		// Color (16 bit components)
+		case VK_FORMAT_R16_UNORM: return ImageFormat::R16_UNORM;
+		case VK_FORMAT_R16_SNORM: return ImageFormat::R16_SNORM;
+		case VK_FORMAT_R16_USCALED: return ImageFormat::R16_USCALED;
+		case VK_FORMAT_R16_SSCALED: return ImageFormat::R16_SSCALED;
+		case VK_FORMAT_R16_UINT: return ImageFormat::R16_UINT;
+		case VK_FORMAT_R16_SINT: return ImageFormat::R16_SINT;
+		case VK_FORMAT_R16_SFLOAT: return ImageFormat::R16_SFLOAT;
+		case VK_FORMAT_R16G16_UNORM: return ImageFormat::RG16_UNORM;
+		case VK_FORMAT_R16G16_SNORM: return ImageFormat::RG16_SNORM;
+		case VK_FORMAT_R16G16_USCALED: return ImageFormat::RG16_USCALED;
+		case VK_FORMAT_R16G16_SSCALED: return ImageFormat::RG16_SSCALED;
+		case VK_FORMAT_R16G16_UINT: return ImageFormat::RG16_UINT;
+		case VK_FORMAT_R16G16_SINT: return ImageFormat::RG16_SINT;
+		case VK_FORMAT_R16G16_SFLOAT: return ImageFormat::RG16_SFLOAT;
+		case VK_FORMAT_R16G16B16_UNORM: return ImageFormat::RGB16_UNORM;
+		case VK_FORMAT_R16G16B16_SNORM: return ImageFormat::RGB16_SNORM;
+		case VK_FORMAT_R16G16B16_USCALED: return ImageFormat::RGB16_USCALED;
+		case VK_FORMAT_R16G16B16_SSCALED: return ImageFormat::RGB16_SSCALED;
+		case VK_FORMAT_R16G16B16_UINT: return ImageFormat::RGB16_UINT;
+		case VK_FORMAT_R16G16B16_SINT: return ImageFormat::RGB16_SINT;
+		case VK_FORMAT_R16G16B16_SFLOAT: return ImageFormat::RGB16_SFLOAT;
+		case VK_FORMAT_R16G16B16A16_UNORM: return ImageFormat::RGBA16_UNORM;
+		case VK_FORMAT_R16G16B16A16_SNORM: return ImageFormat::RGBA16_SNORM;
+		case VK_FORMAT_R16G16B16A16_USCALED: return ImageFormat::RGBA16_USCALED;
+		case VK_FORMAT_R16G16B16A16_SSCALED: return ImageFormat::RGBA16_SSCALED;
+		case VK_FORMAT_R16G16B16A16_UINT: return ImageFormat::RGBA16_UINT;
+		case VK_FORMAT_R16G16B16A16_SINT: return ImageFormat::RGBA16_SINT;
+		case VK_FORMAT_R16G16B16A16_SFLOAT: return ImageFormat::RGBA16_SFLOAT;
+		// Color (32 bit components)
+		case VK_FORMAT_R32_UINT: return ImageFormat::R32_UINT;
+		case VK_FORMAT_R32_SINT: return ImageFormat::R32_SINT;
+		case VK_FORMAT_R32_SFLOAT: return ImageFormat::R32_SFLOAT;
+		case VK_FORMAT_R32G32_UINT: return ImageFormat::RG32_UINT;
+		case VK_FORMAT_R32G32_SINT: return ImageFormat::RG32_SINT;
+		case VK_FORMAT_R32G32_SFLOAT: return ImageFormat::RG32_SFLOAT;
+		case VK_FORMAT_R32G32B32_UINT: return ImageFormat::RGB32_UINT;
+		case VK_FORMAT_R32G32B32_SINT: return ImageFormat::RGB32_SINT;
+		case VK_FORMAT_R32G32B32_SFLOAT: return ImageFormat::RGB32_SFLOAT;
+		case VK_FORMAT_R32G32B32A32_UINT: return ImageFormat::RGBA32_UINT;
+		case VK_FORMAT_R32G32B32A32_SINT: return ImageFormat::RGBA32_SINT;
+		case VK_FORMAT_R32G32B32A32_SFLOAT: return ImageFormat::RGBA32_SFLOAT;
+		// Color (64 bit components)
+		case VK_FORMAT_R64_UINT: return ImageFormat::R64_UINT;
+		case VK_FORMAT_R64_SINT: return ImageFormat::R64_SINT;
+		case VK_FORMAT_R64_SFLOAT: return ImageFormat::R64_SFLOAT;
+		case VK_FORMAT_R64G64_UINT: return ImageFormat::RG64_UINT;
+		case VK_FORMAT_R64G64_SINT: return ImageFormat::RG64_SINT;
+		case VK_FORMAT_R64G64_SFLOAT: return ImageFormat::RG64_SFLOAT;
+		case VK_FORMAT_R64G64B64_UINT: return ImageFormat::RGB64_UINT;
+		case VK_FORMAT_R64G64B64_SINT: return ImageFormat::RGB64_SINT;
+		case VK_FORMAT_R64G64B64_SFLOAT: return ImageFormat::RGB64_SFLOAT;
+		case VK_FORMAT_R64G64B64A64_UINT: return ImageFormat::RGBA64_UINT;
+		case VK_FORMAT_R64G64B64A64_SINT: return ImageFormat::RGBA64_SINT;
+		case VK_FORMAT_R64G64B64A64_SFLOAT: return ImageFormat::RGBA64_SFLOAT;
+		// DepthStencil
 		case VK_FORMAT_D32_SFLOAT: return ImageFormat::D32F;
 		case VK_FORMAT_D32_SFLOAT_S8_UINT: return ImageFormat::D32F_S8U;
 		case VK_FORMAT_D24_UNORM_S8_UINT: return ImageFormat::D24U_S8U;
