@@ -28,7 +28,7 @@ namespace at
 {
 	enum class ImageFormat
 	{
-		// Color
+		// Color (8 bit components)
 		R8_UNORM,
 		R8_SNORM,
 		R8_USCALED,
@@ -76,6 +76,73 @@ namespace at
 		BGRA8_UINT,
 		BGRA8_SINT,
 		BGRA8_SRGB,
+
+		// Color (16 bit components)
+		R16_UNORM,
+		R16_SNORM,
+		R16_USCALED,
+		R16_SSCALED,
+		R16_UINT,
+		R16_SINT,
+		R16_SFLOAT,
+
+		RG16_UNORM,
+		RG16_SNORM,
+		RG16_USCALED,
+		RG16_SSCALED,
+		RG16_UINT,
+		RG16_SINT,
+		RG16_SFLOAT,
+
+		RGB16_UNORM,
+		RGB16_SNORM,
+		RGB16_USCALED,
+		RGB16_SSCALED,
+		RGB16_UINT,
+		RGB16_SINT,
+		RGB16_SFLOAT,
+
+		RGBA16_UNORM,
+		RGBA16_SNORM,
+		RGBA16_USCALED,
+		RGBA16_SSCALED,
+		RGBA16_UINT,
+		RGBA16_SINT,
+		RGBA16_SFLOAT,
+
+		// Color (32 bit components)
+		R32_UINT,
+		R32_SINT,
+		R32_SFLOAT,
+
+		RG32_UINT,
+		RG32_SINT,
+		RG32_SFLOAT,
+
+		RGB32_UINT,
+		RGB32_SINT,
+		RGB32_SFLOAT,
+
+		RGBA32_UINT,
+		RGBA32_SINT,
+		RGBA32_SFLOAT,
+
+		// Color (64 bit components)
+		R64_UINT,
+		R64_SINT,
+		R64_SFLOAT,
+
+		RG64_UINT,
+		RG64_SINT,
+		RG64_SFLOAT,
+
+		RGB64_UINT,
+		RGB64_SINT,
+		RGB64_SFLOAT,
+
+		RGBA64_UINT,
+		RGBA64_SINT,
+		RGBA64_SFLOAT,
 		
 		// DepthStencil
 		D32F,
