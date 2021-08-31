@@ -29,7 +29,7 @@ namespace
 {
 	constexpr size_t targetThreadCount = 4;
 
-	const size_t threadCount = std::min(targetThreadCount, TaskManager::getInstance().getSize());
+	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
 }
 
 BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& settings) :
@@ -102,7 +102,7 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	}
 
 	//----- THREAD RESOURCES -----//
-	auto& taskManager = TaskManager::getInstance();
+	auto& taskManager = TaskManager::instance();
 	const auto coreCount = taskManager.getSize();
 
 	m_threadCommandBuffers.resize(coreCount);
@@ -145,7 +145,7 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 
 BasicRenderPipeline::~BasicRenderPipeline()
 {
-	Renderer::getInstance().waitForIdle();
+	Renderer::instance().waitForIdle();
 
 	// Thread resources
 	m_threadCommandBuffers.clear();
@@ -223,7 +223,7 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 
 		auto& objects = m_scene->getObjects();
 
-		auto& taskManager = TaskManager::getInstance();
+		auto& taskManager = TaskManager::instance();
 
 		std::vector<Ptr<Task>> tasks;
 		tasks.reserve(threadCount);
@@ -354,7 +354,7 @@ void BasicRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 	{
 		auto& objects = m_scene->getObjects();
 
-		auto& taskManager = TaskManager::getInstance();
+		auto& taskManager = TaskManager::instance();
 
 		// Divide the updates in max groups
 		std::vector<Ptr<Task>> tasks;

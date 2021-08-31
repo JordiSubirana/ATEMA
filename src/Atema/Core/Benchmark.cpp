@@ -38,7 +38,7 @@ BenchmarkData::BenchmarkData() :
 Benchmark::Benchmark(const std::string& label) :
 	ScopedTimer()
 {
-	m_data = BenchmarkManager::getInstance().getData(label);
+	m_data = BenchmarkManager::instance().getData(label);
 
 	auto data = m_data;
 	
@@ -52,7 +52,7 @@ Benchmark::Benchmark(const std::string& label) :
 
 Benchmark::~Benchmark()
 {
-	BenchmarkManager::getInstance().decrement();
+	BenchmarkManager::instance().decrement();
 }
 
 // BenchmarkManager
@@ -68,7 +68,7 @@ BenchmarkManager::~BenchmarkManager()
 	reset();
 }
 
-BenchmarkManager& BenchmarkManager::getInstance() noexcept
+BenchmarkManager& BenchmarkManager::instance() noexcept
 {
 	thread_local BenchmarkManager s_instance;
 

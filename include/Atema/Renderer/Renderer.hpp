@@ -59,7 +59,7 @@ namespace at
 		template <typename T>
 		static Renderer& create(const Settings& settings);
 
-		static Renderer& getInstance();
+		static Renderer& instance();
 
 		static void destroy();
 

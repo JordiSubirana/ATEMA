@@ -23,7 +23,6 @@
 
 using namespace at;
 
-
 SandboxApplication::SandboxApplication():
 	Application(),
 	m_frameCount(0),
@@ -52,7 +51,7 @@ void SandboxApplication::initialize()
 	Renderer::create<VulkanRenderer>(settings);
 
 	// Window / SwapChain
-	m_window = Renderer::getInstance().getMainWindow();
+	m_window = Renderer::instance().getMainWindow();
 
 	RenderPipeline::Settings renderPipelineSettings;
 	renderPipelineSettings.window = m_window;
@@ -72,7 +71,7 @@ void SandboxApplication::update(at::TimeStep ms)
 
 	if (m_window->shouldClose())
 	{
-		Application::instance().close();
+		close();
 		return;
 	}
 
@@ -91,8 +90,8 @@ void SandboxApplication::update(at::TimeStep ms)
 
 		m_window->setTitle("Atema (" + std::to_string(fps) + " fps / " + std::to_string(frameTime * 1000.0f) + " ms)");
 
-		BenchmarkManager::getInstance().print(m_frameCount);
-		BenchmarkManager::getInstance().reset();
+		BenchmarkManager::instance().print(m_frameCount);
+		BenchmarkManager::instance().reset();
 
 		m_frameCount = 0;
 		m_frameDuration = 0.0f;

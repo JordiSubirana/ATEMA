@@ -40,7 +40,7 @@ namespace at
 		VulkanRenderer(const Renderer::Settings& settings);
 		virtual ~VulkanRenderer();
 
-		static VulkanRenderer& getInstance();
+		static VulkanRenderer& instance();
 
 		// Renderer methods
 		void initialize() override;

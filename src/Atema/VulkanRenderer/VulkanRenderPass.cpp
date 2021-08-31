@@ -29,7 +29,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 	m_renderPass(VK_NULL_HANDLE),
 	m_attachments(settings.attachments)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	//TODO: Manage resolve attachments
@@ -113,7 +113,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 
 VulkanRenderPass::~VulkanRenderPass()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyRenderPass, m_renderPass);

@@ -114,7 +114,7 @@ ModelData::ModelData(const std::filesystem::path& path, Ptr<CommandPool> command
 
 		auto fence = Fence::create({});
 
-		Renderer::getInstance().submit(
+		Renderer::instance().submit(
 			{ commandBuffer },
 			{},
 			{},
@@ -152,7 +152,7 @@ ModelData::ModelData(const std::filesystem::path& path, Ptr<CommandPool> command
 
 		auto fence = Fence::create({});
 
-		Renderer::getInstance().submit(
+		Renderer::instance().submit(
 			{ commandBuffer },
 			{},
 			{},
@@ -220,7 +220,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, Ptr<CommandPool> c
 
 	auto fence = Fence::create({});
 
-	Renderer::getInstance().submit(
+	Renderer::instance().submit(
 		{ commandBuffer },
 		{},
 		{},

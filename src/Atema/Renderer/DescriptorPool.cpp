@@ -34,5 +34,5 @@ DescriptorPool::~DescriptorPool()
 
 Ptr<DescriptorPool> DescriptorPool::create(const Settings& settings)
 {
-	return Renderer::getInstance().createDescriptorPool(settings);
+	return Renderer::instance().createDescriptorPool(settings);
 }

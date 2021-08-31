@@ -34,5 +34,5 @@ Fence::~Fence()
 
 Ptr<Fence> Fence::create(const Settings& settings)
 {
-	return Renderer::getInstance().createFence(settings);
+	return Renderer::instance().createFence(settings);
 }

@@ -34,5 +34,5 @@ Shader::~Shader()
 
 Ptr<Shader> Shader::create(const Settings& settings)
 {
-	return Renderer::getInstance().createShader(settings);
+	return Renderer::instance().createShader(settings);
 }

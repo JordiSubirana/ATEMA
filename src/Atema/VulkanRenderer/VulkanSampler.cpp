@@ -29,7 +29,7 @@ VulkanSampler::VulkanSampler(const Sampler::Settings& settings) :
 	m_device(VK_NULL_HANDLE),
 	m_sampler(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto physicalDevice = renderer.getPhysicalDeviceHandle();
 	m_device = renderer.getLogicalDeviceHandle();
 

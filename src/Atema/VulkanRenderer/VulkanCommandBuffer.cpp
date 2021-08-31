@@ -39,7 +39,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	m_secondaryBegan(false),
 	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	auto commandPool = std::static_pointer_cast<VulkanCommandPool>(settings.commandPool);
@@ -62,7 +62,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	vkFreeCommandBuffers(device, m_commandPool, 1, &m_commandBuffer);
@@ -437,7 +437,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 	auto oldLayouts = layouts;
 
 	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	const auto physicalDevice = renderer.getPhysicalDeviceHandle();
 
 	VkFormatProperties formatProperties;

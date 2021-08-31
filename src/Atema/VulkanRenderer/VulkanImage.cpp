@@ -35,7 +35,7 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 	m_size(settings.width, settings.height),
 	m_mipLevels(settings.mipLevels)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	auto format = Vulkan::getFormat(settings.format);
@@ -95,7 +95,7 @@ VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlag
 	m_size(0, 0),
 	m_mipLevels(1)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	createView(device, format, aspect, mipLevels);
@@ -103,7 +103,7 @@ VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlag
 
 VulkanImage::~VulkanImage()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyImageView, m_view);

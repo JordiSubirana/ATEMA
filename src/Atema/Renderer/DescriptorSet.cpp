@@ -52,7 +52,7 @@ DescriptorSetLayout::~DescriptorSetLayout()
 
 Ptr<DescriptorSetLayout> DescriptorSetLayout::create(const Settings& settings)
 {
-	return Renderer::getInstance().createDescriptorSetLayout(settings);
+	return Renderer::instance().createDescriptorSetLayout(settings);
 }
 
 // DescriptorSet

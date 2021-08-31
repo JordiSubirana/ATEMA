@@ -98,7 +98,7 @@ void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 
 	const auto basisChange = rotation4f({ toRadians(90.0f), 0.0f, 0.0f });
 
-	auto& taskManager = TaskManager::getInstance();
+	auto& taskManager = TaskManager::instance();
 
 	// Divide the updates in max groups
 	const size_t taskCount = threadCount ? threadCount : taskManager.getSize();

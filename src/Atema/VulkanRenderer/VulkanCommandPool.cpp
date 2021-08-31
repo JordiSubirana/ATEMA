@@ -28,7 +28,7 @@ VulkanCommandPool::VulkanCommandPool(const CommandPool::Settings& settings) :
 	CommandPool(),
 	m_commandPool(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	//TODO: Make this custom
@@ -44,7 +44,7 @@ VulkanCommandPool::VulkanCommandPool(const CommandPool::Settings& settings) :
 
 VulkanCommandPool::~VulkanCommandPool()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyCommandPool, m_commandPool);

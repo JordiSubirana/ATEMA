@@ -29,7 +29,7 @@ VulkanFence::VulkanFence(const Fence::Settings& settings) :
 	m_device(VK_NULL_HANDLE),
 	m_fence(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 
 	VkFenceCreateInfo fenceInfo{};

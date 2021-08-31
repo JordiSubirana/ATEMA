@@ -34,5 +34,5 @@ GraphicsPipeline::~GraphicsPipeline()
 
 Ptr<GraphicsPipeline> GraphicsPipeline::create(const Settings& settings)
 {
-	return Renderer::getInstance().createGraphicsPipeline(settings);
+	return Renderer::instance().createGraphicsPipeline(settings);
 }

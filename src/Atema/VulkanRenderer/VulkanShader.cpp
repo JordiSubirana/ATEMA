@@ -55,7 +55,7 @@ VulkanShader::VulkanShader(const Shader::Settings& settings) :
 	Shader(),
 	m_shaderModule(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	auto shaderCode = readFile(settings.path);
@@ -70,7 +70,7 @@ VulkanShader::VulkanShader(const Shader::Settings& settings) :
 
 VulkanShader::~VulkanShader()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyShaderModule, m_shaderModule);

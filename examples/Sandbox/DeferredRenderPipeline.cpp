@@ -29,7 +29,7 @@ namespace
 {
 	constexpr size_t targetThreadCount = 4;
 
-	const size_t threadCount = std::min(targetThreadCount, TaskManager::getInstance().getSize());
+	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
 
 	struct PPVertex
 	{
@@ -75,7 +75,7 @@ namespace
 
 		auto fence = Fence::create({});
 
-		Renderer::getInstance().submit(
+		Renderer::instance().submit(
 			{ commandBuffer },
 			{},
 			{},
@@ -223,7 +223,7 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 	}
 
 	//----- THREAD RESOURCES -----//
-	auto& taskManager = TaskManager::getInstance();
+	auto& taskManager = TaskManager::instance();
 	const auto coreCount = taskManager.getSize();
 
 	m_threadCommandBuffers.resize(coreCount);
@@ -246,7 +246,7 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 
 DeferredRenderPipeline::~DeferredRenderPipeline()
 {
-	Renderer::getInstance().waitForIdle();
+	Renderer::instance().waitForIdle();
 
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
@@ -425,7 +425,7 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 
 		auto& objects = m_scene->getObjects();
 
-		auto& taskManager = TaskManager::getInstance();
+		auto& taskManager = TaskManager::instance();
 
 		std::vector<Ptr<Task>> tasks;
 		tasks.reserve(threadCount);
@@ -569,7 +569,7 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 	{
 		auto& objects = m_scene->getObjects();
 
-		auto& taskManager = TaskManager::getInstance();
+		auto& taskManager = TaskManager::instance();
 
 		// Divide the updates in max groups
 		std::vector<Ptr<Task>> tasks;

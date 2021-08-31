@@ -76,9 +76,9 @@ VulkanRenderer::~VulkanRenderer()
 	destroy();
 }
 
-VulkanRenderer& VulkanRenderer::getInstance()
+VulkanRenderer& VulkanRenderer::instance()
 {
-	return static_cast<VulkanRenderer&>(Renderer::getInstance());
+	return static_cast<VulkanRenderer&>(Renderer::instance());
 }
 
 void VulkanRenderer::initialize()

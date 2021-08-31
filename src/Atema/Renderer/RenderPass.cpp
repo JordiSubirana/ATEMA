@@ -34,5 +34,5 @@ RenderPass::~RenderPass()
 
 Ptr<RenderPass> RenderPass::create(const Settings& settings)
 {
-	return Renderer::getInstance().createRenderPass(settings);
+	return Renderer::instance().createRenderPass(settings);
 }

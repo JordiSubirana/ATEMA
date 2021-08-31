@@ -70,7 +70,7 @@ namespace at
 	public:
 		virtual ~BenchmarkManager();
 
-		static BenchmarkManager& getInstance() noexcept;
+		static BenchmarkManager& instance() noexcept;
 		
 		void reset();
 		

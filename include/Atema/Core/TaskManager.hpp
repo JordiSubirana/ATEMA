@@ -55,11 +55,9 @@ namespace at
 	class ATEMA_CORE_API TaskManager : public NonCopyable
 	{
 	public:
-		TaskManager();
-		TaskManager(size_t size);
 		virtual ~TaskManager();
 		
-		static TaskManager& getInstance();
+		static TaskManager& instance();
 
 		size_t getSize() const noexcept;
 		
@@ -67,6 +65,7 @@ namespace at
 		Ptr<Task> createTask(const std::function<void(size_t)>& function);
 
 	private:
+		TaskManager();
 		void initialize(size_t size);
 
 		std::atomic_bool m_exit;

@@ -30,7 +30,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 	Framebuffer(),
 	m_framebuffer(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
@@ -60,7 +60,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 
 VulkanFramebuffer::~VulkanFramebuffer()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyFramebuffer, m_framebuffer);

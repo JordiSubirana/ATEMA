@@ -34,5 +34,5 @@ SwapChain::~SwapChain()
 
 Ptr<SwapChain> SwapChain::create(const Settings& settings)
 {
-	return Renderer::getInstance().createSwapChain(settings);
+	return Renderer::instance().createSwapChain(settings);
 }

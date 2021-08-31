@@ -173,7 +173,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	// Reset fence & submit command buffers to the target queue (works with arrays for performance)
 	fence->reset();
 
-	Renderer::getInstance().submit(
+	Renderer::instance().submit(
 		submitCommandBuffers,
 		submitWaitSemaphores,
 		submitWaitStages,
@@ -184,7 +184,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 		ATEMA_BENCHMARK("Renderer::present")
 
 		// Present swapchain image
-		acquireResult = Renderer::getInstance().present(
+		acquireResult = Renderer::instance().present(
 			m_swapChain,
 			m_currentSwapChainImage,
 			submitSignalSemaphores
@@ -311,7 +311,7 @@ void RenderPipeline::createSwapChainResources()
 void RenderPipeline::destroySwapChainResources()
 {
 	// Resources may be in use, wait until it's not the case anymore
-	Renderer::getInstance().waitForIdle();
+	Renderer::instance().waitForIdle();
 
 	m_framebuffers.clear();
 

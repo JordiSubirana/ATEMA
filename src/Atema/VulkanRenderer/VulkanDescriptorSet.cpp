@@ -33,7 +33,7 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const DescriptorSetLayout::
 	m_descriptorSetLayout(VK_NULL_HANDLE),
 	m_bindings(settings.bindings)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
@@ -61,7 +61,7 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const DescriptorSetLayout::
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
@@ -84,7 +84,7 @@ VulkanDescriptorSet::VulkanDescriptorSet(VkDescriptorSet descriptorSet, std::fun
 	m_descriptorSet(descriptorSet),
 	m_destroyCallback(destroyCallback)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 }
 

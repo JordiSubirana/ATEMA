@@ -29,7 +29,7 @@ VulkanSemaphore::VulkanSemaphore() :
 	m_device(VK_NULL_HANDLE),
 	m_semaphore(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 
 	VkSemaphoreCreateInfo semaphoreInfo{};

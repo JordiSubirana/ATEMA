@@ -34,7 +34,7 @@ VulkanBuffer::VulkanBuffer(const Buffer::Settings& settings) :
 {
 	ATEMA_ASSERT(settings.byteSize != 0, "Invalid buffer size");
 
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 
 	// Buffer creation

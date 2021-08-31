@@ -35,7 +35,7 @@ Renderer::~Renderer()
 {
 }
 
-Renderer& Renderer::getInstance()
+Renderer& Renderer::instance()
 {
 	if (!s_renderer)
 	{

@@ -34,5 +34,5 @@ Semaphore::~Semaphore()
 
 Ptr<Semaphore> Semaphore::create()
 {
-	return Renderer::getInstance().createSemaphore();
+	return Renderer::instance().createSemaphore();
 }

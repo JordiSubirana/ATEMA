@@ -44,5 +44,5 @@ Sampler::~Sampler()
 
 Ptr<Sampler> Sampler::create(const Settings& settings)
 {
-	return Renderer::getInstance().createSampler(settings);
+	return Renderer::instance().createSampler(settings);
 }

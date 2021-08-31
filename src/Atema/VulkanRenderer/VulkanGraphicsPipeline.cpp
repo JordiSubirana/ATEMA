@@ -32,7 +32,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	m_pipelineLayout(VK_NULL_HANDLE),
 	m_pipeline(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	//-----
@@ -346,7 +346,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto device = renderer.getLogicalDeviceHandle();
 
 	ATEMA_VK_DESTROY(device, vkDestroyPipeline, m_pipeline);

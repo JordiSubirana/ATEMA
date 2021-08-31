@@ -34,5 +34,5 @@ Framebuffer::~Framebuffer()
 
 Ptr<Framebuffer> Framebuffer::create(const Settings& settings)
 {
-	return Renderer::getInstance().createFramebuffer(settings);
+	return Renderer::instance().createFramebuffer(settings);
 }

@@ -86,7 +86,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(const DescriptorPool::Settings& setti
 	m_poolSettings({}),
 	m_layout(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 
 	m_layout = std::static_pointer_cast<VulkanDescriptorSetLayout>(settings.layout)->getHandle();

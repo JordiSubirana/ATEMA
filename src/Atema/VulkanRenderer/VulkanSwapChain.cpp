@@ -96,7 +96,7 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 		ATEMA_ERROR("Invalid window");
 	}
 	
-	auto& renderer = VulkanRenderer::getInstance();
+	auto& renderer = VulkanRenderer::instance();
 	auto instance = renderer.getInstanceHandle();
 	auto physicalDevice = renderer.getPhysicalDeviceHandle();
 	m_device = renderer.getLogicalDeviceHandle();

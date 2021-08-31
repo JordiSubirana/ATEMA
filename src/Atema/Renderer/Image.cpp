@@ -34,5 +34,5 @@ Image::~Image()
 
 Ptr<Image> Image::create(const Settings& settings)
 {
-	return Renderer::getInstance().createImage(settings);
+	return Renderer::instance().createImage(settings);
 }

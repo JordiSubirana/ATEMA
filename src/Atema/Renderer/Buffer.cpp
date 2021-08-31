@@ -34,5 +34,5 @@ Buffer::~Buffer()
 
 Ptr<Buffer> Buffer::create(const Settings& settings)
 {
-	return Renderer::getInstance().createBuffer(settings);
+	return Renderer::instance().createBuffer(settings);
 }

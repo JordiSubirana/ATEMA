@@ -34,5 +34,5 @@ CommandPool::~CommandPool()
 
 Ptr<CommandPool> CommandPool::create(const Settings& settings)
 {
-	return Renderer::getInstance().createCommandPool(settings);
+	return Renderer::instance().createCommandPool(settings);
 }

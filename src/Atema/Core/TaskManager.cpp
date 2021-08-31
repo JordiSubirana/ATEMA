@@ -71,13 +71,6 @@ TaskManager::TaskManager() :
 	initialize(coreCount);
 }
 
-TaskManager::TaskManager(size_t size)
-{
-	ATEMA_ASSERT(size > 0, "Invalid thread count (0)");
-
-	initialize(size);
-}
-
 TaskManager::~TaskManager()
 {
 	m_exit = true;
@@ -86,7 +79,7 @@ TaskManager::~TaskManager()
 		thread->join();
 }
 
-TaskManager& TaskManager::getInstance()
+TaskManager& TaskManager::instance()
 {
 	static TaskManager s_instance;
 
