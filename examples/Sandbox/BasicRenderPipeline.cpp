@@ -158,9 +158,9 @@ BasicRenderPipeline::~BasicRenderPipeline()
 	m_frameUniformBuffers.clear();
 
 	// Object resources
+	m_objectFrameData.clear();
 	m_objectDescriptorSetLayout.reset();
 	m_objectDescriptorPool.reset();
-	m_objectFrameData.clear();
 	m_scene.reset();
 
 	m_pipeline.reset();
