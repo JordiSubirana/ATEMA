@@ -121,8 +121,8 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	pipelineSettings.viewport.size.x = static_cast<float>(windowSize.x);
 	pipelineSettings.viewport.size.y = static_cast<float>(windowSize.y);
 	pipelineSettings.scissor.size = windowSize;
-	pipelineSettings.vertexShader = Shader::create({ vertShaderPath });
-	pipelineSettings.fragmentShader = Shader::create({ fragShaderPath });
+	pipelineSettings.vertexShader = Shader::create({ materialVertexPath });
+	pipelineSettings.fragmentShader = Shader::create({ materialFragmentPath });
 	pipelineSettings.renderPass = getRenderPass();
 	pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
 	pipelineSettings.vertexInput.attributes =

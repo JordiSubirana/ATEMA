@@ -28,11 +28,17 @@ constexpr uint32_t objectRow = 30;
 constexpr uint32_t objectCount = objectRow * objectRow;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources/";
-const std::filesystem::path vertShaderPath = rscPath / "Shaders/vert.spv";
-const std::filesystem::path fragShaderPath = rscPath / "Shaders/frag.spv";
+
+const std::filesystem::path materialVertexPath = rscPath / "Shaders/ForwardVert.spv";
+const std::filesystem::path materialFragmentPath = rscPath / "Shaders/ForwardFrag.spv";
+
+const std::filesystem::path deferredMaterialVertexPath = rscPath / "Shaders/GeometryPassVert.spv";
+const std::filesystem::path deferredMaterialFragmentPath = rscPath / "Shaders/GeometryPassFrag.spv";
+const std::filesystem::path deferredPostProcessVertexPath = rscPath / "Shaders/PostProcessOutputColorVert.spv";
+const std::filesystem::path deferredPostProcessFragmentPath = rscPath / "Shaders/PostProcessOutputColorFrag.spv";
 
 // LampPost
-//*
+/*
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost_Color.png";
 const float modelScale = 30.0f;
@@ -42,7 +48,7 @@ const auto zoomOffset = 100.0f;
 //*/
 
 // Tardis
-/*
+//*
 const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis_blue_color.png";
 const float modelScale = 4.0f;
