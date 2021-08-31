@@ -74,6 +74,9 @@ namespace at
 
 		virtual void waitForIdle() = 0;
 		
+		virtual Ptr<CommandPool> getDefaultCommandPool() = 0;
+		virtual Ptr<CommandPool> getCommandPool(size_t threadIndex) = 0;
+		
 		// Object creation
 		virtual Ptr<Image> createImage(const Image::Settings& settings) = 0;
 		virtual Ptr<Sampler> createSampler(const Sampler::Settings& settings) = 0;
