@@ -29,8 +29,10 @@
 
 using namespace at;
 
-ModelData::ModelData(const std::filesystem::path& path, Ptr<CommandPool> commandPool)
+ModelData::ModelData(const std::filesystem::path& path)
 {
+	auto commandPool = Renderer::instance().getDefaultCommandPool();
+
 	std::vector<BasicVertex> modelVertices;
 	std::vector<uint32_t> modelIndices;
 
@@ -166,8 +168,10 @@ ModelData::ModelData(const std::filesystem::path& path, Ptr<CommandPool> command
 	indexCount = modelIndices.size();
 }
 
-MaterialData::MaterialData(const std::filesystem::path& path, Ptr<CommandPool> commandPool)
+MaterialData::MaterialData(const std::filesystem::path& path)
 {
+	auto commandPool = Renderer::instance().getDefaultCommandPool();
+
 	// Load the texture data
 	int texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

@@ -69,8 +69,7 @@ struct UniformObjectElement
 class Scene
 {
 public:
-	Scene() = delete;
-	Scene(const at::Ptr<at::CommandPool>& commandPool);
+	Scene();
 	virtual ~Scene();
 
 	void updateObjects(at::TimeStep timeStep, size_t threadCount = 0);
@@ -78,7 +77,7 @@ public:
 	const std::vector<ObjectData>& getObjects() const noexcept;
 
 private:
-	void loadResources(const at::Ptr<at::CommandPool>& commandPool);
+	void loadResources();
 	
 	// Global resources
 	at::Ptr<ModelData> m_modelData;

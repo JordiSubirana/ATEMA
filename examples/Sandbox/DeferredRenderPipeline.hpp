@@ -88,7 +88,6 @@ private:
 
 	// Thread resources
 	std::vector<std::vector<std::vector<at::Ptr<at::CommandBuffer>>>> m_threadCommandBuffers;
-	std::vector<at::Ptr<at::CommandPool>> m_threadCommandPools;
 };
 
 #endif

@@ -231,10 +231,6 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 	for (auto& commandBuffers : m_threadCommandBuffers)
 		commandBuffers.resize(m_maxFramesInFlight);
 
-	m_threadCommandPools.reserve(coreCount);
-	for (size_t i = 0; i < coreCount; i++)
-		m_threadCommandPools.push_back(CommandPool::create({}));
-
 	// Create size dependent resources
 	const auto windowSize = settings.window->getSize();
 
@@ -265,7 +261,6 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	
 	// Thread resources
 	m_threadCommandBuffers.clear();
-	m_threadCommandPools.clear();
 
 	// Frame resources
 	m_frameDescriptorSetLayout.reset();
@@ -449,7 +444,7 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 
 			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
 				{
-					auto& commandPool = m_threadCommandPools[threadIndex];
+					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
 					auto commandBuffer = CommandBuffer::create({ commandPool, true, true });
 
 					commandBuffer->beginSecondary(m_deferredRenderPass, m_deferredFramebuffer);
@@ -508,9 +503,7 @@ void DeferredRenderPipeline::loadScene()
 {
 	ATEMA_BENCHMARK("DeferredRenderPipeline::loadScene");
 
-	auto& commandPool = getCommandPools()[0];
-
-	m_scene = std::make_shared<Scene>(commandPool);
+	m_scene = std::make_shared<Scene>();
 
 	auto& objects = m_scene->getObjects();
 

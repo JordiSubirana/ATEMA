@@ -110,10 +110,6 @@ BasicRenderPipeline::BasicRenderPipeline(const RenderPipeline::Settings& setting
 	for (auto& commandBuffers : m_threadCommandBuffers)
 		commandBuffers.resize(m_maxFramesInFlight);
 
-	m_threadCommandPools.reserve(coreCount);
-	for (size_t i = 0; i < coreCount; i++)
-		m_threadCommandPools.push_back(CommandPool::create({}));
-
 	//----- PIPELINE RESOURCES -----//
 	
 	// Graphics pipeline
@@ -149,7 +145,6 @@ BasicRenderPipeline::~BasicRenderPipeline()
 
 	// Thread resources
 	m_threadCommandBuffers.clear();
-	m_threadCommandPools.clear();
 
 	// Frame resources
 	m_frameDescriptorSetLayout.reset();
@@ -247,7 +242,7 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 
 			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
 				{
-					auto& commandPool = m_threadCommandPools[threadIndex];
+					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
 					auto commandBuffer = CommandBuffer::create({ commandPool, true, true });
 
 					commandBuffer->beginSecondary(getRenderPass(), getCurrentFramebuffer());
@@ -292,10 +287,8 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 void BasicRenderPipeline::loadScene()
 {
 	ATEMA_BENCHMARK("BasicRenderPipeline::loadScene")
-
-	auto& commandPool = getCommandPools()[0];
 	
-	m_scene = std::make_shared<Scene>(commandPool);
+	m_scene = std::make_shared<Scene>();
 
 	auto& objects = m_scene->getObjects();
 

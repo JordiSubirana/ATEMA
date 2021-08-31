@@ -40,9 +40,7 @@ public:
 
 	void update(at::TimeStep ms) override;
 
-private:
-	void initialize();
-	
+private:	
 	at::Ptr<at::Window> m_window;
 
 	at::Ptr<TestRenderPipeline> m_renderPipeline;

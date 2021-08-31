@@ -59,9 +59,9 @@ Ptr<DescriptorSet> ObjectFrameData::getDescriptorSet(uint32_t frameIndex)
 	return m_descriptorSets[frameIndex];
 }
 
-Scene::Scene(const at::Ptr<at::CommandPool>& commandPool)
+Scene::Scene()
 {
-	loadResources(commandPool);
+	loadResources();
 
 	m_objects.reserve(objectCount);
 
@@ -151,9 +151,9 @@ const std::vector<ObjectData>& Scene::getObjects() const noexcept
 	return m_objects;
 }
 
-void Scene::loadResources(const at::Ptr<at::CommandPool>& commandPool)
+void Scene::loadResources()
 {
-	m_modelData = std::make_shared<ModelData>(modelMeshPath, commandPool);
+	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	m_materialData = std::make_shared<MaterialData>(modelTexturePath, commandPool);
+	m_materialData = std::make_shared<MaterialData>(modelTexturePath);
 }

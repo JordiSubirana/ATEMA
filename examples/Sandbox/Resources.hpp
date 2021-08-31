@@ -139,7 +139,7 @@ namespace std
 struct ModelData
 {
 	ModelData() = delete;
-	ModelData(const std::filesystem::path& path, at::Ptr<at::CommandPool> commandPool);
+	ModelData(const std::filesystem::path& path);
 
 	at::Ptr<at::Buffer> vertexBuffer;
 	at::Ptr<at::Buffer> indexBuffer;
@@ -149,7 +149,7 @@ struct ModelData
 struct MaterialData
 {
 	MaterialData() = delete;
-	MaterialData(const std::filesystem::path& path, at::Ptr<at::CommandPool> commandPool);
+	MaterialData(const std::filesystem::path& path);
 
 	at::Ptr<at::Image> texture;
 	at::Ptr<at::Sampler> sampler;
