@@ -29,7 +29,7 @@ VulkanCommandPool::VulkanCommandPool(const CommandPool::Settings& settings) :
 	m_commandPool(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	//TODO: Make this custom
 	VkCommandPoolCreateInfo poolInfo{};
@@ -39,15 +39,12 @@ VulkanCommandPool::VulkanCommandPool(const CommandPool::Settings& settings) :
 	// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
-	ATEMA_VK_CHECK(vkCreateCommandPool(device, &poolInfo, nullptr, &m_commandPool));
+	ATEMA_VK_CHECK(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool));
 }
 
 VulkanCommandPool::~VulkanCommandPool()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyCommandPool, m_commandPool);
+	ATEMA_VK_DESTROY(m_device, vkDestroyCommandPool, m_commandPool);
 }
 
 VkCommandPool VulkanCommandPool::getHandle() const noexcept

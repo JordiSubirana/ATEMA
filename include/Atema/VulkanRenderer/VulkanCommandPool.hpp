@@ -38,6 +38,7 @@ namespace at
 		VkCommandPool getHandle() const noexcept;
 		
 	private:
+		VkDevice m_device;
 		VkCommandPool m_commandPool;
 	};
 }
