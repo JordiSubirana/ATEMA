@@ -211,10 +211,20 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 
 	//-----
 	// Color blending (configuration per attached framebuffer)
-	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+	uint32_t colorAttachmentCount = 0;
+
+	for (auto& attachment : settings.renderPass->getAttachments())
+	{
+		if (!hasDepth(attachment.format) && !hasStencil(attachment.format))
+			colorAttachmentCount++;
+	}
+	
+	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+	colorBlendAttachments.reserve(colorAttachmentCount);
 	{
 		auto& colorBlendSettings = settings.colorBlend;
 
+		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachment.blendEnable = colorBlendSettings.enabled ? VK_TRUE : VK_FALSE;
 		colorBlendAttachment.srcColorBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.colorSrcFactor);
@@ -223,6 +233,9 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 		colorBlendAttachment.srcAlphaBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.alphaSrcFactor);
 		colorBlendAttachment.dstAlphaBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.alphaDstFactor);
 		colorBlendAttachment.alphaBlendOp = Vulkan::getBlendOperation(colorBlendSettings.alphaOperation);
+
+		for (size_t i = 0; i < colorAttachmentCount; i++)
+			colorBlendAttachments.push_back(colorBlendAttachment);
 	}
 
 	// Color blending (global configuration)
@@ -230,8 +243,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlending.logicOpEnable = VK_FALSE; // True to use bitwise combination blending, false to use previous method
 	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &colorBlendAttachment;
+	colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
+	colorBlending.pAttachments = colorBlendAttachments.data();
 	colorBlending.blendConstants[0] = 0.0f; // Optional
 	colorBlending.blendConstants[1] = 0.0f; // Optional
 	colorBlending.blendConstants[2] = 0.0f; // Optional
