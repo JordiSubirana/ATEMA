@@ -28,21 +28,6 @@ SandboxApplication::SandboxApplication():
 	m_frameCount(0),
 	m_frameDuration(0.0f)
 {
-	initialize();
-}
-
-SandboxApplication::~SandboxApplication()
-{
-	m_renderPipeline.reset();
-
-	// Window & Renderer
-	m_window.reset();
-
-	Renderer::destroy();
-}
-
-void SandboxApplication::initialize()
-{
 	Renderer::Settings settings;
 	settings.maxFramesInFlight = 2;
 	//settings.mainWindowSettings.width = 1920;
@@ -57,6 +42,16 @@ void SandboxApplication::initialize()
 	renderPipelineSettings.window = m_window;
 
 	m_renderPipeline = std::make_shared<TestRenderPipeline>(renderPipelineSettings);
+}
+
+SandboxApplication::~SandboxApplication()
+{
+	m_renderPipeline.reset();
+
+	// Window & Renderer
+	m_window.reset();
+
+	Renderer::destroy();
 }
 
 void SandboxApplication::onEvent(at::Event& event)

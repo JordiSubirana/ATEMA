@@ -36,13 +36,13 @@ public:
 	SandboxApplication();
 	~SandboxApplication();
 
-	void initialize();
-
 	void onEvent(at::Event& event) override;
 
 	void update(at::TimeStep ms) override;
 
 private:
+	void initialize();
+	
 	at::Ptr<at::Window> m_window;
 
 	at::Ptr<TestRenderPipeline> m_renderPipeline;
