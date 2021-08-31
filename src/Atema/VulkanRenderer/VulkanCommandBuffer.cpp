@@ -40,7 +40,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	auto commandPool = std::static_pointer_cast<VulkanCommandPool>(settings.commandPool);
 
@@ -57,15 +57,12 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	allocInfo.level = settings.secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = 1;
 
-	ATEMA_VK_CHECK(vkAllocateCommandBuffers(device, &allocInfo, &m_commandBuffer));
+	ATEMA_VK_CHECK(vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer));
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	vkFreeCommandBuffers(device, m_commandPool, 1, &m_commandBuffer);
+	vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
 	
 	m_commandBuffer = VK_NULL_HANDLE;
 }

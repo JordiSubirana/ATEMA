@@ -38,6 +38,7 @@ namespace at
 		VkShaderModule getHandle() const noexcept;
 
 	private:
+		VkDevice m_device;
 		VkShaderModule m_shaderModule;
 	};
 }

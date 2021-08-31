@@ -30,7 +30,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 	m_attachments(settings.attachments)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	//TODO: Manage resolve attachments
 	std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -108,15 +108,12 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	ATEMA_VK_CHECK(vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_renderPass));
+	ATEMA_VK_CHECK(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
 }
 
 VulkanRenderPass::~VulkanRenderPass()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyRenderPass, m_renderPass);
+	ATEMA_VK_DESTROY(m_device, vkDestroyRenderPass, m_renderPass);
 }
 
 VkRenderPass VulkanRenderPass::getHandle() const noexcept

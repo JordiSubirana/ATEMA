@@ -39,6 +39,7 @@ namespace at
 		VkPipelineLayout getLayoutHandle() const noexcept;
 		
 	private:
+		VkDevice m_device;
 		VkPipelineLayout m_pipelineLayout;
 		VkPipeline m_pipeline;
 	};

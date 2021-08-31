@@ -48,8 +48,9 @@ namespace at
 		uint32_t getMipLevels() const noexcept override;
 		
 	private:
-		void createView(VkDevice device, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
+		void createView(VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
 
+		VkDevice m_device;
 		bool m_ownsImage;
 		VkImage m_image;
 		VkImageView m_view;

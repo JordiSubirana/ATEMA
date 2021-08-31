@@ -56,7 +56,7 @@ VulkanShader::VulkanShader(const Shader::Settings& settings) :
 	m_shaderModule(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	auto shaderCode = readFile(settings.path);
 
@@ -65,15 +65,12 @@ VulkanShader::VulkanShader(const Shader::Settings& settings) :
 	createInfo.codeSize = shaderCode.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
-	ATEMA_VK_CHECK(vkCreateShaderModule(device, &createInfo, nullptr, &m_shaderModule));
+	ATEMA_VK_CHECK(vkCreateShaderModule(m_device, &createInfo, nullptr, &m_shaderModule));
 }
 
 VulkanShader::~VulkanShader()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyShaderModule, m_shaderModule);
+	ATEMA_VK_DESTROY(m_device, vkDestroyShaderModule, m_shaderModule);
 }
 
 VkShaderModule VulkanShader::getHandle() const noexcept

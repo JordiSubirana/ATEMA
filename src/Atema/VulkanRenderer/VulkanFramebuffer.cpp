@@ -31,7 +31,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 	m_framebuffer(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
 	std::vector<VkImageView> attachments;
@@ -52,7 +52,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 	framebufferInfo.height = settings.height;
 	framebufferInfo.layers = 1;
 
-	ATEMA_VK_CHECK(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &m_framebuffer));
+	ATEMA_VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffer));
 
 	m_size.x = settings.width;
 	m_size.y = settings.height;
@@ -60,10 +60,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 
 VulkanFramebuffer::~VulkanFramebuffer()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyFramebuffer, m_framebuffer);
+	ATEMA_VK_DESTROY(m_device, vkDestroyFramebuffer, m_framebuffer);
 }
 
 VkFramebuffer VulkanFramebuffer::getHandle() const noexcept

@@ -33,7 +33,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	m_pipeline(VK_NULL_HANDLE)
 {
 	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
+	m_device = renderer.getLogicalDeviceHandle();
 
 	//-----
 	// Shaders
@@ -312,7 +312,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-		ATEMA_VK_CHECK(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
+		ATEMA_VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 	}
 
 	//-----
@@ -341,16 +341,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	//pipelineInfo.basePipelineIndex = -1; // Optional
 
-	ATEMA_VK_CHECK(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
+	ATEMA_VK_CHECK(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyPipeline, m_pipeline);
-	ATEMA_VK_DESTROY(device, vkDestroyPipelineLayout, m_pipelineLayout);
+	ATEMA_VK_DESTROY(m_device, vkDestroyPipeline, m_pipeline);
+	ATEMA_VK_DESTROY(m_device, vkDestroyPipelineLayout, m_pipelineLayout);
 }
 
 VkPipeline VulkanGraphicsPipeline::getHandle() const noexcept

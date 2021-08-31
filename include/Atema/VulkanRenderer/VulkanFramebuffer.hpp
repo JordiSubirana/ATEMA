@@ -40,6 +40,7 @@ namespace at
 		Vector2u getSize() const noexcept override;
 		
 	private:
+		VkDevice m_device;
 		VkFramebuffer m_framebuffer;
 		Vector2u m_size;
 	};

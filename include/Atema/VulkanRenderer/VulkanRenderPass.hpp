@@ -40,6 +40,7 @@ namespace at
 		const std::vector<AttachmentDescription>& getAttachments() const noexcept override;
 		
 	private:
+		VkDevice m_device;
 		VkRenderPass m_renderPass;
 		std::vector<AttachmentDescription> m_attachments;
 	};
