@@ -10,17 +10,17 @@ using TestRenderPipeline = DeferredRenderPipeline;
 
 using namespace at;
 
-class SandboxLayer : public ApplicationLayer
+class SandboxApp : public Application
 {
 public:
-	SandboxLayer() :
+	SandboxApp() :
 		frameCount(0),
 		frameDuration(0.0f)
 	{
 		initialize();
 	}
 
-	~SandboxLayer()
+	~SandboxApp()
 	{
 		renderPipeline.reset();
 
@@ -101,11 +101,7 @@ int main(int argc, char** argv)
 {
 	try
 	{
-		auto sandboxLayer = std::make_unique<SandboxLayer>();
-
-		auto& app = Application::instance();
-
-		app.addLayer(sandboxLayer.get());
+		SandboxApp app;
 
 		app.run();
 	}
