@@ -20,37 +20,34 @@
 */
 
 #include <Atema/Core/Application.hpp>
-#include <Atema/Core/ApplicationLayer.hpp>
+#include <Atema/Core/Error.hpp>
 #include <Atema/Core/Timer.hpp>
 
 using namespace at;
 
+namespace
+{
+	Application* s_instance = nullptr;
+}
+
 Application::Application() : m_close(false)
 {
+	ATEMA_ASSERT(!s_instance, "A single application must exist");
+	
+	s_instance = this;
 }
 
 Application::~Application()
 {
+	if (s_instance == this)
+		s_instance = nullptr;
 }
 
 Application& Application::instance()
 {
-	static Application s_instance;
-
-	return s_instance;
-}
-
-void Application::addLayer(ApplicationLayer* layer)
-{
-	m_layers.push_back(layer);
-}
-
-void Application::removeLayer(ApplicationLayer* layer)
-{
-	auto it = std::find(m_layers.begin(), m_layers.end(), layer);
-
-	if (it != m_layers.end())
-		m_layers.erase(it);
+	ATEMA_ASSERT(s_instance, "No application was created");
+	
+	return *s_instance;
 }
 
 void Application::run()
@@ -61,7 +58,7 @@ void Application::run()
 	{
 		processEvents();
 
-		updateLayers(timer.getStep());
+		update(timer.getStep());
 	}
 }
 
@@ -81,22 +78,11 @@ void Application::processEvents()
 	{
 		auto& event = m_currentEvents.front();
 
-		for (auto& layer : m_layers)
-		{
-			if (!event.isHandled())
-				layer->onEvent(event);
-		}
+		if (!event.isHandled())
+			onEvent(event);
 
 		m_currentEvents.pop();
 	}
 
 	m_currentEvents.swap(m_nextEvents);
-}
-
-void Application::updateLayers(TimeStep timeStep)
-{
-	for (auto& layer : m_layers)
-	{
-		layer->update(timeStep);
-	}
 }

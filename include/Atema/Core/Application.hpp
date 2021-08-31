@@ -26,24 +26,18 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Event.hpp>
 
-#include <vector>
 #include <queue>
 
 namespace at
 {
-	class ApplicationLayer;
 	class TimeStep;
 	
-	class ATEMA_CORE_API Application final : public NonCopyable
+	class ATEMA_CORE_API Application : public NonCopyable
 	{
 	public:
-		~Application();
+		virtual ~Application();
 
 		static Application& instance();
-
-		// The user must manage layers lifetime
-		void addLayer(ApplicationLayer* layer);
-		void removeLayer(ApplicationLayer* layer);
 
 		// Runs the main loop
 		void run();
@@ -53,16 +47,17 @@ namespace at
 
 		// Push an event that will be executed on the next loop
 		void pushEvent(Event& event);
+
+	protected:
+		Application();
+		
+		virtual void onEvent(Event& event) = 0;
+		virtual void update(TimeStep ms) = 0;
 		
 	private:
-		Application();
-
 		void processEvents();
 
-		void updateLayers(TimeStep timeStep);
-
 		bool m_close;
-		std::vector<ApplicationLayer*> m_layers;
 		std::queue<Event> m_currentEvents;
 		std::queue<Event> m_nextEvents;
 	};
