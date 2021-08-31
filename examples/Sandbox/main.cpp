@@ -1,8 +1,12 @@
 #include <Atema/Atema.hpp>
 
 #include "BasicRenderPipeline.hpp"
+#include "DeferredRenderPipeline.hpp"
 
 #include <iostream>
+
+//using TestRenderPipeline = BasicRenderPipeline;
+using TestRenderPipeline = DeferredRenderPipeline;
 
 using namespace at;
 
@@ -41,7 +45,7 @@ public:
 		RenderPipeline::Settings renderPipelineSettings;
 		renderPipelineSettings.window = window;
 
-		renderPipeline = std::make_shared<BasicRenderPipeline>(renderPipelineSettings);
+		renderPipeline = std::make_shared<TestRenderPipeline>(renderPipelineSettings);
 	}
 
 	void onEvent(Event& event) override
@@ -86,7 +90,7 @@ public:
 
 	Ptr<Window> window;
 
-	Ptr<BasicRenderPipeline> renderPipeline;
+	Ptr<TestRenderPipeline> renderPipeline;
 
 	int frameCount;
 	float frameDuration;
