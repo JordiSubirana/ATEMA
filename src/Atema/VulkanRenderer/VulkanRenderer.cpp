@@ -35,8 +35,10 @@
 #include <Atema/VulkanRenderer/VulkanFence.hpp>
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
+#include <Atema/Core/TaskManager.hpp>
 
 #include <set>
+#include <thread>
 
 using namespace at;
 
@@ -91,11 +93,25 @@ void VulkanRenderer::initialize()
 	getPhysicalDevice();
 
 	createDevice();
+
+	createThreadCommandPools();
 }
 
 void VulkanRenderer::waitForIdle()
 {
 	vkDeviceWaitIdle(m_device);
+}
+
+Ptr<CommandPool> VulkanRenderer::getDefaultCommandPool()
+{
+	return m_threadCommandPools.back();
+}
+
+Ptr<CommandPool> VulkanRenderer::getCommandPool(size_t threadIndex)
+{
+	ATEMA_ASSERT(threadIndex < m_threadCommandPools.size() - 1, "Thread index out of range");
+	
+	return m_threadCommandPools[threadIndex];
 }
 
 void VulkanRenderer::registerWindow(Ptr<Window> window)
@@ -765,11 +781,24 @@ void VulkanRenderer::createDevice()
 	vkGetDeviceQueue(m_device, m_queueFamilyData.presentIndex, 0, &m_presentQueue);
 }
 
+void VulkanRenderer::createThreadCommandPools()
+{
+	const auto size = TaskManager::instance().getSize() + 1;
+	m_threadCommandPools.reserve(size);
+
+	for (size_t i = 0; i < size; i++)
+	{
+		m_threadCommandPools.push_back(CommandPool::create({}));
+	}
+}
+
 void VulkanRenderer::destroy()
 {
 	// Wait for asynchronous stuff to be done
 	vkDeviceWaitIdle(m_device);
 
+	destroyThreadCommandPools();
+	
 	destroyDevice();
 
 	destroyInstance();
@@ -797,6 +826,11 @@ void VulkanRenderer::destroyDevice()
 		m_graphicsQueue = VK_NULL_HANDLE;
 		m_presentQueue = VK_NULL_HANDLE;
 	}
+}
+
+void VulkanRenderer::destroyThreadCommandPools()
+{
+	m_threadCommandPools.clear();
 }
 
 void VulkanRenderer::unregisterWindows()

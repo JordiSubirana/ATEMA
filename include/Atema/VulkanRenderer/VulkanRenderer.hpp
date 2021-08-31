@@ -46,6 +46,9 @@ namespace at
 		void initialize() override;
 
 		void waitForIdle() override;
+
+		Ptr<CommandPool> getDefaultCommandPool() override;
+		Ptr<CommandPool> getCommandPool(size_t threadIndex) override;
 		
 		void registerWindow(Ptr<Window> window) override;
 		void unregisterWindow(Ptr<Window> window) override;
@@ -117,12 +120,14 @@ namespace at
 		int getPhysicalDeviceScore(VkPhysicalDevice device, const QueueFamilyData& queueFamilyData);
 		void getPhysicalDevice();
 		void createDevice();
+		void createThreadCommandPools();
 
 		void unregisterWindows();
 		
 		void destroy();
 		void destroyInstance();
 		void destroyDevice();
+		void destroyThreadCommandPools();
 		
 		VkInstance m_instance;
 		UPtr<Vulkan> m_vulkan;
@@ -135,6 +140,8 @@ namespace at
 		VkSurfaceKHR m_surface;
 
 		std::unordered_map<Window*, VkSurfaceKHR> m_windowSurfaces;
+		
+		std::vector<Ptr<CommandPool>> m_threadCommandPools;
 	};
 }
 
