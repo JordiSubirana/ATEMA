@@ -26,7 +26,6 @@ using namespace at;
 
 ObjectData::ObjectData()
 {
-	transform = Matrix4f::identity();
 }
 
 ObjectFrameData::ObjectFrameData(const ObjectData& object, uint32_t frameCount, Ptr<DescriptorPool> descriptorPool)
@@ -79,8 +78,11 @@ Scene::Scene()
 			object.texture = m_materialData->texture;
 			object.sampler = m_materialData->sampler;
 
-			object.position.x = modelScale * static_cast<float>(i) + origin;
-			object.position.y = modelScale * static_cast<float>(j) + origin;
+			Vector3f position;
+			position.x = modelScale * static_cast<float>(i) + origin;
+			position.y = modelScale * static_cast<float>(j) + origin;
+
+			object.transform.setTranslation(position);
 
 			m_objects.push_back(object);
 		}
@@ -95,8 +97,6 @@ Scene::~Scene()
 void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 {
 	const auto origin = -modelScale * (objectRow / 2.0f);
-
-	const auto basisChange = rotation4f({ toRadians(90.0f), 0.0f, 0.0f });
 
 	auto& taskManager = TaskManager::instance();
 
@@ -120,7 +120,7 @@ void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 			lastIndex += remainingSize;
 		}
 
-		auto task = taskManager.createTask([this, firstIndex, lastIndex, timeStep, basisChange]()
+		auto task = taskManager.createTask([this, firstIndex, lastIndex, timeStep]()
 			{
 				for (size_t j = firstIndex; j < lastIndex; j++)
 				{
@@ -128,12 +128,10 @@ void Scene::updateObjects(at::TimeStep timeStep, size_t threadCount)
 
 					auto& object = m_objects[j];
 
-					object.rotation.z += timeStep.getSeconds() * toRadians(rotScale);
+					Vector3f rotation;
+					rotation.z += timeStep.getSeconds() * toRadians(rotScale);
 
-					auto rotationMatrix = rotation4f(object.rotation);
-					auto translationMatrix = translation(object.position);
-
-					object.transform = translationMatrix * rotationMatrix * basisChange;
+					object.transform.rotate(rotation);
 				}
 			});
 

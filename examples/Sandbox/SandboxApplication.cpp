@@ -30,8 +30,6 @@ SandboxApplication::SandboxApplication():
 {
 	Renderer::Settings settings;
 	settings.maxFramesInFlight = 2;
-	//settings.mainWindowSettings.width = 1920;
-	//settings.mainWindowSettings.height = 1080;
 
 	Renderer::create<VulkanRenderer>(settings);
 

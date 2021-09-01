@@ -535,8 +535,8 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 		const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
 
 		UniformFrameElement frameTransforms;
-		frameTransforms.view = lookAt(cameraPos, cameraTarget, cameraUp);
-		frameTransforms.proj = perspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
+		frameTransforms.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
+		frameTransforms.proj = Matrix4f::createPerspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
 		frameTransforms.proj[1][1] *= -1;
 
 		auto buffer = m_frameUniformBuffers[frameIndex];
@@ -550,6 +550,8 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 	// Update objects buffers
 	{
+		const auto basisChange = Matrix4f::createRotation({ toRadians(90.0f), 0.0f, 0.0f });
+
 		auto& objects = m_scene->getObjects();
 
 		auto& taskManager = TaskManager::instance();
@@ -572,7 +574,7 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, firstIndex, lastIndex, &objects, frameIndex]()
+			auto task = taskManager.createTask([this, basisChange, firstIndex, lastIndex, &objects, frameIndex]()
 				{
 					for (size_t i = firstIndex; i < lastIndex; i++)
 					{
@@ -580,7 +582,7 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 						auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
 
 						UniformObjectElement objectTransforms;
-						objectTransforms.model = object.transform;
+						objectTransforms.model = object.transform.getMatrix() * basisChange;
 
 						void* data = buffer->map();
 

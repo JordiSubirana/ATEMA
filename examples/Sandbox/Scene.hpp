@@ -36,9 +36,7 @@ struct ObjectData
 	uint32_t indexCount = 0;
 	at::Ptr<at::Image> texture;
 	at::Ptr<at::Sampler> sampler;
-	at::Matrix4f transform;
-	at::Vector3f position;
-	at::Vector3f rotation;
+	at::Transform transform;
 };
 
 class ObjectFrameData
