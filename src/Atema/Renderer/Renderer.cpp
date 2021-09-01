@@ -59,3 +59,13 @@ Ptr<Window> Renderer::getMainWindow() const noexcept
 {
 	return m_mainWindow;
 }
+
+void Renderer::submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers)
+{
+	auto fence = Fence::create({});
+
+	submit(commandBuffers, {}, {}, {}, fence);
+
+	// Wait for the command to be done
+	fence->wait();
+}

@@ -73,17 +73,7 @@ namespace
 
 		commandBuffer->end();
 
-		auto fence = Fence::create({});
-
-		Renderer::instance().submit(
-			{ commandBuffer },
-			{},
-			{},
-			{},
-			fence);
-
-		// Wait for the command to be done
-		fence->wait();
+		Renderer::instance().submitAndWait({ commandBuffer });
 
 		return vertexBuffer;
 	}

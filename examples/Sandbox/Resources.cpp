@@ -114,17 +114,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 		commandBuffer->end();
 
-		auto fence = Fence::create({});
-
-		Renderer::instance().submit(
-			{ commandBuffer },
-			{},
-			{},
-			{},
-			fence);
-
-		// Wait for the command to be done
-		fence->wait();
+		Renderer::instance().submitAndWait({ commandBuffer });
 	}
 
 	// Create index buffer
@@ -152,17 +142,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 		commandBuffer->end();
 
-		auto fence = Fence::create({});
-
-		Renderer::instance().submit(
-			{ commandBuffer },
-			{},
-			{},
-			{},
-			fence);
-
-		// Wait for the command to be done
-		fence->wait();
+		Renderer::instance().submitAndWait({ commandBuffer });
 	}
 
 	indexCount = modelIndices.size();
@@ -222,17 +202,7 @@ MaterialData::MaterialData(const std::filesystem::path& path)
 
 	commandBuffer->end();
 
-	auto fence = Fence::create({});
-
-	Renderer::instance().submit(
-		{ commandBuffer },
-		{},
-		{},
-		{},
-		fence);
-
-	// Wait for the command to be done
-	fence->wait();
+	Renderer::instance().submitAndWait({ commandBuffer });
 
 	// Create sampler
 	Sampler::Settings samplerSettings(SamplerFilter::Linear, true);
