@@ -30,7 +30,6 @@
 #include <Atema/Core/Event.hpp>
 #include <Atema/Core/Flags.hpp>
 #include <Atema/Core/Hash.hpp>
-#include <Atema/Core/Matrix.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
@@ -41,7 +40,6 @@
 #include <Atema/Core/TimeStep.hpp>
 #include <Atema/Core/Traits.hpp>
 #include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Vector.hpp>
 #include <Atema/Core/Window.hpp>
 
 #endif

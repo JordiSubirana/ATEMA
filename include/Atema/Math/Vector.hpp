@@ -19,8 +19,8 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_VECTOR_HPP
-#define ATEMA_CORE_VECTOR_HPP
+#ifndef ATEMA_MATH_VECTOR_HPP
+#define ATEMA_MATH_VECTOR_HPP
 
 namespace at
 {
@@ -172,6 +172,6 @@ namespace at
 	}
 }
 
-#include <Atema/Core/Vector.inl>
+#include <Atema/Math/Vector.inl>
 
 #endif

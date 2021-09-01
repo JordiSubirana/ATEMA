@@ -26,7 +26,7 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Vector.hpp>
+#include <Atema/Math/Vector.hpp>
 #include <Atema/Renderer/Enums.hpp>
 
 #include <vector>

@@ -25,7 +25,7 @@
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/Vector.hpp>
+#include <Atema/Math/Vector.hpp>
 
 #include <string>
 #include <vector>

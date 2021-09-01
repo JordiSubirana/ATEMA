@@ -23,7 +23,7 @@
 #define ATEMA_RENDERER_VERTEX_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Vector.hpp>
+#include <Atema/Math/Vector.hpp>
 
 #include <cstdint> 
 #include <vector>

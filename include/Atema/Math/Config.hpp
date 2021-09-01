@@ -19,41 +19,27 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
-#define ATEMA_RENDERER_FRAMEBUFFER_HPP
+#ifndef ATEMA_MATH_CONFIG_HPP
+#define ATEMA_MATH_CONFIG_HPP
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Math/Vector.hpp>
+#include <Atema/Config.hpp>
 
-#include <vector>
-
-namespace at
-{
-	class RenderPass;
-	class Image;
+#if defined(ATEMA_STATIC)
 	
-	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
-	{
-	public:
-		struct Settings
-		{
-			Ptr<RenderPass> renderPass;
-			std::vector<Ptr<Image>> images;
-			uint32_t width = 0;
-			uint32_t height = 0;
-		};
+	#define ATEMA_MATH_API
+	
+#else
+	
+	#if defined(ATEMA_MATH_EXPORT)
 		
-		virtual ~Framebuffer();
-
-		static Ptr<Framebuffer> create(const Settings& settings);
-
-		virtual Vector2u getSize() const noexcept = 0;
+		#define ATEMA_MATH_API ATEMA_EXPORT
 		
-	protected:
-		Framebuffer();
-	};
-}
+	#else
+		
+		#define ATEMA_MATH_API ATEMA_IMPORT
+		
+	#endif
+
+#endif
 
 #endif

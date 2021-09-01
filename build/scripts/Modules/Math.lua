@@ -5,8 +5,8 @@ MODULE.defines = {}
 MODULE.thirdparty = {}
 
 -- Dependencies (Atema modules & compiled thirdparty libraries)
-MODULE.dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer"}
+MODULE.dependencies = {}
 
 -- OS specific dependencies (compiled)
-MODULE.osDependencies.windows = {"vulkan-1"}
+MODULE.osDependencies.windows = {}
 MODULE.osDependencies.posix = {}

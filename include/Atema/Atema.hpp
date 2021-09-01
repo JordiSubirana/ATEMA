@@ -25,6 +25,7 @@
 #include <Atema/Config.hpp>
 #include <Atema/Core.hpp>
 #include <Atema/Graphics.hpp>
+#include <Atema/Math.hpp>
 #include <Atema/Renderer.hpp>
 #include <Atema/VulkanRenderer.hpp>
 

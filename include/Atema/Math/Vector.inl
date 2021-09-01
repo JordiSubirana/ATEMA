@@ -19,10 +19,10 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_VECTOR_INL
-#define ATEMA_CORE_VECTOR_INL
+#ifndef ATEMA_MATH_VECTOR_INL
+#define ATEMA_MATH_VECTOR_INL
 
-#include <Atema/Core/Vector.hpp>
+#include <Atema/Math/Vector.hpp>
 #include <Atema/Core/Error.hpp>
 
 namespace at

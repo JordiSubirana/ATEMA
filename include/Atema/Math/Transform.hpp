@@ -19,40 +19,46 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
-#define ATEMA_RENDERER_FRAMEBUFFER_HPP
+#ifndef ATEMA_MATH_TRANSFORM_HPP
+#define ATEMA_MATH_TRANSFORM_HPP
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Math/Config.hpp>
+#include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/Vector.hpp>
-
-#include <vector>
 
 namespace at
 {
-	class RenderPass;
-	class Image;
-	
-	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
+	class ATEMA_MATH_API Transform
 	{
 	public:
-		struct Settings
-		{
-			Ptr<RenderPass> renderPass;
-			std::vector<Ptr<Image>> images;
-			uint32_t width = 0;
-			uint32_t height = 0;
-		};
-		
-		virtual ~Framebuffer();
+		Transform();
+		Transform(const Vector3f& translation, const Vector3f& rotation);
+		Transform(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale);
+		~Transform();
 
-		static Ptr<Framebuffer> create(const Settings& settings);
+		Transform& translate(const Vector3f& translation);
+		Transform& rotate(const Vector3f& rotation);
+		Transform& scale(const Vector3f& scale);
 
-		virtual Vector2u getSize() const noexcept = 0;
+		void set(const Vector3f& translation, const Vector3f& rotation);
+		void set(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale);
 		
-	protected:
-		Framebuffer();
+		void setTranslation(const Vector3f& translation);
+		void setRotation(const Vector3f& rotation);
+		void setScale(const Vector3f& scale);
+
+		const Vector3f& getTranslation() const noexcept;
+		const Vector3f& getRotation() const noexcept;
+		const Vector3f& getScale() const noexcept;
+
+		const Matrix4f& getMatrix() const noexcept;
+
+	private:
+		Vector3f m_translation;
+		Vector3f m_rotation;
+		Vector3f m_scale;
+
+		Matrix4f m_transform;
 	};
 }
 
