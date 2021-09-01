@@ -36,6 +36,8 @@ namespace at
 		virtual ~VulkanCommandPool();
 
 		VkCommandPool getHandle() const noexcept;
+
+		Ptr<CommandBuffer> createBuffer(const CommandBuffer::Settings& settings) override;
 		
 	private:
 		VkDevice m_device;

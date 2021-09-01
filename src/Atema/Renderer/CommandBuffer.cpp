@@ -31,8 +31,3 @@ CommandBuffer::CommandBuffer()
 CommandBuffer::~CommandBuffer()
 {
 }
-
-Ptr<CommandBuffer> CommandBuffer::create(const Settings& settings)
-{
-	return Renderer::instance().createCommandBuffer(settings);
-}

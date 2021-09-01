@@ -218,13 +218,6 @@ Ptr<CommandPool> VulkanRenderer::createCommandPool(const CommandPool::Settings& 
 	return std::static_pointer_cast<CommandPool>(object);
 }
 
-Ptr<CommandBuffer> VulkanRenderer::createCommandBuffer(const CommandBuffer::Settings& settings)
-{
-	auto object = std::make_shared<VulkanCommandBuffer>(settings);
-
-	return std::static_pointer_cast<CommandBuffer>(object);
-}
-
 Ptr<Fence> VulkanRenderer::createFence(const Fence::Settings& settings)
 {
 	auto object = std::make_shared<VulkanFence>(settings);

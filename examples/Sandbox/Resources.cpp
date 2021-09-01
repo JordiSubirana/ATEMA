@@ -106,7 +106,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 		vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
 
 		// Copy staging buffer to vertex buffer
-		auto commandBuffer = CommandBuffer::create({ commandPool, true });
+		auto commandBuffer = commandPool->createBuffer({ true });
 
 		commandBuffer->begin();
 
@@ -144,7 +144,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 		indexBuffer = Buffer::create({ BufferUsage::Index, bufferSize });
 
 		// Copy staging buffer to index buffer
-		auto commandBuffer = CommandBuffer::create({ commandPool, true });
+		auto commandBuffer = commandPool->createBuffer({ true });
 
 		commandBuffer->begin();
 
@@ -208,7 +208,7 @@ MaterialData::MaterialData(const std::filesystem::path& path)
 	texture = Image::create(imageSettings);
 
 	// Copy staging buffer to index buffer
-	auto commandBuffer = CommandBuffer::create({ commandPool, true });
+	auto commandBuffer = commandPool->createBuffer({ true });
 
 	commandBuffer->begin();
 

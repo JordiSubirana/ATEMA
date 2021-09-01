@@ -44,7 +44,6 @@ namespace at
 	public:
 		struct Settings
 		{
-			Ptr<CommandPool> commandPool;
 			bool singleUse = false;
 			bool secondary = false;
 		};
@@ -62,8 +61,6 @@ namespace at
 		} ClearValue;
 		
 		virtual ~CommandBuffer();
-
-		static Ptr<CommandBuffer> create(const Settings& settings);
 
 		virtual void begin() = 0;
 

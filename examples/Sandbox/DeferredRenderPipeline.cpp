@@ -65,7 +65,7 @@ namespace
 		auto vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
 
 		// Copy staging buffer to vertex buffer
-		auto commandBuffer = CommandBuffer::create({ commandPool, true });
+		auto commandBuffer = commandPool->createBuffer({ true });
 
 		commandBuffer->begin();
 
@@ -445,7 +445,7 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
 				{
 					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
-					auto commandBuffer = CommandBuffer::create({ commandPool, true, true });
+					auto commandBuffer = commandPool->createBuffer({ true, true });
 
 					commandBuffer->beginSecondary(m_deferredRenderPass, m_deferredFramebuffer);
 

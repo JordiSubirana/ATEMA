@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
@@ -50,4 +51,11 @@ VulkanCommandPool::~VulkanCommandPool()
 VkCommandPool VulkanCommandPool::getHandle() const noexcept
 {
 	return m_commandPool;
+}
+
+Ptr<CommandBuffer> VulkanCommandPool::createBuffer(const CommandBuffer::Settings& settings)
+{
+	auto commandBuffer = std::make_shared<VulkanCommandBuffer>(m_commandPool, settings);
+
+	return std::static_pointer_cast<CommandBuffer>(commandBuffer);
 }

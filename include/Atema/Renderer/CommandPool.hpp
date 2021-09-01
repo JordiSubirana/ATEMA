@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Renderer/CommandBuffer.hpp>
 
 namespace at
 {
@@ -39,6 +40,8 @@ namespace at
 		virtual ~CommandPool();
 
 		static Ptr<CommandPool> create(const Settings& settings);
+
+		virtual Ptr<CommandBuffer> createBuffer(const CommandBuffer::Settings& settings) = 0;
 
 	protected:
 		CommandPool();

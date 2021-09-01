@@ -88,7 +88,6 @@ namespace at
 		virtual Ptr<DescriptorPool> createDescriptorPool(const DescriptorPool::Settings& settings) = 0;
 		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
 		virtual Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) = 0;
-		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings) = 0;
 		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;
 		virtual Ptr<Semaphore> createSemaphore() = 0;
 		virtual Ptr<Buffer> createBuffer(const Buffer::Settings& settings) = 0;

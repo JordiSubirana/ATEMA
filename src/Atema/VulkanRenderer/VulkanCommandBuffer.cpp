@@ -31,7 +31,7 @@
 
 using namespace at;
 
-VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings) :
+VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, const CommandBuffer::Settings& settings) :
 	CommandBuffer(),
 	m_commandBuffer(VK_NULL_HANDLE),
 	m_singleUse(settings.singleUse),
@@ -42,14 +42,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const CommandBuffer::Settings& settings
 	auto& renderer = VulkanRenderer::instance();
 	m_device = renderer.getLogicalDeviceHandle();
 
-	auto commandPool = std::static_pointer_cast<VulkanCommandPool>(settings.commandPool);
-
-	if (!commandPool)
-	{
-		ATEMA_ERROR("Invalid CommandPool");
-	}
-
-	m_commandPool = commandPool->getHandle();
+	m_commandPool = commandPool;
 	
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

@@ -243,7 +243,7 @@ void BasicRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> com
 			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
 				{
 					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
-					auto commandBuffer = CommandBuffer::create({ commandPool, true, true });
+					auto commandBuffer = commandPool->createBuffer({ true, true });
 
 					commandBuffer->beginSecondary(getRenderPass(), getCurrentFramebuffer());
 

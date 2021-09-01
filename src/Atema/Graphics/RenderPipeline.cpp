@@ -150,7 +150,7 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	// Prepare command buffer
 	const auto& commandPool = m_commandPools[m_currentFrame];
 
-	m_currentCommandBuffer = CommandBuffer::create({ commandPool, true });
+	m_currentCommandBuffer = commandPool->createBuffer({ true });
 
 	m_currentCommandBuffer->begin();
 
