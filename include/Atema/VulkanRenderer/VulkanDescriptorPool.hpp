@@ -25,6 +25,7 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/SparseSet.hpp>
 
 #include <queue>
 
@@ -44,7 +45,7 @@ namespace at
 		{
 		public:
 			Pool() = delete;
-			Pool(VkDevice device, VkDescriptorSetLayout layout, const VkDescriptorPoolCreateInfo& settings);
+			Pool(VkDevice device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings);
 			~Pool();
 
 			bool isFull() const noexcept;
@@ -55,6 +56,7 @@ namespace at
 			VkDevice m_device;
 			VkDescriptorPool m_pool;
 			VkDescriptorSetLayout m_layout;
+			const SparseSet<VkDescriptorType>& m_bindingTypes;
 			std::queue<VkDescriptorSet> m_unusedSets;
 			uint32_t m_size;
 			uint32_t m_maxSize;
@@ -67,6 +69,7 @@ namespace at
 		VkDescriptorPoolCreateInfo m_poolSettings;
 		std::vector<Ptr<Pool>> m_pools;
 		VkDescriptorSetLayout m_layout;
+		SparseSet<VkDescriptorType> m_bindingTypes;
 	};
 }
 

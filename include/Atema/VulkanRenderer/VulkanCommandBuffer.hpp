@@ -56,7 +56,9 @@ namespace at
 		void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) override;
 
 		void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet) override;
+		void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets) override;
 		void bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets) override;
+		void bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets, const std::vector<uint32_t>& dynamicBufferOffsets) override;
 		
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
 

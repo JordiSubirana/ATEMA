@@ -252,14 +252,32 @@ void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType i
 
 void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet)
 {
+	bindDescriptorSet(descriptorSet, {});
+}
+
+void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
+{
 	ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
 
 	const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet)->getHandle();
 
-	vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_currentPipelineLayout, 0, 1, &vkDescriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(
+		m_commandBuffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_currentPipelineLayout,
+		0,
+		1,
+		&vkDescriptorSet,
+		static_cast<uint32_t>(dynamicBufferOffsets.size()),
+		dynamicBufferOffsets.empty() ? nullptr : dynamicBufferOffsets.data());
 }
 
 void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets)
+{
+	bindDescriptorSets(descriptorSets, {});
+}
+
+void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets, const std::vector<uint32_t>& dynamicBufferOffsets)
 {
 	std::vector<VkDescriptorSet> vkDescriptorSets;
 	vkDescriptorSets.reserve(descriptorSets.size());
@@ -271,7 +289,7 @@ void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet
 		ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
 
 		const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet);
-		
+
 		vkDescriptorSets.push_back(vkDescriptorSet->getHandle());
 	}
 
@@ -282,8 +300,8 @@ void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet
 		0,
 		static_cast<uint32_t>(vkDescriptorSets.size()),
 		vkDescriptorSets.data(),
-		0,
-		nullptr);
+		static_cast<uint32_t>(dynamicBufferOffsets.size()),
+		dynamicBufferOffsets.empty() ? nullptr : dynamicBufferOffsets.data());
 }
 
 void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)

@@ -26,10 +26,11 @@
 using namespace at;
 
 // Internal pool
-VulkanDescriptorPool::Pool::Pool(VkDevice device, VkDescriptorSetLayout layout, const VkDescriptorPoolCreateInfo& settings) :
+VulkanDescriptorPool::Pool::Pool(VkDevice device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings) :
 	m_device(device),
 	m_pool(VK_NULL_HANDLE),
 	m_layout(layout),
+	m_bindingTypes(bindingTypes),
 	m_size(0),
 	m_maxSize(settings.maxSets)
 {
@@ -70,7 +71,7 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 
 	m_size++;
 
-	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(handle, [this, handle]()
+	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(handle, m_bindingTypes, [this, handle]()
 	{
 		m_unusedSets.push(handle);
 		m_size--;
@@ -92,13 +93,22 @@ VulkanDescriptorPool::VulkanDescriptorPool(const DescriptorPool::Settings& setti
 	m_layout = std::static_pointer_cast<VulkanDescriptorSetLayout>(settings.layout)->getHandle();
 	
 	// Save pool creation settings
-	for (auto& binding : settings.layout->getBindings())
+	const auto& bindings = settings.layout->getBindings();
+	
+	m_poolSizes.reserve(bindings.size());
+	m_bindingTypes.reserve(bindings.size());
+	
+	for (auto& binding : bindings)
 	{
+		const auto bindingType = Vulkan::getDescriptorType(binding.type);
+
 		VkDescriptorPoolSize poolSize;
-		poolSize.type = Vulkan::getDescriptorType(binding.type);
+		poolSize.type = bindingType;
 		poolSize.descriptorCount = settings.pageSize * binding.count;
 
 		m_poolSizes.push_back(poolSize);
+
+		m_bindingTypes.emplace(binding.binding) = bindingType;
 	}
 
 	m_poolSettings.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -135,5 +145,5 @@ Ptr<DescriptorSet> VulkanDescriptorPool::createSet()
 
 void VulkanDescriptorPool::addPool()
 {
-	m_pools.push_back(std::make_shared<Pool>(m_device, m_layout, m_poolSettings));
+	m_pools.push_back(std::make_shared<Pool>(m_device, m_layout, m_bindingTypes, m_poolSettings));
 }

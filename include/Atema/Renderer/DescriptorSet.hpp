@@ -70,7 +70,9 @@ namespace at
 		virtual ~DescriptorSet();
 
 		void update(uint32_t binding, const Ptr<Buffer>& buffer);
+		void update(uint32_t binding, const Ptr<Buffer>& buffer, size_t bufferRange);
 		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers);
+		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers, const std::vector<size_t>& bufferRanges);
 		void update(uint32_t binding, const Ptr<Image>& image, const Ptr<Sampler>& sampler);
 		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Image>>& images, const std::vector<Ptr<Sampler>>& samplers);
 
@@ -78,6 +80,7 @@ namespace at
 			const std::vector<uint32_t>& bufferBindings,
 			const std::vector<uint32_t>& bufferIndices,
 			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
 			const std::vector<std::vector<Ptr<Image>>>& images,

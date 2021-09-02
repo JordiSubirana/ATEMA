@@ -25,6 +25,7 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Core/SparseSet.hpp>
 
 #include <functional>
 
@@ -51,7 +52,7 @@ namespace at
 	{
 	public:
 		VulkanDescriptorSet() = delete;
-		VulkanDescriptorSet(VkDescriptorSet descriptorSet, std::function<void()> destroyCallback);
+		VulkanDescriptorSet(VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback);
 		
 		virtual ~VulkanDescriptorSet();
 
@@ -61,6 +62,7 @@ namespace at
 			const std::vector<uint32_t>& bufferBindings,
 			const std::vector<uint32_t>& bufferIndices,
 			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
 			const std::vector<std::vector<Ptr<Image>>>& images,
@@ -70,6 +72,7 @@ namespace at
 		VkDevice m_device;
 		VkDescriptorSet m_descriptorSet;
 		std::function<void()> m_destroyCallback;
+		const SparseSet<VkDescriptorType>& m_bindingTypes;
 	};
 }
 
