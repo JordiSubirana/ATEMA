@@ -157,8 +157,7 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
-			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment }
+			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment }
 		};
 
 		m_objectDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
@@ -180,7 +179,8 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
+			{ DescriptorType::UniformBufferDynamic, 1, 1, ShaderStage::Vertex }
 		};
 
 		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
@@ -198,16 +198,42 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 	// Uniform buffers & descriptor sets
 	m_frameUniformBuffers.reserve(m_maxFramesInFlight);
 	m_frameDescriptorSets.reserve(m_maxFramesInFlight);
+	m_frameObjectsUniformBuffers.reserve(m_maxFramesInFlight);
 
+	const size_t elementByteSize = sizeof(UniformObjectElement);
+	const size_t minOffset = static_cast<size_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
+
+	if (minOffset >= elementByteSize)
+	{
+		m_dynamicObjectBufferOffset = minOffset;
+	}
+	else
+	{
+		m_dynamicObjectBufferOffset = minOffset;
+
+		while (m_dynamicObjectBufferOffset < elementByteSize)
+		{
+			m_dynamicObjectBufferOffset += minOffset;
+		}
+	}
+	
 	for (uint32_t j = 0; j < m_maxFramesInFlight; j++)
 	{
-		auto uniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
+		// Frame uniform buffers
+		auto frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
 
-		m_frameUniformBuffers.push_back(uniformBuffer);
+		m_frameUniformBuffers.push_back(frameUniformBuffer);
 
+		// Frame object uniform buffers
+		auto objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, objectCount * m_dynamicObjectBufferOffset, true });
+
+		m_frameObjectsUniformBuffers.push_back(objectsUniformBuffer);
+
+		// Add descriptor set
 		auto descriptorSet = m_frameDescriptorPool->createSet();
 
-		descriptorSet->update(0, uniformBuffer);
+		descriptorSet->update(0, frameUniformBuffer);
+		descriptorSet->update(1, objectsUniformBuffer, sizeof(UniformObjectElement));
 
 		m_frameDescriptorSets.push_back(descriptorSet);
 	}
@@ -259,7 +285,7 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	m_frameUniformBuffers.clear();
 
 	// Object resources
-	m_objectFrameData.clear();
+	m_objectDescriptorSets.clear();
 	m_objectDescriptorSetLayout.reset();
 	m_objectDescriptorPool.reset();
 	m_scene.reset();
@@ -444,13 +470,13 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 					for (size_t i = firstIndex; i < lastIndex; i++)
 					{
 						auto& object = objects[i];
-						auto descriptorSet = m_objectFrameData[i].getDescriptorSet(frameIndex);
+						auto& descriptorSet = m_objectDescriptorSets[i];
 
 						commandBuffer->bindVertexBuffer(object.vertexBuffer, 0);
 
 						commandBuffer->bindIndexBuffer(object.indexBuffer, IndexType::U32);
 
-						commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet });
+						commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet }, { i * m_dynamicObjectBufferOffset });
 
 						commandBuffer->drawIndexed(object.indexCount);
 					}
@@ -497,13 +523,15 @@ void DeferredRenderPipeline::loadScene()
 
 	auto& objects = m_scene->getObjects();
 
-	m_objectFrameData.reserve(objects.size());
+	m_objectDescriptorSets.reserve(objects.size());
 
 	for (auto& object : objects)
 	{
-		ObjectFrameData objectFrameData(object, m_maxFramesInFlight, m_objectDescriptorPool);
+		auto descriptorSet = m_objectDescriptorPool->createSet();
 
-		m_objectFrameData.push_back(objectFrameData);
+		descriptorSet->update(0, object.texture, object.sampler);
+
+		m_objectDescriptorSets.push_back(descriptorSet);
 	}
 }
 
@@ -550,6 +578,8 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 	// Update objects buffers
 	{
+		auto data = static_cast<uint8_t*>(m_frameObjectsUniformBuffers[frameIndex]->map());
+
 		const auto basisChange = Matrix4f::createRotation({ toRadians(90.0f), 0.0f, 0.0f });
 
 		auto& objects = m_scene->getObjects();
@@ -574,21 +604,16 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, basisChange, firstIndex, lastIndex, &objects, frameIndex]()
+			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &objects, frameIndex]()
 				{
 					for (size_t i = firstIndex; i < lastIndex; i++)
 					{
 						auto& object = objects[i];
-						auto buffer = m_objectFrameData[i].getBuffer(frameIndex);
 
 						UniformObjectElement objectTransforms;
 						objectTransforms.model = object.transform.getMatrix() * basisChange;
 
-						void* data = buffer->map();
-
-						memcpy(data, static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
-
-						buffer->unmap();
+						memcpy(static_cast<void*>(&data[i * m_dynamicObjectBufferOffset]), static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
 					}
 				});
 
@@ -599,5 +624,7 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 		for (auto& task : tasks)
 			task->wait();
+
+		m_frameObjectsUniformBuffers[frameIndex]->unmap();
 	}
 }

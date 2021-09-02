@@ -6,7 +6,7 @@ layout(set = 0, binding = 0) uniform FrameData
     mat4 view;
 } frameData;
 
-layout(set = 1, binding = 0) uniform ObjectData
+layout(set = 0, binding = 1) uniform ObjectData
 {
 	mat4 model;
 } objectData;

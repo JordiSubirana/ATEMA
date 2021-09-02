@@ -75,12 +75,14 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_objectDescriptorSetLayout;
 	at::Ptr<at::DescriptorPool> m_objectDescriptorPool;
 	at::Ptr<Scene> m_scene;
-	std::vector<ObjectFrameData> m_objectFrameData;
+	std::vector<at::Ptr<at::DescriptorSet>> m_objectDescriptorSets;
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
 	std::vector<at::Ptr<at::Buffer>> m_frameUniformBuffers;
+	size_t m_dynamicObjectBufferOffset;
+	std::vector<at::Ptr<at::Buffer>> m_frameObjectsUniformBuffers;
 	std::vector<at::Ptr<at::DescriptorSet>> m_frameDescriptorSets;
 
 	// Pipeline resources
