@@ -83,6 +83,11 @@ VulkanRenderer& VulkanRenderer::instance()
 	return static_cast<VulkanRenderer&>(Renderer::instance());
 }
 
+const Renderer::Limits& VulkanRenderer::getLimits() const noexcept
+{
+	return m_limits;
+}
+
 void VulkanRenderer::initialize()
 {
 	createInstance();
@@ -723,6 +728,128 @@ void VulkanRenderer::getPhysicalDevice()
 
 	if (m_physicalDevice == VK_NULL_HANDLE)
 		ATEMA_ERROR("Failed to find a valid physical device");
+
+	// Get physical device properties
+	VkPhysicalDeviceProperties properties;
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
+
+	// Save device limits
+	auto& limits = properties.limits;
+
+	m_limits.maxImageDimension1D = limits.maxImageDimension1D;
+	m_limits.maxImageDimension2D = limits.maxImageDimension2D;
+	m_limits.maxImageDimension3D = limits.maxImageDimension3D;
+	m_limits.maxImageDimensionCube = limits.maxImageDimensionCube;
+	m_limits.maxImageArrayLayers = limits.maxImageArrayLayers;
+	m_limits.maxTexelBufferElements = limits.maxTexelBufferElements;
+	m_limits.maxUniformBufferRange = limits.maxUniformBufferRange;
+	m_limits.maxStorageBufferRange = limits.maxStorageBufferRange;
+	m_limits.maxPushConstantsSize = limits.maxPushConstantsSize;
+	m_limits.maxMemoryAllocationCount = limits.maxMemoryAllocationCount;
+	m_limits.maxSamplerAllocationCount = limits.maxSamplerAllocationCount;
+	m_limits.bufferImageGranularity = limits.bufferImageGranularity;
+	m_limits.sparseAddressSpaceSize = limits.sparseAddressSpaceSize;
+	m_limits.maxBoundDescriptorSets = limits.maxBoundDescriptorSets;
+	m_limits.maxPerStageDescriptorSamplers = limits.maxPerStageDescriptorSamplers;
+	m_limits.maxPerStageDescriptorUniformBuffers = limits.maxPerStageDescriptorUniformBuffers;
+	m_limits.maxPerStageDescriptorStorageBuffers = limits.maxPerStageDescriptorStorageBuffers;
+	m_limits.maxPerStageDescriptorSampledImages = limits.maxPerStageDescriptorSampledImages;
+	m_limits.maxPerStageDescriptorStorageImages = limits.maxPerStageDescriptorStorageImages;
+	m_limits.maxPerStageDescriptorInputAttachments = limits.maxPerStageDescriptorInputAttachments;
+	m_limits.maxPerStageResources = limits.maxPerStageResources;
+	m_limits.maxDescriptorSetSamplers = limits.maxDescriptorSetSamplers;
+	m_limits.maxDescriptorSetUniformBuffers = limits.maxDescriptorSetUniformBuffers;
+	m_limits.maxDescriptorSetUniformBuffersDynamic = limits.maxDescriptorSetUniformBuffersDynamic;
+	m_limits.maxDescriptorSetStorageBuffers = limits.maxDescriptorSetStorageBuffers;
+	m_limits.maxDescriptorSetStorageBuffersDynamic = limits.maxDescriptorSetStorageBuffersDynamic;
+	m_limits.maxDescriptorSetSampledImages = limits.maxDescriptorSetSampledImages;
+	m_limits.maxDescriptorSetStorageImages = limits.maxDescriptorSetStorageImages;
+	m_limits.maxDescriptorSetInputAttachments = limits.maxDescriptorSetInputAttachments;
+	m_limits.maxVertexInputAttributes = limits.maxVertexInputAttributes;
+	m_limits.maxVertexInputBindings = limits.maxVertexInputBindings;
+	m_limits.maxVertexInputAttributeOffset = limits.maxVertexInputAttributeOffset;
+	m_limits.maxVertexInputBindingStride = limits.maxVertexInputBindingStride;
+	m_limits.maxVertexOutputComponents = limits.maxVertexOutputComponents;
+	m_limits.maxTessellationGenerationLevel = limits.maxTessellationGenerationLevel;
+	m_limits.maxTessellationPatchSize = limits.maxTessellationPatchSize;
+	m_limits.maxTessellationControlPerVertexInputComponents = limits.maxTessellationControlPerVertexInputComponents;
+	m_limits.maxTessellationControlPerVertexOutputComponents = limits.maxTessellationControlPerVertexOutputComponents;
+	m_limits.maxTessellationControlPerPatchOutputComponents = limits.maxTessellationControlPerPatchOutputComponents;
+	m_limits.maxTessellationControlTotalOutputComponents = limits.maxTessellationControlTotalOutputComponents;
+	m_limits.maxTessellationEvaluationInputComponents = limits.maxTessellationEvaluationInputComponents;
+	m_limits.maxTessellationEvaluationOutputComponents = limits.maxTessellationEvaluationOutputComponents;
+	m_limits.maxGeometryShaderInvocations = limits.maxGeometryShaderInvocations;
+	m_limits.maxGeometryInputComponents = limits.maxGeometryInputComponents;
+	m_limits.maxGeometryOutputComponents = limits.maxGeometryOutputComponents;
+	m_limits.maxGeometryOutputVertices = limits.maxGeometryOutputVertices;
+	m_limits.maxGeometryTotalOutputComponents = limits.maxGeometryTotalOutputComponents;
+	m_limits.maxFragmentInputComponents = limits.maxFragmentInputComponents;
+	m_limits.maxFragmentOutputAttachments = limits.maxFragmentOutputAttachments;
+	m_limits.maxFragmentDualSrcAttachments = limits.maxFragmentDualSrcAttachments;
+	m_limits.maxFragmentCombinedOutputResources = limits.maxFragmentCombinedOutputResources;
+	m_limits.maxComputeSharedMemorySize = limits.maxComputeSharedMemorySize;
+	m_limits.maxComputeWorkGroupCount[0] = limits.maxComputeWorkGroupCount[0];
+	m_limits.maxComputeWorkGroupCount[1] = limits.maxComputeWorkGroupCount[1];
+	m_limits.maxComputeWorkGroupCount[2] = limits.maxComputeWorkGroupCount[2];
+	m_limits.maxComputeWorkGroupInvocations = limits.maxComputeWorkGroupInvocations;
+	m_limits.maxComputeWorkGroupSize[0] = limits.maxComputeWorkGroupSize[0];
+	m_limits.maxComputeWorkGroupSize[1] = limits.maxComputeWorkGroupSize[1];
+	m_limits.maxComputeWorkGroupSize[2] = limits.maxComputeWorkGroupSize[2];
+	m_limits.subPixelPrecisionBits = limits.subPixelPrecisionBits;
+	m_limits.subTexelPrecisionBits = limits.subTexelPrecisionBits;
+	m_limits.mipmapPrecisionBits = limits.mipmapPrecisionBits;
+	m_limits.maxDrawIndexedIndexValue = limits.maxDrawIndexedIndexValue;
+	m_limits.maxDrawIndirectCount = limits.maxDrawIndirectCount;
+	m_limits.maxSamplerLodBias = limits.maxSamplerLodBias;
+	m_limits.maxSamplerAnisotropy = limits.maxSamplerAnisotropy;
+	m_limits.maxViewports = limits.maxViewports;
+	m_limits.maxViewportDimensions[0] = limits.maxViewportDimensions[0];
+	m_limits.maxViewportDimensions[1] = limits.maxViewportDimensions[1];
+	m_limits.viewportBoundsRange[0] = limits.viewportBoundsRange[0];
+	m_limits.viewportBoundsRange[1] = limits.viewportBoundsRange[1];
+	m_limits.viewportSubPixelBits = limits.viewportSubPixelBits;
+	m_limits.minMemoryMapAlignment = limits.minMemoryMapAlignment;
+	m_limits.minTexelBufferOffsetAlignment = limits.minTexelBufferOffsetAlignment;
+	m_limits.minUniformBufferOffsetAlignment = limits.minUniformBufferOffsetAlignment;
+	m_limits.minStorageBufferOffsetAlignment = limits.minStorageBufferOffsetAlignment;
+	m_limits.minTexelOffset = limits.minTexelOffset;
+	m_limits.maxTexelOffset = limits.maxTexelOffset;
+	m_limits.minTexelGatherOffset = limits.minTexelGatherOffset;
+	m_limits.maxTexelGatherOffset = limits.maxTexelGatherOffset;
+	m_limits.minInterpolationOffset = limits.minInterpolationOffset;
+	m_limits.maxInterpolationOffset = limits.maxInterpolationOffset;
+	m_limits.subPixelInterpolationOffsetBits = limits.subPixelInterpolationOffsetBits;
+	m_limits.maxFramebufferWidth = limits.maxFramebufferWidth;
+	m_limits.maxFramebufferHeight = limits.maxFramebufferHeight;
+	m_limits.maxFramebufferLayers = limits.maxFramebufferLayers;
+	m_limits.framebufferColorSampleCounts = Vulkan::getSamples(limits.framebufferColorSampleCounts);
+	m_limits.framebufferDepthSampleCounts = Vulkan::getSamples(limits.framebufferDepthSampleCounts);
+	m_limits.framebufferStencilSampleCounts = Vulkan::getSamples(limits.framebufferStencilSampleCounts);
+	m_limits.framebufferNoAttachmentsSampleCounts = Vulkan::getSamples(limits.framebufferNoAttachmentsSampleCounts);
+	m_limits.maxColorAttachments = limits.maxColorAttachments;
+	m_limits.sampledImageColorSampleCounts = Vulkan::getSamples(limits.sampledImageColorSampleCounts);
+	m_limits.sampledImageIntegerSampleCounts = Vulkan::getSamples(limits.sampledImageIntegerSampleCounts);
+	m_limits.sampledImageDepthSampleCounts = Vulkan::getSamples(limits.sampledImageDepthSampleCounts);
+	m_limits.sampledImageStencilSampleCounts = Vulkan::getSamples(limits.sampledImageStencilSampleCounts);
+	m_limits.storageImageSampleCounts = Vulkan::getSamples(limits.storageImageSampleCounts);
+	m_limits.maxSampleMaskWords = limits.maxSampleMaskWords;
+	m_limits.timestampComputeAndGraphics = limits.timestampComputeAndGraphics;
+	m_limits.timestampPeriod = limits.timestampPeriod;
+	m_limits.maxClipDistances = limits.maxClipDistances;
+	m_limits.maxCullDistances = limits.maxCullDistances;
+	m_limits.maxCombinedClipAndCullDistances = limits.maxCombinedClipAndCullDistances;
+	m_limits.discreteQueuePriorities = limits.discreteQueuePriorities;
+	m_limits.pointSizeRange[0] = limits.pointSizeRange[0];
+	m_limits.pointSizeRange[1] = limits.pointSizeRange[1];
+	m_limits.lineWidthRange[0] = limits.lineWidthRange[0];
+	m_limits.lineWidthRange[1] = limits.lineWidthRange[1];
+	m_limits.pointSizeGranularity = limits.pointSizeGranularity;
+	m_limits.lineWidthGranularity = limits.lineWidthGranularity;
+	m_limits.strictLines = limits.strictLines;
+	m_limits.standardSampleLocations = limits.standardSampleLocations;
+	m_limits.optimalBufferCopyOffsetAlignment = limits.optimalBufferCopyOffsetAlignment;
+	m_limits.optimalBufferCopyRowPitchAlignment = limits.optimalBufferCopyRowPitchAlignment;
+	m_limits.nonCoherentAtomSize = limits.nonCoherentAtomSize;
 }
 
 void VulkanRenderer::createDevice()

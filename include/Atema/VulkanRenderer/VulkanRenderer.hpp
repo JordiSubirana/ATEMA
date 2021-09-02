@@ -42,6 +42,8 @@ namespace at
 
 		static VulkanRenderer& instance();
 
+		const Limits& getLimits() const noexcept override;
+		
 		// Renderer methods
 		void initialize() override;
 
@@ -127,7 +129,8 @@ namespace at
 		void destroyInstance();
 		void destroyDevice();
 		void destroyThreadCommandPools();
-		
+
+		Limits m_limits;
 		VkInstance m_instance;
 		UPtr<Vulkan> m_vulkan;
 		VkPhysicalDevice m_physicalDevice;

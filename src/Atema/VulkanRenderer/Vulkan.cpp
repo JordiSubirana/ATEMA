@@ -435,6 +435,34 @@ VkSampleCountFlagBits Vulkan::getSamples(ImageSamples samples)
 	return VK_SAMPLE_COUNT_1_BIT;
 }
 
+Flags<ImageSamples> Vulkan::getSamples(VkSampleCountFlags samples)
+{
+	Flags<ImageSamples> flags = 0;
+
+	if (samples & VK_SAMPLE_COUNT_1_BIT)
+		flags |= ImageSamples::S1;
+
+	if (samples & VK_SAMPLE_COUNT_2_BIT)
+		flags |= ImageSamples::S2;
+
+	if (samples & VK_SAMPLE_COUNT_4_BIT)
+		flags |= ImageSamples::S4;
+
+	if (samples & VK_SAMPLE_COUNT_8_BIT)
+		flags |= ImageSamples::S8;
+
+	if (samples & VK_SAMPLE_COUNT_16_BIT)
+		flags |= ImageSamples::S16;
+
+	if (samples & VK_SAMPLE_COUNT_32_BIT)
+		flags |= ImageSamples::S32;
+
+	if (samples & VK_SAMPLE_COUNT_64_BIT)
+		flags |= ImageSamples::S64;
+	
+	return flags;
+}
+
 VkAttachmentLoadOp Vulkan::getAttachmentLoading(AttachmentLoading value)
 {
 	switch (value)

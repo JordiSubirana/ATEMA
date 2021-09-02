@@ -189,15 +189,17 @@ namespace at
 
 	enum class ImageSamples
 	{
-		S1,
-		S2,
-		S4,
-		S8,
-		S16,
-		S32,
-		S64,
+		S1 = 0x0001,
+		S2 = 0x0002,
+		S4 = 0x0004,
+		S8 = 0x0008,
+		S16 = 0x0010,
+		S32 = 0x0020,
+		S64 = 0x0040,
 		Max = S64
 	};
+
+	ATEMA_DECLARE_FLAGS(ImageSamples);
 
 	enum class ImageTiling
 	{

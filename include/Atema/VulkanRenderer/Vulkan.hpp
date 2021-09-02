@@ -84,6 +84,7 @@ namespace at
 		static VkImageLayout getLayout(ImageLayout layout, bool isDepth);
 		
 		static VkSampleCountFlagBits getSamples(ImageSamples samples);
+		static Flags<ImageSamples> getSamples(VkSampleCountFlags samples);
 		
 		static VkAttachmentLoadOp getAttachmentLoading(AttachmentLoading value);
 		
