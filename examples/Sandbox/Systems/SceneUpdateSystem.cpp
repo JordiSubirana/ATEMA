@@ -19,41 +19,33 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#include "SceneUpdateSystem.hpp"
+#include "../Components/VelocityComponent.hpp"
 
-#include <Atema/Atema.hpp>
+using namespace at;
 
-struct MaterialData;
-struct ModelData;
-class System;
-
-class SandboxApplication : public at::Application
+SceneUpdateSystem::SceneUpdateSystem() : System()
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
+}
 
-	void onEvent(at::Event& event) override;
+SceneUpdateSystem::~SceneUpdateSystem()
+{
+}
 
-	void update(at::TimeStep ms) override;
+void SceneUpdateSystem::update(TimeStep timeStep)
+{
+	auto& entityManager = getEntityManager();
 
-private:
-	void createScene();
-	
-	at::Ptr<at::Window> m_window;
+	auto entities = entityManager.getUnion<Transform, VelocityComponent>();
 
-	at::EntityManager m_entityManager;
-	
-	//at::Ptr<TestRenderPipeline> m_renderPipeline;
-	std::vector<at::Ptr<System>> m_systems;
-	
-	int m_frameCount;
-	float m_frameDuration;
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
-};
+	for (auto& entity : entities)
+	{
+		auto& transform = entities.get<Transform>(entity);
+		auto& velocity = entities.get<VelocityComponent>(entity);
 
-#endif
+		Vector3f rotation;
+		rotation.z = velocity.speed * timeStep.getSeconds();
+		
+		transform.rotate(rotation);
+	}
+}

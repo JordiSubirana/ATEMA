@@ -19,41 +19,26 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#include "System.hpp"
 
-#include <Atema/Atema.hpp>
+using namespace at;
 
-struct MaterialData;
-struct ModelData;
-class System;
-
-class SandboxApplication : public at::Application
+System::System() : m_entityManager(nullptr)
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
+}
 
-	void onEvent(at::Event& event) override;
+System::~System()
+{
+}
 
-	void update(at::TimeStep ms) override;
+void System::setEntityManager(EntityManager& manager)
+{
+	m_entityManager = &manager;
+}
 
-private:
-	void createScene();
-	
-	at::Ptr<at::Window> m_window;
+EntityManager& System::getEntityManager()
+{
+	ATEMA_ASSERT(m_entityManager, "Invalid EntityManager");
 
-	at::EntityManager m_entityManager;
-	
-	//at::Ptr<TestRenderPipeline> m_renderPipeline;
-	std::vector<at::Ptr<System>> m_systems;
-	
-	int m_frameCount;
-	float m_frameDuration;
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
-};
-
-#endif
+	return *m_entityManager;
+}

@@ -41,10 +41,10 @@ const std::filesystem::path deferredPostProcessFragmentPath = rscPath / "Shaders
 /*
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost_Color.png";
-const float modelScale = 30.0f;
+const float modelScale = 25.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 400.0f;
-const auto zoomOffset = 100.0f;
+const auto zoomOffset = 40.0f;
 //*/
 
 // Tardis
@@ -54,7 +54,7 @@ const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis_blue_c
 const float modelScale = 4.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 100.0f;
-const auto zoomOffset = 10.0f;
+const auto zoomOffset = 5.0f;
 //*/
 
 

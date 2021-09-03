@@ -19,41 +19,12 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_VELOCITYCOMPONENT_HPP
+#define ATEMA_SANDBOX_VELOCITYCOMPONENT_HPP
 
-#include <Atema/Atema.hpp>
-
-struct MaterialData;
-struct ModelData;
-class System;
-
-class SandboxApplication : public at::Application
+struct VelocityComponent
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
-
-	void onEvent(at::Event& event) override;
-
-	void update(at::TimeStep ms) override;
-
-private:
-	void createScene();
-	
-	at::Ptr<at::Window> m_window;
-
-	at::EntityManager m_entityManager;
-	
-	//at::Ptr<TestRenderPipeline> m_renderPipeline;
-	std::vector<at::Ptr<System>> m_systems;
-	
-	int m_frameCount;
-	float m_frameDuration;
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
+	float speed = 1.0f;
 };
 
 #endif

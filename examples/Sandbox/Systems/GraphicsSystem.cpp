@@ -19,18 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "DeferredRenderPipeline.hpp"
-
-#include "Resources.hpp"
+#include "GraphicsSystem.hpp"
+#include "../Resources.hpp"
+#include "../Components/GraphicsComponent.hpp"
 
 using namespace at;
 
 namespace
 {
-	constexpr size_t targetThreadCount = 4;
+	constexpr size_t targetThreadCount = 8;
 
 	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
 
+	const std::vector<ImageFormat> gBuffer =
+	{
+		// Position
+		ImageFormat::RGBA32_SFLOAT,
+		// Normal
+		ImageFormat::RGBA32_SFLOAT,
+		// Color
+		ImageFormat::RGBA8_SRGB
+	};
+	
 	struct PPVertex
 	{
 		Vector3f position;
@@ -47,7 +57,7 @@ namespace
 		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 1.0f }},
 		{{ +1.0f, +1.0f, 0.0f }, { 1.0f, 1.0f }}
 	};
-	
+
 	Ptr<Buffer> createQuad(Ptr<CommandPool> commandPool)
 	{
 		// Fill staging buffer
@@ -77,21 +87,52 @@ namespace
 
 		return vertexBuffer;
 	}
+
+	struct UniformFrameElement
+	{
+		Matrix4f proj;
+		Matrix4f view;
+	};
+	
+	struct UniformObjectElement
+	{
+		Matrix4f model;
+	};
 }
 
-DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& settings) :
-	RenderPipeline(settings),
-	m_maxFramesInFlight(settings.maxFramesInFlight),
-	m_totalTime(0.0f),
-	m_depthFormat(settings.depthFormat)
+GraphicsSystem::GraphicsSystem() :
+	System(),
+	m_maxFramesInFlight(2),
+	m_totalTime(0.0f)
 {
+	auto& renderer = Renderer::instance();
+	auto window = renderer.getMainWindow();
+
+	//----- RENDER PIPELINE -----//
+	RenderPipeline::Settings renderPipelineSettings;
+	renderPipelineSettings.window = window;
+	renderPipelineSettings.maxFramesInFlight = m_maxFramesInFlight;
+	renderPipelineSettings.resizeCallback = [this](const Vector2u& size)
+	{
+		onResize(size);
+	};
+	renderPipelineSettings.updateFrameCallback = [this](uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
+	{
+		onUpdateFrame(frameIndex, commandBuffer);
+	};
+
+	m_renderPipeline = std::make_unique<RenderPipeline>(renderPipelineSettings);
+
+	// Keep default values
+	m_depthFormat = renderPipelineSettings.depthFormat;
+
 	//----- DEFERRED RESOURCES -----//
 	// Create RenderPass
 	{
 		RenderPass::Settings renderPassSettings;
 
 		// Color attachments
-		for (auto& format : gbuffer)
+		for (auto& format : gBuffer)
 		{
 			AttachmentDescription attachment;
 			attachment.format = format;
@@ -103,7 +144,7 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 
 		// Depth attachment
 		AttachmentDescription attachment;
-		attachment.format = settings.depthFormat;
+		attachment.format = m_depthFormat;
 
 		renderPassSettings.attachments.push_back(attachment);
 
@@ -147,9 +188,9 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 
 	// Create quad
 	{
-		m_ppQuad = createQuad(getCommandPools()[0]);
+		m_ppQuad = createQuad(renderer.getDefaultCommandPool());
 	}
-	
+
 	//----- OBJECT RESOURCES -----//
 
 	// Descriptor set layout
@@ -160,16 +201,16 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment }
 		};
 
-		m_objectDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_materialDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	// Descriptor pool
 	{
 		DescriptorPool::Settings descriptorPoolSettings;
-		descriptorPoolSettings.layout = m_objectDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = m_maxFramesInFlight * objectCount;
+		descriptorPoolSettings.layout = m_materialDescriptorSetLayout;
+		descriptorPoolSettings.pageSize = 1;
 
-		m_objectDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
+		m_materialDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
 	}
 
 	//----- FRAME RESOURCES -----//
@@ -216,7 +257,7 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 			m_dynamicObjectBufferOffset += minOffset;
 		}
 	}
-	
+
 	for (uint32_t j = 0; j < m_maxFramesInFlight; j++)
 	{
 		// Frame uniform buffers
@@ -248,17 +289,14 @@ DeferredRenderPipeline::DeferredRenderPipeline(const RenderPipeline::Settings& s
 		commandBuffers.resize(m_maxFramesInFlight);
 
 	// Create size dependent resources
-	const auto windowSize = settings.window->getSize();
-
-	resize(windowSize);
-
-	// Load scene
-	loadScene();
+	onResize(window->getSize());
 }
 
-DeferredRenderPipeline::~DeferredRenderPipeline()
+GraphicsSystem::~GraphicsSystem()
 {
 	Renderer::instance().waitForIdle();
+
+	m_renderPipeline.reset();
 
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
@@ -270,11 +308,11 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	m_deferredFramebuffer.reset();
 	m_deferredDepthImage.reset();
 	m_deferredImages.clear();
-	
+
 	m_ppSampler.reset();
 
 	m_ppPipeline.reset();
-	
+
 	// Thread resources
 	m_threadCommandBuffers.clear();
 
@@ -285,21 +323,43 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	m_frameUniformBuffers.clear();
 
 	// Object resources
-	m_objectDescriptorSets.clear();
-	m_objectDescriptorSetLayout.reset();
-	m_objectDescriptorPool.reset();
-	m_scene.reset();
+	m_materialDescriptorSet.reset();
+	m_materialDescriptorSetLayout.reset();
+	m_materialDescriptorPool.reset();
 
 	m_pipeline.reset();
 }
 
-void DeferredRenderPipeline::resize(const Vector2u& size)
+void GraphicsSystem::update(TimeStep timeStep)
+{
+	// Ensure object descriptor frame exists
+	if (!m_materialDescriptorSet)
+	{
+		auto sparseUnion = getEntityManager().getUnion<GraphicsComponent>();
+
+		if (sparseUnion.size() > 0)
+		{
+			auto& graphics = sparseUnion.get<GraphicsComponent>(*sparseUnion.begin());
+
+			m_materialDescriptorSet = m_materialDescriptorPool->createSet();
+			m_materialDescriptorSet->update(0, graphics.texture, graphics.sampler);
+		}
+	}
+	
+	// Start frame
+	m_renderPipeline->startFrame();
+
+	// Update total time
+	m_totalTime += timeStep.getSeconds();
+}
+
+void GraphicsSystem::onResize(const Vector2u& size)
 {
 	// Create color images
 	{
 		m_deferredImages.clear();
-		
-		for (auto& format : gbuffer)
+
+		for (auto& format : gBuffer)
 		{
 			Image::Settings imageSettings;
 			imageSettings.format = format;
@@ -338,7 +398,7 @@ void DeferredRenderPipeline::resize(const Vector2u& size)
 
 	// Write descriptor set
 	{
-		for (uint32_t i = 0; i < gbuffer.size(); i++)
+		for (uint32_t i = 0; i < gBuffer.size(); i++)
 			m_ppDescriptorSet->update(i, m_deferredImages[i], m_ppSampler);
 	}
 
@@ -352,7 +412,7 @@ void DeferredRenderPipeline::resize(const Vector2u& size)
 		pipelineSettings.scissor.size = size;
 		pipelineSettings.vertexShader = Shader::create({ deferredPostProcessVertexPath });
 		pipelineSettings.fragmentShader = Shader::create({ deferredPostProcessFragmentPath });
-		pipelineSettings.renderPass = getRenderPass();
+		pipelineSettings.renderPass = m_renderPipeline->getRenderPass();
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.attributes =
@@ -368,7 +428,7 @@ void DeferredRenderPipeline::resize(const Vector2u& size)
 
 		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
-	
+
 	// Deferred pipeline
 	{
 		m_pipeline.reset();
@@ -380,7 +440,7 @@ void DeferredRenderPipeline::resize(const Vector2u& size)
 		pipelineSettings.vertexShader = Shader::create({ deferredMaterialVertexPath });
 		pipelineSettings.fragmentShader = Shader::create({ deferredMaterialFragmentPath });
 		pipelineSettings.renderPass = m_deferredRenderPass;
-		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_objectDescriptorSetLayout };
+		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
 		pipelineSettings.vertexInput.attributes =
 		{
 			{ VertexAttribute::Format::RGB32_SFLOAT },
@@ -398,16 +458,7 @@ void DeferredRenderPipeline::resize(const Vector2u& size)
 	}
 }
 
-void DeferredRenderPipeline::updateFrame(at::TimeStep elapsedTime)
-{
-	ATEMA_BENCHMARK("Scene::updateObjects");
-
-	m_totalTime += elapsedTime.getSeconds();
-
-	m_scene->updateObjects(elapsedTime, threadCount);
-}
-
-void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
+void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
 {
 	// Update scene data
 	updateUniformBuffers(frameIndex);
@@ -415,7 +466,7 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 	// Deferred pass
 	std::vector<CommandBuffer::ClearValue> clearValues;
 
-	for (auto& format : gbuffer)
+	for (auto& format : gBuffer)
 		clearValues.push_back({ 0.0f, 0.0f, 0.0f, 1.0f });
 
 	clearValues.push_back({ 1.0f, 0 });
@@ -434,7 +485,9 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 			threadCommandBuffers[frameIndex].clear();
 		}
 
-		auto& objects = m_scene->getObjects();
+		auto& entityManager = getEntityManager();
+
+		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
 		auto& taskManager = TaskManager::instance();
 
@@ -445,7 +498,7 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 		commandBuffers.resize(threadCount);
 
 		size_t firstIndex = 0;
-		size_t size = objects.size() / threadCount;
+		const size_t size = entities.size() / threadCount;
 
 		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
 		{
@@ -453,12 +506,12 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 
 			if (taskIndex == threadCount - 1)
 			{
-				const auto remainingSize = objects.size() - lastIndex;
+				const auto remainingSize = entities.size() - lastIndex;
 
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &objects, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
+			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
 				{
 					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
 					auto commandBuffer = commandPool->createBuffer({ true, true });
@@ -467,18 +520,20 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 
 					commandBuffer->bindPipeline(m_pipeline);
 
-					for (size_t i = firstIndex; i < lastIndex; i++)
+					size_t i = firstIndex;
+					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
 					{
-						auto& object = objects[i];
-						auto& descriptorSet = m_objectDescriptorSets[i];
+						auto& graphics = entities.get<GraphicsComponent>(*it);
+						
+						commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
 
-						commandBuffer->bindVertexBuffer(object.vertexBuffer, 0);
+						commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
 
-						commandBuffer->bindIndexBuffer(object.indexBuffer, IndexType::U32);
+						commandBuffer->bindDescriptorSets({ globalDescriptorSet, m_materialDescriptorSet }, { i * m_dynamicObjectBufferOffset });
 
-						commandBuffer->bindDescriptorSets({ globalDescriptorSet, descriptorSet }, { i * m_dynamicObjectBufferOffset });
+						commandBuffer->drawIndexed(graphics.indexCount);
 
-						commandBuffer->drawIndexed(object.indexCount);
+						i++;
 					}
 
 					commandBuffer->end();
@@ -500,9 +555,9 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 	}
 
 	commandBuffer->endRenderPass();
-	
+
 	// Post process pass
-	beginRenderPass();
+	m_renderPipeline->beginScreenRenderPass();
 
 	commandBuffer->bindPipeline(m_ppPipeline);
 
@@ -510,38 +565,18 @@ void DeferredRenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> 
 
 	commandBuffer->bindDescriptorSets({ m_ppDescriptorSet });
 
-	commandBuffer->draw(6);
+	commandBuffer->draw(quadVertices.size());
 
-	endRenderPass();
+	m_renderPipeline->endScreenRenderPass();
 }
 
-void DeferredRenderPipeline::loadScene()
+void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 {
-	ATEMA_BENCHMARK("DeferredRenderPipeline::loadScene");
-
-	m_scene = std::make_shared<Scene>();
-
-	auto& objects = m_scene->getObjects();
-
-	m_objectDescriptorSets.reserve(objects.size());
-
-	for (auto& object : objects)
-	{
-		auto descriptorSet = m_objectDescriptorPool->createSet();
-
-		descriptorSet->update(0, object.texture, object.sampler);
-
-		m_objectDescriptorSets.push_back(descriptorSet);
-	}
-}
-
-void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
-{
-	ATEMA_BENCHMARK("DeferredRenderPipeline::updateUniformBuffers")
+	ATEMA_BENCHMARK("GraphicsSystem::updateUniformBuffers")
 
 		// Update global buffers
 	{
-		const auto windowSize = getWindow()->getSize();
+		const auto windowSize = Renderer::instance().getMainWindow()->getSize();
 
 		const auto angle = m_totalTime * zoomSpeed;
 
@@ -582,7 +617,9 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 		const auto basisChange = Matrix4f::createRotation({ toRadians(90.0f), 0.0f, 0.0f });
 
-		auto& objects = m_scene->getObjects();
+		auto& entityManager = getEntityManager();
+
+		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
 		auto& taskManager = TaskManager::instance();
 
@@ -591,7 +628,7 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 		tasks.reserve(threadCount);
 
 		size_t firstIndex = 0;
-		size_t size = objects.size() / threadCount;
+		size_t size = entities.size() / threadCount;
 
 		for (size_t i = 0; i < threadCount; i++)
 		{
@@ -599,21 +636,25 @@ void DeferredRenderPipeline::updateUniformBuffers(uint32_t frameIndex)
 
 			if (i == threadCount - 1)
 			{
-				const auto remainingSize = objects.size() - lastIndex;
+				const auto remainingSize = entities.size() - lastIndex;
 
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &objects, frameIndex]()
+			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &entities, frameIndex]()
 				{
-					for (size_t i = firstIndex; i < lastIndex; i++)
+					auto it = entities.begin() + firstIndex;
+
+					for (size_t j = firstIndex; j < lastIndex; j++)
 					{
-						auto& object = objects[i];
+						auto& transform = entities.get<Transform>(*it);
 
 						UniformObjectElement objectTransforms;
-						objectTransforms.model = object.transform.getMatrix() * basisChange;
+						objectTransforms.model = transform.getMatrix() * basisChange;
 
-						memcpy(static_cast<void*>(&data[i * m_dynamicObjectBufferOffset]), static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+						memcpy(static_cast<void*>(&data[j * m_dynamicObjectBufferOffset]), static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+
+						it++;
 					}
 				});
 

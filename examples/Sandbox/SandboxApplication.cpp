@@ -20,6 +20,11 @@
 */
 
 #include "SandboxApplication.hpp"
+#include "Resources.hpp"
+#include "Components/GraphicsComponent.hpp"
+#include "Components/VelocityComponent.hpp"
+#include "Systems/SceneUpdateSystem.hpp"
+#include "Systems/GraphicsSystem.hpp"
 
 using namespace at;
 
@@ -36,17 +41,29 @@ SandboxApplication::SandboxApplication():
 	// Window / SwapChain
 	m_window = Renderer::instance().getMainWindow();
 
-	RenderPipeline::Settings renderPipelineSettings;
-	renderPipelineSettings.window = m_window;
+	// Create systems
+	auto sceneUpdateSystem = std::make_shared<SceneUpdateSystem>();
+	sceneUpdateSystem->setEntityManager(m_entityManager);
 
-	m_renderPipeline = std::make_shared<TestRenderPipeline>(renderPipelineSettings);
+	m_systems.push_back(sceneUpdateSystem);
+
+	auto graphicsSystem = std::make_shared<GraphicsSystem>();
+	graphicsSystem->setEntityManager(m_entityManager);
+
+	m_systems.push_back(graphicsSystem);
+
+	// Create scene
+	createScene();
 }
 
 SandboxApplication::~SandboxApplication()
 {
-	m_renderPipeline.reset();
+	m_entityManager.clear();
+	m_systems.clear();
 
-	// Window & Renderer
+	m_modelData.reset();
+	m_materialData.reset();
+	
 	m_window.reset();
 
 	Renderer::destroy();
@@ -70,7 +87,10 @@ void SandboxApplication::update(at::TimeStep ms)
 
 	m_window->processEvents();
 
-	m_renderPipeline->update(ms);
+	//m_renderPipeline->update();
+
+	for (auto& system : m_systems)
+		system->update(ms);
 
 	m_window->swapBuffers();
 
@@ -88,5 +108,56 @@ void SandboxApplication::update(at::TimeStep ms)
 
 		m_frameCount = 0;
 		m_frameDuration = 0.0f;
+	}
+}
+
+void SandboxApplication::createScene()
+{
+	// Resources
+	m_modelData = std::make_shared<ModelData>(modelMeshPath);
+
+	m_materialData = std::make_shared<MaterialData>(modelTexturePath);
+
+	// Create objects
+	const auto origin = -modelScale * (objectRow / 2.0f);
+
+	const Vector2f velocityReference(objectRow / 2, objectRow / 2);
+	//const auto maxDistance = Vector2f(objectRow, objectRow).getNorm();
+	const auto maxDistance = velocityReference.getNorm();
+	
+	for (size_t i = 0; i < objectRow; i++)
+	{
+		for (size_t j = 0; j < objectRow; j++)
+		{
+			auto entity = m_entityManager.createEntity();
+
+			// Transform component
+			auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+			Vector3f position;
+			position.x = modelScale * static_cast<float>(i) + origin;
+			position.y = modelScale * static_cast<float>(j) + origin;
+
+			transform.setTranslation(position);
+			
+			// Graphics component
+			auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+			graphics.vertexBuffer = m_modelData->vertexBuffer;
+			graphics.indexBuffer = m_modelData->indexBuffer;
+			graphics.indexCount = m_modelData->indexCount;
+			graphics.texture = m_materialData->texture;
+			graphics.sampler = m_materialData->sampler;
+
+			// Velocity component
+			auto& velocity = m_entityManager.createComponent<VelocityComponent>(entity);
+
+			//const auto distance = Vector2f(i, j).getNorm();
+			const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
+			
+			const auto percent = distance / maxDistance;
+			
+			velocity.speed = percent * 3.14159f * 2.0f;
+		}
 	}
 }

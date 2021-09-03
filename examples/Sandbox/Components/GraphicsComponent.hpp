@@ -19,69 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SCENE_HPP
-#define ATEMA_SANDBOX_SCENE_HPP
+#ifndef ATEMA_SANDBOX_GRAPHICSCOMPONENT_HPP
+#define ATEMA_SANDBOX_GRAPHICSCOMPONENT_HPP
 
 #include <Atema/Atema.hpp>
 
-struct MaterialData;
-struct ModelData;
-
-struct ObjectData
+struct GraphicsComponent
 {
-	ObjectData();
-	
 	at::Ptr<at::Buffer> vertexBuffer;
 	at::Ptr<at::Buffer> indexBuffer;
 	uint32_t indexCount = 0;
 	at::Ptr<at::Image> texture;
 	at::Ptr<at::Sampler> sampler;
-	at::Transform transform;
-};
-
-class ObjectFrameData
-{
-public:
-	ObjectFrameData() = delete;
-	ObjectFrameData(const ObjectData& object, uint32_t frameCount, at::Ptr<at::DescriptorPool> descriptorPool);
-
-	at::Ptr<at::Buffer> getBuffer(uint32_t frameIndex);
-	at::Ptr<at::DescriptorSet> getDescriptorSet(uint32_t frameIndex);
-
-private:
-	std::vector<at::Ptr<at::Buffer>> m_uniformBuffers;
-	std::vector<at::Ptr<at::DescriptorSet>> m_descriptorSets;
-};
-
-struct UniformFrameElement
-{
-	at::Matrix4f proj;
-	at::Matrix4f view;
-};
-
-struct UniformObjectElement
-{
-	at::Matrix4f model;
-};
-
-class Scene
-{
-public:
-	Scene();
-	virtual ~Scene();
-
-	void updateObjects(at::TimeStep timeStep, size_t threadCount = 0);
-	
-	const std::vector<ObjectData>& getObjects() const noexcept;
-
-private:
-	void loadResources();
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
-
-	std::vector<ObjectData> m_objects;
 };
 
 #endif

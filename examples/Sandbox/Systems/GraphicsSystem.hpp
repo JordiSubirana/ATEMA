@@ -19,44 +19,59 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_BASICRENDERPIPELINE_HPP
-#define ATEMA_SANDBOX_BASICRENDERPIPELINE_HPP
+#ifndef ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
+#define ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
 
-#include <Atema/Atema.hpp>
+#include "System.hpp"
 
-#include "Scene.hpp"
-
-class BasicRenderPipeline : public at::RenderPipeline
+class GraphicsSystem : public System
 {
 public:
-	BasicRenderPipeline() = delete;
-	BasicRenderPipeline(const at::RenderPipeline::Settings& settings);
-	virtual ~BasicRenderPipeline();
+	GraphicsSystem();
+	virtual ~GraphicsSystem();
 
-protected:
-	void resize(const at::Vector2u& size) override;
-	void updateFrame(at::TimeStep elapsedTime) override;
-	void setupFrame(uint32_t frameIndex, at::Ptr<at::CommandBuffer> commandBuffer) override;
+	void update(at::TimeStep timeStep) override;
 
 private:
-	void loadScene();
+	void onResize(const at::Vector2u& size);
+	void onUpdateFrame(uint32_t frameIndex, at::Ptr<at::CommandBuffer> commandBuffer);
+
 	void updateUniformBuffers(uint32_t frameIndex);
 
+	at::UPtr<at::RenderPipeline> m_renderPipeline;
+	
 	uint32_t m_maxFramesInFlight;
 	float m_totalTime;
-	
+
+	at::ImageFormat m_depthFormat;
+
+	// Rendering resources (deferred)
+	std::vector<at::Ptr<at::Image>> m_deferredImages;
+	at::Ptr<at::Image> m_deferredDepthImage;
+	at::Ptr<at::Framebuffer> m_deferredFramebuffer;
+	at::Ptr<at::RenderPass> m_deferredRenderPass;
+
+	// Rendering resources (post process)
+	at::Ptr<at::Buffer> m_ppQuad;
+	at::Ptr<at::Sampler> m_ppSampler;
+	at::Ptr<at::GraphicsPipeline> m_ppPipeline;
+	at::Ptr<at::DescriptorSetLayout> m_ppDescriptorSetLayout;
+	at::Ptr<at::DescriptorPool> m_ppDescriptorPool;
+	at::Ptr<at::DescriptorSet> m_ppDescriptorSet;
+
 	// Object resources
-	at::Ptr<at::DescriptorSetLayout> m_objectDescriptorSetLayout;
-	at::Ptr<at::DescriptorPool> m_objectDescriptorPool;
-	at::Ptr<Scene> m_scene;
-	std::vector<ObjectFrameData> m_objectFrameData;
+	at::Ptr<at::DescriptorSetLayout> m_materialDescriptorSetLayout;
+	at::Ptr<at::DescriptorPool> m_materialDescriptorPool;
+	at::Ptr<at::DescriptorSet> m_materialDescriptorSet;
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
 	std::vector<at::Ptr<at::Buffer>> m_frameUniformBuffers;
+	size_t m_dynamicObjectBufferOffset;
+	std::vector<at::Ptr<at::Buffer>> m_frameObjectsUniformBuffers;
 	std::vector<at::Ptr<at::DescriptorSet>> m_frameDescriptorSets;
-	
+
 	// Pipeline resources
 	at::Ptr<at::GraphicsPipeline> m_pipeline;
 
