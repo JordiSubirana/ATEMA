@@ -56,6 +56,15 @@ void EntityManager::removeEntity(EntityHandle entity)
 		componentHandler->erase(entity);
 }
 
+void EntityManager::clear()
+{
+	m_components.clear();
+
+	m_availableIDs.clear();
+
+	m_nextID = 0;
+}
+
 EntityHandle EntityManager::getNextID()
 {
 	if (!m_availableIDs.empty())

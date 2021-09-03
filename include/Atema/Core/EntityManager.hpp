@@ -73,6 +73,8 @@ namespace at
 		
 		void removeEntity(EntityHandle entity);
 
+		void clear();
+
 		template <typename T>
 		T& createComponent(EntityHandle entity);
 
