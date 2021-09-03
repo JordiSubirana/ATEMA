@@ -37,14 +37,13 @@ RenderPipeline::RenderPipeline(const Settings& settings) :
 	NonCopyable(),
 	m_window(settings.window),
 	m_maxFramesInFlight(settings.maxFramesInFlight),
-	m_currentFrame(0),
-	m_currentSwapChainImage(0),
 	m_colorFormat(settings.colorFormat),
-	m_depthFormat(settings.depthFormat)
+	m_depthFormat(settings.depthFormat),
+	m_currentFrame(0),
+	m_currentSwapChainImage(0)
 {
-	auto window = settings.window;
-
-	auto windowSize = window->getSize();
+	ATEMA_ASSERT(settings.resizeCallback, "Invalid resize callback");
+	ATEMA_ASSERT(settings.updateFrameCallback, "Invalid update frame callback");
 
 	// RenderPass
 	RenderPass::Settings renderPassSettings;
@@ -73,6 +72,10 @@ RenderPipeline::RenderPipeline(const Settings& settings) :
 	m_commandBuffers.resize(m_maxFramesInFlight);
 
 	createSwapChainResources();
+
+	// Set callbacks once everything is initialized
+	m_resizeCallback = settings.resizeCallback;
+	m_updateFrameCallback = settings.updateFrameCallback;
 }
 
 RenderPipeline::~RenderPipeline()
@@ -95,19 +98,12 @@ RenderPipeline::~RenderPipeline()
 	m_renderPass.reset();
 }
 
-void RenderPipeline::update(TimeStep elapsedTime)
+void RenderPipeline::startFrame()
 {
 	ATEMA_BENCHMARK_TAG(rootBenchmark, "RenderPipeline::update")
 
 	m_currentCommandBuffer.reset();
 
-	// Update Frame
-	{
-		ATEMA_BENCHMARK("Update frame")
-
-		updateFrame(elapsedTime);
-	}
-	
 	// Wait on fence to be signaled (max frames in flight)
 	auto& fence = m_fences[m_currentFrame];
 
@@ -155,9 +151,9 @@ void RenderPipeline::update(TimeStep elapsedTime)
 	m_currentCommandBuffer->begin();
 
 	{
-		ATEMA_BENCHMARK("RenderPipeline::setupFrame")
+		ATEMA_BENCHMARK("RenderPipeline::updateFrame")
 
-		setupFrame(m_currentFrame, m_currentCommandBuffer);
+		m_updateFrameCallback(m_currentFrame, m_currentCommandBuffer);
 	}
 
 	m_currentCommandBuffer->end();
@@ -236,20 +232,7 @@ const std::vector<Ptr<CommandPool>>& RenderPipeline::getCommandPools() const noe
 	return m_commandPools;
 }
 
-void RenderPipeline::resize(const Vector2u& size)
-{
-	
-}
-
-void RenderPipeline::updateFrame(TimeStep elapsedTime)
-{
-}
-
-void RenderPipeline::setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
-{
-}
-
-void RenderPipeline::beginRenderPass(bool useSecondaryBuffers)
+void RenderPipeline::beginScreenRenderPass(bool useSecondaryBuffers)
 {
 	static const std::vector<CommandBuffer::ClearValue> clearValues =
 	{
@@ -262,7 +245,7 @@ void RenderPipeline::beginRenderPass(bool useSecondaryBuffers)
 	m_currentCommandBuffer->beginRenderPass(m_renderPass, framebuffer, clearValues, useSecondaryBuffers);
 }
 
-void RenderPipeline::endRenderPass()
+void RenderPipeline::endScreenRenderPass()
 {
 	m_currentCommandBuffer->endRenderPass();
 }
@@ -305,7 +288,8 @@ void RenderPipeline::createSwapChainResources()
 
 	m_imageFences.resize(swapChainImageCount);
 
-	resize(windowSize);
+	if (m_resizeCallback)
+		m_resizeCallback(windowSize);
 }
 
 void RenderPipeline::destroySwapChainResources()

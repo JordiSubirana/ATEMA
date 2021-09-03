@@ -25,7 +25,6 @@
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/TimeStep.hpp>
 #include <Atema/Math/Vector.hpp>
 #include <Atema/Renderer/Enums.hpp>
 
@@ -49,42 +48,44 @@ namespace at
 		struct ATEMA_GRAPHICS_API Settings
 		{
 			Ptr<Window> window;
+			
 			uint32_t maxFramesInFlight = 2;
+			
 			ImageFormat colorFormat = ImageFormat::BGRA8_SRGB;
 			ImageFormat depthFormat = ImageFormat::D32F;
+			
+			std::function<void(const Vector2u&)> resizeCallback;
+			std::function<void(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)> updateFrameCallback;
 		};
 
 		RenderPipeline() = delete;
 		RenderPipeline(const Settings& settings);
 		virtual ~RenderPipeline();
 
-		void update(TimeStep elapsedTime);
+		void startFrame();
 
+		void beginScreenRenderPass(bool useSecondaryBuffers = false);
+		void endScreenRenderPass();
+		
 		Ptr<Window> getWindow() const noexcept;
 		const Ptr<SwapChain>& getSwapChain() const noexcept;
 		const Ptr<RenderPass>& getRenderPass() const noexcept;
 		const Ptr<Framebuffer>& getCurrentFramebuffer() const noexcept;
 		const std::vector<Ptr<CommandPool>>& getCommandPools() const noexcept;
 		
-	protected:
-		virtual void resize(const Vector2u& size);
-		virtual void updateFrame(TimeStep elapsedTime);
-		virtual void setupFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer);
-
-		void beginRenderPass(bool useSecondaryBuffers = false);
-		void endRenderPass();
-		
 	private:
 		void createSwapChainResources();
 		void destroySwapChainResources();
-		
+
+		WPtr<Window> m_window;
 		uint32_t m_maxFramesInFlight;
-		uint32_t m_currentFrame;
-		uint32_t m_currentSwapChainImage;
 		ImageFormat m_colorFormat;
 		ImageFormat m_depthFormat;
+		std::function<void(const Vector2u&)> m_resizeCallback;
+		std::function<void(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)> m_updateFrameCallback;
+		uint32_t m_currentFrame;
+		uint32_t m_currentSwapChainImage;
 		Ptr<CommandBuffer> m_currentCommandBuffer;
-		WPtr<Window> m_window;
 		Ptr<SwapChain> m_swapChain;
 		Ptr<RenderPass> m_renderPass;
 		Ptr<Image> m_depthImage;
