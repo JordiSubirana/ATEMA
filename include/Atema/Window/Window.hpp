@@ -26,6 +26,7 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Math/Vector.hpp>
+#include <Atema/Core/EventDispatcher.hpp>
 
 #include <string>
 #include <vector>
@@ -69,6 +70,9 @@ namespace at
 
 		Vector2u getSize() const noexcept;
 
+		EventDispatcher& getEventDispatcher() noexcept;
+		const EventDispatcher& getEventDispatcher() const noexcept;
+
 		// Platform specific
 		void* getHandle() const;
 		
@@ -87,6 +91,8 @@ namespace at
 		UPtr<Implementation> m_implementation;
 
 		Vector2u m_size;
+
+		EventDispatcher m_eventDispatcher;
 	};
 }
 

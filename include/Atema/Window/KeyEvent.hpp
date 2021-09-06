@@ -19,12 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_WINDOW_HPP
-#define ATEMA_GLOBAL_WINDOW_HPP
+#ifndef ATEMA_WINDOW_KEYEVENT_HPP
+#define ATEMA_WINDOW_KEYEVENT_HPP
 
 #include <Atema/Window/Config.hpp>
+#include <Atema/Core/Event.hpp>
 #include <Atema/Window/Enums.hpp>
-#include <Atema/Window/KeyEvent.hpp>
-#include <Atema/Window/Window.hpp>
+
+namespace at
+{
+	class ATEMA_WINDOW_API KeyEvent : public Event
+	{
+	public:
+		KeyEvent();
+		~KeyEvent();
+
+		Key key;
+		KeyState state;
+		Flags<KeyModifier> modifiers;
+	};
+}
 
 #endif

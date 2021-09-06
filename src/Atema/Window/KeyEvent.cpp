@@ -19,12 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_WINDOW_HPP
-#define ATEMA_GLOBAL_WINDOW_HPP
-
-#include <Atema/Window/Config.hpp>
-#include <Atema/Window/Enums.hpp>
 #include <Atema/Window/KeyEvent.hpp>
-#include <Atema/Window/Window.hpp>
 
-#endif
+using namespace at;
+
+KeyEvent::KeyEvent() :
+	Event(TypeInfo<KeyEvent>::id),
+	key(Key::Unknown),
+	state(KeyState::Press),
+	modifiers(0)
+{
+}
+
+KeyEvent::~KeyEvent()
+{
+}
