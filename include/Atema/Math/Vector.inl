@@ -263,6 +263,12 @@ namespace at
 
 		return length;
 	}
+
+	template <size_t N, typename T>
+	T Vector<N, T>::angle(const Vector<N, T>& other) const
+	{
+		return std::acos(dot(other) / (getNorm() * other.getNorm()));
+	}
 }
 
 #endif

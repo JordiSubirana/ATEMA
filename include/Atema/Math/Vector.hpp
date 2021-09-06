@@ -69,7 +69,7 @@ namespace at
 		Vector();
 
 		template <typename...Args>
-		Vector(Args...args)
+		Vector(Args...args) : Vector()
 		{
 			auto tmp = { static_cast<T>(args)... };
 
@@ -127,6 +127,8 @@ namespace at
 		const T& operator[](size_t index) const;
 
 		T dot(const Vector<N, T>& other) const;
+
+		T angle(const Vector<N, T>& other) const;
 	};
 
 	template <typename T>
