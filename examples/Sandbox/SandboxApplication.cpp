@@ -40,6 +40,11 @@ SandboxApplication::SandboxApplication():
 
 	// Window / SwapChain
 	m_window = Renderer::instance().getMainWindow();
+	m_window->setCursorEnabled(false);
+	m_window->getEventDispatcher().addListener([this](Event& event)
+		{
+			onEvent(event);
+		});
 
 	// Create systems
 	auto sceneUpdateSystem = std::make_shared<SceneUpdateSystem>();
@@ -71,6 +76,13 @@ SandboxApplication::~SandboxApplication()
 
 void SandboxApplication::onEvent(at::Event& event)
 {
+	for (auto& system : m_systems)
+	{
+		if (event.isHandled())
+			return;
+
+		system->onEvent(event);
+	}
 }
 
 void SandboxApplication::update(at::TimeStep ms)

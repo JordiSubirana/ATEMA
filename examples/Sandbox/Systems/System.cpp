@@ -42,3 +42,11 @@ EntityManager& System::getEntityManager()
 
 	return *m_entityManager;
 }
+
+void System::update(at::TimeStep timeStep)
+{
+}
+
+void System::onEvent(at::Event& event)
+{
+}

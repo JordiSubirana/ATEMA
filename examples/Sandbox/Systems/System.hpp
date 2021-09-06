@@ -33,7 +33,9 @@ public:
 	void setEntityManager(at::EntityManager& manager);
 	at::EntityManager& getEntityManager();
 
-	virtual void update(at::TimeStep timeStep) = 0;
+	virtual void update(at::TimeStep timeStep);
+
+	virtual void onEvent(at::Event& event);
 
 private:
 	at::EntityManager *m_entityManager;
