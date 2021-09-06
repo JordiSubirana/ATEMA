@@ -24,7 +24,7 @@
 
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/Window.hpp>
+#include <Atema/Window/Window.hpp>
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>

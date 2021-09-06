@@ -21,7 +21,7 @@
 
 #include <Atema/Core/Benchmark.hpp>
 #include <Atema/Graphics/RenderPipeline.hpp>
-#include <Atema/Core/Window.hpp>
+#include <Atema/Window/Window.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>

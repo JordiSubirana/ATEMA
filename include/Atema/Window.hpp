@@ -19,53 +19,10 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Renderer/Renderer.hpp>
+#ifndef ATEMA_GLOBAL_WINDOW_HPP
+#define ATEMA_GLOBAL_WINDOW_HPP
+
+#include <Atema/Window/Config.hpp>
 #include <Atema/Window/Window.hpp>
 
-using namespace at;
-
-Ptr<Renderer> Renderer::s_renderer = nullptr;
-
-Renderer::Renderer(const Settings& settings) : m_settings(settings)
-{
-	m_mainWindow = Window::create(settings.mainWindowSettings);
-}
-
-Renderer::~Renderer()
-{
-}
-
-Renderer& Renderer::instance()
-{
-	if (!s_renderer)
-	{
-		ATEMA_ERROR("No Renderer available");
-	}
-
-	return *s_renderer;
-}
-
-void Renderer::destroy()
-{
-	s_renderer.reset();
-}
-
-const Renderer::Settings& Renderer::getSettings() const noexcept
-{
-	return m_settings;
-}
-
-Ptr<Window> Renderer::getMainWindow() const noexcept
-{
-	return m_mainWindow;
-}
-
-void Renderer::submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers)
-{
-	auto fence = Fence::create({});
-
-	submit(commandBuffers, {}, {}, {}, fence);
-
-	// Wait for the command to be done
-	fence->wait();
-}
+#endif

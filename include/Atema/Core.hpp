@@ -40,6 +40,5 @@
 #include <Atema/Core/TimeStep.hpp>
 #include <Atema/Core/Traits.hpp>
 #include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Window.hpp>
 
 #endif

@@ -19,10 +19,10 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_WINDOW_HPP
-#define ATEMA_CORE_WINDOW_HPP
+#ifndef ATEMA_WINDOW_WINDOW_HPP
+#define ATEMA_WINDOW_WINDOW_HPP
 
-#include <Atema/Core/Config.hpp>
+#include <Atema/Window/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Math/Vector.hpp>
@@ -32,7 +32,7 @@
 
 namespace at
 {
-	class ATEMA_CORE_API Window : NonCopyable
+	class ATEMA_WINDOW_API Window : NonCopyable
 	{
 	public:
 		struct Settings

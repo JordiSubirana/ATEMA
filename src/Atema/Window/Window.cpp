@@ -19,7 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Core/Window.hpp>
+#include <Atema/Window/Window.hpp>
 #include <Atema/Core/Error.hpp>
 
 #define GLFW_INCLUDE_NONE

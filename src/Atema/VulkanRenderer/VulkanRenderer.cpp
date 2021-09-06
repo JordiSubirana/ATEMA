@@ -20,7 +20,7 @@
 */
 
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/Core/Window.hpp>
+#include <Atema/Window/Window.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanSampler.hpp>
 #include <Atema/VulkanRenderer/VulkanSwapChain.hpp>

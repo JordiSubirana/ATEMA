@@ -19,53 +19,27 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Window/Window.hpp>
+#ifndef ATEMA_WINDOW_CONFIG_HPP
+#define ATEMA_WINDOW_CONFIG_HPP
 
-using namespace at;
+#include <Atema/Config.hpp>
 
-Ptr<Renderer> Renderer::s_renderer = nullptr;
+#if defined(ATEMA_STATIC)
+	
+	#define ATEMA_WINDOW_API
+	
+#else
+	
+	#if defined(ATEMA_WINDOW_EXPORT)
+		
+		#define ATEMA_WINDOW_API ATEMA_EXPORT
+		
+	#else
+		
+		#define ATEMA_WINDOW_API ATEMA_IMPORT
+		
+	#endif
 
-Renderer::Renderer(const Settings& settings) : m_settings(settings)
-{
-	m_mainWindow = Window::create(settings.mainWindowSettings);
-}
+#endif
 
-Renderer::~Renderer()
-{
-}
-
-Renderer& Renderer::instance()
-{
-	if (!s_renderer)
-	{
-		ATEMA_ERROR("No Renderer available");
-	}
-
-	return *s_renderer;
-}
-
-void Renderer::destroy()
-{
-	s_renderer.reset();
-}
-
-const Renderer::Settings& Renderer::getSettings() const noexcept
-{
-	return m_settings;
-}
-
-Ptr<Window> Renderer::getMainWindow() const noexcept
-{
-	return m_mainWindow;
-}
-
-void Renderer::submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers)
-{
-	auto fence = Fence::create({});
-
-	submit(commandBuffers, {}, {}, {}, fence);
-
-	// Wait for the command to be done
-	fence->wait();
-}
+#endif

@@ -28,5 +28,6 @@
 #include <Atema/Math.hpp>
 #include <Atema/Renderer.hpp>
 #include <Atema/VulkanRenderer.hpp>
+#include <Atema/Window.hpp>
 
 #endif
