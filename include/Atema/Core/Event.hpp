@@ -23,19 +23,33 @@
 #define ATEMA_CORE_EVENT_HPP
 
 #include <Atema/Core/Config.hpp>
+#include <Atema/Core/Hash.hpp>
+#include <Atema/Core/TypeInfo.hpp>
 
 namespace at
 {
 	class ATEMA_CORE_API Event
 	{
 	public:
-		Event();
+		Event() = delete;
 		virtual ~Event();
+
+		HashType getType() const noexcept;
+
+		template <typename T>
+		bool is() const noexcept
+		{
+			return m_typeHash == TypeInfo<T>::id;
+		}
 
 		void setHandled(bool value);
 		bool isHandled() const noexcept;
-
+		
+	protected:
+		Event(HashType typeHash);
+		
 	private:
+		HashType m_typeHash;
 		bool m_isHandled;
 	};
 }

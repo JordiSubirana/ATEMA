@@ -24,12 +24,19 @@
 using namespace at;
 
 
-Event::Event() : m_isHandled(false)
+Event::Event(HashType typeHash) :
+	m_typeHash(typeHash),
+	m_isHandled(false)
 {
 }
 
 Event::~Event()
 {
+}
+
+HashType Event::getType() const noexcept
+{
+	return m_typeHash;
 }
 
 void Event::setHandled(bool value)
