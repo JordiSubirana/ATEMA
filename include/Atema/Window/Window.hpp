@@ -62,6 +62,8 @@ namespace at
 
 		void setTitle(const std::string& title);
 
+		void setCursorEnabled(bool enable); // Default : true
+
 		bool shouldClose() const noexcept;
 
 		void processEvents();

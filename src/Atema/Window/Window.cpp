@@ -347,6 +347,13 @@ public:
 		glfwSetWindowTitle(m_window, title.c_str());
 	}
 
+	void setCursorEnabled(bool enable)
+	{
+		const auto mode = enable ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
+
+		glfwSetInputMode(m_window, GLFW_CURSOR, mode);
+	}
+
 	bool shouldClose() const noexcept
 	{
 		return glfwWindowShouldClose(m_window);
@@ -469,6 +476,11 @@ Ptr<Window> Window::create(const Window::Settings& description)
 void Window::setTitle(const std::string& title)
 {
 	m_implementation->setTitle(title);
+}
+
+void Window::setCursorEnabled(bool enable)
+{
+	m_implementation->setCursorEnabled(enable);
 }
 
 void Window::initialize(const Settings& description)
