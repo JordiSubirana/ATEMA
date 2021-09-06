@@ -257,7 +257,7 @@ namespace
 class Window::Implementation
 {
 public:
-	Implementation() : m_window(nullptr)
+	Implementation() : m_window(nullptr), m_isCursorEnabled(true)
 	{
 		if (s_windowCount == 0)
 		{
@@ -349,9 +349,16 @@ public:
 
 	void setCursorEnabled(bool enable)
 	{
+		m_isCursorEnabled = enable;
+
 		const auto mode = enable ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
 
 		glfwSetInputMode(m_window, GLFW_CURSOR, mode);
+	}
+
+	bool isCursorEnabled() const noexcept
+	{
+		return m_isCursorEnabled;
 	}
 
 	bool shouldClose() const noexcept
@@ -443,6 +450,7 @@ private:
 	GLFWwindow* m_window;
 	std::function<void(unsigned, unsigned)> m_resizedCallback;
 	std::function<void(Event&)> m_eventCallback;
+	bool m_isCursorEnabled;
 };
 
 // Window
@@ -481,6 +489,11 @@ void Window::setTitle(const std::string& title)
 void Window::setCursorEnabled(bool enable)
 {
 	m_implementation->setCursorEnabled(enable);
+}
+
+bool Window::isCursorEnabled() const noexcept
+{
+	return m_implementation->isCursorEnabled();
 }
 
 void Window::initialize(const Settings& description)
