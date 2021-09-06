@@ -169,6 +169,24 @@ namespace at
 		Repeat,
 		Release
 	};
+
+	enum class MouseButton
+	{
+		Left,
+		Middle,
+		Right,
+		Button1,
+		Button2,
+		Button3,
+		Button4,
+		Button5
+	};
+
+	enum class MouseButtonState
+	{
+		Press,
+		Release
+	};
 }
 
 #endif

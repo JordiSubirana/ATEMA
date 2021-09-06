@@ -32,6 +32,7 @@ namespace at
 	{
 	public:
 		KeyEvent();
+		KeyEvent(Key key, KeyState state, Flags<KeyModifier> modifiers = 0);
 		~KeyEvent();
 
 		Key key;

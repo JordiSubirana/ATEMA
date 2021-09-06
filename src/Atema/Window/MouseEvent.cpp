@@ -19,13 +19,44 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_WINDOW_HPP
-#define ATEMA_GLOBAL_WINDOW_HPP
-
-#include <Atema/Window/Config.hpp>
-#include <Atema/Window/Enums.hpp>
-#include <Atema/Window/KeyEvent.hpp>
 #include <Atema/Window/MouseEvent.hpp>
-#include <Atema/Window/Window.hpp>
 
-#endif
+using namespace at;
+
+// MouseButtonEvent
+MouseButtonEvent::MouseButtonEvent() :
+	Event(TypeInfo<MouseButtonEvent>::id),
+	button(MouseButton::Left),
+	state(MouseButtonState::Press),
+	modifiers(0)
+{
+}
+
+MouseButtonEvent::MouseButtonEvent(MouseButton button, MouseButtonState state, Flags<KeyModifier> modifiers, Vector2f position) :
+	Event(TypeInfo<MouseButtonEvent>::id),
+	button(button),
+	state(state),
+	modifiers(modifiers),
+	position(position)
+{
+}
+
+MouseButtonEvent::~MouseButtonEvent()
+{
+}
+
+// MouseMoveEvent
+MouseMoveEvent::MouseMoveEvent() :
+	Event(TypeInfo<MouseMoveEvent>::id)	
+{
+}
+
+MouseMoveEvent::MouseMoveEvent(Vector2f position) :
+	Event(TypeInfo<MouseMoveEvent>::id),
+	position(position)
+{
+}
+
+MouseMoveEvent::~MouseMoveEvent()
+{
+}

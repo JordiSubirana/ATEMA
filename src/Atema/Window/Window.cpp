@@ -22,6 +22,7 @@
 #include <Atema/Window/Window.hpp>
 #include <Atema/Core/Error.hpp>
 #include <Atema/Window/KeyEvent.hpp>
+#include <Atema/Window/MouseEvent.hpp>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -214,8 +215,45 @@ namespace
 
 		return KeyState::Press;
 	}
+
+	MouseButton getMouseButton(int glfwButton)
+	{
+		switch (glfwButton)
+		{
+			case GLFW_MOUSE_BUTTON_LEFT: return MouseButton::Left;
+			case GLFW_MOUSE_BUTTON_RIGHT: return MouseButton::Right;
+			case GLFW_MOUSE_BUTTON_MIDDLE: return MouseButton::Middle;
+			case GLFW_MOUSE_BUTTON_4: return MouseButton::Button1;
+			case GLFW_MOUSE_BUTTON_5: return MouseButton::Button2;
+			case GLFW_MOUSE_BUTTON_6: return MouseButton::Button3;
+			case GLFW_MOUSE_BUTTON_7: return MouseButton::Button4;
+			case GLFW_MOUSE_BUTTON_8: return MouseButton::Button5;
+			default:
+			{
+				ATEMA_ERROR("Invalid mouse button");
+			}
+		}
+
+		return MouseButton::Left;
+	}
+
+	MouseButtonState getMouseButtonState(int glfwState)
+	{
+		switch (glfwState)
+		{
+		case GLFW_PRESS: return MouseButtonState::Press;
+		case GLFW_RELEASE: return MouseButtonState::Release;
+		default:
+		{
+			ATEMA_ERROR("Invalid mouse button state");
+		}
+		}
+
+		return MouseButtonState::Press;
+	}
 }
 
+// Window Implementation
 class Window::Implementation
 {
 public:
@@ -275,6 +313,7 @@ public:
 
 		glfwSetFramebufferSizeCallback(m_window, onFramebufferResized);
 		glfwSetKeyCallback(m_window, onKeyEvent);
+		glfwSetCursorPosCallback(m_window, onMouseMoveEvent);
 
 		int w, h;
 		glfwGetWindowSize(m_window, &w, &h);
@@ -339,6 +378,32 @@ public:
 		m_eventCallback(event);
 	}
 
+	void mouseMoveEvent(double x, double y)
+	{
+		MouseMoveEvent event;
+
+		event.position.x = static_cast<float>(x);
+		event.position.y = static_cast<float>(y);
+
+		m_eventCallback(event);
+	}
+
+	void mouseButtonEvent(int button, int action, int mods)
+	{
+		double x, y;
+		glfwGetCursorPos(m_window, &x, &y);
+
+		MouseButtonEvent event;
+
+		event.button = getMouseButton(button);
+		event.state = getMouseButtonState(action);
+		event.modifiers = getKeyModifier(mods);
+		event.position.x = static_cast<float>(x);
+		event.position.y = static_cast<float>(y);
+		
+		m_eventCallback(event);
+	}
+
 	static void onFramebufferResized(GLFWwindow* window, int width, int height)
 	{
 		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
@@ -351,6 +416,20 @@ public:
 		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
 
 		w->keyEvent(key, scancode, action, mods);
+	}
+
+	static void onMouseMoveEvent(GLFWwindow* window, double x, double y)
+	{
+		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
+
+		w->mouseMoveEvent(x, y);
+	}
+
+	static void onMouseButtonEvent(GLFWwindow* window, int button, int action, int mods)
+	{
+		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
+
+		w->mouseButtonEvent(button, action, mods);
 	}
 
 private:

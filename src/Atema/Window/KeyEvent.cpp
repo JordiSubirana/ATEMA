@@ -31,6 +31,14 @@ KeyEvent::KeyEvent() :
 {
 }
 
+KeyEvent::KeyEvent(Key key, KeyState state, Flags<KeyModifier> modifiers) :
+	Event(TypeInfo<KeyEvent>::id),
+	key(key),
+	state(state),
+	modifiers(modifiers)
+{
+}
+
 KeyEvent::~KeyEvent()
 {
 }
