@@ -19,43 +19,19 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_CAMERACOMPONENT_HPP
+#define ATEMA_SANDBOX_CAMERACOMPONENT_HPP
 
-#include <Atema/Atema.hpp>
-
-struct MaterialData;
-struct ModelData;
-class System;
-
-class SandboxApplication : public at::Application
+struct CameraComponent
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
-
-	void onEvent(at::Event& event) override;
-
-	void update(at::TimeStep ms) override;
-
-private:
-	void createScene();
-	void createCamera();
-	void createPlayer();
-	
-	at::Ptr<at::Window> m_window;
-
-	at::EntityManager m_entityManager;
-	
-	//at::Ptr<TestRenderPipeline> m_renderPipeline;
-	std::vector<at::Ptr<System>> m_systems;
-	
-	int m_frameCount;
-	float m_frameDuration;
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
+	bool display = true;
+	bool isAuto = false;
+	bool useTarget = false;
+	at::Vector3f target;
+	float fov = 45.0f;
+	float aspectRatio = 1.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 1000.0f;
 };
 
 #endif

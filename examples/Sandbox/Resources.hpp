@@ -37,6 +37,8 @@ const std::filesystem::path deferredMaterialFragmentPath = rscPath / "Shaders/Ge
 const std::filesystem::path deferredPostProcessVertexPath = rscPath / "Shaders/PostProcessOutputColorVert.spv";
 const std::filesystem::path deferredPostProcessFragmentPath = rscPath / "Shaders/PostProcessOutputColorFrag.spv";
 
+const float cameraScale = 0.001f;
+
 // LampPost
 /*
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";

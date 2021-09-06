@@ -22,6 +22,7 @@
 #include "GraphicsSystem.hpp"
 #include "../Resources.hpp"
 #include "../Components/GraphicsComponent.hpp"
+#include "../Components/CameraComponent.hpp"
 
 using namespace at;
 
@@ -572,43 +573,47 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 {
-	ATEMA_BENCHMARK("GraphicsSystem::updateUniformBuffers")
+	ATEMA_BENCHMARK("GraphicsSystem::updateUniformBuffers");
 
-		// Update global buffers
+	// Update global buffers
 	{
-		const auto windowSize = Renderer::instance().getMainWindow()->getSize();
+		auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
 
-		const auto angle = m_totalTime * zoomSpeed;
+		for (auto& entity : selection)
+		{
+			auto& camera = selection.get<CameraComponent>(entity);
 
-		const auto sin = std::sin(angle);
-		const auto sinSlow = std::sin(angle / 2.0f + 3.14159f);
+			if (camera.display)
+			{
+				auto& transform = selection.get<Transform>(entity);
 
-		const auto sign = (sin + 1.0f) / 2.0f;
-		const auto signSlow = (sinSlow + 1.0f) / 2.0f;
+				const Vector3f cameraPos = transform.getTranslation();
+				const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
+				
+				Vector3f cameraTarget = camera.target;
 
-		auto radius = modelScale * objectRow;
-		radius = sign * radius + (1.0f - sign) * zoomOffset;
+				// If the camera doesn't use target, calculate target from transform rotation
+				if (!camera.useTarget)
+				{
+					cameraTarget = cameraPos + Matrix4f::createRotation(transform.getRotation()) * Vector3f(1.0f, 0.0f, 0.0f);
+				}
 
-		const auto pos = toCartesian({ radius, angle / 3.0f });
+				UniformFrameElement frameTransforms;
+				frameTransforms.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
+				frameTransforms.proj = Matrix4f::createPerspective(toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
+				frameTransforms.proj[1][1] *= -1;
 
-		const auto z = signSlow * radius + (1.0f - signSlow) * zoomOffset;
+				auto buffer = m_frameUniformBuffers[frameIndex];
 
-		const Vector3f cameraPos(pos.x, pos.y, z);
-		const Vector3f cameraTarget(0.0f, 0.0f, zoomOffset / 2.0f);
-		const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
+				void* data = buffer->map();
 
-		UniformFrameElement frameTransforms;
-		frameTransforms.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
-		frameTransforms.proj = Matrix4f::createPerspective(toRadians(45.0f), static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y), 0.1f, 1000.0f);
-		frameTransforms.proj[1][1] *= -1;
+				memcpy(data, static_cast<void*>(&frameTransforms), sizeof(UniformFrameElement));
 
-		auto buffer = m_frameUniformBuffers[frameIndex];
+				buffer->unmap();
 
-		void* data = buffer->map();
-
-		memcpy(data, static_cast<void*>(&frameTransforms), sizeof(UniformFrameElement));
-
-		buffer->unmap();
+				break;
+			}
+		}
 	}
 
 	// Update objects buffers

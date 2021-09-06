@@ -23,8 +23,11 @@
 #include "Resources.hpp"
 #include "Components/GraphicsComponent.hpp"
 #include "Components/VelocityComponent.hpp"
+#include "Components/CameraComponent.hpp"
 #include "Systems/SceneUpdateSystem.hpp"
 #include "Systems/GraphicsSystem.hpp"
+#include "Systems/CameraSystem.hpp"
+#include "Systems/FirstPersonCameraSystem.hpp"
 
 using namespace at;
 
@@ -40,7 +43,6 @@ SandboxApplication::SandboxApplication():
 
 	// Window / SwapChain
 	m_window = Renderer::instance().getMainWindow();
-	m_window->setCursorEnabled(false);
 	m_window->getEventDispatcher().addListener([this](Event& event)
 		{
 			onEvent(event);
@@ -52,13 +54,27 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(sceneUpdateSystem);
 
+	auto cameraSystem = std::make_shared<CameraSystem>();
+	cameraSystem->setEntityManager(m_entityManager);
+
+	m_systems.push_back(cameraSystem);
+
+	auto firstPersonCameraSystem = std::make_shared<FirstPersonCameraSystem>();
+	firstPersonCameraSystem->setEntityManager(m_entityManager);
+
+	m_systems.push_back(firstPersonCameraSystem);
+
 	auto graphicsSystem = std::make_shared<GraphicsSystem>();
 	graphicsSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(graphicsSystem);
 
-	// Create scene
+	// Create entities
 	createScene();
+	
+	createCamera();
+
+	createPlayer();
 }
 
 SandboxApplication::~SandboxApplication()
@@ -82,6 +98,17 @@ void SandboxApplication::onEvent(at::Event& event)
 			return;
 
 		system->onEvent(event);
+	}
+
+	// Manage cursor depending on which camera is active
+	if (event.is<KeyEvent>())
+	{
+		auto& keyEvent = static_cast<KeyEvent&>(event);
+
+		if (keyEvent.key == Key::Space && keyEvent.state == KeyState::Press)
+		{
+			m_window->setCursorEnabled(!m_window->isCursorEnabled());
+		}
 	}
 }
 
@@ -172,4 +199,33 @@ void SandboxApplication::createScene()
 			velocity.speed = percent * 3.14159f * 2.0f;
 		}
 	}
+}
+
+void SandboxApplication::createCamera()
+{
+	const auto entity = m_entityManager.createEntity();
+
+	// Create default transform
+	auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+	// Create camera
+	auto& camera = m_entityManager.createComponent<CameraComponent>(entity);
+	camera.display = true;
+	camera.isAuto = true;
+	camera.useTarget = true;
+	camera.target = Vector3f(0.0f, 0.0f, zoomOffset / 2.0f);
+}
+
+void SandboxApplication::createPlayer()
+{
+	const auto entity = m_entityManager.createEntity();
+
+	// Create default transform
+	auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+	// Create camera
+	auto& camera = m_entityManager.createComponent<CameraComponent>(entity);
+	camera.display = false;
+	camera.isAuto = false;
+	camera.useTarget = false;
 }
