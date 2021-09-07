@@ -19,16 +19,26 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_WINDOW_HPP
-#define ATEMA_GLOBAL_WINDOW_HPP
+#ifndef ATEMA_WINDOW_QWERTYKEYBOARDLAYOUT_HPP
+#define ATEMA_WINDOW_QWERTYKEYBOARDLAYOUT_HPP
 
-#include <Atema/Window/AzertyKeyboardLayout.hpp>
 #include <Atema/Window/Config.hpp>
-#include <Atema/Window/Enums.hpp>
 #include <Atema/Window/KeyboardLayout.hpp>
-#include <Atema/Window/KeyEvent.hpp>
-#include <Atema/Window/MouseEvent.hpp>
-#include <Atema/Window/QwertyKeyboardLayout.hpp>
-#include <Atema/Window/Window.hpp>
+
+namespace at
+{
+	class ATEMA_WINDOW_API QwertyKeyboardLayout : public KeyboardLayout
+	{
+	public:
+		virtual ~QwertyKeyboardLayout();
+
+		static QwertyKeyboardLayout& instance();
+		
+		Key getKey(uint8_t unicode) const noexcept override;
+
+	private:
+		QwertyKeyboardLayout();
+	};
+}
 
 #endif

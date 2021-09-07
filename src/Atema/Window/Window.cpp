@@ -23,6 +23,7 @@
 #include <Atema/Core/Error.hpp>
 #include <Atema/Window/KeyEvent.hpp>
 #include <Atema/Window/MouseEvent.hpp>
+#include <Atema/Window/KeyboardLayout.hpp>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -313,6 +314,7 @@ public:
 
 		glfwSetFramebufferSizeCallback(m_window, onFramebufferResized);
 		glfwSetKeyCallback(m_window, onKeyEvent);
+		glfwSetCharCallback(m_window, onCharEvent);
 		glfwSetCursorPosCallback(m_window, onMouseMoveEvent);
 
 		int w, h;
@@ -385,9 +387,25 @@ public:
 	{
 		KeyEvent event;
 
-		event.key = getKey(key);
+		if (key < 256)
+			event.key = KeyboardLayout::getActive().getKey(static_cast<uint8_t>(key));
+		else
+			event.key = getKey(key);
+		
 		event.state = getKeyState(action);
 		event.modifiers = getKeyModifier(mods);
+
+		m_eventCallback(event);
+	}
+
+	void charEvent(unsigned int codepoint)
+	{
+		return;
+		KeyEvent event;
+
+		event.key = Key::Unknown;
+		//event.state = getKeyState(action);
+		//event.modifiers = getKeyModifier(mods);
 
 		m_eventCallback(event);
 	}
@@ -430,6 +448,13 @@ public:
 		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
 
 		w->keyEvent(key, scancode, action, mods);
+	}
+
+	static void onCharEvent(GLFWwindow* window, unsigned int codepoint)
+	{
+		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
+
+		w->charEvent(codepoint);
 	}
 
 	static void onMouseMoveEvent(GLFWwindow* window, double x, double y)

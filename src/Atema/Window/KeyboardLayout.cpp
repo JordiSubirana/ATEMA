@@ -19,16 +19,30 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_WINDOW_HPP
-#define ATEMA_GLOBAL_WINDOW_HPP
-
-#include <Atema/Window/AzertyKeyboardLayout.hpp>
-#include <Atema/Window/Config.hpp>
-#include <Atema/Window/Enums.hpp>
 #include <Atema/Window/KeyboardLayout.hpp>
-#include <Atema/Window/KeyEvent.hpp>
-#include <Atema/Window/MouseEvent.hpp>
 #include <Atema/Window/QwertyKeyboardLayout.hpp>
-#include <Atema/Window/Window.hpp>
 
-#endif
+using namespace at;
+
+namespace
+{
+	KeyboardLayout* s_layout = &QwertyKeyboardLayout::instance();
+}
+
+KeyboardLayout::KeyboardLayout()
+{
+}
+
+KeyboardLayout::~KeyboardLayout()
+{
+}
+
+void KeyboardLayout::setActive()
+{
+	s_layout = this;
+}
+
+KeyboardLayout& KeyboardLayout::getActive()
+{
+	return *s_layout;
+}
