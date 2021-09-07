@@ -80,11 +80,9 @@ namespace at
 
 		virtual void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) = 0;
 
-		virtual void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet) = 0;
-		virtual void bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets) = 0;
-		virtual void bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets) = 0;
-		virtual void bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets, const std::vector<uint32_t>& dynamicBufferOffsets) = 0;
-		
+		virtual void bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet) = 0;
+		virtual void bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets) = 0;
+
 		virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 
 		virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;

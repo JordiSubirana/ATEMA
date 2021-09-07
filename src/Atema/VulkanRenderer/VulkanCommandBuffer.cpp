@@ -250,12 +250,12 @@ void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType i
 	vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet)
+void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet)
 {
-	bindDescriptorSet(descriptorSet, {});
+	bindDescriptorSet(index, descriptorSet, {});
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
+void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
 {
 	ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
 
@@ -265,41 +265,9 @@ void VulkanCommandBuffer::bindDescriptorSet(const Ptr<DescriptorSet>& descriptor
 		m_commandBuffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_currentPipelineLayout,
-		0,
+		index,
 		1,
 		&vkDescriptorSet,
-		static_cast<uint32_t>(dynamicBufferOffsets.size()),
-		dynamicBufferOffsets.empty() ? nullptr : dynamicBufferOffsets.data());
-}
-
-void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets)
-{
-	bindDescriptorSets(descriptorSets, {});
-}
-
-void VulkanCommandBuffer::bindDescriptorSets(const std::vector<Ptr<DescriptorSet>>& descriptorSets, const std::vector<uint32_t>& dynamicBufferOffsets)
-{
-	std::vector<VkDescriptorSet> vkDescriptorSets;
-	vkDescriptorSets.reserve(descriptorSets.size());
-
-	ATEMA_ASSERT(!descriptorSets.empty(), "Invalid descriptor sets");
-
-	for (auto& descriptorSet : descriptorSets)
-	{
-		ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
-
-		const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet);
-
-		vkDescriptorSets.push_back(vkDescriptorSet->getHandle());
-	}
-
-	vkCmdBindDescriptorSets(
-		m_commandBuffer,
-		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_currentPipelineLayout,
-		0,
-		static_cast<uint32_t>(vkDescriptorSets.size()),
-		vkDescriptorSets.data(),
 		static_cast<uint32_t>(dynamicBufferOffsets.size()),
 		dynamicBufferOffsets.empty() ? nullptr : dynamicBufferOffsets.data());
 }
