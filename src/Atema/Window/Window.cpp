@@ -314,7 +314,6 @@ public:
 
 		glfwSetFramebufferSizeCallback(m_window, onFramebufferResized);
 		glfwSetKeyCallback(m_window, onKeyEvent);
-		glfwSetCharCallback(m_window, onCharEvent);
 		glfwSetCursorPosCallback(m_window, onMouseMoveEvent);
 
 		int w, h;
@@ -398,18 +397,6 @@ public:
 		m_eventCallback(event);
 	}
 
-	void charEvent(unsigned int codepoint)
-	{
-		return;
-		KeyEvent event;
-
-		event.key = Key::Unknown;
-		//event.state = getKeyState(action);
-		//event.modifiers = getKeyModifier(mods);
-
-		m_eventCallback(event);
-	}
-
 	void mouseMoveEvent(double x, double y)
 	{
 		MouseMoveEvent event;
@@ -448,13 +435,6 @@ public:
 		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
 
 		w->keyEvent(key, scancode, action, mods);
-	}
-
-	static void onCharEvent(GLFWwindow* window, unsigned int codepoint)
-	{
-		auto w = static_cast<Window::Implementation*>(glfwGetWindowUserPointer(window));
-
-		w->charEvent(codepoint);
 	}
 
 	static void onMouseMoveEvent(GLFWwindow* window, double x, double y)
