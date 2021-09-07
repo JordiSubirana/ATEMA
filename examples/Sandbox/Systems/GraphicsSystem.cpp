@@ -521,6 +521,8 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 					commandBuffer->bindPipeline(m_pipeline);
 
+					commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
+
 					size_t i = firstIndex;
 					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
 					{
@@ -529,8 +531,8 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 						commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
 
 						commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
-
-						commandBuffer->bindDescriptorSets({ globalDescriptorSet, m_materialDescriptorSet }, { i * m_dynamicObjectBufferOffset });
+						
+						commandBuffer->bindDescriptorSet(0, globalDescriptorSet, { i * m_dynamicObjectBufferOffset });
 
 						commandBuffer->drawIndexed(graphics.indexCount);
 
@@ -564,7 +566,7 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 	commandBuffer->bindVertexBuffer(m_ppQuad, 0);
 
-	commandBuffer->bindDescriptorSets({ m_ppDescriptorSet });
+	commandBuffer->bindDescriptorSet(0, m_ppDescriptorSet);
 
 	commandBuffer->draw(quadVertices.size());
 
