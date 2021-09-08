@@ -52,20 +52,6 @@ namespace at
 			bool primitiveRestart = false;
 		};
 
-		struct ViewportState
-		{
-			Vector2f position;
-			Vector2f size;
-			float minDepth = 0.0f;
-			float maxDepth = 1.0f;
-		};
-
-		struct ScissorState
-		{
-			Vector2i offset;
-			Vector2u size;
-		};
-
 		struct RasterizationState
 		{
 			bool depthClamp = false;
@@ -120,8 +106,6 @@ namespace at
 		{
 			VertexInputState vertexInput;
 			InputAssemblyState inputAssembly;
-			ViewportState viewport;
-			ScissorState scissor;
 			RasterizationState rasterization;
 			MultisampleState multisample;
 			ColorBlendState colorBlend;

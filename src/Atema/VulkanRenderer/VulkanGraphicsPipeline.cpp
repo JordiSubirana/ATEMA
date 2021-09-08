@@ -136,20 +136,24 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	//-----
 	// Viewport (region of the framebuffer to draw to)
 	VkViewport viewport{};
+	/*
 	viewport.x = settings.viewport.position.x;
 	viewport.y = settings.viewport.position.y;
 	viewport.width = settings.viewport.size.x;
 	viewport.height = settings.viewport.size.y;
 	viewport.minDepth = settings.viewport.minDepth;
 	viewport.maxDepth = settings.viewport.maxDepth;
+	//*/
 
 	//-----
 	// Scissors (use rasterizer to discard pixels)
 	VkRect2D scissor{};
+	/*
 	scissor.offset.x = settings.scissor.offset.x;
 	scissor.offset.y = settings.scissor.offset.y;
 	scissor.extent.width = settings.scissor.size.x;
 	scissor.extent.height = settings.scissor.size.y;
+	//*/
 
 	//-----
 	// Possible to use multiple viewports & scissors but requires to enable a GPU feature (device creation)
@@ -281,18 +285,16 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 
 	//-----
 	// Dynamic states (instead of being fixed at pipeline creation)
-	/*
-	VkDynamicState dynamicStates[] =
+	std::vector<VkDynamicState> dynamicStates =
 	{
 		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_LINE_WIDTH
+		VK_DYNAMIC_STATE_SCISSOR
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = 2;
-	dynamicState.pDynamicStates = dynamicStates;
-	//*/
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
 
 	//-----
 	// Pipeline layout (to use uniform variables & push constants)
@@ -330,7 +332,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.layout = m_pipelineLayout;
 	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
-	//pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = &dynamicState; // Optional
 
 	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
 	

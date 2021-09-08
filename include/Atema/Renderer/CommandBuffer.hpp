@@ -26,11 +26,13 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
+#include <Atema/Math/Vector.hpp>
 
 #include <vector>
 
 namespace at
 {
+	class Viewport;
 	class Buffer;
 	class CommandPool;
 	class DescriptorSet;
@@ -70,6 +72,10 @@ namespace at
 
 		virtual void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) = 0;
 
+		virtual void setViewport(const Viewport& viewport) = 0;
+		
+		virtual void setScissor(const Vector2i& position, const Vector2u& size) = 0;
+		
 		virtual void endRenderPass() = 0;
 
 		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset = 0, size_t dstOffset = 0) = 0;

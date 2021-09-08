@@ -45,6 +45,10 @@ namespace at
 
 		void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) override;
 
+		void setViewport(const Viewport& viewport) override;
+
+		void setScissor(const Vector2i& position, const Vector2u& size) override;
+
 		void endRenderPass() override;
 
 		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;

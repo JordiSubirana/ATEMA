@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Renderer/Viewport.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
@@ -171,6 +172,30 @@ void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
 	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->getHandle());
 
 	m_currentPipelineLayout = vkPipeline->getLayoutHandle();
+}
+
+void VulkanCommandBuffer::setViewport(const Viewport& viewport)
+{
+	VkViewport vkViewport;
+	vkViewport.x = viewport.position.x;
+	vkViewport.y = viewport.position.y;
+	vkViewport.width = viewport.size.x;
+	vkViewport.height = viewport.size.y;
+	vkViewport.minDepth = viewport.minDepth;
+	vkViewport.maxDepth = viewport.maxDepth;
+
+	vkCmdSetViewport(m_commandBuffer, 0, 1, &vkViewport);
+}
+
+void VulkanCommandBuffer::setScissor(const Vector2i& position, const Vector2u& size)
+{
+	VkRect2D vkScissor;
+	vkScissor.offset.x = static_cast<int32_t>(position.x);
+	vkScissor.offset.y = static_cast<int32_t>(position.y);
+	vkScissor.extent.width = static_cast<uint32_t>(size.x);
+	vkScissor.extent.height = static_cast<uint32_t>(size.y);
+	
+	vkCmdSetScissor(m_commandBuffer, 0, 1, &vkScissor);
 }
 
 void VulkanCommandBuffer::endRenderPass()
