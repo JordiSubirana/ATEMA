@@ -42,7 +42,6 @@ namespace at
 	public:
 		struct VertexInputState
 		{
-			std::vector<VertexAttribute> attributes;
 			std::vector<VertexInput> inputs;
 		};
 

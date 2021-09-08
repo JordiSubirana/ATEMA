@@ -84,29 +84,22 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 	{
-		auto& attributes = settings.vertexInput.attributes;
 		auto& inputs = settings.vertexInput.inputs;
 
-		if ((attributes.size() != inputs.size()) || attributes.empty())
-		{
-			ATEMA_ERROR("Invalid vertex input");
-		}
+		ATEMA_ASSERT(!inputs.empty(), "Invalid vertex input");
 
 		uint32_t offset = 0;
-		for (size_t i = 0; i < attributes.size(); i++)
+		for (auto& input : inputs)
 		{
-			auto& attribute = attributes[i];
-			auto& input = inputs[i];
-
 			VkVertexInputAttributeDescription description;
 			description.binding = input.binding;
 			description.location = input.location;
-			description.format = Vulkan::getFormat(attribute.format);
+			description.format = Vulkan::getFormat(input.format);
 			description.offset = offset;
 
 			attributeDescriptions.push_back(description);
 
-			offset += attribute.getByteSize();
+			offset += input.getByteSize();
 		}
 		
 		//TODO: Manage instanced rendering

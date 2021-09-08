@@ -73,7 +73,7 @@ namespace at
 
 		static VkFormat getFormat(ImageFormat format);
 		static ImageFormat getFormat(VkFormat format);
-		static VkFormat getFormat(VertexAttribute::Format format);
+		static VkFormat getFormat(VertexFormat format);
 
 		static VkImageAspectFlags getAspect(ImageFormat format);
 

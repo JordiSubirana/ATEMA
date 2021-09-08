@@ -30,86 +30,79 @@
 
 namespace at
 {
-	struct ATEMA_RENDERER_API VertexAttribute
+	enum class VertexFormat
 	{
-		enum class Format
-		{
-			R8_UINT,
-			R8_SINT,
+		R8_UINT,
+		R8_SINT,
 
-			RG8_UINT,
-			RG8_SINT,
+		RG8_UINT,
+		RG8_SINT,
 
-			RGB8_UINT,
-			RGB8_SINT,
+		RGB8_UINT,
+		RGB8_SINT,
 
-			RGBA8_UINT,
-			RGBA8_SINT,
+		RGBA8_UINT,
+		RGBA8_SINT,
 
-			R16_UINT,
-			R16_SINT,
-			R16_SFLOAT,
+		R16_UINT,
+		R16_SINT,
+		R16_SFLOAT,
 
-			RG16_UINT,
-			RG16_SINT,
-			RG16_SFLOAT,
+		RG16_UINT,
+		RG16_SINT,
+		RG16_SFLOAT,
 
-			RGB16_UINT,
-			RGB16_SINT,
-			RGB16_SFLOAT,
+		RGB16_UINT,
+		RGB16_SINT,
+		RGB16_SFLOAT,
 
-			RGBA16_UINT,
-			RGBA16_SINT,
-			RGBA16_SFLOAT,
+		RGBA16_UINT,
+		RGBA16_SINT,
+		RGBA16_SFLOAT,
 
-			R32_UINT,
-			R32_SINT,
-			R32_SFLOAT,
+		R32_UINT,
+		R32_SINT,
+		R32_SFLOAT,
 
-			RG32_UINT,
-			RG32_SINT,
-			RG32_SFLOAT,
+		RG32_UINT,
+		RG32_SINT,
+		RG32_SFLOAT,
 
-			RGB32_UINT,
-			RGB32_SINT,
-			RGB32_SFLOAT,
+		RGB32_UINT,
+		RGB32_SINT,
+		RGB32_SFLOAT,
 
-			RGBA32_UINT,
-			RGBA32_SINT,
-			RGBA32_SFLOAT,
+		RGBA32_UINT,
+		RGBA32_SINT,
+		RGBA32_SFLOAT,
 
-			R64_UINT,
-			R64_SINT,
-			R64_SFLOAT,
+		R64_UINT,
+		R64_SINT,
+		R64_SFLOAT,
 
-			RG64_UINT,
-			RG64_SINT,
-			RG64_SFLOAT,
+		RG64_UINT,
+		RG64_SINT,
+		RG64_SFLOAT,
 
-			RGB64_UINT,
-			RGB64_SINT,
-			RGB64_SFLOAT,
+		RGB64_UINT,
+		RGB64_SINT,
+		RGB64_SFLOAT,
 
-			RGBA64_UINT,
-			RGBA64_SINT,
-			RGBA64_SFLOAT
-		};
-
-		VertexAttribute() = delete;
-		VertexAttribute(Format format);
-		
-		size_t getByteSize() const;
-		
-		Format format;
+		RGBA64_UINT,
+		RGBA64_SINT,
+		RGBA64_SFLOAT
 	};
 
 	struct ATEMA_RENDERER_API VertexInput
 	{
-		VertexInput();
-		VertexInput(uint32_t binding, uint32_t location);
+		VertexInput() = delete;
+		VertexInput(uint32_t binding, uint32_t location, VertexFormat format);
+
+		size_t getByteSize() const;
 
 		uint32_t binding;
 		uint32_t location;
+		VertexFormat format;
 	};
 }
 

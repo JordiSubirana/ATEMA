@@ -181,15 +181,10 @@ GraphicsSystem::GraphicsSystem() :
 		pipelineSettings.renderPass = m_renderPipeline->getRenderPass();
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
-		pipelineSettings.vertexInput.attributes =
-		{
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RG32_SFLOAT }
-		};
 		pipelineSettings.vertexInput.inputs =
 		{
-			{ 0, 0 },
-			{ 0, 1 }
+			{ 0, 0, VertexFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexFormat::RG32_SFLOAT }
 		};
 
 		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
@@ -257,17 +252,11 @@ GraphicsSystem::GraphicsSystem() :
 		pipelineSettings.fragmentShader = Shader::create({ deferredMaterialFragmentPath });
 		pipelineSettings.renderPass = m_deferredRenderPass;
 		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
-		pipelineSettings.vertexInput.attributes =
-		{
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RG32_SFLOAT }
-		};
 		pipelineSettings.vertexInput.inputs =
 		{
-			{ 0, 0 },
-			{ 0, 1 },
-			{ 0, 2 }
+			{ 0, 0, VertexFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexFormat::RGB32_SFLOAT },
+			{ 0, 2, VertexFormat::RG32_SFLOAT }
 		};
 
 		m_pipeline = GraphicsPipeline::create(pipelineSettings);

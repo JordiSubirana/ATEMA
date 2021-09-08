@@ -23,104 +23,106 @@
 
 using namespace at;
 
-VertexAttribute::VertexAttribute(Format format) :
+VertexInput::VertexInput(uint32_t binding, uint32_t location, VertexFormat format) :
+	binding(binding),
+	location(location),
 	format(format)
 {
 }
 
-size_t VertexAttribute::getByteSize() const
+size_t VertexInput::getByteSize() const
 {
 	switch (format)
 	{
-		case Format::R8_UINT:
-		case Format::R8_SINT:
+		case VertexFormat::R8_UINT:
+		case VertexFormat::R8_SINT:
 		{
 			return 1;
 		}
-		case Format::RG8_UINT:
-		case Format::RG8_SINT:
+		case VertexFormat::RG8_UINT:
+		case VertexFormat::RG8_SINT:
 		{
 			return 2;
 		}
-		case Format::RGB8_UINT:
-		case Format::RGB8_SINT:
+		case VertexFormat::RGB8_UINT:
+		case VertexFormat::RGB8_SINT:
 		{
 			return 3;
 		}
-		case Format::RGBA8_UINT:
-		case Format::RGBA8_SINT:
+		case VertexFormat::RGBA8_UINT:
+		case VertexFormat::RGBA8_SINT:
 		{
 			return 4;
 		}
-		case Format::R16_UINT:
-		case Format::R16_SINT:
-		case Format::R16_SFLOAT:
+		case VertexFormat::R16_UINT:
+		case VertexFormat::R16_SINT:
+		case VertexFormat::R16_SFLOAT:
 		{
 			return 2;
 		}
-		case Format::RG16_UINT:
-		case Format::RG16_SINT:
-		case Format::RG16_SFLOAT:
+		case VertexFormat::RG16_UINT:
+		case VertexFormat::RG16_SINT:
+		case VertexFormat::RG16_SFLOAT:
 		{
 			return 4;
 		}
-		case Format::RGB16_UINT:
-		case Format::RGB16_SINT:
-		case Format::RGB16_SFLOAT:
+		case VertexFormat::RGB16_UINT:
+		case VertexFormat::RGB16_SINT:
+		case VertexFormat::RGB16_SFLOAT:
 		{
 			return 6;
 		}
-		case Format::RGBA16_UINT:
-		case Format::RGBA16_SINT:
-		case Format::RGBA16_SFLOAT:
+		case VertexFormat::RGBA16_UINT:
+		case VertexFormat::RGBA16_SINT:
+		case VertexFormat::RGBA16_SFLOAT:
 		{
 			return 8;
 		}
-		case Format::R32_UINT:
-		case Format::R32_SINT:
-		case Format::R32_SFLOAT:
+		case VertexFormat::R32_UINT:
+		case VertexFormat::R32_SINT:
+		case VertexFormat::R32_SFLOAT:
 		{
 			return 4;
 		}
-		case Format::RG32_UINT:
-		case Format::RG32_SINT:
-		case Format::RG32_SFLOAT:
+		case VertexFormat::RG32_UINT:
+		case VertexFormat::RG32_SINT:
+		case VertexFormat::RG32_SFLOAT:
 		{
 			return 8;
 		}
-		case Format::RGB32_UINT:
-		case Format::RGB32_SINT:
-		case Format::RGB32_SFLOAT:
+		case VertexFormat::RGB32_UINT:
+		case VertexFormat::RGB32_SINT:
+		case VertexFormat::RGB32_SFLOAT:
 		{
 			return 12;
 		}
-		case Format::RGBA32_UINT:
-		case Format::RGBA32_SINT:
-		case Format::RGBA32_SFLOAT:
+		case VertexFormat::RGBA32_UINT:
+		case VertexFormat::RGBA32_SINT:
+		case VertexFormat::RGBA32_SFLOAT:
 		{
 			return 16;
 		}
-		case Format::R64_UINT:
-		case Format::R64_SINT:
-		case Format::R64_SFLOAT:
+		case VertexFormat::R64_UINT:
+		case VertexFormat::R64_SINT:
+		case VertexFormat::R64_SFLOAT:
 		{
 			return 8;
 		}
-		case Format::RG64_UINT:
-		case Format::RG64_SINT:
-		case Format::RG64_SFLOAT:
+		case VertexFormat::RG64_UINT:
+		case VertexFormat::RG64_SINT:
+		case VertexFormat::RG64_SFLOAT:
 		{
 			return 16;
 		}
-		case Format::RGB64_UINT:
-		case Format::RGB64_SINT:
-		case Format::RGB64_SFLOAT:
+		case VertexFormat::RGB64_UINT:
+		case VertexFormat::RGB64_SINT:
+		case VertexFormat::RGB64_SFLOAT:
 		{
 			return 24;
 		}
-		case Format::RGBA64_UINT:
-		case Format::RGBA64_SINT:
-		case Format::RGBA64_SFLOAT:
+		case VertexFormat::RGBA64_UINT:
+		case VertexFormat::RGBA64_SINT:
+		case VertexFormat::RGBA64_SFLOAT:
 		{
 			return 32;
 		}
@@ -131,16 +133,4 @@ size_t VertexAttribute::getByteSize() const
 	}
 
 	return 0;
-}
-
-VertexInput::VertexInput() :
-	binding(0),
-	location(0)
-{
-}
-
-VertexInput::VertexInput(uint32_t binding, uint32_t location) :
-	binding(binding),
-	location(location)
-{
 }
