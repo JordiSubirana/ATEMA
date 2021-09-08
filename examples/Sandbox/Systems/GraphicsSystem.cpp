@@ -173,6 +173,28 @@ GraphicsSystem::GraphicsSystem() :
 		m_ppDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
+	// Create post process pipeline
+	{
+		GraphicsPipeline::Settings pipelineSettings;
+		pipelineSettings.vertexShader = Shader::create({ deferredPostProcessVertexPath });
+		pipelineSettings.fragmentShader = Shader::create({ deferredPostProcessFragmentPath });
+		pipelineSettings.renderPass = m_renderPipeline->getRenderPass();
+		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
+		// Position / TexCoords
+		pipelineSettings.vertexInput.attributes =
+		{
+			{ VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Format::RG32_SFLOAT }
+		};
+		pipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0 },
+			{ 0, 1 }
+		};
+
+		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
+	}
+
 	// Create DescriptorPool
 	{
 		DescriptorPool::Settings descriptorPoolSettings;
@@ -228,6 +250,29 @@ GraphicsSystem::GraphicsSystem() :
 		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
+	// Deferred pipeline
+	{
+		GraphicsPipeline::Settings pipelineSettings;
+		pipelineSettings.vertexShader = Shader::create({ deferredMaterialVertexPath });
+		pipelineSettings.fragmentShader = Shader::create({ deferredMaterialFragmentPath });
+		pipelineSettings.renderPass = m_deferredRenderPass;
+		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
+		pipelineSettings.vertexInput.attributes =
+		{
+			{ VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Format::RGB32_SFLOAT },
+			{ VertexAttribute::Format::RG32_SFLOAT }
+		};
+		pipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0 },
+			{ 0, 1 },
+			{ 0, 2 }
+		};
+
+		m_pipeline = GraphicsPipeline::create(pipelineSettings);
+	}
+
 	// Descriptor pool
 	{
 		DescriptorPool::Settings descriptorPoolSettings;
@@ -279,7 +324,7 @@ GraphicsSystem::GraphicsSystem() :
 
 		m_frameDescriptorSets.push_back(descriptorSet);
 	}
-
+	
 	//----- THREAD RESOURCES -----//
 	auto& taskManager = TaskManager::instance();
 	const auto coreCount = taskManager.getSize();
@@ -288,7 +333,7 @@ GraphicsSystem::GraphicsSystem() :
 
 	for (auto& commandBuffers : m_threadCommandBuffers)
 		commandBuffers.resize(m_maxFramesInFlight);
-
+	
 	// Create size dependent resources
 	onResize(window->getSize());
 }
@@ -403,60 +448,9 @@ void GraphicsSystem::onResize(const Vector2u& size)
 			m_ppDescriptorSet->update(i, m_deferredImages[i], m_ppSampler);
 	}
 
-	// Post process pipeline
-	{
-		m_ppPipeline.reset();
-
-		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.viewport.size.x = static_cast<float>(size.x);
-		pipelineSettings.viewport.size.y = static_cast<float>(size.y);
-		pipelineSettings.scissor.size = size;
-		pipelineSettings.vertexShader = Shader::create({ deferredPostProcessVertexPath });
-		pipelineSettings.fragmentShader = Shader::create({ deferredPostProcessFragmentPath });
-		pipelineSettings.renderPass = m_renderPipeline->getRenderPass();
-		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
-		// Position / TexCoords
-		pipelineSettings.vertexInput.attributes =
-		{
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RG32_SFLOAT }
-		};
-		pipelineSettings.vertexInput.inputs =
-		{
-			{ 0, 0 },
-			{ 0, 1 }
-		};
-
-		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
-	}
-
-	// Deferred pipeline
-	{
-		m_pipeline.reset();
-
-		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.viewport.size.x = static_cast<float>(size.x);
-		pipelineSettings.viewport.size.y = static_cast<float>(size.y);
-		pipelineSettings.scissor.size = size;
-		pipelineSettings.vertexShader = Shader::create({ deferredMaterialVertexPath });
-		pipelineSettings.fragmentShader = Shader::create({ deferredMaterialFragmentPath });
-		pipelineSettings.renderPass = m_deferredRenderPass;
-		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
-		pipelineSettings.vertexInput.attributes =
-		{
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RGB32_SFLOAT },
-			{ VertexAttribute::Format::RG32_SFLOAT }
-		};
-		pipelineSettings.vertexInput.inputs =
-		{
-			{ 0, 0 },
-			{ 0, 1 },
-			{ 0, 2 }
-		};
-
-		m_pipeline = GraphicsPipeline::create(pipelineSettings);
-	}
+	m_viewport.size.x = static_cast<float>(size.x);
+	m_viewport.size.y = static_cast<float>(size.y);
+	m_windowSize = size;
 }
 
 void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
@@ -521,6 +515,10 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 					commandBuffer->bindPipeline(m_pipeline);
 
+					commandBuffer->setViewport(m_viewport);
+
+					commandBuffer->setScissor(Vector2i(), m_windowSize);
+
 					commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
 
 					size_t i = firstIndex;
@@ -563,6 +561,10 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 	m_renderPipeline->beginScreenRenderPass();
 
 	commandBuffer->bindPipeline(m_ppPipeline);
+
+	commandBuffer->setViewport(m_viewport);
+
+	commandBuffer->setScissor(Vector2i(), m_windowSize);
 
 	commandBuffer->bindVertexBuffer(m_ppQuad, 0);
 

@@ -45,6 +45,9 @@ private:
 
 	at::ImageFormat m_depthFormat;
 
+	at::Viewport m_viewport;
+	at::Vector2u m_windowSize;
+
 	// Rendering resources (deferred)
 	std::vector<at::Ptr<at::Image>> m_deferredImages;
 	at::Ptr<at::Image> m_deferredDepthImage;
