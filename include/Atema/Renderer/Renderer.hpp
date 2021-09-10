@@ -173,6 +173,10 @@ namespace at
 
 		static void destroy();
 
+		static bool isDepthImageFormat(ImageFormat format);
+
+		static bool isStencilImageFormat(ImageFormat format);
+
 		virtual void initialize() = 0;
 
 		const Settings& getSettings() const noexcept;

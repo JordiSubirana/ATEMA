@@ -52,6 +52,10 @@ RenderPipeline::RenderPipeline(const Settings& settings) :
 	renderPassSettings.attachments[0].finalLayout = ImageLayout::Present;
 	renderPassSettings.attachments[1].format = m_depthFormat;
 
+	renderPassSettings.subpasses.resize(1);
+	renderPassSettings.subpasses[0].color = { 0 };
+	renderPassSettings.subpasses[0].depthStencil = 1;
+
 	m_renderPass = RenderPass::create(renderPassSettings);
 
 	// Frame resources (per thread)

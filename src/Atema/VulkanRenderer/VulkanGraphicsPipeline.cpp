@@ -212,7 +212,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 
 	for (auto& attachment : settings.renderPass->getAttachments())
 	{
-		if (!hasDepth(attachment.format) && !hasStencil(attachment.format))
+		if (!Renderer::isDepthImageFormat(attachment.format) && !Renderer::isStencilImageFormat(attachment.format))
 			colorAttachmentCount++;
 	}
 	

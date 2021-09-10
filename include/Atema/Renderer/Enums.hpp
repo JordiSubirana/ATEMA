@@ -150,43 +150,6 @@ namespace at
 		D24U_S8U
 	};
 
-	inline bool hasDepth(ImageFormat format)
-	{
-		switch (format)
-		{
-		case ImageFormat::D32F:
-		case ImageFormat::D32F_S8U:
-		case ImageFormat::D24U_S8U:
-		{
-			return true;
-		}
-		default:
-		{
-			return false;
-		}
-		}
-
-		return false;
-	}
-
-	inline bool hasStencil(ImageFormat format)
-	{
-		switch (format)
-		{
-		case ImageFormat::D32F_S8U:
-		case ImageFormat::D24U_S8U:
-		{
-			return true;
-		}
-		default:
-		{
-			return false;
-		}
-		}
-
-		return false;
-	}
-
 	enum class ImageSamples
 	{
 		S1 = 0x0001,

@@ -131,7 +131,10 @@ GraphicsSystem::GraphicsSystem() :
 	// Create RenderPass
 	{
 		RenderPass::Settings renderPassSettings;
+		renderPassSettings.subpasses.resize(1);
 
+		uint32_t attachmentIndex = 0;
+		
 		// Color attachments
 		for (auto& format : gBuffer)
 		{
@@ -141,6 +144,8 @@ GraphicsSystem::GraphicsSystem() :
 			attachment.finalLayout = ImageLayout::ShaderInput;
 
 			renderPassSettings.attachments.push_back(attachment);
+			
+			renderPassSettings.subpasses[0].color.push_back(attachmentIndex++);
 		}
 
 		// Depth attachment
@@ -148,6 +153,8 @@ GraphicsSystem::GraphicsSystem() :
 		attachment.format = m_depthFormat;
 
 		renderPassSettings.attachments.push_back(attachment);
+
+		renderPassSettings.subpasses[0].depthStencil = attachmentIndex;
 
 		// Create RenderPass
 		m_deferredRenderPass = RenderPass::create(renderPassSettings);

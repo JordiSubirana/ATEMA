@@ -42,13 +42,37 @@ namespace at
 		ImageLayout initialLayout = ImageLayout::Undefined;
 		ImageLayout finalLayout = ImageLayout::Attachment;
 	};
-
+	
 	class ATEMA_RENDERER_API RenderPass : public NonCopyable
 	{
 	public:
+		static constexpr uint32_t UnusedAttachment = std::numeric_limits<uint32_t>::max();
+		
+		struct SubpassSettings
+		{
+			// Shader input attachments
+			// The array index must match shader input location
+			// Use RenderPass::UnusedAttachment for unused input locations
+			std::vector<uint32_t> input;
+			
+			// Shader output color attachments
+			// The array index must match shader output location
+			// Use RenderPass::UnusedAttachment for unused color locations
+			std::vector<uint32_t> color;
+
+			// Resolve attachments
+			// The array index must match output index
+			// Use RenderPass::UnusedAttachment for unused resolve indices
+			std::vector<uint32_t> resolve;
+
+			// Depth/Stencil output attachment (Unused by default)
+			uint32_t depthStencil = RenderPass::UnusedAttachment;
+		};
+		
 		struct Settings
 		{
 			std::vector<AttachmentDescription> attachments;
+			std::vector<SubpassSettings> subpasses;
 		};
 		
 		virtual ~RenderPass();

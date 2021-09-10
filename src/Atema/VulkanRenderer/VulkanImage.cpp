@@ -53,7 +53,7 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 		imageInfo.format = format; // Use the same format than the buffer
 		imageInfo.tiling = Vulkan::getTiling(settings.tiling); // Optimal or linear if we want to change pixels client side
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage = Vulkan::getUsages(settings.usages, hasDepth(settings.format));
+		imageInfo.usage = Vulkan::getUsages(settings.usages, Renderer::isDepthImageFormat(settings.format));
 		//TODO: Make this custom
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Here used by only one queue
 		imageInfo.samples = Vulkan::getSamples(settings.samples);

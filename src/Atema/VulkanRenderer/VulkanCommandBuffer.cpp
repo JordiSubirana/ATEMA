@@ -134,7 +134,7 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 		auto& value = clearValues[i];
 		auto& attachment = attachments[i];
 
-		if (hasDepth(attachment.format) || hasStencil(attachment.format))
+		if (Renderer::isDepthImageFormat(attachment.format) || Renderer::isStencilImageFormat(attachment.format))
 		{
 			vkClearValues[i].depthStencil.depth = value.depthStencil.depth;
 			vkClearValues[i].depthStencil.stencil = value.depthStencil.stencil;
@@ -319,7 +319,7 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 		levelCount = layouts.size() - firstMipLevel;
 
 	const auto oldLayout = layouts[firstMipLevel];
-	const auto newLayout = Vulkan::getLayout(layout, hasDepth(format));
+	const auto newLayout = Vulkan::getLayout(layout, Renderer::isDepthImageFormat(format));
 	
 	if (oldLayout == newLayout)
 		return;
@@ -348,7 +348,7 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 	{
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		if (hasStencil(format))
+		if (Renderer::isStencilImageFormat(format))
 		{
 			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
 		}

@@ -20,6 +20,7 @@
 */
 
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 
 using namespace at;
 
@@ -331,10 +332,10 @@ VkImageAspectFlags Vulkan::getAspect(ImageFormat format)
 {
 	VkImageAspectFlags aspect = 0;
 
-	if (hasDepth(format))
+	if (Renderer::isDepthImageFormat(format))
 		aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
 
-	if (hasStencil(format))
+	if (Renderer::isStencilImageFormat(format))
 		aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
 
 	if (!aspect)

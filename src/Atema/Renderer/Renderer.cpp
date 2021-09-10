@@ -50,6 +50,43 @@ void Renderer::destroy()
 	s_renderer.reset();
 }
 
+bool Renderer::isDepthImageFormat(ImageFormat format)
+{
+	switch (format)
+	{
+		case ImageFormat::D32F:
+		case ImageFormat::D32F_S8U:
+		case ImageFormat::D24U_S8U:
+		{
+			return true;
+		}
+		default:
+		{
+			return false;
+		}
+	}
+
+	return false;
+}
+
+bool Renderer::isStencilImageFormat(ImageFormat format)
+{
+	switch (format)
+	{
+		case ImageFormat::D32F_S8U:
+		case ImageFormat::D24U_S8U:
+		{
+			return true;
+		}
+		default:
+		{
+			return false;
+		}
+	}
+
+	return false;
+}
+
 const Renderer::Settings& Renderer::getSettings() const noexcept
 {
 	return m_settings;
