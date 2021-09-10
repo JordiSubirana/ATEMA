@@ -79,7 +79,7 @@ namespace at
 		void initialize();
 
 		std::tuple<SparseSet<Args>*...> m_sets;
-		std::vector<size_t*> m_indices;
+		std::vector<const size_t*> m_indices;
 		std::vector<size_t> m_sizes;
 		std::vector<size_t> m_commonIndices;
 		std::vector<std::function<bool(size_t)>> m_contains;

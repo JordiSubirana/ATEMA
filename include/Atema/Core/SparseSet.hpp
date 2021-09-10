@@ -39,8 +39,7 @@ namespace at
 	class SparseSet
 	{
 	public:
-		using size_type = typename std::vector<T>::size_type;
-		static constexpr size_type InvalidIndex = std::numeric_limits<size_type>::max() - 1;
+		static constexpr size_t InvalidIndex = std::numeric_limits<size_t>::max() - 1;
 
 		using Iterator = typename std::vector<T>::iterator;
 		using ConstIterator = typename std::vector<T>::const_iterator;
@@ -49,36 +48,38 @@ namespace at
 		~SparseSet();
 
 		T* data() noexcept;
+		T* getData() noexcept;
 		const T* data() const noexcept;
-		size_type* indices() noexcept;
-		const size_type* indices() const noexcept;
-
-		size_type size() const;
-		size_type getSize() const;
-		size_type capacity() const;
-		size_type getCapacity() const;
+		const T* getData() const noexcept;
 		
-		void reserve(size_type size);
-		
-		bool contains(size_type index) const;
+		const std::vector<size_t>& getIndices() const noexcept;
 
-		T& operator[](size_type index);
-		const T& operator[](size_type index) const;
+		size_t size() const;
+		size_t getSize() const;
+		size_t capacity() const;
+		size_t getCapacity() const;
+		
+		void reserve(size_t size);
+		
+		bool contains(size_t index) const;
+
+		T& operator[](size_t index);
+		const T& operator[](size_t index) const;
 
 		Iterator begin() noexcept;
 		ConstIterator begin() const noexcept;
 		Iterator end() noexcept;
 		ConstIterator end() const noexcept;
 
-		T& emplace(size_type index);
-		T& insert(size_type index, const T& value);
+		T& emplace(size_t index);
+		T& insert(size_t index, const T& value);
 
-		void erase(size_type index);
+		void erase(size_t index);
 
 		void clear();
 
 	private:
-		static constexpr size_type PageSize = ATEMA_SPARSESET_PAGE_SIZE;
+		static constexpr size_t PageSize = ATEMA_SPARSESET_PAGE_SIZE;
 
 		static_assert(IsPowerOfTwo<PageSize>::value, "Page size must be power of 2");
 		
@@ -90,16 +91,16 @@ namespace at
 					index = InvalidIndex;
 			}
 			
-			std::array<size_type, PageSize> indices;
-			size_type size;
+			std::array<size_t, PageSize> indices;
+			size_t size;
 		};
 
-		size_type getPageIndex(size_type index) const;
-		size_type getOffset(size_type index) const;
-		size_type getPackedIndex(size_type index) const;
+		size_t getPageIndex(size_t index) const;
+		size_t getOffset(size_t index) const;
+		size_t getPackedIndex(size_t index) const;
 
-		Page& checkPage(size_type index);
-		T& checkElement(size_type index);
+		Page& checkPage(size_t index);
+		T& checkElement(size_t index);
 		
 		std::vector<T> m_data;
 		std::vector<size_t> m_indices;

@@ -126,7 +126,7 @@ namespace at
 	template <typename T>
 	void SparseSetUnion<Args...>::build(SparseSet<T>& set)
 	{
-		m_indices.push_back(set.indices());
+		m_indices.push_back(set.getIndices().data());
 		m_sizes.push_back(set.size());
 		m_contains.push_back([&set](size_t index)
 		{
@@ -147,18 +147,18 @@ namespace at
 	void SparseSetUnion<Args...>::initialize()
 	{
 		size_t minSize = std::numeric_limits<size_t>::max();
-		size_t* indices = nullptr;
+		const size_t** indices = nullptr;
 
 		for (size_t i = 0; i < Size; i++)
 		{
 			if (m_sizes[i] < minSize)
 			{
 				minSize = m_sizes[i];
-				indices = m_indices[i];
+				indices = &m_indices[i];
 			}
 		}
 
-		m_commonIndices.assign(indices, indices + minSize);
+		m_commonIndices.assign(*indices, *indices + minSize);
 
 		std::vector<size_t> commonIndicesTmp;
 		commonIndicesTmp.reserve(minSize);
@@ -168,7 +168,7 @@ namespace at
 			const auto& otherIndices = m_indices[i];
 			const auto& contains = m_contains[i];
 
-			if (indices == otherIndices)
+			if (*indices == otherIndices)
 				continue;
 
 			for (auto& index : m_commonIndices)
