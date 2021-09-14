@@ -600,7 +600,7 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 
 				UniformFrameElement frameTransforms;
 				frameTransforms.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
-				frameTransforms.proj = Matrix4f::createPerspective(toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
+				frameTransforms.proj = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
 				frameTransforms.proj[1][1] *= -1;
 
 				auto buffer = m_frameUniformBuffers[frameIndex];
@@ -620,7 +620,7 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 	{
 		auto data = static_cast<uint8_t*>(m_frameObjectsUniformBuffers[frameIndex]->map());
 
-		const auto basisChange = Matrix4f::createRotation({ toRadians(90.0f), 0.0f, 0.0f });
+		const auto basisChange = Matrix4f::createRotation({ Math::toRadians(90.0f), 0.0f, 0.0f });
 
 		auto& entityManager = getEntityManager();
 

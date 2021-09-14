@@ -19,13 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_MATH_INL
+#define ATEMA_MATH_MATH_INL
 
-#include <Atema/Math/Config.hpp>
 #include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
-#include <Atema/Math/Transform.hpp>
-#include <Atema/Math/Vector.hpp>
+
+#include <algorithm>
+
+namespace at
+{
+	namespace Math
+	{
+		template <typename T>
+		constexpr bool equals(T a, T b, T epsilon)
+		{
+			if (a < b)
+				std::swap(a, b);
+
+			return (a - b) <= epsilon;
+		}
+
+		template <typename T>
+		constexpr T toRadians(T degrees)
+		{
+			return degrees * Pi<T> / static_cast<T>(180);
+		}
+
+		template <typename T>
+		constexpr T toDegrees(T radians)
+		{
+			return radians * static_cast<T>(180) / Pi<T>;
+		}
+	}
+}
 
 #endif

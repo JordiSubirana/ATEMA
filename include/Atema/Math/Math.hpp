@@ -19,13 +19,37 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_MATH_HPP
+#define ATEMA_MATH_MATH_HPP
 
 #include <Atema/Math/Config.hpp>
-#include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
-#include <Atema/Math/Transform.hpp>
-#include <Atema/Math/Vector.hpp>
+
+#include <limits>
+
+namespace at
+{
+	namespace Math
+	{
+		// Constants
+		template <typename T>
+		constexpr T Pi = static_cast<T>(3.1415926535897932384626433832795);
+		template <typename T>
+		constexpr T HalfPi = static_cast<T>(1.5707963267948966192313216916398);
+		template <typename T>
+		constexpr T Epsilon = std::numeric_limits<T>::epsilon();
+
+		// Functions
+		template <typename T>
+		constexpr bool equals(T a, T b, T epsilon = Epsilon<T>);
+
+		template <typename T>
+		constexpr T toRadians(T degrees);
+
+		template <typename T>
+		constexpr T toDegrees(T radians);
+	}
+}
+
+#include <Atema/Math/Math.inl>
 
 #endif

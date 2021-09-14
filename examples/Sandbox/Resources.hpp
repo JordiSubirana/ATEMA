@@ -59,17 +59,6 @@ const auto zoomRadius = 100.0f;
 const auto zoomOffset = 5.0f;
 //*/
 
-
-inline float toRadians(float degrees)
-{
-	return degrees * 3.14159f / 180.0f;
-}
-
-inline float toDegrees(float radians)
-{
-	return radians * 180.0f / 3.14159f;
-}
-
 inline at::Vector2f toPolar(const at::Vector2f& cartesian)
 {
 	const auto x = cartesian.x;
