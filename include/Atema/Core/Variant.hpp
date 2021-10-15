@@ -19,28 +19,48 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_VARIANT_HPP
+#define ATEMA_CORE_VARIANT_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/Benchmark.hpp>
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/EventDispatcher.hpp>
-#include <Atema/Core/Flags.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/TaskManager.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Variant.hpp>
+#include <variant>
+
+namespace at
+{
+	template <typename ... Args>
+	class Variant
+	{
+	public:
+		Variant();
+		Variant(Variant<Args...>& other);
+		Variant(const Variant<Args...>& other);
+		Variant(Variant<Args...>&& other) noexcept;
+		Variant(const Variant<Args...>&& other) noexcept;
+		template <typename T>
+		Variant(T&& value);
+		
+		~Variant();
+
+		template <typename T>
+		bool is() const noexcept;
+
+		template <typename T>
+		T& get();
+
+		template <typename T>
+		const T& get() const;
+
+		Variant<Args...>& operator=(Variant<Args...>& other);
+		Variant<Args...>& operator=(const Variant<Args...>& other);
+		Variant<Args...>& operator=(Variant<Args...>&& other) noexcept;
+		Variant<Args...>& operator=(const Variant<Args...>&& other) noexcept;
+		template <typename T>
+		Variant<Args...>& operator=(T&& value);
+
+	private:
+		std::variant<Args...> m_value;
+	};
+}
+
+#include <Atema/Core/Variant.inl>
 
 #endif
