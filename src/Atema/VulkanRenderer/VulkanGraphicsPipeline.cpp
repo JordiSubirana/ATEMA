@@ -99,7 +99,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 
 			attributeDescriptions.push_back(description);
 
-			offset += input.getByteSize();
+			offset += static_cast<uint32_t>(input.getByteSize());
 		}
 		
 		//TODO: Manage instanced rendering

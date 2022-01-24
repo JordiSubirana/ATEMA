@@ -316,7 +316,7 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 	auto& layouts = vkImage->getLayouts();
 
 	if (levelCount == 0)
-		levelCount = layouts.size() - firstMipLevel;
+		levelCount = static_cast<uint32_t>(layouts.size()) - firstMipLevel;
 
 	const auto oldLayout = layouts[firstMipLevel];
 	const auto newLayout = Vulkan::getLayout(layout, Renderer::isDepthImageFormat(format));

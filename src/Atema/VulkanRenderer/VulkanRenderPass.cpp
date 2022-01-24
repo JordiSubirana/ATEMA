@@ -378,7 +378,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 			// If the attachment was used before but not during this subpass, preserve its content for potential later use
 			if (isUsed && !roles)
 			{
-				subpass.preserve.push_back(attachmentIndex);
+				subpass.preserve.push_back(static_cast<uint32_t>(attachmentIndex));
 
 				continue;
 			}
@@ -519,7 +519,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 			auto& subpassDependency = subpassDependencies.emplace_back();
 
 			subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-			subpassDependency.dstSubpass = subpassIndex;
+			subpassDependency.dstSubpass = static_cast<uint32_t>(subpassIndex);
 
 			if (subpass.externalDependencies & SubpassExternalDependency::Input)
 			{
@@ -554,8 +554,8 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 		{
 			auto& subpassDependency = subpassDependencies.emplace_back();
 
-			subpassDependency.srcSubpass = subpassIndex;
-			subpassDependency.dstSubpass = subpassIndex;
+			subpassDependency.srcSubpass = static_cast<uint32_t>(subpassIndex);
+			subpassDependency.dstSubpass = static_cast<uint32_t>(subpassIndex);
 			
 			subpassDependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -583,8 +583,8 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 
 			auto& subpassDependency = subpassDependencies.emplace_back();
 
-			subpassDependency.srcSubpass = previousSubpassIndex;
-			subpassDependency.dstSubpass = subpassIndex;
+			subpassDependency.srcSubpass = static_cast<uint32_t>(previousSubpassIndex);
+			subpassDependency.dstSubpass = static_cast<uint32_t>(subpassIndex);
 
 			subpassDependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
