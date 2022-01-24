@@ -145,7 +145,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 		Renderer::instance().submitAndWait({ commandBuffer });
 	}
 
-	indexCount = modelIndices.size();
+	indexCount = static_cast<uint32_t>(modelIndices.size());
 }
 
 MaterialData::MaterialData(const std::filesystem::path& path)

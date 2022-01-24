@@ -283,8 +283,8 @@ GraphicsSystem::GraphicsSystem() :
 	m_frameDescriptorSets.reserve(m_maxFramesInFlight);
 	m_frameObjectsUniformBuffers.reserve(m_maxFramesInFlight);
 
-	const size_t elementByteSize = sizeof(UniformObjectElement);
-	const size_t minOffset = static_cast<size_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
+	const uint32_t elementByteSize = sizeof(UniformObjectElement);
+	const uint32_t minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 
 	if (minOffset >= elementByteSize)
 	{
@@ -517,7 +517,7 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 					commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
 
-					size_t i = firstIndex;
+					uint32_t i = static_cast<uint32_t>(firstIndex);
 					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
 					{
 						auto& graphics = entities.get<GraphicsComponent>(*it);
@@ -566,7 +566,7 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 	commandBuffer->bindDescriptorSet(0, m_ppDescriptorSet);
 
-	commandBuffer->draw(quadVertices.size());
+	commandBuffer->draw(static_cast<uint32_t>(quadVertices.size()));
 
 	m_renderPipeline->endScreenRenderPass();
 }

@@ -71,7 +71,7 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
 	std::vector<at::Ptr<at::Buffer>> m_frameUniformBuffers;
-	size_t m_dynamicObjectBufferOffset;
+	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<at::Ptr<at::Buffer>> m_frameObjectsUniformBuffers;
 	std::vector<at::Ptr<at::DescriptorSet>> m_frameDescriptorSets;
 
