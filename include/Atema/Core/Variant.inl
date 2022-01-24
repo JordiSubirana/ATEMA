@@ -76,6 +76,16 @@ namespace at
 	}
 
 	template <typename ... Args>
+	template <typename First, typename ... Rest>
+	bool Variant<Args...>::isOneOf() const noexcept
+	{
+		if constexpr (sizeof...(Rest) > 0)
+			return is<First>() || isOneOf<Rest...>();
+
+		return is<First>();
+	}
+
+	template <typename ... Args>
 	template <typename T>
 	T& Variant<Args...>::get()
 	{
@@ -128,6 +138,24 @@ namespace at
 		m_value = std::forward<T>(value);
 
 		return *this;
+	}
+
+	template <typename ... Args>
+	bool Variant<Args...>::operator==(const Variant& other) const
+	{
+		return m_value == other.m_value;
+	}
+
+	template <typename ... Args>
+	template <typename T>
+	bool Variant<Args...>::operator==(const T& value) const noexcept
+	{
+		if (is<T>())
+		{
+			return get<T>() == value;
+		}
+
+		return false;
 	}
 }
 

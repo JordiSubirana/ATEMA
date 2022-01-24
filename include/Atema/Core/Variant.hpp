@@ -43,6 +43,9 @@ namespace at
 		template <typename T>
 		bool is() const noexcept;
 
+		template <typename First, typename ... Rest>
+		bool isOneOf() const noexcept;
+
 		template <typename T>
 		T& get();
 
@@ -55,6 +58,10 @@ namespace at
 		Variant<Args...>& operator=(const Variant<Args...>&& other) noexcept;
 		template <typename T>
 		Variant<Args...>& operator=(T&& value);
+
+		bool operator==(const Variant& other) const;
+		template <typename T>
+		bool operator==(const T& value) const noexcept;
 
 	private:
 		std::variant<Args...> m_value;
