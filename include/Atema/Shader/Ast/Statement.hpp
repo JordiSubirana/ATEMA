@@ -171,7 +171,8 @@ namespace at
 			at::Type type;
 		};
 
-		Type returnType;
+		std::string name;
+		at::Type returnType;
 		std::vector<Argument> arguments;
 		std::vector<UPtr<Statement>> statements;
 	};
