@@ -19,72 +19,16 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SHADER_AST_TYPE_HPP
-#define ATEMA_SHADER_AST_TYPE_HPP
+#include <Atema/Shader/Ast/Type.hpp>
 
-#include <Atema/Shader/Config.hpp>
+using namespace at;
 
-#include <string>
-#include <Atema/Core/Variant.hpp>
-#include <vector>
-
-namespace at
+ATEMA_SHADER_API bool at::isInOutType(const Type& type)
 {
-	struct VoidType
-	{
-		
-	};
-
-	enum class PrimitiveType
-	{
-		Bool,
-		Int,
-		UInt,
-		Float
-	};
-
-	struct VectorType
-	{
-		PrimitiveType primitiveType;
-		size_t componentCount;
-	};
-
-	struct MatrixType
-	{
-		PrimitiveType primitiveType;
-		size_t rowCount;
-		size_t columnCount;
-	};
-
-	enum class ImageType
-	{
-		Texture1D,
-		Texture2D,
-		Texture3D,
-		Cubemap
-	};
-	
-	struct SamplerType
-	{
-		ImageType imageType;
-		PrimitiveType primitiveType;
-	};
-
-	struct StructType
-	{
-		std::string name;
-	};
-
-	using Type = Variant<
-		VoidType,
-		PrimitiveType,
-		VectorType,
-		MatrixType,
-		SamplerType,
-		StructType>;
-
-	ATEMA_SHADER_API bool isInOutType(const Type& type);
-	ATEMA_SHADER_API bool isReturnType(const Type& type);
+	return type.isOneOf<PrimitiveType, VectorType, MatrixType>();
 }
 
-#endif
+ATEMA_SHADER_API bool at::isReturnType(const Type& type)
+{
+	return type.isOneOf<VoidType, PrimitiveType, VectorType, MatrixType>();
+}
