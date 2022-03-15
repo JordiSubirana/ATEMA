@@ -34,6 +34,7 @@
 namespace at
 {
 	struct Expression;
+	struct SequenceStatement;
 
 	struct ATEMA_SHADER_API Statement : public NonCopyable
 	{
@@ -50,7 +51,7 @@ namespace at
 			EntryFunctionDeclaration,
 			Expression,
 			Return,
-			Group
+			Sequence
 		};
 
 		Statement();
@@ -174,7 +175,7 @@ namespace at
 		std::string name;
 		at::Type returnType;
 		std::vector<Argument> arguments;
-		std::vector<UPtr<Statement>> statements;
+		UPtr<SequenceStatement> sequence;
 	};
 
 	struct ATEMA_SHADER_API EntryFunctionDeclarationStatement : public FunctionDeclarationStatement

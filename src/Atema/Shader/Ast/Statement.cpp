@@ -89,5 +89,5 @@ Statement::Type ReturnStatement::getType() const noexcept
 
 Statement::Type SequenceStatement::getType() const noexcept
 {
-	return Type::Group;
+	return Type::Sequence;
 }
