@@ -873,6 +873,28 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 				{
 					case AtslKeyword::Const:
 					{
+						auto statement = std::make_unique<VariableDeclarationStatement>();
+						statement->qualifiers |= VariableQualifier::Const;
+						
+						iterate();
+
+						ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
+
+						statement->type = atsl::getType(iterate().value.get<AtslIdentifier>());
+
+						ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
+						
+						statement->name = iterate().value.get<AtslIdentifier>();
+
+						if (get().is(AtslSymbol::Equal))
+						{
+							iterate();
+							
+							statement->value = parseExpression();
+						}
+
+						currentStatement = std::move(statement);
+
 						break;
 					}
 					case AtslKeyword::If:
