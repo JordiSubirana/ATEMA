@@ -39,7 +39,12 @@ namespace
 		{ AtslKeyword::Const, "const" },
 		{ AtslKeyword::If, "if" },
 		{ AtslKeyword::Else, "else" },
+		{ AtslKeyword::For, "for" },
+		{ AtslKeyword::While, "while" },
+		{ AtslKeyword::Do, "do" },
 		{ AtslKeyword::Struct, "struct" },
+		{ AtslKeyword::Break, "break" },
+		{ AtslKeyword::Continue, "continue" },
 		{ AtslKeyword::Return, "return" }
 	};
 
@@ -52,7 +57,12 @@ namespace
 		{ "const", AtslKeyword::Const },
 		{ "if", AtslKeyword::If },
 		{ "else", AtslKeyword::Else },
+		{ "for", AtslKeyword::For },
+		{ "while", AtslKeyword::While },
+		{ "do", AtslKeyword::Do },
 		{ "struct", AtslKeyword::Struct },
+		{ "break", AtslKeyword::Break },
+		{ "continue", AtslKeyword::Continue },
 		{ "return", AtslKeyword::Return }
 	};
 

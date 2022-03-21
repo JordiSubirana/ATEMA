@@ -47,31 +47,31 @@ namespace
 	{
 		switch (c)
 		{
-		case '+':
-		case '-':
-		case '*':
-		case '/':
-		case '^':
-		case '%':
-		case '=':
-		case '<':
-		case '>':
-		case '&':
-		case '|':
-		case '!':
-		case '.':
-		case ',':
-		case ':':
-		case ';':
-		case '{':
-		case '}':
-		case '[':
-		case ']':
-		case '(':
-		case ')':
-			return true;
-		default:
-			break;
+			case '+':
+			case '-':
+			case '*':
+			case '/':
+			case '^':
+			case '%':
+			case '=':
+			case '<':
+			case '>':
+			case '&':
+			case '|':
+			case '!':
+			case '.':
+			case ',':
+			case ':':
+			case ';':
+			case '{':
+			case '}':
+			case '[':
+			case ']':
+			case '(':
+			case ')':
+				return true;
+			default:
+				break;
 		}
 
 		return false;
@@ -81,12 +81,12 @@ namespace
 	{
 		switch (c)
 		{
-		case ' ':
-		case '\t':
-		case '\r':
-			return true;
-		default:
-			break;
+			case ' ':
+			case '\t':
+			case '\r':
+				return true;
+			default:
+				break;
 		}
 
 		return false;
