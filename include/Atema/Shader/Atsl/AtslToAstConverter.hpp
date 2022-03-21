@@ -80,6 +80,7 @@ namespace at
 		void createStruct();
 		void createFunction();
 		UPtr<SequenceStatement> createBlockSequence();
+		UPtr<Statement> createBlockStatement();
 
 		void clearAttributes();
 		
