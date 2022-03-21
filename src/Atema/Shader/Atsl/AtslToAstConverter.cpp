@@ -942,7 +942,16 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 				// - Return : return statement
 				case AtslKeyword::Return:
 				{
-					break;
+					iterate();
+					
+					auto statement = std::make_unique<ReturnStatement>();
+
+					if (get().is(AtslSymbol::Semicolon))
+						iterate();
+					else
+						statement->expression = parseExpression(); // Will parse the semicolon
+
+					return std::move(statement);
 				}
 				default:
 				{
