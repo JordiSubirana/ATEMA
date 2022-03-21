@@ -44,22 +44,6 @@ namespace
 		return AstShaderStage::Vertex;
 	}
 
-	bool isInOutType(const std::string& typeStr)
-	{
-		static const std::unordered_set<std::string> s_types =
-		{
-			"bool", "int", "uint", "float",
-			"vec2i", "vec2u", "vec2f",
-			"vec3i", "vec3u", "vec3f",
-			"vec4i", "vec4u", "vec4f",
-			"mat2i", "mat2u", "mat2f",
-			"mat3i", "mat3u", "mat3f",
-			"mat4i", "mat4u", "mat4f",
-		};
-
-		return s_types.find(typeStr) != s_types.end();
-	}
-
 	struct Variable
 	{
 		Type type;
