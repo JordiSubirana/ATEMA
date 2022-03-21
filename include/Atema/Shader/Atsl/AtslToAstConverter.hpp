@@ -78,7 +78,8 @@ namespace at
 		void createOptions();
 		void createConsts();
 		void createStruct();
-		void createFunction(const AtslIdentifier& identifier);
+		void createFunction();
+		UPtr<SequenceStatement> createBlockSequence();
 
 		void clearAttributes();
 		
