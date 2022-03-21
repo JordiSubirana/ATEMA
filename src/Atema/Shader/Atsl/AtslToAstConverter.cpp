@@ -837,6 +837,8 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 {
 	auto sequenceStatement = std::make_unique<SequenceStatement>();
 	
+	UPtr<Statement> currentStatement;
+
 	expect(iterate(), AtslSymbol::LeftBrace);
 
 	// Parse next token to find what is the meaning of the following statements
@@ -845,6 +847,19 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 		// Right brace : we got to the end of the block sequence
 		if (get().is(AtslSymbol::RightBrace))
 			break;
+
+		// Semicolon : end of the current statement, add it to the sequence and iterate
+		if (get().is(AtslSymbol::Semicolon))
+		{
+			iterate();
+			
+			if (currentStatement)
+				sequenceStatement->statements.push_back(std::move(currentStatement));
+
+			currentStatement.reset();
+
+			continue;
+		}
 
 		switch (get().type)
 		{
@@ -874,6 +889,8 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 					}
 				}
 
+				iterate();
+
 				break;
 			}
 			// Symbol
@@ -886,6 +903,8 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 
 				sequenceStatement->statements.push_back(std::move(expressionStatement));
 
+				iterate();
+
 				break;
 			}
 			// Identifier
@@ -893,7 +912,13 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 			// - Expression (function call, cast, etc)
 			case AtslTokenType::Identifier:
 			{
+				iterate();
 
+				break;
+			}
+			default :
+			{
+				ATEMA_ERROR("Unexpected token type");
 			}
 		}
 	}
