@@ -79,8 +79,14 @@ namespace at
 		If,
 		Else,
 
+		For,
+		While,
+		Do,
+
 		Struct,
 
+		Break,
+		Continue,
 		Return,
 	};
 

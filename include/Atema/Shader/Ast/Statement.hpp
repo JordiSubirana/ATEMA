@@ -41,6 +41,9 @@ namespace at
 		enum class Type
 		{
 			Conditional,
+			ForLoop,
+			WhileLoop,
+			DoWhileLoop,
 			VariableDeclaration,
 			StructDeclaration,
 			InputDeclaration,
@@ -50,6 +53,8 @@ namespace at
 			FunctionDeclaration,
 			EntryFunctionDeclaration,
 			Expression,
+			Break,
+			Continue,
 			Return,
 			Sequence
 		};
@@ -73,6 +78,33 @@ namespace at
 
 		std::vector<Branch> branches;
 		UPtr<Statement> elseStatement;
+	};
+
+	// Loops
+	struct ATEMA_SHADER_API ForLoopStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
+
+		UPtr<Statement> initialization;
+		UPtr<Expression> condition;
+		UPtr<Statement> increase;
+		UPtr<Statement> statement;
+	};
+
+	struct ATEMA_SHADER_API WhileLoopStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
+
+		UPtr<Expression> condition;
+		UPtr<Statement> statement;
+	};
+
+	struct ATEMA_SHADER_API DoWhileLoopStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
+
+		UPtr<Expression> condition;
+		UPtr<Statement> statement;
 	};
 
 	// Declarations
@@ -191,6 +223,16 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		UPtr<Expression> expression;
+	};
+
+	struct ATEMA_SHADER_API BreakStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
+	};
+
+	struct ATEMA_SHADER_API ContinueStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
 	};
 
 	struct ATEMA_SHADER_API ReturnStatement : public Statement

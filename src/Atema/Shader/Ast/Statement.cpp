@@ -37,6 +37,21 @@ Statement::Type ConditionalStatement::getType() const noexcept
 	return Type::Conditional;
 }
 
+Statement::Type ForLoopStatement::getType() const noexcept
+{
+	return Type::ForLoop;
+}
+
+Statement::Type WhileLoopStatement::getType() const noexcept
+{
+	return Type::WhileLoop;
+}
+
+Statement::Type DoWhileLoopStatement::getType() const noexcept
+{
+	return Type::DoWhileLoop;
+}
+
 Statement::Type VariableDeclarationStatement::getType() const noexcept
 {
 	return Type::VariableDeclaration;
@@ -80,6 +95,16 @@ Statement::Type EntryFunctionDeclarationStatement::getType() const noexcept
 Statement::Type ExpressionStatement::getType() const noexcept
 {
 	return Type::Expression;
+}
+
+Statement::Type BreakStatement::getType() const noexcept
+{
+	return Type::Break;
+}
+
+Statement::Type ContinueStatement::getType() const noexcept
+{
+	return Type::Continue;
 }
 
 Statement::Type ReturnStatement::getType() const noexcept
