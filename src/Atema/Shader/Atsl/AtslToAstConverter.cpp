@@ -60,6 +60,12 @@ namespace
 
 		return token.value.get<T>();
 	}
+
+	bool isType(const std::string& identifier)
+	{
+		//TODO: Manage struct types
+		return isReturnType(identifier);
+	}
 }
 
 AtslToAstConverter::AtslToAstConverter()
@@ -1079,7 +1085,75 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
-			iterate();
+			auto identifier = iterate().value.get<AtslIdentifier>();
+
+			if (isType(identifier))
+			{
+				auto type = atsl::getType(identifier);
+
+				// Type(expression) : cast
+				if (get().is(AtslSymbol::LeftParenthesis))
+				{
+					iterate();
+					
+					auto statement = std::make_unique<ExpressionStatement>();
+					auto cast = std::make_unique<CastExpression>();
+
+					cast->type = type;
+
+					expect(iterate(), AtslSymbol::LeftParenthesis);
+
+					while (remains())
+					{
+						if (get().is(AtslSymbol::RightParenthesis))
+							break;
+
+						cast->components.push_back(parseExpression());
+
+						if (get().is(AtslSymbol::Comma))
+							iterate();
+					}
+
+					expect(iterate(), AtslSymbol::RightParenthesis);
+
+					statement->expression = std::move(cast);
+
+					return std::move(statement);
+				}
+				// Variable declaration
+				else if (get().type == AtslTokenType::Identifier)
+				{
+					auto statement = std::make_unique<VariableDeclarationStatement>();
+					
+					statement->type = type;
+
+					ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
+
+					statement->name = iterate().value.get<AtslIdentifier>();
+
+					if (get().is(AtslSymbol::Equal))
+					{
+						iterate();
+
+						statement->value = parseExpression(); // Will parse the semicolon
+					}
+					else
+					{
+						expect(iterate(), AtslSymbol::Semicolon);
+					}
+
+					return std::move(statement);
+				}
+				else
+				{
+					ATEMA_ERROR("Unexpected token");
+				}
+			}
+			// Function call or expression
+			else
+			{
+				ATEMA_ERROR("Unexpected token");
+			}
 
 			break;
 		}
