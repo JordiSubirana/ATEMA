@@ -61,10 +61,10 @@ namespace
 		return token.value.get<T>();
 	}
 
-	bool isType(const std::string& identifier)
+	bool isTypeOrStruct(const std::string& identifier)
 	{
 		//TODO: Manage struct types
-		return isReturnType(identifier);
+		return atsl::isType(identifier);
 	}
 }
 
@@ -1087,7 +1087,7 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 		{
 			auto identifier = iterate().value.get<AtslIdentifier>();
 
-			if (isType(identifier))
+			if (isTypeOrStruct(identifier))
 			{
 				auto type = atsl::getType(identifier);
 
