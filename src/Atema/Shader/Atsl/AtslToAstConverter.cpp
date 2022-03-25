@@ -1182,7 +1182,11 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 			// Expression
 			else
 			{
-				ATEMA_ERROR("Unexpected token");
+				auto statement = std::make_unique<ExpressionStatement>();
+
+				statement->expression = parseExpression();
+
+				return std::move(statement);
 			}
 
 			break;
