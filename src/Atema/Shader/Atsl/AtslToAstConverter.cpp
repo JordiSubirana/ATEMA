@@ -860,7 +860,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 	return sequenceStatement;
 }
 
-UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
+UPtr<Statement> AtslToAstConverter::createBlockStatement()
 {
 	switch (get().type)
 	{
@@ -876,191 +876,42 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 				// - Const : const variable declaration / assignment
 				case AtslKeyword::Const:
 				{
-					iterate();
-
-					auto statement = std::make_unique<VariableDeclarationStatement>();
-					statement->qualifiers |= VariableQualifier::Const;
-
-					ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
-
-					statement->type = atsl::getType(iterate().value.get<AtslIdentifier>());
-
-					ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
-
-					statement->name = iterate().value.get<AtslIdentifier>();
-
-					if (get().is(AtslSymbol::Equal))
-					{
-						iterate();
-
-						statement->value = parseExpression(); // Will parse the semicolon
-					}
-					else
-					{
-						expect(iterate(), AtslSymbol::Semicolon);
-					}
-
-					return std::move(statement);
+					return parseVariableDeclaration();
 				}
 				// - If : conditional branch
 				case AtslKeyword::If:
 				{
-					auto statement = std::make_unique<ConditionalStatement>();
-
-					bool firstBranch = true;
-
-					do
-					{
-						iterate(); // Get 'else' of first 'if'
-
-						// If/else if branches
-						if (firstBranch || get().is(AtslKeyword::If))
-						{
-							// Get 'if' after 'else'
-							if (!firstBranch)
-								iterate();
-
-							ConditionalStatement::Branch branch;
-
-							branch.condition = parseParenthesisExpression();
-
-							if (get().is(AtslSymbol::LeftBrace))
-								branch.statement = createBlockSequence();
-							else
-								branch.statement = createBlockStatement();
-
-							statement->branches.push_back(std::move(branch));
-
-							firstBranch = false;
-						}
-						// Else statement
-						else
-						{
-							if (get().is(AtslSymbol::LeftBrace))
-								statement->elseStatement = createBlockSequence();
-							else
-								statement->elseStatement = createBlockStatement();
-						}
-
-					} while (get().is(AtslKeyword::Else));
-
-					return std::move(statement);
+					return parseConditionalBranch();
 				}
 				// - For : loop statement
 				case AtslKeyword::For:
 				{
-					iterate();
-
-					auto statement = std::make_unique<ForLoopStatement>();
-
-					expect(iterate(), AtslSymbol::LeftParenthesis);
-
-					// Check if there is an initialization statement
-					if (!get().is(AtslSymbol::Semicolon))
-						statement->initialization = createBlockStatement();
-					else
-						iterate(); // Get the semicolon
-
-					// Check if there is a condition
-					if (!get().is(AtslSymbol::Semicolon))
-						statement->condition = parseExpression();
-					else
-						iterate(); // Get the semicolon
-
-					// Check if there is an iteration
-					if (!get().is(AtslSymbol::RightParenthesis))
-						statement->increase = createBlockStatement();
-
-					expect(iterate(), AtslSymbol::RightParenthesis);
-
-					// Get loop block
-					if (get().is(AtslSymbol::LeftBrace))
-						statement->statement = createBlockSequence();
-					else
-						statement->statement = createBlockStatement();
-
-					return std::move(statement);
+					return parseForLoop();
 				}
 				// - While : loop statement
 				case AtslKeyword::While:
 				{
-					iterate();
-
-					auto statement = std::make_unique<WhileLoopStatement>();
-
-					expect(iterate(), AtslSymbol::LeftParenthesis);
-
-					// Check if there is a condition
-					if (!get().is(AtslSymbol::RightParenthesis))
-						statement->condition = parseExpression();
-
-					expect(iterate(), AtslSymbol::RightParenthesis);
-
-					// Get loop block
-					if (get().is(AtslSymbol::LeftBrace))
-						statement->statement = createBlockSequence();
-					else
-						statement->statement = createBlockStatement();
-
-					return std::move(statement);
+					return parseWhileLoop();
 				}
 				// - Do : loop statement
 				case AtslKeyword::Do:
 				{
-					iterate();
-
-					auto statement = std::make_unique<DoWhileLoopStatement>();
-
-					// Get loop block
-					statement->statement = createBlockSequence();
-
-					// Get condition
-					expect(iterate(), AtslKeyword::While);
-					expect(iterate(), AtslSymbol::LeftParenthesis);
-
-					// Check if there is a condition
-					if (!get().is(AtslSymbol::RightParenthesis))
-						statement->condition = parseExpression();
-
-					expect(iterate(), AtslSymbol::RightParenthesis);
-
-					return std::move(statement);
+					return parseDoWhileLoop();
 				}
 				// - Break : break statement
 				case AtslKeyword::Break:
 				{
-					iterate();
-
-					auto statement = std::make_unique<BreakStatement>();
-
-					expect(iterate(), AtslSymbol::Semicolon);
-
-					return std::move(statement);
+					return parseBreak();
 				}
 				// - Continue : continue statement
 				case AtslKeyword::Continue:
 				{
-					iterate();
-
-					auto statement = std::make_unique<ContinueStatement>();
-
-					expect(iterate(), AtslSymbol::Semicolon);
-
-					return std::move(statement);
+					return parseContinue();
 				}
 				// - Return : return statement
 				case AtslKeyword::Return:
 				{
-					iterate();
-					
-					auto statement = std::make_unique<ReturnStatement>();
-
-					if (get().is(AtslSymbol::Semicolon))
-						iterate();
-					else
-						statement->expression = parseExpression(); // Will parse the semicolon
-
-					return std::move(statement);
+					return parseReturn();
 				}
 				default:
 				{
@@ -1089,60 +940,24 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 
 			if (isTypeOrStruct(identifier))
 			{
-				auto type = atsl::getType(identifier);
-
 				// Type(expression) : cast
 				if (get().is(AtslSymbol::LeftParenthesis))
 				{
 					iterate();
 					
 					auto statement = std::make_unique<ExpressionStatement>();
-					auto cast = std::make_unique<CastExpression>();
 
-					cast->type = type;
+					statement->expression = parseCast();
 
-					expect(iterate(), AtslSymbol::LeftParenthesis);
-
-					while (remains())
-					{
-						if (get().is(AtslSymbol::RightParenthesis))
-							break;
-
-						cast->components.push_back(parseExpression());
-
-						if (get().is(AtslSymbol::Comma))
-							iterate();
-					}
-
-					expect(iterate(), AtslSymbol::RightParenthesis);
-
-					statement->expression = std::move(cast);
+					// Parse semicolon after expression statement
+					expect(iterate(), AtslSymbol::Semicolon);
 
 					return std::move(statement);
 				}
 				// Variable declaration
 				else if (get().type == AtslTokenType::Identifier)
 				{
-					auto statement = std::make_unique<VariableDeclarationStatement>();
-					
-					statement->type = type;
-
-					ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
-
-					statement->name = iterate().value.get<AtslIdentifier>();
-
-					if (get().is(AtslSymbol::Equal))
-					{
-						iterate();
-
-						statement->value = parseExpression(); // Will parse the semicolon
-					}
-					else
-					{
-						expect(iterate(), AtslSymbol::Semicolon);
-					}
-
-					return std::move(statement);
+					return parseVariableDeclaration();
 				}
 				else
 				{
@@ -1154,27 +969,9 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 			{
 				auto statement = std::make_unique<ExpressionStatement>();
 
-				if (atsl::isBuiltInFunction(identifier))
-				{
-					auto functionCall = std::make_unique<BuiltInFunctionCallExpression>();
+				statement->expression = parseFunctionCall();
 
-					functionCall->function = atsl::getBuiltInFunction(identifier);
-
-					functionCall->arguments = parseArguments();
-
-					statement->expression = std::move(functionCall);
-				}
-				else
-				{
-					auto functionCall = std::make_unique<FunctionCallExpression>();
-
-					functionCall->identifier = identifier;
-
-					functionCall->arguments = parseArguments();
-
-					statement->expression = std::move(functionCall);
-				}
-
+				// Parse semicolon after expression statement
 				expect(iterate(), AtslSymbol::Semicolon);
 
 				return std::move(statement);
@@ -1185,6 +982,9 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 				auto statement = std::make_unique<ExpressionStatement>();
 
 				statement->expression = parseExpression();
+
+				// Parse semicolon after expression statement
+				expect(iterate(), AtslSymbol::Semicolon);
 
 				return std::move(statement);
 			}
@@ -1198,6 +998,266 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 	}
 	
 	return UPtr<Statement>();
+}
+
+UPtr<ConditionalStatement> AtslToAstConverter::parseConditionalBranch()
+{
+	expect(get(), AtslKeyword::If);
+	
+	auto statement = std::make_unique<ConditionalStatement>();
+
+	bool firstBranch = true;
+
+	do
+	{
+		iterate(); // Get 'else' of first 'if'
+
+		// If/else if branches
+		if (firstBranch || get().is(AtslKeyword::If))
+		{
+			// Get 'if' after 'else'
+			if (!firstBranch)
+				iterate();
+
+			ConditionalStatement::Branch branch;
+
+			branch.condition = parseParenthesisExpression();
+
+			if (get().is(AtslSymbol::LeftBrace))
+				branch.statement = createBlockSequence();
+			else
+				branch.statement = createBlockStatement();
+
+			statement->branches.push_back(std::move(branch));
+
+			firstBranch = false;
+		}
+		// Else statement
+		else
+		{
+			if (get().is(AtslSymbol::LeftBrace))
+				statement->elseStatement = createBlockSequence();
+			else
+				statement->elseStatement = createBlockStatement();
+		}
+
+	} while (get().is(AtslKeyword::Else));
+
+	return std::move(statement);
+}
+
+UPtr<ForLoopStatement> AtslToAstConverter::parseForLoop()
+{
+	expect(iterate(), AtslKeyword::For);
+
+	auto statement = std::make_unique<ForLoopStatement>();
+
+	expect(iterate(), AtslSymbol::LeftParenthesis);
+
+	// Check if there is an initialization statement
+	if (!get().is(AtslSymbol::Semicolon))
+		statement->initialization = createBlockStatement();
+	else
+		iterate(); // Get the semicolon
+
+	// Check if there is a condition
+	if (!get().is(AtslSymbol::Semicolon))
+		statement->condition = parseExpression();
+	else
+		iterate(); // Get the semicolon
+
+	// Check if there is an iteration
+	if (!get().is(AtslSymbol::RightParenthesis))
+		statement->increase = createBlockStatement();
+
+	expect(iterate(), AtslSymbol::RightParenthesis);
+
+	// Get loop block
+	if (get().is(AtslSymbol::LeftBrace))
+		statement->statement = createBlockSequence();
+	else
+		statement->statement = createBlockStatement();
+
+	return std::move(statement);
+}
+
+UPtr<WhileLoopStatement> AtslToAstConverter::parseWhileLoop()
+{
+	expect(iterate(), AtslKeyword::While);
+
+	auto statement = std::make_unique<WhileLoopStatement>();
+
+	expect(iterate(), AtslSymbol::LeftParenthesis);
+
+	// Check if there is a condition
+	if (!get().is(AtslSymbol::RightParenthesis))
+		statement->condition = parseExpression();
+
+	expect(iterate(), AtslSymbol::RightParenthesis);
+
+	// Get loop block
+	if (get().is(AtslSymbol::LeftBrace))
+		statement->statement = createBlockSequence();
+	else
+		statement->statement = createBlockStatement();
+
+	return std::move(statement);
+}
+
+UPtr<DoWhileLoopStatement> AtslToAstConverter::parseDoWhileLoop()
+{
+	expect(iterate(), AtslKeyword::Do);
+
+	auto statement = std::make_unique<DoWhileLoopStatement>();
+
+	// Get loop block
+	statement->statement = createBlockSequence();
+
+	// Get condition
+	expect(iterate(), AtslKeyword::While);
+	expect(iterate(), AtslSymbol::LeftParenthesis);
+
+	// Check if there is a condition
+	if (!get().is(AtslSymbol::RightParenthesis))
+		statement->condition = parseExpression();
+
+	expect(iterate(), AtslSymbol::RightParenthesis);
+
+	return std::move(statement);
+}
+
+UPtr<VariableDeclarationStatement> AtslToAstConverter::parseVariableDeclaration()
+{
+	auto statement = std::make_unique<VariableDeclarationStatement>();
+
+	// Check if this is a const variable
+	if (get().is(AtslKeyword::Const))
+	{
+		statement->qualifiers |= VariableQualifier::Const;
+
+		iterate();
+	}
+
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
+
+	auto& identifier = iterate().value.get<AtslIdentifier>();
+
+	statement->type = atsl::getType(identifier);
+
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
+
+	statement->name = iterate().value.get<AtslIdentifier>();
+
+	if (get().is(AtslSymbol::Equal))
+	{
+		iterate();
+
+		statement->value = parseExpression();
+	}
+	
+	expect(iterate(), AtslSymbol::Semicolon);
+
+	return std::move(statement);
+}
+
+UPtr<StructDeclarationStatement> AtslToAstConverter::parseStructDeclaration()
+{
+	return UPtr<StructDeclarationStatement>();
+}
+
+UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration()
+{
+	return UPtr<FunctionDeclarationStatement>();
+}
+
+UPtr<BreakStatement> AtslToAstConverter::parseBreak()
+{
+	expect(iterate(), AtslKeyword::Break);
+
+	auto statement = std::make_unique<BreakStatement>();
+
+	expect(iterate(), AtslSymbol::Semicolon);
+
+	return std::move(statement);
+}
+
+UPtr<ContinueStatement> AtslToAstConverter::parseContinue()
+{
+	expect(iterate(), AtslKeyword::Continue);
+
+	auto statement = std::make_unique<ContinueStatement>();
+
+	expect(iterate(), AtslSymbol::Semicolon);
+
+	return std::move(statement);
+}
+
+UPtr<ReturnStatement> AtslToAstConverter::parseReturn()
+{
+	expect(iterate(), AtslKeyword::Return);
+
+	auto statement = std::make_unique<ReturnStatement>();
+
+	if (get().is(AtslSymbol::Semicolon))
+	{
+		iterate();
+	}
+	else
+	{
+		statement->expression = parseExpression();
+
+		expect(iterate(), AtslSymbol::Semicolon);
+	}
+
+	return std::move(statement);
+}
+
+UPtr<Expression> AtslToAstConverter::parseFunctionCall()
+{
+	auto& identifier = iterate().value.get<AtslIdentifier>();
+
+	if (atsl::isBuiltInFunction(identifier))
+	{
+		auto functionCall = std::make_unique<BuiltInFunctionCallExpression>();
+
+		functionCall->function = atsl::getBuiltInFunction(identifier);
+
+		functionCall->arguments = parseArguments();
+
+		return std::move(functionCall);
+	}
+
+	auto functionCall = std::make_unique<FunctionCallExpression>();
+
+	functionCall->identifier = identifier;
+
+	functionCall->arguments = parseArguments();
+
+	return std::move(functionCall);
+}
+
+UPtr<CastExpression> AtslToAstConverter::parseCast()
+{
+	auto cast = std::make_unique<CastExpression>();
+
+	cast->type = atsl::getType(iterate().value.get<AtslIdentifier>());
+
+	expect(iterate(), AtslSymbol::LeftParenthesis);
+
+	while (remains())
+	{
+		if (get().is(AtslSymbol::RightParenthesis))
+			break;
+
+		cast->components.push_back(parseExpression());
+
+		if (get().is(AtslSymbol::Comma))
+			iterate();
+	}
+
+	expect(iterate(), AtslSymbol::RightParenthesis);
+
+	return std::move(cast);
 }
 
 void AtslToAstConverter::clearAttributes()

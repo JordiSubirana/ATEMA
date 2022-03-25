@@ -27,6 +27,7 @@
 #include <Atema/Shader/Config.hpp>
 #include <Atema/Shader/Atsl/AtslToken.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
+#include <Atema/Shader/Ast/Expression.hpp>
 
 #include <vector>
 #include <string>
@@ -81,6 +82,22 @@ namespace at
 		void createFunction();
 		UPtr<SequenceStatement> createBlockSequence();
 		UPtr<Statement> createBlockStatement();
+		
+		// Statements : at the end, semicolon is parsed
+		UPtr<ConditionalStatement> parseConditionalBranch();
+		UPtr<ForLoopStatement> parseForLoop();
+		UPtr<WhileLoopStatement> parseWhileLoop();
+		UPtr<DoWhileLoopStatement> parseDoWhileLoop();
+		UPtr<VariableDeclarationStatement> parseVariableDeclaration();
+		UPtr<StructDeclarationStatement> parseStructDeclaration();
+		UPtr<FunctionDeclarationStatement> parseFunctionDeclaration();
+		UPtr<BreakStatement> parseBreak();
+		UPtr<ContinueStatement> parseContinue();
+		UPtr<ReturnStatement> parseReturn();
+
+		// Expressions : delimiter is not known, so no parsing
+		UPtr<Expression> parseFunctionCall(); // Classic function or Built-in function
+		UPtr<CastExpression> parseCast();
 
 		void clearAttributes();
 		
