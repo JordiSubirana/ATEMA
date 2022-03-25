@@ -1149,7 +1149,37 @@ UPtr<Statement> at::AtslToAstConverter::createBlockStatement()
 					ATEMA_ERROR("Unexpected token");
 				}
 			}
-			// Function call or expression
+			// Function call
+			else if (get().is(AtslSymbol::LeftParenthesis))
+			{
+				auto statement = std::make_unique<ExpressionStatement>();
+
+				if (atsl::isBuiltInFunction(identifier))
+				{
+					auto functionCall = std::make_unique<BuiltInFunctionCallExpression>();
+
+					functionCall->function = atsl::getBuiltInFunction(identifier);
+
+					functionCall->arguments = parseArguments();
+
+					statement->expression = std::move(functionCall);
+				}
+				else
+				{
+					auto functionCall = std::make_unique<FunctionCallExpression>();
+
+					functionCall->identifier = identifier;
+
+					functionCall->arguments = parseArguments();
+
+					statement->expression = std::move(functionCall);
+				}
+
+				expect(iterate(), AtslSymbol::Semicolon);
+
+				return std::move(statement);
+			}
+			// Expression
 			else
 			{
 				ATEMA_ERROR("Unexpected token");
