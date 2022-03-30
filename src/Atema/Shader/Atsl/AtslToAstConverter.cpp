@@ -172,7 +172,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			// - function definition
 			case AtslTokenType::Identifier:
 			{
-				createFunction();
+				m_currentSequence->statements.push_back(parseFunctionDeclaration());
 				
 				break;
 			}
@@ -772,73 +772,6 @@ void AtslToAstConverter::createStruct()
 {
 }
 
-void AtslToAstConverter::createFunction()
-{
-	UPtr<FunctionDeclarationStatement> statement;
-	
-	// Entry function in one of the shader stages
-	if (hasAttribute("entry"))
-	{
-		auto entryFunctionStatement = std::make_unique<EntryFunctionDeclarationStatement>();
-
-		entryFunctionStatement->stage = getShaderStage(expectAttributeIdentifier("entry"));
-
-		statement = std::move(entryFunctionStatement);
-	}
-	// Generic function
-	else
-	{
-		statement = std::make_unique<FunctionDeclarationStatement>();
-	}
-
-	// Return type
-	//TODO: Handle qualifiers if needed
-	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function return type identifier");
-	
-	statement->returnType = atsl::getType(get().value.get<AtslIdentifier>());
-	
-	ATEMA_ASSERT(isReturnType(statement->returnType), "Invalid function return type");
-
-	// Function name
-	iterate();
-
-	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function name");
-
-	statement->name = get().value.get<AtslIdentifier>();
-
-	// Arguments
-	//TODO: Handle qualifiers if needed
-	expect(iterate(), AtslSymbol::LeftParenthesis);
-
-	while (remains())
-	{
-		// We got all arguments (possibly none)
-		if (get().is(AtslSymbol::RightParenthesis))
-			break;
-
-		// If we have at least one argument, we expect a comma
-		if (!statement->arguments.empty())
-			expect(iterate(), AtslSymbol::Comma);
-
-		FunctionDeclarationStatement::Argument argument;
-
-		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument type identifier");
-
-		argument.type = atsl::getType(iterate().value.get<AtslIdentifier>());
-
-		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument name");
-
-		argument.name = iterate().value.get<AtslIdentifier>();
-
-		// There is at least one more argument to get
-		statement->arguments.push_back(std::move(argument));
-	}
-
-	expect(iterate(), AtslSymbol::RightParenthesis);
-
-	statement->sequence = createBlockSequence();
-}
-
 UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 {
 	auto sequenceStatement = std::make_unique<SequenceStatement>();
@@ -1167,7 +1100,71 @@ UPtr<StructDeclarationStatement> AtslToAstConverter::parseStructDeclaration()
 
 UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration()
 {
-	return UPtr<FunctionDeclarationStatement>();
+	UPtr<FunctionDeclarationStatement> statement;
+
+	// Entry function in one of the shader stages
+	if (hasAttribute("entry"))
+	{
+		auto entryFunctionStatement = std::make_unique<EntryFunctionDeclarationStatement>();
+
+		entryFunctionStatement->stage = getShaderStage(expectAttributeIdentifier("entry"));
+
+		statement = std::move(entryFunctionStatement);
+	}
+	// Generic function
+	else
+	{
+		statement = std::make_unique<FunctionDeclarationStatement>();
+	}
+
+	// Return type
+	//TODO: Handle qualifiers if needed
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function return type identifier");
+
+	statement->returnType = atsl::getType(get().value.get<AtslIdentifier>());
+
+	ATEMA_ASSERT(isReturnType(statement->returnType), "Invalid function return type");
+
+	// Function name
+	iterate();
+
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function name");
+
+	statement->name = get().value.get<AtslIdentifier>();
+
+	// Arguments
+	//TODO: Handle qualifiers if needed
+	expect(iterate(), AtslSymbol::LeftParenthesis);
+
+	while (remains())
+	{
+		// We got all arguments (possibly none)
+		if (get().is(AtslSymbol::RightParenthesis))
+			break;
+
+		// If we have at least one argument, we expect a comma
+		if (!statement->arguments.empty())
+			expect(iterate(), AtslSymbol::Comma);
+
+		FunctionDeclarationStatement::Argument argument;
+
+		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument type identifier");
+
+		argument.type = atsl::getType(iterate().value.get<AtslIdentifier>());
+
+		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument name");
+
+		argument.name = iterate().value.get<AtslIdentifier>();
+
+		// There is at least one more argument to get
+		statement->arguments.push_back(std::move(argument));
+	}
+
+	expect(iterate(), AtslSymbol::RightParenthesis);
+
+	statement->sequence = createBlockSequence();
+
+	return std::move(statement);
 }
 
 UPtr<BreakStatement> AtslToAstConverter::parseBreak()

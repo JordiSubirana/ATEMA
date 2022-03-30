@@ -79,7 +79,6 @@ namespace at
 		void createOptions();
 		void createConsts();
 		void createStruct();
-		void createFunction();
 		UPtr<SequenceStatement> createBlockSequence();
 		UPtr<Statement> createBlockStatement();
 		
