@@ -48,6 +48,7 @@ namespace at
 		using AttributeMap = std::unordered_map<AtslIdentifier, Attribute>;
 		struct VariableData
 		{
+			Flags<VariableQualifier> qualifiers;
 			Type type;
 			std::string name;
 			UPtr<Expression> value;
@@ -74,7 +75,7 @@ namespace at
 		std::vector<UPtr<Expression>> parseArguments();
 		UPtr<Expression> parseParenthesisExpression();
 		UPtr<Expression> createFunctionCall();
-		VariableData createVariable();
+		VariableData parseVariableDeclarationData();
 		void createVariableBlock();
 		void createOptions();
 		void createConsts();

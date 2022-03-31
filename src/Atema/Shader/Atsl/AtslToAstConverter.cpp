@@ -227,7 +227,7 @@ void AtslToAstConverter::expect(const AtslToken& token, AtslKeyword keyword) con
 	}
 }
 
-bool AtslToAstConverter::hasAttribute(const AtslIdentifier& identifier)
+bool AtslToAstConverter::hasAttribute(const AtslIdentifier& identifier) const
 {
 	return m_attributes.find(identifier) != m_attributes.end();
 }
@@ -576,21 +576,29 @@ UPtr<Expression> AtslToAstConverter::createFunctionCall()
 	return {};
 }
 
-AtslToAstConverter::VariableData AtslToAstConverter::createVariable()
+AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationData()
 {
 	VariableData variable;
 
-	// Get type
+	// Check if this is a const variable
+	if (get().is(AtslKeyword::Const))
 	{
-		const auto& token = expectType<AtslIdentifier>(iterate());
+		variable.qualifiers |= VariableQualifier::Const;
 
-		variable.type = atsl::getType(token);
+		iterate();
 	}
+
+	// Get type
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
+
+	auto& typeIdentifier = iterate().value.get<AtslIdentifier>();
+
+	variable.type = atsl::getType(typeIdentifier);
 
 	// Get name
-	{
-		variable.name = expectType<AtslIdentifier>(iterate());
-	}
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
+
+	variable.name = iterate().value.get<AtslIdentifier>();
 
 	// Optional expression for initial value
 	if (get().is(AtslSymbol::Equal))
@@ -733,7 +741,7 @@ void AtslToAstConverter::createVariableBlock()
 		}
 		else if (token.type == AtslTokenType::Identifier)
 		{
-			addVariable(createVariable());
+			addVariable(parseVariableDeclarationData());
 
 			variableCount++;
 
@@ -760,7 +768,7 @@ void AtslToAstConverter::createOptions()
 	// Only one variable
 	else
 	{
-		auto variableData = createVariable();
+		auto variableData = parseVariableDeclarationData();
 	}
 }
 
@@ -1063,32 +1071,12 @@ UPtr<VariableDeclarationStatement> AtslToAstConverter::parseVariableDeclaration(
 {
 	auto statement = std::make_unique<VariableDeclarationStatement>();
 
-	// Check if this is a const variable
-	if (get().is(AtslKeyword::Const))
-	{
-		statement->qualifiers |= VariableQualifier::Const;
+	auto variableData = parseVariableDeclarationData();
 
-		iterate();
-	}
-
-	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
-
-	auto& identifier = iterate().value.get<AtslIdentifier>();
-
-	statement->type = atsl::getType(identifier);
-
-	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
-
-	statement->name = iterate().value.get<AtslIdentifier>();
-
-	if (get().is(AtslSymbol::Equal))
-	{
-		iterate();
-
-		statement->value = parseExpression();
-	}
-	
-	expect(iterate(), AtslSymbol::Semicolon);
+	statement->qualifiers = variableData.qualifiers;
+	statement->type = variableData.type;
+	statement->name = variableData.name;
+	statement->value = std::move(variableData.value);
 
 	return std::move(statement);
 }
