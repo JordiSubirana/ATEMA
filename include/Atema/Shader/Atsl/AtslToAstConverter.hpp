@@ -63,12 +63,12 @@ namespace at
 		void expect(const AtslToken& token, AtslSymbol symbol) const;
 		void expect(const AtslToken& token, AtslKeyword keyword) const;
 		
-		bool hasAttribute(const AtslIdentifier& identifier);
-		const Attribute& getAttribute(const AtslIdentifier& identifier);
-		const AtslIdentifier& expectAttributeIdentifier(const AtslIdentifier& name);
-		bool expectAttributeBool(const AtslIdentifier& name);
-		uint32_t expectAttributeInt(const AtslIdentifier& name);
-		float expectAttributeFloat(const AtslIdentifier& name);
+		bool hasAttribute(const AtslIdentifier& identifier) const;
+		const Attribute& getAttribute(const AtslIdentifier& identifier) const;
+		const AtslIdentifier& expectAttributeIdentifier(const AtslIdentifier& name) const;
+		bool expectAttributeBool(const AtslIdentifier& name) const;
+		uint32_t expectAttributeInt(const AtslIdentifier& name) const;
+		float expectAttributeFloat(const AtslIdentifier& name) const;
 		
 		void createAttributes();
 		UPtr<Expression> parseExpression();

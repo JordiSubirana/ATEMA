@@ -68,7 +68,11 @@ namespace
 	}
 }
 
-AtslToAstConverter::AtslToAstConverter()
+AtslToAstConverter::AtslToAstConverter():
+	m_currentSequence(nullptr),
+	m_parentSequence(nullptr),
+	m_tokens(nullptr),
+	m_currentIndex(0)
 {
 }
 
@@ -232,14 +236,14 @@ bool AtslToAstConverter::hasAttribute(const AtslIdentifier& identifier) const
 	return m_attributes.find(identifier) != m_attributes.end();
 }
 
-const AtslToAstConverter::Attribute& AtslToAstConverter::getAttribute(const AtslIdentifier& identifier)
+const AtslToAstConverter::Attribute& AtslToAstConverter::getAttribute(const AtslIdentifier& identifier) const
 {
 	ATEMA_ASSERT(hasAttribute(identifier), "Attribute does not exist");
 
-	return m_attributes[identifier];
+	return m_attributes.at(identifier);
 }
 
-const AtslIdentifier& AtslToAstConverter::expectAttributeIdentifier(const AtslIdentifier& name)
+const AtslIdentifier& AtslToAstConverter::expectAttributeIdentifier(const AtslIdentifier& name) const
 {
 	if (!hasAttribute(name))
 	{
@@ -256,7 +260,7 @@ const AtslIdentifier& AtslToAstConverter::expectAttributeIdentifier(const AtslId
 	return attribute.get<AtslIdentifier>();
 }
 
-bool AtslToAstConverter::expectAttributeBool(const AtslIdentifier& name)
+bool AtslToAstConverter::expectAttributeBool(const AtslIdentifier& name) const
 {
 	if (!hasAttribute(name))
 	{
@@ -273,7 +277,7 @@ bool AtslToAstConverter::expectAttributeBool(const AtslIdentifier& name)
 	return attribute.get<AtslBasicValue>().get<bool>();
 }
 
-uint32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name)
+uint32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name) const
 {
 	if (!hasAttribute(name))
 	{
@@ -290,7 +294,7 @@ uint32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name)
 	return attribute.get<AtslBasicValue>().get<uint32_t>();
 }
 
-float AtslToAstConverter::expectAttributeFloat(const AtslIdentifier& name)
+float AtslToAstConverter::expectAttributeFloat(const AtslIdentifier& name) const
 {
 	if (!hasAttribute(name))
 	{
@@ -877,7 +881,7 @@ UPtr<Statement> AtslToAstConverter::createBlockStatement()
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
-			auto identifier = iterate().value.get<AtslIdentifier>();
+			auto& identifier = iterate().value.get<AtslIdentifier>();
 
 			if (isTypeOrStruct(identifier))
 			{
