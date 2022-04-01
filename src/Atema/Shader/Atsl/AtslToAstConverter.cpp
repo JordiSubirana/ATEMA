@@ -414,8 +414,6 @@ UPtr<Expression> AtslToAstConverter::parseExpression()
 {
 	auto& token = get();
 
-	UPtr<Expression> expression;
-
 	switch (token.type)
 	{
 		// - variable (constant, option or variable)
@@ -425,40 +423,19 @@ UPtr<Expression> AtslToAstConverter::parseExpression()
 		{
 			auto& identifier = token.value.get<AtslIdentifier>();
 
-			iterate();
-
 			// Cast
 			if (atsl::isType(identifier))
 			{
-				auto tmp = std::make_unique<CastExpression>();
-				tmp->type = atsl::getType(identifier);
-				tmp->components = parseArguments();
-
-				expression = std::move(tmp);
+				return parseCast();
 			}
 			else
 			{
 				// Function call
-				if (get().is(AtslSymbol::LeftParenthesis))
+				if (get(1).is(AtslSymbol::LeftParenthesis))
 				{
-					if (atsl::isBuiltInFunction(identifier))
-					{
-						auto tmp = std::make_unique<BuiltInFunctionCallExpression>();
-						tmp->function = atsl::getBuiltInFunction(identifier);
-						tmp->arguments = parseArguments();
-
-						expression = std::move(tmp);
-					}
-					else
-					{
-						auto tmp = std::make_unique<FunctionCallExpression>();
-						tmp->identifier = identifier;
-						tmp->arguments = parseArguments();
-
-						expression = std::move(tmp);
-					}
+					return parseFunctionCall();
 				}
-				// Variable
+				// Variable operations
 				else
 				{
 					
@@ -506,28 +483,26 @@ UPtr<Expression> AtslToAstConverter::parseExpression()
 
 			iterate();
 
-			auto tmp = std::make_unique<ConstantExpression>();
+			auto constantExpression = std::make_unique<ConstantExpression>();
 
 			if (value.is<bool>())
 			{
-				tmp->value = value.get<bool>();
+				constantExpression->value = value.get<bool>();
 			}
 			else if (value.is<uint32_t>())
 			{
-				tmp->value = value.get<uint32_t>();
+				constantExpression->value = value.get<uint32_t>();
 			}
 			else if (value.is<float>())
 			{
-				tmp->value = value.get<float>();
+				constantExpression->value = value.get<float>();
 			}
 			else
 			{
 				ATEMA_ERROR("Invalid value type");
 			}
 
-			expression = std::move(tmp);
-
-			break;
+			return std::move(constantExpression);
 		}
 		default:
 		{
@@ -535,7 +510,7 @@ UPtr<Expression> AtslToAstConverter::parseExpression()
 		}
 	}
 
-	return std::move(expression);
+	return {};
 }
 
 std::vector<UPtr<Expression>> AtslToAstConverter::parseArguments()
@@ -1230,21 +1205,7 @@ UPtr<CastExpression> AtslToAstConverter::parseCast()
 	auto cast = std::make_unique<CastExpression>();
 
 	cast->type = atsl::getType(iterate().value.get<AtslIdentifier>());
-
-	expect(iterate(), AtslSymbol::LeftParenthesis);
-
-	while (remains())
-	{
-		if (get().is(AtslSymbol::RightParenthesis))
-			break;
-
-		cast->components.push_back(parseExpression());
-
-		if (get().is(AtslSymbol::Comma))
-			iterate();
-	}
-
-	expect(iterate(), AtslSymbol::RightParenthesis);
+	cast->components = parseArguments();
 
 	return std::move(cast);
 }
