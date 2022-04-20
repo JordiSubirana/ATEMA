@@ -71,6 +71,8 @@ namespace at
 		float expectAttributeFloat(const AtslIdentifier& name) const;
 		
 		void createAttributes();
+		UPtr<Expression> parsePrimaryExpression();
+		UPtr<Expression> parseOperation(int precedence, UPtr<Expression> lhs);
 		UPtr<Expression> parseExpression();
 		std::vector<UPtr<Expression>> parseArguments();
 		UPtr<Expression> parseParenthesisExpression();

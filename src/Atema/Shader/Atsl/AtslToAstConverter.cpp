@@ -24,9 +24,11 @@
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Expression.hpp>
 #include <Atema/Shader/Atsl/Utils.hpp>
+#include <Atema/Shader/Ast/AstUtils.hpp>
 
 #include <unordered_set>
 #include <functional>
+
 
 using namespace at;
 
@@ -410,107 +412,459 @@ void AtslToAstConverter::createAttributes()
 	}
 }
 
-UPtr<Expression> AtslToAstConverter::parseExpression()
+UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 {
-	auto& token = get();
+	UPtr<Expression> expression;
 
-	switch (token.type)
+	while (remains())
 	{
-		// - variable (constant, option or variable)
-		// - function call
-		// - cast
-		case AtslTokenType::Identifier:
-		{
-			auto& identifier = token.value.get<AtslIdentifier>();
+		auto& token = get();
 
-			// Cast
-			if (atsl::isType(identifier))
+		switch (token.type)
+		{
+			// - constant value
+			case AtslTokenType::Value:
 			{
-				return parseCast();
-			}
-			else
-			{
-				// Function call
-				if (get(1).is(AtslSymbol::LeftParenthesis))
+				auto& value = token.value.get<AtslBasicValue>();
+
+				iterate();
+
+				auto constantExpression = std::make_unique<ConstantExpression>();
+
+				if (value.is<bool>())
 				{
-					return parseFunctionCall();
+					constantExpression->value = value.get<bool>();
 				}
-				// Variable operations
+				else if (value.is<uint32_t>())
+				{
+					constantExpression->value = value.get<uint32_t>();
+				}
+				else if (value.is<float>())
+				{
+					constantExpression->value = value.get<float>();
+				}
 				else
 				{
-					
+					ATEMA_ERROR("Invalid value type");
 				}
-			}
-			
-			break;
-		}
-		// - +value
-		// - -value
-		// - !value
-		// - (expression)
-		case AtslTokenType::Symbol:
-		{
-			switch (token.value.get<AtslSymbol>())
-			{
-				case AtslSymbol::Plus:
-				{
-					break;
-				}
-				case AtslSymbol::Minus:
-				{
-					break;
-				}
-				case AtslSymbol::Not:
-				{
-					break;
-				}
-				case AtslSymbol::LeftParenthesis:
-				{
-					break;
-				}
-				default:
-				{
-					ATEMA_ERROR("Unexpected symbol");
-				}
-			}
 
-			break;
-		}
-		// - constant value
-		case AtslTokenType::Value:
-		{
-			auto& value = token.value.get<AtslBasicValue>();
-
-			iterate();
-
-			auto constantExpression = std::make_unique<ConstantExpression>();
-
-			if (value.is<bool>())
-			{
-				constantExpression->value = value.get<bool>();
+				// A value is a full primary expression, don't need to check anything else
+				return std::move(constantExpression);
 			}
-			else if (value.is<uint32_t>())
+			// - variable (constant, option or variable)
+			// - function call
+			// - cast
+			case AtslTokenType::Identifier:
 			{
-				constantExpression->value = value.get<uint32_t>();
-			}
-			else if (value.is<float>())
-			{
-				constantExpression->value = value.get<float>();
-			}
-			else
-			{
-				ATEMA_ERROR("Invalid value type");
-			}
+				// The identifier must be the first thing we get in this loop
+				ATEMA_ASSERT(!expression, "Unexpected identifier");
 
-			return std::move(constantExpression);
-		}
-		default:
-		{
-			ATEMA_ERROR("Unexpected token");
+				auto& identifier = token.value.get<AtslIdentifier>();
+
+				// Cast
+				if (atsl::isType(identifier))
+				{
+					expression = parseCast();
+				}
+				// Function call
+				else if (get(1).is(AtslSymbol::LeftParenthesis))
+				{
+					expression = parseFunctionCall();
+				}
+				// Variable operations, depends on the following symbol
+				else
+				{
+					expression = parseVariable();
+				}
+
+				// We got the first
+				continue;
+			}
+			// - access identifier
+			// - access index
+			// - parenthesis expression
+			// - unary operation
+			case AtslTokenType::Symbol:
+			{
+				// First token : check for parenthesis expression or unary operation
+				if (!expression)
+				{
+					switch (token.value.get<AtslSymbol>())
+					{
+						// Parenthesis expression
+						case AtslSymbol::LeftParenthesis:
+						{
+							return parseParenthesisExpression();
+						}
+						// Unary Operation (positive or increment prefix)
+						case AtslSymbol::Plus:
+						{
+							iterate();
+
+							auto tmp = std::make_unique<UnaryExpression>();
+
+							tmp->op = UnaryOperator::Positive;
+
+							// Another identical symbol : unary prefix operation
+							if (get().is(AtslSymbol::Plus))
+							{
+								iterate();
+
+								tmp->op = UnaryOperator::IncrementPrefix;
+							}
+
+							// Operator must be followed by a primary expression
+							tmp->operand = parsePrimaryExpression();
+
+							// No need to check anything else
+							return std::move(tmp);
+						}
+						// Unary Operation (negative or decrement prefix)
+						case AtslSymbol::Minus:
+						{
+							iterate();
+
+							auto tmp = std::make_unique<UnaryExpression>();
+
+							tmp->op = UnaryOperator::Negative;
+
+							// Another identical symbol : unary prefix operation
+							if (get().is(AtslSymbol::Minus))
+							{
+								iterate();
+
+								tmp->op = UnaryOperator::DecrementPrefix;
+							}
+
+							// Operator must be followed by a primary expression
+							tmp->operand = parsePrimaryExpression();
+
+							// No need to check anything else
+							return std::move(tmp);
+						}
+						// Unary Operation (not)
+						case AtslSymbol::Not:
+						{
+							iterate();
+
+							auto tmp = std::make_unique<UnaryExpression>();
+
+							tmp->op = UnaryOperator::LogicalNot;
+							tmp->operand = parsePrimaryExpression();
+
+							// No need to check anything else
+							return std::move(tmp);
+						}
+						default:
+						{
+							ATEMA_ERROR("Unexpected symbol");
+						}
+					}
+				}
+				// Currently parsing expression (variable name resolution)
+				else
+				{
+					switch (token.value.get<AtslSymbol>())
+					{
+						// AccessIdentifier
+						//TODO: Manage Swizzle
+						case AtslSymbol::Dot:
+						{
+							iterate();
+
+							auto tmp = std::make_unique<AccessIdentifierExpression>();
+
+							tmp->expression = std::move(expression);
+							tmp->identifier = expectType<AtslIdentifier>(iterate());
+
+							expression = std::move(tmp);
+
+							continue;
+						}
+						// AccessIndex
+						case AtslSymbol::LeftBracket:
+						{
+							iterate();
+
+							auto tmp = std::make_unique<AccessIndexExpression>();
+
+							tmp->expression = std::move(expression);
+							tmp->index = parseExpression();
+
+							expect(iterate(), AtslSymbol::RightBracket);
+
+							expression = std::move(tmp);
+
+							continue;
+						}
+						default:
+						{
+							// Unexpected token, we got the entire expression
+							return std::move(expression);
+						}
+					}
+				}
+
+				break;
+			}
+			default:
+			{
+				ATEMA_ERROR("Unexpected token");
+			}
 		}
 	}
 
-	return {};
+	return std::move(expression);
+}
+
+UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Expression> lhs)
+{
+	while (remains())
+	{
+		const auto& symbol = expectType<AtslSymbol>(get());
+
+		// If we get a delimiter, just return the current operand
+		if (atsl::isExpressionDelimiter(symbol))
+			return std::move(lhs);
+
+		// Save index in case we need to reset it later
+		const auto currentIndex = m_currentIndex;
+
+		iterate();
+
+		// High precedence resolution (array or member access, ternary, assignment)
+		switch (symbol)
+		{
+			// Assignment
+			case AtslSymbol::Equal:
+			{
+				// Check whether this is an assignment or an equals binary expression
+				if (get().is(AtslSymbol::Equal))
+					break;
+
+				auto expression = std::make_unique<AssignmentExpression>();
+
+				expression->left = std::move(lhs);
+				expression->right = parseExpression();
+
+				return std::move(expression);
+			}
+			// Ternary
+			case AtslSymbol::QuestionMark:
+			{
+				auto expression = std::make_unique<TernaryExpression>();
+
+				expression->condition = std::move(lhs);
+
+				expression->trueValue = parseExpression();
+
+				expect(iterate(), AtslSymbol::Colon);
+
+				expression->falseValue = parseExpression();
+
+				lhs = std::move(expression);
+
+				continue;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
+		// Operations
+		// Get next operation, compare its precedence with the current one
+		// Get next operand, and check which operation needs to occur first
+		Variant<UnaryOperator, BinaryOperator> operation;
+
+		switch (symbol)
+		{
+			case AtslSymbol::Plus:
+			{
+				if (get().is(AtslSymbol::Plus))
+				{
+					iterate();
+
+					operation = UnaryOperator::IncrementPostfix;
+
+					break;
+				}
+
+				operation = BinaryOperator::Add;
+
+				break;
+			}
+			case AtslSymbol::Minus:
+			{
+				if (get().is(AtslSymbol::Minus))
+				{
+					iterate();
+
+					operation = UnaryOperator::DecrementPostfix;
+
+					break;
+				}
+
+				operation = BinaryOperator::Subtract;
+
+				break;
+			}
+			case AtslSymbol::Multiply:
+			{
+				operation = BinaryOperator::Multiply;
+
+				break;
+			}
+			case AtslSymbol::Divide:
+			{
+				operation = BinaryOperator::Divide;
+
+				break;
+			}
+			case AtslSymbol::Power:
+			{
+				operation = BinaryOperator::Power;
+
+				break;
+			}
+			case AtslSymbol::Modulo:
+			{
+				operation = BinaryOperator::Modulo;
+
+				break;
+			}
+			case AtslSymbol::And:
+			{
+				expect(iterate(), AtslSymbol::And);
+
+				operation = BinaryOperator::And;
+
+				break;
+			}
+			case AtslSymbol::Or:
+			{
+				expect(iterate(), AtslSymbol::Or);
+
+				operation = BinaryOperator::Or;
+
+				break;
+			}
+			case AtslSymbol::Less:
+			{
+				if (get().is(AtslSymbol::Equal))
+				{
+					iterate();
+
+					operation = BinaryOperator::LessOrEqual;
+
+					break;
+				}
+
+				operation = BinaryOperator::Less;
+
+				break;
+			}
+			case AtslSymbol::Greater:
+			{
+				if (get().is(AtslSymbol::Equal))
+				{
+					iterate();
+
+					operation = BinaryOperator::GreaterOrEqual;
+
+					break;
+				}
+
+				operation = BinaryOperator::Greater;
+
+				break;
+			}
+			case AtslSymbol::Not:
+			{
+				expect(iterate(), AtslSymbol::Equal);
+
+				operation = BinaryOperator::NotEqual;
+
+				break;
+			}
+			default:
+			{
+				ATEMA_ERROR("Unexpected symbol");
+			}
+		}
+
+		// Unary operators are always executed first
+		// Create the expression and iterate
+		if (operation.is<UnaryOperator>())
+		{
+			auto expression = std::make_unique<UnaryExpression>();
+
+			expression->op = operation.get<UnaryOperator>();
+			expression->operand = std::move(lhs);
+
+			lhs = std::move(expression);
+
+			continue;
+		}
+
+		// Binary operation : we expected a right operand
+		auto rhs = parsePrimaryExpression();
+
+		ATEMA_ASSERT(rhs, "Expected right operand for binary operation");
+
+		// Check for next operation precedence
+		auto nextPrecedence = getOperatorPrecedence(operation.get<BinaryOperator>());
+
+		// Current operation has a higher priority : execute it first
+		// a * b + c * d
+		// lhs = b ; rhs = c ; precedence = * ; nextPrecedence = +
+		// return lhs to execute the priority operation, and reset the parsing index
+		if (precedence > nextPrecedence)
+		{
+			// We reset the index because we didn't process this part : the parent loop will
+			m_currentIndex = currentIndex;
+
+			return std::move(lhs);
+		}
+		// Next operation has a higher (or same) priority : execute it first
+		// a + b * c + d
+		// lhs = b ; rhs = c ; precedence = + ; nextPrecedence = *
+		// 
+		else
+		{
+			auto expression = std::make_unique<BinaryExpression>();
+
+			expression->op = operation.get<BinaryOperator>();
+			expression->left = std::move(lhs);
+			expression->right = parseOperation(nextPrecedence, std::move(rhs));
+
+			lhs = std::move(expression);
+
+			continue;
+		}
+	}
+
+	return std::move(lhs);
+}
+
+UPtr<Expression> AtslToAstConverter::parseExpression()
+{
+	// An expression must be :
+	// - A primary expression
+	//		- constant value
+	//		- variable (constant, option or variable)
+	//		- function call
+	//		- cast
+	//		- access identifier
+	//		- access index
+	//		- parenthesis expression
+	//		- unary operation (prefix)
+	// - An operation on that primary expression
+	//		- assignment
+	//		- ternary
+	//		- unary operation (suffix)
+	//		- binary operation with another primary expression
+	return parseOperation(-1, parsePrimaryExpression());
 }
 
 std::vector<UPtr<Expression>> AtslToAstConverter::parseArguments()
