@@ -194,7 +194,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 
 bool AtslToAstConverter::remains(size_t offset) const
 {
-	return m_currentIndex + offset < m_tokens->size();
+	return m_currentIndex + offset <= m_tokens->size();
 }
 
 const AtslToken& AtslToAstConverter::get(size_t offset) const
