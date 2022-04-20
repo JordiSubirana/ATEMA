@@ -58,6 +58,7 @@ namespace at
 		Comma,
 		Colon,
 		Semicolon,
+		QuestionMark,
 
 		LeftBrace,
 		RightBrace,
