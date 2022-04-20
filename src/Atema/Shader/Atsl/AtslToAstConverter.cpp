@@ -1172,6 +1172,15 @@ UPtr<ReturnStatement> AtslToAstConverter::parseReturn()
 	return std::move(statement);
 }
 
+UPtr<VariableExpression> AtslToAstConverter::parseVariable()
+{
+	auto expression = std::make_unique<VariableExpression>();
+
+	expression->identifier = expectType<AtslIdentifier>(iterate());
+
+	return expression;
+}
+
 UPtr<Expression> AtslToAstConverter::parseFunctionCall()
 {
 	auto& identifier = iterate().value.get<AtslIdentifier>();
