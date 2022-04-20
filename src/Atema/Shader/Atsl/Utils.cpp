@@ -345,3 +345,22 @@ BuiltInFunction atsl::getBuiltInFunction(const std::string& str)
 
 	return it->second;
 }
+
+bool atsl::isExpressionDelimiter(AtslSymbol symbol)
+{
+	switch (symbol)
+	{
+		case AtslSymbol::Comma:
+		case AtslSymbol::Colon:
+		case AtslSymbol::Semicolon:
+		case AtslSymbol::RightBrace:
+		case AtslSymbol::RightBracket:
+		case AtslSymbol::RightParenthesis:
+			return true;
+
+		default:
+			break;
+	}
+
+	return false;
+}

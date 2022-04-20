@@ -44,6 +44,8 @@ namespace at::atsl
 
 	ATEMA_SHADER_API bool isBuiltInFunction(const std::string& str);
 	ATEMA_SHADER_API BuiltInFunction getBuiltInFunction(const std::string& str);
+
+	ATEMA_SHADER_API bool isExpressionDelimiter(AtslSymbol symbol);
 }
 
 #endif
