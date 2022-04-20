@@ -856,15 +856,13 @@ UPtr<Statement> AtslToAstConverter::createBlockStatement()
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
-			auto& identifier = iterate().value.get<AtslIdentifier>();
+			auto& identifier = get().value.get<AtslIdentifier>();
 
 			if (isTypeOrStruct(identifier))
 			{
 				// Type(expression) : cast
-				if (get().is(AtslSymbol::LeftParenthesis))
+				if (get(1).is(AtslSymbol::LeftParenthesis))
 				{
-					iterate();
-					
 					auto statement = std::make_unique<ExpressionStatement>();
 
 					statement->expression = parseCast();
@@ -875,7 +873,7 @@ UPtr<Statement> AtslToAstConverter::createBlockStatement()
 					return std::move(statement);
 				}
 				// Variable declaration
-				else if (get().type == AtslTokenType::Identifier)
+				else if (get(1).type == AtslTokenType::Identifier)
 				{
 					return parseVariableDeclaration();
 				}
