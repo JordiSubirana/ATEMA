@@ -1086,16 +1086,14 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 	//TODO: Handle qualifiers if needed
 	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function return type identifier");
 
-	statement->returnType = atsl::getType(get().value.get<AtslIdentifier>());
+	statement->returnType = atsl::getType(iterate().value.get<AtslIdentifier>());
 
 	ATEMA_ASSERT(isReturnType(statement->returnType), "Invalid function return type");
 
 	// Function name
-	iterate();
-
 	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function name");
 
-	statement->name = get().value.get<AtslIdentifier>();
+	statement->name = iterate().value.get<AtslIdentifier>();
 
 	// Arguments
 	//TODO: Handle qualifiers if needed
