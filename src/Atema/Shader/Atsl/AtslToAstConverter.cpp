@@ -404,6 +404,8 @@ void AtslToAstConverter::createAttributes()
 						ATEMA_ERROR("Expected ',' or ']'");
 					}
 				}
+
+				break;
 			}
 			default:
 			{
