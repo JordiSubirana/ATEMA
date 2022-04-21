@@ -295,7 +295,7 @@ Type atsl::getType(const std::string& typeStr)
 	if (typeStr == "float")
 		return PrimitiveType::Float;
 
-	if (typeStr.compare(0, 3, "vec") && typeStr.size() == 5)
+	if (!typeStr.compare(0, 3, "vec") && typeStr.size() == 5)
 	{
 		VectorType type;
 
@@ -305,7 +305,7 @@ Type atsl::getType(const std::string& typeStr)
 		return type;
 	}
 
-	if (typeStr.compare(0, 3, "mat") && typeStr.size() == 5)
+	if (!typeStr.compare(0, 3, "mat") && typeStr.size() == 5)
 	{
 		MatrixType type;
 
@@ -316,7 +316,7 @@ Type atsl::getType(const std::string& typeStr)
 		return type;
 	}
 
-	if (typeStr.compare(0, 7, "sampler") && typeStr.size() >= 9)
+	if (!typeStr.compare(0, 7, "sampler") && typeStr.size() >= 9)
 	{
 		SamplerType type;
 
