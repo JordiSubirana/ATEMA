@@ -966,7 +966,9 @@ void AtslToAstConverter::createVariableBlock()
 			auto tmp = std::make_unique<InputDeclarationStatement>();
 			tmp->stage = getShaderStage(expectAttributeIdentifier("stage"));
 
-			addVariable = [this, &tmp](const VariableData& variableData)
+			auto statementPtr = tmp.get();
+
+			addVariable = [this, statementPtr](const VariableData& variableData)
 			{
 				InputDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
@@ -978,7 +980,7 @@ void AtslToAstConverter::createVariableBlock()
 					ATEMA_ERROR("Input must be a primitive, a vector or a matrix");
 				}
 				
-				tmp->variables.push_back(variable);
+				statementPtr->variables.push_back(variable);
 			};
 
 			statement = std::move(tmp);
@@ -990,7 +992,9 @@ void AtslToAstConverter::createVariableBlock()
 			auto tmp = std::make_unique<OutputDeclarationStatement>();
 			tmp->stage = getShaderStage(expectAttributeIdentifier("stage"));
 
-			addVariable = [this, &tmp](const VariableData& variableData)
+			auto statementPtr = tmp.get();
+
+			addVariable = [this, statementPtr](const VariableData& variableData)
 			{
 				OutputDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
@@ -1002,7 +1006,7 @@ void AtslToAstConverter::createVariableBlock()
 					ATEMA_ERROR("Output must be a primitive, a vector or a matrix");
 				}
 
-				tmp->variables.push_back(variable);
+				statementPtr->variables.push_back(variable);
 			};
 
 			statement = std::move(tmp);
@@ -1013,7 +1017,9 @@ void AtslToAstConverter::createVariableBlock()
 		{
 			auto tmp = std::make_unique<ExternalDeclarationStatement>();
 
-			addVariable = [this, &tmp](const VariableData& variableData)
+			auto statementPtr = tmp.get();
+
+			addVariable = [this, statementPtr](const VariableData& variableData)
 			{
 				ExternalDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
@@ -1021,7 +1027,7 @@ void AtslToAstConverter::createVariableBlock()
 				variable.setIndex = expectAttributeInt("set");
 				variable.bindingIndex = expectAttributeInt("binding");
 
-				tmp->variables.push_back(variable);
+				statementPtr->variables.push_back(variable);
 			};
 			
 			statement = std::move(tmp);
@@ -1088,8 +1094,6 @@ void AtslToAstConverter::createVariableBlock()
 			ATEMA_ERROR("Unexpected token");
 		}
 	}
-
-	m_currentSequence->statements.push_back(std::move(statement));
 }
 
 void AtslToAstConverter::createOptions()
