@@ -162,7 +162,8 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					}
 					case AtslKeyword::Struct:
 					{
-						createStruct();
+						m_currentSequence->statements.push_back(parseStructDeclaration());
+
 						break;
 					}
 					default:
@@ -1109,10 +1110,6 @@ void AtslToAstConverter::createConsts()
 {
 }
 
-void AtslToAstConverter::createStruct()
-{
-}
-
 UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 {
 	auto sequenceStatement = std::make_unique<SequenceStatement>();
@@ -1414,7 +1411,27 @@ UPtr<VariableDeclarationStatement> AtslToAstConverter::parseVariableDeclaration(
 
 UPtr<StructDeclarationStatement> AtslToAstConverter::parseStructDeclaration()
 {
-	return UPtr<StructDeclarationStatement>();
+	auto statement = std::make_unique<StructDeclarationStatement>();
+
+	expect(iterate(), AtslKeyword::Struct);
+
+	statement->name = expectType<AtslIdentifier>(iterate());
+
+	expect(iterate(), AtslSymbol::LeftBrace);
+
+	while (remains())
+	{
+		if (get().is(AtslSymbol::RightBrace))
+			break;
+
+		const auto variableData = parseVariableDeclarationData();
+
+		statement->members.push_back({ variableData.name, variableData.type });
+	}
+
+	expect(iterate(), AtslSymbol::RightBrace);
+
+	return statement;
 }
 
 UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration()

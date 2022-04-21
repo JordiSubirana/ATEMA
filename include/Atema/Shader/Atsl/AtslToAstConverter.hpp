@@ -81,7 +81,6 @@ namespace at
 		void createVariableBlock();
 		void createOptions();
 		void createConsts();
-		void createStruct();
 		UPtr<SequenceStatement> createBlockSequence();
 		UPtr<Statement> createBlockStatement();
 		
