@@ -40,23 +40,8 @@ namespace at
 	{
 		enum class Type
 		{
-			Conditional,
-			ForLoop,
-			WhileLoop,
-			DoWhileLoop,
-			VariableDeclaration,
-			StructDeclaration,
-			InputDeclaration,
-			OutputDeclaration,
-			ExternalDeclaration,
-			OptionDeclaration,
-			FunctionDeclaration,
-			EntryFunctionDeclaration,
-			Expression,
-			Break,
-			Continue,
-			Return,
-			Sequence
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) at_statement,
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
 		};
 
 		Statement();

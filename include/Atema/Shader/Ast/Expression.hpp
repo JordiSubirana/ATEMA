@@ -38,18 +38,8 @@ namespace at
 	{
 		enum class Type
 		{
-			Constant,
-			Variable,
-			AccessIndex,
-			AccessIdentifier,
-			Assignment,
-			Unary,
-			Binary,
-			FunctionCall,
-			BuiltInFunctionCall,
-			Cast,
-			Swizzle,
-			Ternary
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) at_expression,
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
 		};
 
 		Expression();
