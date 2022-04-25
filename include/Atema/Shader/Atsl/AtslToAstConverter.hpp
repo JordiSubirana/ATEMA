@@ -79,7 +79,7 @@ namespace at
 		UPtr<Expression> createFunctionCall();
 		VariableData parseVariableDeclarationData();
 		void createVariableBlock();
-		void createOptions();
+		UPtr<OptionDeclarationStatement> parseOptionDeclaration();
 		UPtr<SequenceStatement> createBlockSequence();
 		UPtr<Statement> createBlockStatement();
 		

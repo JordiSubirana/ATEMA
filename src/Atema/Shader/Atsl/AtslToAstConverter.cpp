@@ -148,11 +148,13 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					case AtslKeyword::External:
 					{
 						createVariableBlock();
+
 						break;
 					}
 					case AtslKeyword::Option:
 					{
-						createOptions();
+						m_currentSequence->statements.push_back(parseOptionDeclaration());
+
 						break;
 					}
 					case AtslKeyword::Const:
@@ -188,6 +190,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			default :
 			{
 				ATEMA_ERROR("Unexpected token");
+
 				return nullptr;
 			}
 		}
@@ -1097,20 +1100,48 @@ void AtslToAstConverter::createVariableBlock()
 	}
 }
 
-void AtslToAstConverter::createOptions()
+UPtr<OptionDeclarationStatement> AtslToAstConverter::parseOptionDeclaration()
 {
+	auto statement = std::make_unique<OptionDeclarationStatement>();
+
 	expect(iterate(), AtslKeyword::Option);
+
+	bool loop = false;
 
 	// List of variables
 	if (get().is(AtslSymbol::LeftBrace))
 	{
-		
+		iterate();
+
+		loop = true;
 	}
-	// Only one variable
-	else
+
+	// Get at least one option
+	do
 	{
+		// We got all options
+		if (get().is(AtslSymbol::RightBrace))
+		{
+			ATEMA_ASSERT(!statement->variables.empty(), "No option defined");
+
+			iterate();
+
+			break;
+		}
+
+		// Parse another option
 		auto variableData = parseVariableDeclarationData();
-	}
+
+		OptionDeclarationStatement::Variable variable;
+
+		variable.name = std::move(variableData.name);
+		variable.type = variableData.type;
+		variable.value = std::move(variableData.value);
+
+		statement->variables.push_back(std::move(variable));
+	} while (loop && remains());
+
+	return statement;
 }
 
 UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
