@@ -121,7 +121,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 				{
 					case AtslSymbol::LeftBracket:
 					{
-						createAttributes();
+						parseAttributes();
 						break;
 					}
 					default:
@@ -318,7 +318,7 @@ float AtslToAstConverter::expectAttributeFloat(const AtslIdentifier& name) const
 	return attribute.get<AtslBasicValue>().get<float>();
 }
 
-void AtslToAstConverter::createAttributes()
+void AtslToAstConverter::parseAttributes()
 {
 	// Clear previous attributes
 	clearAttributes();
@@ -911,11 +911,6 @@ UPtr<Expression> AtslToAstConverter::parseParenthesisExpression()
 	return std::move(expression);
 }
 
-UPtr<Expression> AtslToAstConverter::createFunctionCall()
-{
-	return {};
-}
-
 AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationData()
 {
 	VariableData variable;
@@ -1072,7 +1067,7 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 
 		// Get attributes if any
 		if (get().is(AtslSymbol::LeftBracket))
-			createAttributes();
+			parseAttributes();
 
 		// Add variable
 		addVariable(parseVariableDeclarationData());
@@ -1130,7 +1125,7 @@ UPtr<OptionDeclarationStatement> AtslToAstConverter::parseOptionDeclaration()
 	return statement;
 }
 
-UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
+UPtr<SequenceStatement> AtslToAstConverter::parseBlockSequence()
 {
 	auto sequenceStatement = std::make_unique<SequenceStatement>();
 
@@ -1143,7 +1138,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 		if (get().is(AtslSymbol::RightBrace))
 			break;
 
-		sequenceStatement->statements.push_back(createBlockStatement());
+		sequenceStatement->statements.push_back(parseBlockStatement());
 	}
 
 	expect(iterate(), AtslSymbol::RightBrace);
@@ -1151,7 +1146,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()
 	return sequenceStatement;
 }
 
-UPtr<Statement> AtslToAstConverter::createBlockStatement()
+UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 {
 	switch (get().type)
 	{
@@ -1313,9 +1308,9 @@ UPtr<ConditionalStatement> AtslToAstConverter::parseConditionalBranch()
 			branch.condition = parseParenthesisExpression();
 
 			if (get().is(AtslSymbol::LeftBrace))
-				branch.statement = createBlockSequence();
+				branch.statement = parseBlockSequence();
 			else
-				branch.statement = createBlockStatement();
+				branch.statement = parseBlockStatement();
 
 			statement->branches.push_back(std::move(branch));
 
@@ -1325,9 +1320,9 @@ UPtr<ConditionalStatement> AtslToAstConverter::parseConditionalBranch()
 		else
 		{
 			if (get().is(AtslSymbol::LeftBrace))
-				statement->elseStatement = createBlockSequence();
+				statement->elseStatement = parseBlockSequence();
 			else
-				statement->elseStatement = createBlockStatement();
+				statement->elseStatement = parseBlockStatement();
 		}
 
 	} while (get().is(AtslKeyword::Else));
@@ -1345,7 +1340,7 @@ UPtr<ForLoopStatement> AtslToAstConverter::parseForLoop()
 
 	// Check if there is an initialization statement
 	if (!get().is(AtslSymbol::Semicolon))
-		statement->initialization = createBlockStatement();
+		statement->initialization = parseBlockStatement();
 	else
 		iterate(); // Get the semicolon
 
@@ -1357,15 +1352,15 @@ UPtr<ForLoopStatement> AtslToAstConverter::parseForLoop()
 
 	// Check if there is an iteration
 	if (!get().is(AtslSymbol::RightParenthesis))
-		statement->increase = createBlockStatement();
+		statement->increase = parseBlockStatement();
 
 	expect(iterate(), AtslSymbol::RightParenthesis);
 
 	// Get loop block
 	if (get().is(AtslSymbol::LeftBrace))
-		statement->statement = createBlockSequence();
+		statement->statement = parseBlockSequence();
 	else
-		statement->statement = createBlockStatement();
+		statement->statement = parseBlockStatement();
 
 	return std::move(statement);
 }
@@ -1386,9 +1381,9 @@ UPtr<WhileLoopStatement> AtslToAstConverter::parseWhileLoop()
 
 	// Get loop block
 	if (get().is(AtslSymbol::LeftBrace))
-		statement->statement = createBlockSequence();
+		statement->statement = parseBlockSequence();
 	else
-		statement->statement = createBlockStatement();
+		statement->statement = parseBlockStatement();
 
 	return std::move(statement);
 }
@@ -1400,7 +1395,7 @@ UPtr<DoWhileLoopStatement> AtslToAstConverter::parseDoWhileLoop()
 	auto statement = std::make_unique<DoWhileLoopStatement>();
 
 	// Get loop block
-	statement->statement = createBlockSequence();
+	statement->statement = parseBlockSequence();
 
 	// Get condition
 	expect(iterate(), AtslKeyword::While);
@@ -1516,7 +1511,7 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 
 	expect(iterate(), AtslSymbol::RightParenthesis);
 
-	statement->sequence = createBlockSequence();
+	statement->sequence = parseBlockSequence();
 
 	return std::move(statement);
 }

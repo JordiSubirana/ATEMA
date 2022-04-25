@@ -70,18 +70,17 @@ namespace at
 		uint32_t expectAttributeInt(const AtslIdentifier& name) const;
 		float expectAttributeFloat(const AtslIdentifier& name) const;
 		
-		void createAttributes();
+		void parseAttributes();
 		UPtr<Expression> parsePrimaryExpression();
 		UPtr<Expression> parseOperation(int precedence, UPtr<Expression> lhs);
 		UPtr<Expression> parseExpression();
 		std::vector<UPtr<Expression>> parseArguments();
 		UPtr<Expression> parseParenthesisExpression();
-		UPtr<Expression> createFunctionCall();
 		VariableData parseVariableDeclarationData();
 		UPtr<Statement> parseVariableBlock();
 		UPtr<OptionDeclarationStatement> parseOptionDeclaration();
-		UPtr<SequenceStatement> createBlockSequence();
-		UPtr<Statement> createBlockStatement();
+		UPtr<SequenceStatement> parseBlockSequence();
+		UPtr<Statement> parseBlockStatement();
 		
 		// Statements : at the end, semicolon is parsed
 		UPtr<ConditionalStatement> parseConditionalBranch();
