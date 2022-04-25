@@ -157,7 +157,8 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					}
 					case AtslKeyword::Const:
 					{
-						createConsts();
+						m_currentSequence->statements.push_back(parseVariableDeclaration());
+
 						break;
 					}
 					case AtslKeyword::Struct:
@@ -1110,10 +1111,6 @@ void AtslToAstConverter::createOptions()
 	{
 		auto variableData = parseVariableDeclarationData();
 	}
-}
-
-void AtslToAstConverter::createConsts()
-{
 }
 
 UPtr<SequenceStatement> AtslToAstConverter::createBlockSequence()

@@ -80,7 +80,6 @@ namespace at
 		VariableData parseVariableDeclarationData();
 		void createVariableBlock();
 		void createOptions();
-		void createConsts();
 		UPtr<SequenceStatement> createBlockSequence();
 		UPtr<Statement> createBlockStatement();
 		
