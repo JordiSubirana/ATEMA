@@ -147,7 +147,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					case AtslKeyword::Output:
 					case AtslKeyword::External:
 					{
-						createVariableBlock();
+						m_currentSequence->statements.push_back(parseVariableBlock());
 
 						break;
 					}
@@ -953,7 +953,7 @@ AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationDat
 	return variable;
 }
 
-void AtslToAstConverter::createVariableBlock()
+UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 {
 	UPtr<Statement> statement;
 
@@ -1044,60 +1044,46 @@ void AtslToAstConverter::createVariableBlock()
 		}
 	}
 
+	bool loop = false;
+
+	// List of variables
+	if (get().is(AtslSymbol::LeftBrace))
+	{
+		iterate();
+
+		loop = true;
+	}
+
 	// We got the attributes we needed
 	clearAttributes();
 
-	// Begin block
-	expect(iterate(), AtslSymbol::LeftBrace);
-
-	// Fill block
-	while (remains())
+	// Get at least one variable
+	do
 	{
-		const auto& token = get();
-
-		if (token.type == AtslTokenType::Symbol)
+		// We got all options
+		if (get().is(AtslSymbol::RightBrace))
 		{
-			const auto symbol = token.value.get<AtslSymbol>();
+			ATEMA_ASSERT(variableCount > 0, "No variable defined");
 
-			// Attributes
-			if (symbol == AtslSymbol::LeftBracket)
-			{
-				createAttributes();
-			}
-			// End of block
-			else if (symbol == AtslSymbol::RightBrace)
-			{
-				if (!variableCount)
-				{
-					ATEMA_ERROR("No variable defined");
-					return;
-				}
+			iterate();
 
-				// Iterate to the next token and add statement to sequence
-				iterate();
-
-				m_currentSequence->statements.push_back(std::move(statement));
-
-				break;
-			}
-			else
-			{
-				ATEMA_ERROR("Unexpected token");
-			}
+			break;
 		}
-		else if (token.type == AtslTokenType::Identifier)
-		{
-			addVariable(parseVariableDeclarationData());
 
-			variableCount++;
+		// Get attributes if any
+		if (get().is(AtslSymbol::LeftBracket))
+			createAttributes();
 
-			clearAttributes();
-		}
-		else
-		{
-			ATEMA_ERROR("Unexpected token");
-		}
-	}
+		// Add variable
+		addVariable(parseVariableDeclarationData());
+
+		variableCount++;
+
+		// Clear attributes
+		clearAttributes();
+	} while (loop && remains());
+
+	return std::move(statement);
 }
 
 UPtr<OptionDeclarationStatement> AtslToAstConverter::parseOptionDeclaration()
