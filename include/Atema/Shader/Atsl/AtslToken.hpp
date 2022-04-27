@@ -26,6 +26,7 @@
 #include <Atema/Core/Variant.hpp>
 
 #include <string>
+#include <ostream>
 
 namespace at
 {
@@ -128,7 +129,22 @@ namespace at
 		size_t column;
 	};
 
-	
+	// Stream operator overload
+	inline std::ostream& operator<<(std::ostream& os, const AtslBasicValue& value)
+	{
+		if (value.is<bool>())
+			os << value.get<bool>();
+		else if (value.is<int32_t>())
+			os << value.get<int32_t>();
+		else if (value.is<float>())
+			os << value.get<float>();
+		else
+		{
+			//TODO: Handle something or just do nothing ?
+		}
+
+		return os;
+	}
 }
 
 #endif
