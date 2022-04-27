@@ -23,7 +23,7 @@
 #include <Atema/Shader/Atsl/AtslToken.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Expression.hpp>
-#include <Atema/Shader/Atsl/Utils.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
 #include <Atema/Shader/Ast/AstUtils.hpp>
 
 #include <unordered_set>

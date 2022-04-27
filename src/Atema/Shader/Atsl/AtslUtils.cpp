@@ -19,7 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Shader/Atsl/Utils.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
 #include <Atema/Core/Error.hpp>
 
 #include <unordered_map>

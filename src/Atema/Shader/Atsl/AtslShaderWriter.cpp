@@ -21,7 +21,7 @@
 
 #include <Atema/Shader/Ast/AstUtils.hpp>
 #include <Atema/Shader/Atsl/AtslShaderWriter.hpp>
-#include <Atema/Shader/Atsl/Utils.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
 
 using namespace at;
 

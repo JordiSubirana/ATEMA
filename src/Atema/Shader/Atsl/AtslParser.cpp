@@ -21,7 +21,7 @@
 
 #include <Atema/Shader/Atsl/AtslParser.hpp>
 #include <Atema/Shader/Atsl/AtslToken.hpp>
-#include <Atema/Shader/Atsl/Utils.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
 #include <Atema/Core/Error.hpp>
 
 using namespace at;
