@@ -34,18 +34,6 @@ using namespace at;
 
 namespace
 {
-	AstShaderStage getShaderStage(const std::string& stage)
-	{
-		if (stage == "vertex")
-			return AstShaderStage::Vertex;
-		else if (stage == "fragment")
-			return AstShaderStage::Fragment;
-
-		ATEMA_ERROR("Invalid shader stage '" + stage + "'");
-
-		return AstShaderStage::Vertex;
-	}
-
 	struct Variable
 	{
 		Type type;
@@ -963,7 +951,7 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 		case AtslKeyword::Input:
 		{
 			auto tmp = std::make_unique<InputDeclarationStatement>();
-			tmp->stage = getShaderStage(expectAttributeIdentifier("stage"));
+			tmp->stage = atsl::getShaderStage(expectAttributeIdentifier("stage"));
 
 			auto statementPtr = tmp.get();
 
@@ -989,7 +977,7 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 		case AtslKeyword::Output:
 		{
 			auto tmp = std::make_unique<OutputDeclarationStatement>();
-			tmp->stage = getShaderStage(expectAttributeIdentifier("stage"));
+			tmp->stage = atsl::getShaderStage(expectAttributeIdentifier("stage"));
 
 			auto statementPtr = tmp.get();
 
@@ -1458,7 +1446,7 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 	{
 		auto entryFunctionStatement = std::make_unique<EntryFunctionDeclarationStatement>();
 
-		entryFunctionStatement->stage = getShaderStage(expectAttributeIdentifier("entry"));
+		entryFunctionStatement->stage = atsl::getShaderStage(expectAttributeIdentifier("entry"));
 
 		statement = std::move(entryFunctionStatement);
 	}

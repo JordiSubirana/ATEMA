@@ -66,7 +66,7 @@ namespace
 		{ "return", AtslKeyword::Return }
 	};
 
-	/*std::unordered_map<BuiltInFunction, std::string> s_builtInFunctionToStr =
+	std::unordered_map<BuiltInFunction, std::string> s_builtInFunctionToStr =
 	{
 		{ BuiltInFunction::Min, "min" },
 		{ BuiltInFunction::Max, "max" },
@@ -74,7 +74,7 @@ namespace
 		{ BuiltInFunction::Dot, "dot" },
 		{ BuiltInFunction::Norm, "norm" },
 		{ BuiltInFunction::Sample, "sample" }
-	};*/
+	};
 
 	std::unordered_map<std::string, BuiltInFunction> s_strToBuiltInFunction =
 	{
@@ -112,6 +112,23 @@ namespace
 		}
 
 		return PrimitiveType::Int;
+	}
+
+	char getPrimitiveSuffix(PrimitiveType type)
+	{
+		switch (type)
+		{
+			case PrimitiveType::Bool: return 'b';
+			case PrimitiveType::Int: return 'i';
+			case PrimitiveType::UInt: return 'u';
+			case PrimitiveType::Float: return 'f';
+			default:
+			{
+				ATEMA_ERROR("Invalid primitive type");
+			}
+		}
+
+		return '\0';
 	}
 
 	ImageType getSamplerImageType(const std::string& str)
@@ -329,6 +346,92 @@ Type atsl::getType(const std::string& typeStr)
 	return StructType{ typeStr };
 }
 
+std::string atsl::getTypeStr(const Type& type)
+{
+	if (type.is<VoidType>())
+		return "void";
+
+	if (type.is<PrimitiveType>())
+	{
+		switch (type.get<PrimitiveType>())
+		{
+			case PrimitiveType::Bool: return "bool";
+			case PrimitiveType::Int: return "int";
+			case PrimitiveType::UInt: return "uint";
+			case PrimitiveType::Float: return "float";
+			default:
+			{
+				ATEMA_ERROR("Invalid primitive type");
+			}
+		}
+	}
+
+	if (type.is<VectorType>())
+	{
+		auto& data = type.get<VectorType>();
+
+		return "vec" + std::to_string(data.componentCount) + getPrimitiveSuffix(data.primitiveType);
+	}
+
+	if (type.is<MatrixType>())
+	{
+		auto& data = type.get<MatrixType>();
+
+		std::string typeStr = "mat" + std::to_string(data.rowCount);
+
+		if (data.rowCount != data.columnCount)
+			typeStr += "x" + std::to_string(data.columnCount);
+
+		return typeStr + getPrimitiveSuffix(data.primitiveType);
+	}
+
+	if (type.is<SamplerType>())
+	{
+		auto& data = type.get<SamplerType>();
+
+		std::string typeStr = "sampler";
+
+		switch (data.imageType)
+		{
+			case ImageType::Texture1D:
+			{
+				typeStr += "1D";
+				break;
+			}
+			case ImageType::Texture2D:
+			{
+				typeStr += "2D";
+				break;
+			}
+			case ImageType::Texture3D:
+			{
+				typeStr += "3D";
+				break;
+			}
+			case ImageType::Cubemap:
+			{
+				typeStr += "Cube";
+				break;
+			}
+			default:
+			{
+				ATEMA_ERROR("Invalid image type");
+			}
+		}
+
+		return typeStr + getPrimitiveSuffix(data.primitiveType);
+	}
+
+	if (type.is<StructType>())
+	{
+		return type.get<StructType>().name;
+	}
+
+	ATEMA_ERROR("Invalid type");
+
+	return "";
+}
+
 bool atsl::isBuiltInFunction(const std::string& str)
 {
 	return s_strToBuiltInFunction.find(str) != s_strToBuiltInFunction.end();
@@ -344,6 +447,45 @@ BuiltInFunction atsl::getBuiltInFunction(const std::string& str)
 	}
 
 	return it->second;
+}
+
+std::string atsl::getBuiltInFunctionStr(BuiltInFunction function)
+{
+	const auto it = s_builtInFunctionToStr.find(function);
+
+	if (it == s_builtInFunctionToStr.end())
+	{
+		ATEMA_ERROR("Invalid built-in function");
+	}
+
+	return it->second;
+}
+
+AstShaderStage atsl::getShaderStage(const std::string& stage)
+{
+	if (stage == "vertex")
+		return AstShaderStage::Vertex;
+	else if (stage == "fragment")
+		return AstShaderStage::Fragment;
+
+	ATEMA_ERROR("Invalid shader stage '" + stage + "'");
+
+	return AstShaderStage::Vertex;
+}
+
+std::string atsl::getShaderStageStr(AstShaderStage stage)
+{
+	switch (stage)
+	{
+		case AstShaderStage::Vertex: return "vertex";
+		case AstShaderStage::Fragment: return "fragment";
+		default:
+		{
+			ATEMA_ERROR("Invalid shader stage");
+		}
+	}
+
+	return "";
 }
 
 bool atsl::isExpressionDelimiter(AtslSymbol symbol)
