@@ -284,7 +284,7 @@ bool AtslToAstConverter::expectAttributeBool(const AtslIdentifier& name) const
 	return attribute.get<AtslBasicValue>().get<bool>();
 }
 
-uint32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name) const
+int32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name) const
 {
 	if (!hasAttribute(name))
 	{
@@ -293,12 +293,12 @@ uint32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name) cons
 
 	const auto& attribute = getAttribute(name);
 
-	if (!attribute.is<AtslBasicValue>() || !attribute.get<AtslBasicValue>().is<uint32_t>())
+	if (!attribute.is<AtslBasicValue>() || !attribute.get<AtslBasicValue>().is<int32_t>())
 	{
 		ATEMA_ERROR("Invalid '" + name + "' attribute : expected integer");
 	}
 
-	return attribute.get<AtslBasicValue>().get<uint32_t>();
+	return attribute.get<AtslBasicValue>().get<int32_t>();
 }
 
 float AtslToAstConverter::expectAttributeFloat(const AtslIdentifier& name) const
@@ -442,9 +442,9 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 				{
 					constantExpression->value = value.get<bool>();
 				}
-				else if (value.is<uint32_t>())
+				else if (value.is<int32_t>())
 				{
-					constantExpression->value = value.get<uint32_t>();
+					constantExpression->value = value.get<int32_t>();
 				}
 				else if (value.is<float>())
 				{

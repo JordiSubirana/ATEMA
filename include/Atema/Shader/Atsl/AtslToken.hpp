@@ -95,7 +95,7 @@ namespace at
 
 	using AtslBasicValue = Variant<
 		bool,
-		uint32_t,
+		int32_t,
 		float>;
 
 	using AtslTokenValue = Variant<
@@ -111,14 +111,14 @@ namespace at
 		AtslToken(AtslKeyword keyword);
 		AtslToken(const AtslIdentifier& identifier);
 		AtslToken(bool value);
-		AtslToken(uint32_t value);
+		AtslToken(int32_t value);
 		AtslToken(float value);
 
 		bool is(AtslSymbol symbol) const noexcept;
 		bool is(AtslKeyword keyword) const noexcept;
 		bool is(const AtslIdentifier& identifier) const noexcept;
 		bool is(bool value) const noexcept;
-		bool is(uint32_t value) const noexcept;
+		bool is(int32_t value) const noexcept;
 		bool is(float value) const noexcept;
 		
 		AtslTokenType type;

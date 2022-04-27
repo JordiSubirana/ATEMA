@@ -55,7 +55,7 @@ AtslToken::AtslToken(bool value) :
 {
 }
 
-AtslToken::AtslToken(uint32_t value) :
+AtslToken::AtslToken(int32_t value) :
 	line(0),
 	column(0),
 	type(AtslTokenType::Value),
@@ -96,14 +96,14 @@ bool AtslToken::is(bool basicValue) const noexcept
 	return val.is<bool>() && val.get<bool>() == basicValue;
 }
 
-bool AtslToken::is(uint32_t basicValue) const noexcept
+bool AtslToken::is(int32_t basicValue) const noexcept
 {
 	if (!value.is<AtslBasicValue>())
 		return false;
 
 	auto& val = value.get<AtslBasicValue>();
 
-	return val.is<uint32_t>() && val.get<uint32_t>() == basicValue;
+	return val.is<int32_t>() && val.get<int32_t>() == basicValue;
 }
 
 bool AtslToken::is(float basicValue) const noexcept

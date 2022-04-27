@@ -236,7 +236,7 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 			}
 			else
 			{
-				tokens.push_back({ static_cast<uint32_t>(std::stoul(strValue)) });
+				tokens.push_back({ static_cast<int32_t>(std::stol(strValue)) });
 			}
 		}
 		// End of file

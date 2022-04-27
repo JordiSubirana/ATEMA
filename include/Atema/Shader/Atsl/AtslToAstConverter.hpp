@@ -67,7 +67,7 @@ namespace at
 		const Attribute& getAttribute(const AtslIdentifier& identifier) const;
 		const AtslIdentifier& expectAttributeIdentifier(const AtslIdentifier& name) const;
 		bool expectAttributeBool(const AtslIdentifier& name) const;
-		uint32_t expectAttributeInt(const AtslIdentifier& name) const;
+		int32_t expectAttributeInt(const AtslIdentifier& name) const;
 		float expectAttributeFloat(const AtslIdentifier& name) const;
 		
 		void parseAttributes();
