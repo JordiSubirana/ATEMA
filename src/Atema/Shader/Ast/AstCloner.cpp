@@ -182,7 +182,6 @@ UPtr<ExternalDeclarationStatement> AstCloner::clone(const ExternalDeclarationSta
 {
 	auto cloneStatement = std::make_unique<ExternalDeclarationStatement>();
 
-	cloneStatement->stage = statement.stage;
 	cloneStatement->variables = statement.variables;
 
 	return std::move(cloneStatement);

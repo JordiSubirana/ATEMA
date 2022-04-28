@@ -229,16 +229,6 @@ void AtslShaderWriter::write(const OutputDeclarationStatement& statement)
 
 void AtslShaderWriter::write(const ExternalDeclarationStatement& statement)
 {
-	// Write block declaration attributes
-	const std::vector<Attribute> blockAttributes =
-	{
-		{"stage", AtslIdentifier(atsl::getShaderStageStr(statement.stage))}
-	};
-
-	writeAttributes(blockAttributes);
-
-	newLine();
-
 	// Begin block
 	m_ostream << "external";
 

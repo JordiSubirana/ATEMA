@@ -37,10 +37,6 @@ namespace at
 		UPtr<Statement> clone(const UPtr<Statement>& statement);
 		UPtr<Expression> clone(const UPtr<Expression>& expression);
 
-		template <typename T>
-		UPtr<T> clone(const UPtr<T>& astNode);
-
-	private:
 		UPtr<Statement> clone(const Statement* statementPtr);
 		UPtr<Expression> clone(const Expression* expressionPtr);
 
@@ -49,6 +45,9 @@ namespace at
 
 #define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) UPtr<at_expression ## Expression> clone(const at_expression ## Expression& expression);
 #include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+
+		template <typename T>
+		UPtr<T> clone(const UPtr<T>& astNode);
 	};
 }
 

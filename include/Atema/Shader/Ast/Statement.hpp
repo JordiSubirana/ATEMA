@@ -181,7 +181,6 @@ namespace at
 			uint32_t bindingIndex;
 		};
 		
-		AstShaderStage stage;
 		std::vector<Variable> variables;
 	};
 
