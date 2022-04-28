@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Shader/Ast/AstVisitor.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Expression.hpp>
 
@@ -37,9 +38,19 @@ Statement::Type ConditionalStatement::getType() const noexcept
 	return Type::Conditional;
 }
 
+void ConditionalStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type ForLoopStatement::getType() const noexcept
 {
 	return Type::ForLoop;
+}
+
+void ForLoopStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type WhileLoopStatement::getType() const noexcept
@@ -47,9 +58,19 @@ Statement::Type WhileLoopStatement::getType() const noexcept
 	return Type::WhileLoop;
 }
 
+void WhileLoopStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type DoWhileLoopStatement::getType() const noexcept
 {
 	return Type::DoWhileLoop;
+}
+
+void DoWhileLoopStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type VariableDeclarationStatement::getType() const noexcept
@@ -57,9 +78,19 @@ Statement::Type VariableDeclarationStatement::getType() const noexcept
 	return Type::VariableDeclaration;
 }
 
+void VariableDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type StructDeclarationStatement::getType() const noexcept
 {
 	return Type::StructDeclaration;
+}
+
+void StructDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type InputDeclarationStatement::getType() const noexcept
@@ -67,9 +98,19 @@ Statement::Type InputDeclarationStatement::getType() const noexcept
 	return Type::InputDeclaration;
 }
 
+void InputDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type OutputDeclarationStatement::getType() const noexcept
 {
 	return Type::OutputDeclaration;
+}
+
+void OutputDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type ExternalDeclarationStatement::getType() const noexcept
@@ -77,9 +118,19 @@ Statement::Type ExternalDeclarationStatement::getType() const noexcept
 	return Type::ExternalDeclaration;
 }
 
+void ExternalDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type OptionDeclarationStatement::getType() const noexcept
 {
 	return Type::OptionDeclaration;
+}
+
+void OptionDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type FunctionDeclarationStatement::getType() const noexcept
@@ -87,9 +138,19 @@ Statement::Type FunctionDeclarationStatement::getType() const noexcept
 	return Type::FunctionDeclaration;
 }
 
+void FunctionDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type EntryFunctionDeclarationStatement::getType() const noexcept
 {
 	return Type::EntryFunctionDeclaration;
+}
+
+void EntryFunctionDeclarationStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type ExpressionStatement::getType() const noexcept
@@ -97,9 +158,19 @@ Statement::Type ExpressionStatement::getType() const noexcept
 	return Type::Expression;
 }
 
+void ExpressionStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type BreakStatement::getType() const noexcept
 {
 	return Type::Break;
+}
+
+void BreakStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Statement::Type ContinueStatement::getType() const noexcept
@@ -107,12 +178,27 @@ Statement::Type ContinueStatement::getType() const noexcept
 	return Type::Continue;
 }
 
+void ContinueStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type ReturnStatement::getType() const noexcept
 {
 	return Type::Return;
 }
 
+void ReturnStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Statement::Type SequenceStatement::getType() const noexcept
 {
 	return Type::Sequence;
+}
+
+void SequenceStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }

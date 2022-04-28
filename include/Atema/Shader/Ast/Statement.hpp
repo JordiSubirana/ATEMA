@@ -35,6 +35,7 @@ namespace at
 {
 	struct Expression;
 	struct SequenceStatement;
+	class AstVisitor;
 
 	struct ATEMA_SHADER_API Statement : public NonCopyable
 	{
@@ -48,12 +49,16 @@ namespace at
 		virtual ~Statement();
 
 		virtual Statement::Statement::Type getType() const noexcept = 0;
+
+		virtual void accept(AstVisitor& visitor) = 0;
 	};
 
 	// Branches / conditions
 	struct ATEMA_SHADER_API ConditionalStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 		
 		struct Branch
 		{
@@ -70,6 +75,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Statement> initialization;
 		UPtr<Expression> condition;
 		UPtr<Statement> increase;
@@ -80,6 +87,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
 	};
@@ -87,6 +96,8 @@ namespace at
 	struct ATEMA_SHADER_API DoWhileLoopStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
@@ -96,6 +107,8 @@ namespace at
 	struct ATEMA_SHADER_API VariableDeclarationStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 		
 		std::string name;
 		Flags<VariableQualifier> qualifiers;
@@ -106,6 +119,8 @@ namespace at
 	struct ATEMA_SHADER_API StructDeclarationStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		struct Member
 		{
@@ -122,6 +137,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		struct Variable
 		{
 			std::string name;
@@ -137,6 +154,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		struct Variable
 		{
 			std::string name;
@@ -151,6 +170,8 @@ namespace at
 	struct ATEMA_SHADER_API ExternalDeclarationStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		struct Variable
 		{
@@ -168,6 +189,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		struct Variable
 		{
 			std::string name;
@@ -182,6 +205,8 @@ namespace at
 	struct ATEMA_SHADER_API FunctionDeclarationStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		struct Argument
 		{
@@ -199,6 +224,8 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		AstShaderStage stage;
 	};
 
@@ -207,22 +234,30 @@ namespace at
 	{
 		Statement::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Expression> expression;
 	};
 
 	struct ATEMA_SHADER_API BreakStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 	};
 
 	struct ATEMA_SHADER_API ContinueStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 	};
 
 	struct ATEMA_SHADER_API ReturnStatement : public Statement
 	{
 		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		UPtr<Expression> expression;
 	};
@@ -230,6 +265,8 @@ namespace at
 	struct ATEMA_SHADER_API SequenceStatement : public Statement
 	{
 		Statement::Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		std::vector<UPtr<Statement>> statements;
 	};

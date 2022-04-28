@@ -33,6 +33,8 @@
 
 namespace at
 {
+	class AstVisitor;
+
 	// Base class
 	struct ATEMA_SHADER_API Expression : public NonCopyable
 	{
@@ -46,6 +48,8 @@ namespace at
 		virtual ~Expression();
 
 		virtual Expression::Type getType() const noexcept = 0;
+
+		virtual void accept(AstVisitor& visitor) = 0;
 	};
 
 	// Direct value
@@ -53,12 +57,16 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		ConstantValue value;
 	};
 
 	struct ATEMA_SHADER_API VariableExpression : Expression
 	{
 		Expression::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		std::string identifier;
 	};
@@ -68,6 +76,8 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Expression> expression;
 		UPtr<Expression> index;
 	};
@@ -75,6 +85,8 @@ namespace at
 	struct ATEMA_SHADER_API AccessIdentifierExpression : Expression
 	{
 		Expression::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		UPtr<Expression> expression;
 		std::string identifier;
@@ -85,6 +97,8 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Expression> left;
 		UPtr<Expression> right;
 	};
@@ -94,6 +108,8 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UnaryOperator op;
 		UPtr<Expression> operand;
 	};
@@ -101,6 +117,8 @@ namespace at
 	struct ATEMA_SHADER_API BinaryExpression : Expression
 	{
 		Expression::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		BinaryOperator op;
 		UPtr<Expression> left;
@@ -112,6 +130,8 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		std::string identifier;
 		std::vector<UPtr<Expression>> arguments;
 	};
@@ -119,6 +139,8 @@ namespace at
 	struct ATEMA_SHADER_API BuiltInFunctionCallExpression : Expression
 	{
 		Expression::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		BuiltInFunction function;
 		std::vector<UPtr<Expression>> arguments;
@@ -129,6 +151,8 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		at::Type type;
 		std::vector<UPtr<Expression>> components;
 	};
@@ -136,6 +160,8 @@ namespace at
 	struct ATEMA_SHADER_API SwizzleExpression : Expression
 	{
 		Expression::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
 
 		UPtr<Expression> expression;
 		std::vector<size_t> components;
@@ -145,12 +171,12 @@ namespace at
 	{
 		Expression::Type getType() const noexcept override;
 
+		void accept(AstVisitor& visitor) override;
+
 		UPtr<Expression> condition;
 		UPtr<Expression> trueValue;
 		UPtr<Expression> falseValue;
 	};
-
-	
 }
 
 #endif

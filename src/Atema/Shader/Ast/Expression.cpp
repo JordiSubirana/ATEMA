@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Shader/Ast/AstVisitor.hpp>
 #include <Atema/Shader/Ast/Expression.hpp>
 
 using namespace at;
@@ -36,9 +37,19 @@ Expression::Type ConstantExpression::getType() const noexcept
 	return Type::Constant;
 }
 
+void ConstantExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type VariableExpression::getType() const noexcept
 {
 	return Type::Variable;
+}
+
+void VariableExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Expression::Type AccessIndexExpression::getType() const noexcept
@@ -46,9 +57,19 @@ Expression::Type AccessIndexExpression::getType() const noexcept
 	return Type::AccessIndex;
 }
 
+void AccessIndexExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type AccessIdentifierExpression::getType() const noexcept
 {
 	return Type::AccessIdentifier;
+}
+
+void AccessIdentifierExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Expression::Type AssignmentExpression::getType() const noexcept
@@ -56,9 +77,19 @@ Expression::Type AssignmentExpression::getType() const noexcept
 	return Type::Assignment;
 }
 
+void AssignmentExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type UnaryExpression::getType() const noexcept
 {
 	return Type::Unary;
+}
+
+void UnaryExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Expression::Type BinaryExpression::getType() const noexcept
@@ -66,9 +97,19 @@ Expression::Type BinaryExpression::getType() const noexcept
 	return Type::Binary;
 }
 
+void BinaryExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type FunctionCallExpression::getType() const noexcept
 {
 	return Type::FunctionCall;
+}
+
+void FunctionCallExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Expression::Type BuiltInFunctionCallExpression::getType() const noexcept
@@ -76,9 +117,19 @@ Expression::Type BuiltInFunctionCallExpression::getType() const noexcept
 	return Type::BuiltInFunctionCall;
 }
 
+void BuiltInFunctionCallExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type CastExpression::getType() const noexcept
 {
 	return Type::Cast;
+}
+
+void CastExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
 
 Expression::Type SwizzleExpression::getType() const noexcept
@@ -86,7 +137,17 @@ Expression::Type SwizzleExpression::getType() const noexcept
 	return Type::Swizzle;
 }
 
+void SwizzleExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+
 Expression::Type TernaryExpression::getType() const noexcept
 {
 	return Type::Ternary;
+}
+
+void TernaryExpression::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
 }
