@@ -337,7 +337,7 @@ Type atsl::getType(const std::string& typeStr)
 	{
 		SamplerType type;
 
-		type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 2));
+		type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 8));
 		type.primitiveType = getSamplerPrimitiveType(typeStr.back());
 
 		return type;
