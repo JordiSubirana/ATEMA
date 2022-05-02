@@ -444,13 +444,13 @@ void AtslShaderWriter::visit(ConstantExpression& expression)
 	{
 		auto& vec = value.get<Vector4u>();
 
-		m_ostream << "vec4i(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
+		m_ostream << "vec4u(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
 	}
 	else if (value.is<Vector4f>())
 	{
 		auto& vec = value.get<Vector4f>();
 
-		m_ostream << "vec4i(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
+		m_ostream << "vec4f(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
 	}
 	else
 	{
