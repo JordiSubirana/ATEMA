@@ -38,36 +38,36 @@ namespace at
 		AtslShaderWriter(std::ostream& ostream);
 		~AtslShaderWriter();
 
-		void write(const ConditionalStatement& statement) override;
-		void write(const ForLoopStatement& statement) override;
-		void write(const WhileLoopStatement& statement) override;
-		void write(const DoWhileLoopStatement& statement) override;
-		void write(const VariableDeclarationStatement& statement) override;
-		void write(const StructDeclarationStatement& statement) override;
-		void write(const InputDeclarationStatement& statement) override;
-		void write(const OutputDeclarationStatement& statement) override;
-		void write(const ExternalDeclarationStatement& statement) override;
-		void write(const OptionDeclarationStatement& statement) override;
-		void write(const FunctionDeclarationStatement& statement) override;
-		void write(const EntryFunctionDeclarationStatement& statement) override;
-		void write(const ExpressionStatement& statement) override;
-		void write(const BreakStatement& statement) override;
-		void write(const ContinueStatement& statement) override;
-		void write(const ReturnStatement& statement) override;
-		void write(const SequenceStatement& statement) override;
+		void visit(ConditionalStatement& statement) override;
+		void visit(ForLoopStatement& statement) override;
+		void visit(WhileLoopStatement& statement) override;
+		void visit(DoWhileLoopStatement& statement) override;
+		void visit(VariableDeclarationStatement& statement) override;
+		void visit(StructDeclarationStatement& statement) override;
+		void visit(InputDeclarationStatement& statement) override;
+		void visit(OutputDeclarationStatement& statement) override;
+		void visit(ExternalDeclarationStatement& statement) override;
+		void visit(OptionDeclarationStatement& statement) override;
+		void visit(FunctionDeclarationStatement& statement) override;
+		void visit(EntryFunctionDeclarationStatement& statement) override;
+		void visit(ExpressionStatement& statement) override;
+		void visit(BreakStatement& statement) override;
+		void visit(ContinueStatement& statement) override;
+		void visit(ReturnStatement& statement) override;
+		void visit(SequenceStatement& statement) override;
 
-		void write(const ConstantExpression& expression) override;
-		void write(const VariableExpression& expression) override;
-		void write(const AccessIndexExpression& expression) override;
-		void write(const AccessIdentifierExpression& expression) override;
-		void write(const AssignmentExpression& expression) override;
-		void write(const UnaryExpression& expression) override;
-		void write(const BinaryExpression& expression) override;
-		void write(const FunctionCallExpression& expression) override;
-		void write(const BuiltInFunctionCallExpression& expression) override;
-		void write(const CastExpression& expression) override;
-		void write(const SwizzleExpression& expression) override;
-		void write(const TernaryExpression& expression) override;
+		void visit(ConstantExpression& expression) override;
+		void visit(VariableExpression& expression) override;
+		void visit(AccessIndexExpression& expression) override;
+		void visit(AccessIdentifierExpression& expression) override;
+		void visit(AssignmentExpression& expression) override;
+		void visit(UnaryExpression& expression) override;
+		void visit(BinaryExpression& expression) override;
+		void visit(FunctionCallExpression& expression) override;
+		void visit(BuiltInFunctionCallExpression& expression) override;
+		void visit(CastExpression& expression) override;
+		void visit(SwizzleExpression& expression) override;
+		void visit(TernaryExpression& expression) override;
 
 	private:
 		struct Attribute
@@ -88,7 +88,7 @@ namespace at
 
 		void writeType(Type type);
 		void writeAttributes(const std::vector<Attribute>& attributes);
-		void writeVariableDeclaration(Type type, std::string name, const Expression* value = nullptr);
+		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);
 
 		std::ostream& m_ostream;

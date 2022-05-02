@@ -23,30 +23,15 @@
 #define ATEMA_SHADER_SHADERWRITER_HPP
 
 #include <Atema/Shader/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Shader/Ast/Expression.hpp>
-#include <Atema/Shader/Ast/Statement.hpp>
-
+#include <Atema/Shader/Ast/AstVisitor.hpp>
 
 namespace at
 {
-	class ATEMA_SHADER_API ShaderWriter
+	class ATEMA_SHADER_API ShaderWriter : public AstVisitor
 	{
 	public:
 		ShaderWriter();
 		virtual ~ShaderWriter();
-
-		void write(const UPtr<Statement>& statement);
-		void write(const Statement& statement);
-
-		void write(const UPtr<Expression>& expression);
-		void write(const Expression& expression);
-
-#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) virtual void write(const at_statement ## Statement& statement) = 0;
-#include <Atema/Shader/Ast/StatementMacroList.hpp>
-
-#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) virtual void write(const at_expression ## Expression& expression) = 0;
-#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
 	};
 }
 
