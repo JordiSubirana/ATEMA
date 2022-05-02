@@ -73,7 +73,8 @@ namespace
 		{ BuiltInFunction::Cross, "cross" },
 		{ BuiltInFunction::Dot, "dot" },
 		{ BuiltInFunction::Norm, "norm" },
-		{ BuiltInFunction::Sample, "sample" }
+		{ BuiltInFunction::Sample, "sample" },
+		{ BuiltInFunction::SetVertexPosition, "setVertexPosition" },
 	};
 
 	std::unordered_map<std::string, BuiltInFunction> s_strToBuiltInFunction =
@@ -83,7 +84,8 @@ namespace
 		{ "cross", BuiltInFunction::Cross },
 		{ "dot", BuiltInFunction::Dot },
 		{ "norm", BuiltInFunction::Norm },
-		{ "sample", BuiltInFunction::Sample }
+		{ "sample", BuiltInFunction::Sample },
+		{ "setVertexPosition", BuiltInFunction::SetVertexPosition },
 	};
 
 	size_t getComponentCount(char c)

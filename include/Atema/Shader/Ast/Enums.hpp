@@ -68,7 +68,9 @@ namespace at
 		Dot,
 		Norm,
 		
-		Sample
+		Sample, // Arguments : sampler, index (primitive type or vector)
+
+		SetVertexPosition // Arguments : position (vector4f)
 	};
 
 	enum class VariableQualifier
