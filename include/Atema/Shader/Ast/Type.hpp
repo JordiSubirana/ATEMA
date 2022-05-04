@@ -19,16 +19,72 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_TYPE_HPP
+#define ATEMA_SHADER_AST_TYPE_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+
+#include <string>
+#include <Atema/Core/Variant.hpp>
+#include <vector>
+
+namespace at
+{
+	struct VoidType
+	{
+		
+	};
+
+	enum class PrimitiveType
+	{
+		Bool,
+		Int,
+		UInt,
+		Float
+	};
+
+	struct VectorType
+	{
+		PrimitiveType primitiveType;
+		size_t componentCount;
+	};
+
+	struct MatrixType
+	{
+		PrimitiveType primitiveType;
+		size_t rowCount;
+		size_t columnCount;
+	};
+
+	enum class ImageType
+	{
+		Texture1D,
+		Texture2D,
+		Texture3D,
+		Cubemap
+	};
+	
+	struct SamplerType
+	{
+		ImageType imageType;
+		PrimitiveType primitiveType;
+	};
+
+	struct StructType
+	{
+		std::string name;
+	};
+
+	using Type = Variant<
+		VoidType,
+		PrimitiveType,
+		VectorType,
+		MatrixType,
+		SamplerType,
+		StructType>;
+
+	ATEMA_SHADER_API bool isInOutType(const Type& type);
+	ATEMA_SHADER_API bool isReturnType(const Type& type);
+}
 
 #endif

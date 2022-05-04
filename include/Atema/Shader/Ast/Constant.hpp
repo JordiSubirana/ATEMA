@@ -19,16 +19,52 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_CONSTANT_HPP
+#define ATEMA_SHADER_AST_CONSTANT_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Math/Vector.hpp>
+#include <Atema/Core/Variant.hpp>
+
+namespace at
+{
+	enum class ConstantType
+	{
+		Bool,
+		Int,
+		UInt,
+		Float,
+
+		Vector2i,
+		Vector2u,
+		Vector2f,
+
+		Vector3i,
+		Vector3u,
+		Vector3f,
+
+		Vector4i,
+		Vector4u,
+		Vector4f
+	};
+
+	using ConstantValue = Variant<
+		bool,
+		int32_t,
+		uint32_t,
+		float,
+	
+		Vector2i,
+		Vector2u,
+		Vector2f,
+	
+		Vector3i,
+		Vector3u,
+		Vector3f,
+	
+		Vector4i,
+		Vector4u,
+		Vector4f
+	>;
+}
 
 #endif

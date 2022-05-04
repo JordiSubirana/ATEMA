@@ -19,16 +19,36 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_ASTCLONER_INL
+#define ATEMA_SHADER_AST_ASTCLONER_INL
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Ast/AstCloner.hpp>
+
+#include <type_traits>
+
+namespace at
+{
+	template <typename T>
+	UPtr<T> AstCloner::clone(const UPtr<T>& astNode)
+	{
+		if (!astNode)
+			return {};
+
+		if constexpr (std::is_base_of<Statement, T>::value)
+		{
+			return clone(*astNode);
+		}
+		else if constexpr (std::is_base_of<Expression, T>::value)
+		{
+			return clone(*astNode);
+		}
+		else
+		{
+			static_assert(false, "Invalid type to clone : must be a derived from Statement or Expression");
+		}
+
+		return {};
+	}
+}
 
 #endif

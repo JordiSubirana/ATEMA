@@ -19,16 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_SHADERWRITER_HPP
+#define ATEMA_SHADER_SHADERWRITER_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+#include <Atema/Shader/Ast/AstVisitor.hpp>
+
+namespace at
+{
+	class ATEMA_SHADER_API ShaderWriter : public AstVisitor
+	{
+	public:
+		ShaderWriter();
+		virtual ~ShaderWriter();
+	};
+}
 
 #endif

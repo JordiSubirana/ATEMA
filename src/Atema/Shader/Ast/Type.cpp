@@ -19,16 +19,16 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#include <Atema/Shader/Ast/Type.hpp>
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+using namespace at;
 
-#endif
+ATEMA_SHADER_API bool at::isInOutType(const Type& type)
+{
+	return type.isOneOf<PrimitiveType, VectorType, MatrixType>();
+}
+
+ATEMA_SHADER_API bool at::isReturnType(const Type& type)
+{
+	return type.isOneOf<VoidType, PrimitiveType, VectorType, MatrixType>();
+}

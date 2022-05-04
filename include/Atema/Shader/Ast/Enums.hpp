@@ -19,16 +19,73 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_ENUMS_HPP
+#define ATEMA_SHADER_AST_ENUMS_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Core/Flags.hpp>
+
+namespace at
+{
+	enum class UnaryOperator
+	{
+		IncrementPrefix,	// ++var
+		IncrementPostfix,	// var++
+		DecrementPrefix,	// --var
+		DecrementPostfix,	// var--
+		
+		Positive,			// +var
+		Negative,			// -var
+		
+		LogicalNot			// !var
+	};
+
+	enum class BinaryOperator
+	{
+		Add,		// a + b
+		Subtract,	// a - b
+		Multiply,	// a * b
+		Divide,		// a / b
+		Power,		// a ^ b
+		Modulo,		// a % b
+
+		And,			// a && b
+		Or,				// a || b
+		
+		Less,			// a < b
+		Greater,		// a > b
+		Equal,			// a == b
+		NotEqual,		// a != b
+		LessOrEqual,	// a <= b
+		GreaterOrEqual	// a >= b
+	};
+
+	enum class BuiltInFunction
+	{
+		Min,
+		Max,
+		
+		Cross,
+		Dot,
+		Norm,
+		
+		Sample, // Arguments : sampler, index (primitive type or vector)
+
+		SetVertexPosition // Arguments : position (vector4f)
+	};
+
+	enum class VariableQualifier
+	{
+		None = 0 << 0,
+		Const = 0 << 1
+	};
+
+	ATEMA_DECLARE_FLAGS(VariableQualifier);
+
+	enum class AstShaderStage
+	{
+		Vertex,
+		Fragment
+	};
+}
 
 #endif

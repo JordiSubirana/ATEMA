@@ -19,16 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_ASTCLONER_HPP
+#define ATEMA_SHADER_AST_ASTCLONER_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+#include <Atema/Shader/Ast/Expression.hpp>
+#include <Atema/Shader/Ast/Statement.hpp>
+
+namespace at
+{
+	class ATEMA_SHADER_API AstCloner
+	{
+	public:
+		AstCloner();
+		~AstCloner();
+
+		UPtr<Statement> clone(const UPtr<Statement>& statement);
+		UPtr<Expression> clone(const UPtr<Expression>& expression);
+
+		UPtr<Statement> clone(const Statement* statementPtr);
+		UPtr<Expression> clone(const Expression* expressionPtr);
+
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) UPtr<at_statement ## Statement> clone(const at_statement ## Statement& statement);
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
+
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) UPtr<at_expression ## Expression> clone(const at_expression ## Expression& expression);
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+
+		template <typename T>
+		UPtr<T> clone(const UPtr<T>& astNode);
+	};
+}
+
+#include <Atema/Shader/Ast/AstCloner.inl>
 
 #endif

@@ -19,16 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_ATSLPARSER_HPP
+#define ATEMA_SHADER_ATSLPARSER_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+
+#include <string>
+#include <vector>
+
+namespace at
+{
+	struct AtslToken;
+
+	class ATEMA_SHADER_API AtslParser
+	{
+	public:
+		AtslParser();
+		virtual ~AtslParser();
+
+		std::vector<AtslToken> createTokens(const std::string& code);
+
+	private:
+		bool hasNext() const;
+		char getNext();
+		void gotoLastChar();
+
+		std::string_view m_code;
+		
+		size_t m_currentLine;
+		int m_currentColumn;
+
+		size_t m_currentIndex;
+	};
+}
 
 #endif

@@ -19,16 +19,30 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_AST_ASTVISITOR_HPP
+#define ATEMA_SHADER_AST_ASTVISITOR_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+#include <Atema/Shader/Ast/Statement.hpp>
+#include <Atema/Shader/Ast/Expression.hpp>
+
+namespace at
+{
+	class ATEMA_SHADER_API AstVisitor
+	{
+	public:
+		AstVisitor();
+		virtual ~AstVisitor();
+
+		void visit(Statement& statement);
+		void visit(Expression& statement);
+
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) virtual void visit(at_statement ## Statement& statement);
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
+
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) virtual void visit(at_expression ## Expression& expression);
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+	};
+}
 
 #endif

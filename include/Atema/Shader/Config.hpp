@@ -19,16 +19,27 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_SHADER_CONFIG_HPP
+#define ATEMA_SHADER_CONFIG_HPP
 
 #include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+
+#if defined(ATEMA_STATIC)
+	
+	#define ATEMA_SHADER_API
+	
+#else
+	
+	#if defined(ATEMA_SHADER_EXPORT)
+		
+		#define ATEMA_SHADER_API ATEMA_EXPORT
+		
+	#else
+		
+		#define ATEMA_SHADER_API ATEMA_IMPORT
+		
+	#endif
+
+#endif
 
 #endif

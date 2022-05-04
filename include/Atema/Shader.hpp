@@ -19,16 +19,26 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_GLOBAL_SHADER_HPP
+#define ATEMA_GLOBAL_SHADER_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/Shader/Config.hpp>
+#include <Atema/Shader/ShaderWriter.hpp>
+#include <Atema/Shader/Ast/AstCloner.hpp>
+#include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
+#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+#include <Atema/Shader/Ast/AstUtils.hpp>
+#include <Atema/Shader/Ast/AstVisitor.hpp>
+#include <Atema/Shader/Ast/Constant.hpp>
+#include <Atema/Shader/Ast/Enums.hpp>
+#include <Atema/Shader/Ast/Expression.hpp>
+#include <Atema/Shader/Ast/Statement.hpp>
+#include <Atema/Shader/Ast/Type.hpp>
+#include <Atema/Shader/Atsl/AtslParser.hpp>
+#include <Atema/Shader/Atsl/AtslShaderWriter.hpp>
+#include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
+#include <Atema/Shader/Atsl/AtslToken.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
+#include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
 
 #endif
