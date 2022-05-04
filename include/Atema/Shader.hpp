@@ -23,5 +23,22 @@
 #define ATEMA_GLOBAL_SHADER_HPP
 
 #include <Atema/Shader/Config.hpp>
+#include <Atema/Shader/ShaderWriter.hpp>
+#include <Atema/Shader/Ast/AstCloner.hpp>
+#include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
+#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+#include <Atema/Shader/Ast/AstUtils.hpp>
+#include <Atema/Shader/Ast/AstVisitor.hpp>
+#include <Atema/Shader/Ast/Constant.hpp>
+#include <Atema/Shader/Ast/Enums.hpp>
+#include <Atema/Shader/Ast/Expression.hpp>
+#include <Atema/Shader/Ast/Statement.hpp>
+#include <Atema/Shader/Ast/Type.hpp>
+#include <Atema/Shader/Atsl/AtslParser.hpp>
+#include <Atema/Shader/Atsl/AtslShaderWriter.hpp>
+#include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
+#include <Atema/Shader/Atsl/AtslToken.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
+#include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
 
 #endif
