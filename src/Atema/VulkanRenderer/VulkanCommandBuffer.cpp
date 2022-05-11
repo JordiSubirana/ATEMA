@@ -27,6 +27,7 @@
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 
@@ -34,15 +35,13 @@ using namespace at;
 
 VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, const CommandBuffer::Settings& settings) :
 	CommandBuffer(),
+	m_device(VulkanRenderer::instance().getDevice()),
 	m_commandBuffer(VK_NULL_HANDLE),
 	m_singleUse(settings.singleUse),
 	m_isSecondary(settings.secondary),
 	m_secondaryBegan(false),
 	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	m_commandPool = commandPool;
 	
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -51,12 +50,12 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, const Comman
 	allocInfo.level = settings.secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY : VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = 1;
 
-	ATEMA_VK_CHECK(vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer));
+	ATEMA_VK_CHECK(m_device.vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer));
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
-	vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
+	m_device.vkFreeCommandBuffers(m_device, m_commandPool, 1, &m_commandBuffer);
 	
 	m_commandBuffer = VK_NULL_HANDLE;
 }
@@ -79,7 +78,7 @@ void VulkanCommandBuffer::begin()
 		//beginInfo.pInheritanceInfo = nullptr; // Optional (for secondary command buffers)
 
 		// Start recording (and reset command buffer if it was already recorded)
-		ATEMA_VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+		ATEMA_VK_CHECK(m_device.vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
 	}
 }
 
@@ -112,7 +111,7 @@ void VulkanCommandBuffer::beginSecondary(const Ptr<RenderPass>& renderPass, cons
 	beginInfo.pInheritanceInfo = &inheritanceInfo; // Optional (for secondary command buffers)
 
 	// Start recording (and reset command buffer if it was already recorded)
-	ATEMA_VK_CHECK(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+	ATEMA_VK_CHECK(m_device.vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
 }
 
 void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands)
@@ -159,7 +158,7 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 	// VK_SUBPASS_CONTENTS_INLINE : render pass in primary command buffer, no secondary buffer will be used
 	// VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : render pass commands executed in secondary command buffer
-	vkCmdBeginRenderPass(
+	m_device.vkCmdBeginRenderPass(
 		m_commandBuffer,
 		&renderPassInfo,
 		useSecondaryCommands ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
@@ -169,7 +168,7 @@ void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
 {
 	auto vkPipeline = std::static_pointer_cast<VulkanGraphicsPipeline>(pipeline);
 
-	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->getHandle());
+	m_device.vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->getHandle());
 
 	m_currentPipelineLayout = vkPipeline->getLayoutHandle();
 }
@@ -184,7 +183,7 @@ void VulkanCommandBuffer::setViewport(const Viewport& viewport)
 	vkViewport.minDepth = viewport.minDepth;
 	vkViewport.maxDepth = viewport.maxDepth;
 
-	vkCmdSetViewport(m_commandBuffer, 0, 1, &vkViewport);
+	m_device.vkCmdSetViewport(m_commandBuffer, 0, 1, &vkViewport);
 }
 
 void VulkanCommandBuffer::setScissor(const Vector2i& position, const Vector2u& size)
@@ -195,12 +194,12 @@ void VulkanCommandBuffer::setScissor(const Vector2i& position, const Vector2u& s
 	vkScissor.extent.width = static_cast<uint32_t>(size.x);
 	vkScissor.extent.height = static_cast<uint32_t>(size.y);
 	
-	vkCmdSetScissor(m_commandBuffer, 0, 1, &vkScissor);
+	m_device.vkCmdSetScissor(m_commandBuffer, 0, 1, &vkScissor);
 }
 
 void VulkanCommandBuffer::endRenderPass()
 {
-	vkCmdEndRenderPass(m_commandBuffer);
+	m_device.vkCmdEndRenderPass(m_commandBuffer);
 }
 
 void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset)
@@ -216,7 +215,7 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buf
 	copyRegion.dstOffset = static_cast<VkDeviceSize>(dstOffset);
 	copyRegion.size = static_cast<VkDeviceSize>(size);
 	
-	vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer->getHandle(), vkDstBuffer->getHandle(), 1, &copyRegion);
+	m_device.vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer->getHandle(), vkDstBuffer->getHandle(), 1, &copyRegion);
 }
 
 void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage)
@@ -245,7 +244,7 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Ima
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { size.x, size.y, 1 };
 
-	vkCmdCopyBufferToImage(
+	m_device.vkCmdCopyBufferToImage(
 		m_commandBuffer,
 		vkBuffer->getHandle(),
 		vkImage->getImageHandle(),
@@ -263,7 +262,7 @@ void VulkanCommandBuffer::bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t b
 	
 	const VkDeviceSize offset = 0;
 	
-	vkCmdBindVertexBuffers(m_commandBuffer, binding, 1, &vkBuffer, &offset);
+	m_device.vkCmdBindVertexBuffers(m_commandBuffer, binding, 1, &vkBuffer, &offset);
 }
 
 void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType)
@@ -272,7 +271,7 @@ void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType i
 
 	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(buffer)->getHandle();
 
-	vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
+	m_device.vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
 }
 
 void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet)
@@ -286,7 +285,7 @@ void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<Descriptor
 
 	const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet)->getHandle();
 
-	vkCmdBindDescriptorSets(
+	m_device.vkCmdBindDescriptorSets(
 		m_commandBuffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_currentPipelineLayout,
@@ -299,12 +298,12 @@ void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<Descriptor
 
 void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-	vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+	m_device.vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
-	vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	m_device.vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel, uint32_t levelCount)
@@ -405,7 +404,7 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 		ATEMA_ERROR("Unsupported layout transition");
 	}
 
-	vkCmdPipelineBarrier(
+	m_device.vkCmdPipelineBarrier(
 		m_commandBuffer,
 		// Depends on what happens before and after the barrier
 		sourceStage, // In which pipeline stage the operations occur (before the barrier)
@@ -439,10 +438,10 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 
 	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
 	auto& renderer = VulkanRenderer::instance();
-	const auto physicalDevice = renderer.getPhysicalDeviceHandle();
+	const auto& physicalDevice = renderer.getPhysicalDevice().getHandle();
 
 	VkFormatProperties formatProperties;
-	vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+	renderer.getInstance().vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
 
 	// Here we check in optimal tiling features because our image is in optimal tiling
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
@@ -478,7 +477,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-		vkCmdPipelineBarrier(
+		m_device.vkCmdPipelineBarrier(
 			m_commandBuffer,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
 			0, nullptr,
@@ -504,7 +503,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 		blit.dstSubresource.layerCount = 1;
 
 		// Blit (must be submitted to a queue with graphics capability)
-		vkCmdBlitImage(
+		m_device.vkCmdBlitImage(
 			m_commandBuffer,
 			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -518,7 +517,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		vkCmdPipelineBarrier(
+		m_device.vkCmdPipelineBarrier(
 			m_commandBuffer,
 			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
 			0, nullptr,
@@ -541,7 +540,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-	vkCmdPipelineBarrier(
+	m_device.vkCmdPipelineBarrier(
 		m_commandBuffer,
 		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
 		0, nullptr,
@@ -563,7 +562,7 @@ void VulkanCommandBuffer::executeSecondaryCommands(const std::vector<Ptr<Command
 		vkCommandBuffers.push_back(vkCommandBuffer->getHandle());
 	}
 
-	vkCmdExecuteCommands(m_commandBuffer, static_cast<uint32_t>(vkCommandBuffers.size()), vkCommandBuffers.data());
+	m_device.vkCmdExecuteCommands(m_commandBuffer, static_cast<uint32_t>(vkCommandBuffers.size()), vkCommandBuffers.data());
 }
 
 void VulkanCommandBuffer::end()
@@ -571,5 +570,5 @@ void VulkanCommandBuffer::end()
 	if (m_isSecondary)
 		m_secondaryBegan = false;
 
-	ATEMA_VK_CHECK(vkEndCommandBuffer(m_commandBuffer));
+	ATEMA_VK_CHECK(m_device.vkEndCommandBuffer(m_commandBuffer));
 }

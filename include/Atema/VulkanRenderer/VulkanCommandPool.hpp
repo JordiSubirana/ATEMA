@@ -32,7 +32,7 @@ namespace at
 	{
 	public:
 		VulkanCommandPool() = delete;
-		VulkanCommandPool(const CommandPool::Settings& settings);
+		VulkanCommandPool(const VulkanDevice& device, const CommandPool::Settings& settings);
 		virtual ~VulkanCommandPool();
 
 		VkCommandPool getHandle() const noexcept;
@@ -40,7 +40,7 @@ namespace at
 		Ptr<CommandBuffer> createBuffer(const CommandBuffer::Settings& settings) override;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkCommandPool m_commandPool;
 	};
 }

@@ -75,7 +75,7 @@ namespace at
 		void end() override;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;
 		bool m_singleUse;

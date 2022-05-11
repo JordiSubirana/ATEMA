@@ -32,7 +32,7 @@ namespace at
 	{
 	public:
 		VulkanFence() = delete;
-		VulkanFence(const Fence::Settings& settings);
+		VulkanFence(const VulkanDevice& device, const Fence::Settings& settings);
 		virtual ~VulkanFence();
 
 		VkFence getHandle() const noexcept;
@@ -42,7 +42,7 @@ namespace at
 		void reset() override;
 
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkFence m_fence;
 	};
 }

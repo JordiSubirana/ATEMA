@@ -20,25 +20,50 @@
 */
 
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/Library.hpp>
 #include <Atema/Renderer/Renderer.hpp>
+
+// Dynamic library name
+#ifdef ATEMA_SYSTEM_WINDOWS
+#define ATEMA_VULKAN_LIBRARY "vulkan-1.dll"
+#elif defined ATEMA_SYSTEM_LINUX
+#define ATEMA_VULKAN_LIBRARY "libvulkan.so"
+#elif defined ATEMA_SYSTEM_MACOS
+#define ATEMA_VULKAN_LIBRARY "libMoltenVK.dylib"
+#else
+#error Vulkan is not implemented on this OS
+#endif
 
 using namespace at;
 
-#define ATEMA_VULKAN_LOAD(AT_FUNCTION) \
-	AT_FUNCTION = reinterpret_cast<PFN_ ## AT_FUNCTION>(vkGetInstanceProcAddr(instance, #AT_FUNCTION))
+#define ATEMA_VULKAN_LOAD(at_func) at_func = reinterpret_cast<PFN_ ## at_func>(vkGetInstanceProcAddr(nullptr, #at_func)); \
+	ATEMA_ASSERT(at_func, "Failed to get function '" #at_func "'");
 
-Vulkan::Vulkan(VkInstance instance)
+Vulkan::Vulkan()
 {
-	ATEMA_VULKAN_LOAD(vkCreateDebugUtilsMessengerEXT);
-	ATEMA_VULKAN_LOAD(vkDestroyDebugUtilsMessengerEXT);
+	m_vulkanLibrary = std::make_unique<Library>(ATEMA_VULKAN_LIBRARY);
 
-#ifdef ATEMA_SYSTEM_WINDOWS
-	ATEMA_VULKAN_LOAD(vkCreateWin32SurfaceKHR);
-#endif
+	ATEMA_ASSERT(m_vulkanLibrary->isLoaded(), "Failed to load Vulkan dynamic library");
+
+	vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(m_vulkanLibrary->getFunction("vkGetInstanceProcAddr"));
+
+	ATEMA_ASSERT(vkGetInstanceProcAddr, "Failed to get function 'vkGetInstanceProcAddr'");
+
+	ATEMA_VULKAN_LOAD(vkEnumerateInstanceVersion);
+	ATEMA_VULKAN_LOAD(vkEnumerateInstanceLayerProperties);
+	ATEMA_VULKAN_LOAD(vkEnumerateInstanceExtensionProperties);
+	ATEMA_VULKAN_LOAD(vkCreateInstance);
 }
 
 Vulkan::~Vulkan()
 {
+}
+
+Vulkan& Vulkan::instance()
+{
+	static Vulkan s_instance;
+
+	return s_instance;
 }
 
 VkFormat Vulkan::getFormat(ImageFormat format)

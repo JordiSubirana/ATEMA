@@ -32,7 +32,7 @@ namespace at
 	{
 	public:
 		VulkanBuffer() = delete;
-		VulkanBuffer(const Buffer::Settings& settings);
+		VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& settings);
 		virtual ~VulkanBuffer();
 
 		VkBuffer getHandle() const noexcept;
@@ -41,7 +41,7 @@ namespace at
 		void unmap() override;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkBuffer m_buffer;
 		VkDeviceMemory m_memory;
 		BufferUsage m_usage;

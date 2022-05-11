@@ -35,7 +35,7 @@ namespace at
 	{
 	public:
 		VulkanDescriptorSetLayout() = delete;
-		VulkanDescriptorSetLayout(const DescriptorSetLayout::Settings& settings);
+		VulkanDescriptorSetLayout(const VulkanDevice& device, const DescriptorSetLayout::Settings& settings);
 		virtual ~VulkanDescriptorSetLayout();
 		
 		VkDescriptorSetLayout getHandle() const noexcept;
@@ -43,6 +43,7 @@ namespace at
 		const std::vector<DescriptorSetBinding>& getBindings() const noexcept override;
 		
 	private:
+		const VulkanDevice& m_device;
 		VkDescriptorSetLayout m_descriptorSetLayout;
 
 		std::vector<DescriptorSetBinding> m_bindings;
@@ -52,7 +53,7 @@ namespace at
 	{
 	public:
 		VulkanDescriptorSet() = delete;
-		VulkanDescriptorSet(VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback);
+		VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback);
 		
 		virtual ~VulkanDescriptorSet();
 
@@ -69,7 +70,7 @@ namespace at
 			const std::vector<std::vector<Ptr<Sampler>>>& samplers) override;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkDescriptorSet m_descriptorSet;
 		std::function<void()> m_destroyCallback;
 		const SparseSet<VkDescriptorType>& m_bindingTypes;

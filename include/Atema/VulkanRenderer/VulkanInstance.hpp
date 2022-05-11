@@ -19,30 +19,45 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_VULKANRENDERER_VULKANFRAMEBUFFER_HPP
-#define ATEMA_VULKANRENDERER_VULKANFRAMEBUFFER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANINSTANCE_HPP
+#define ATEMA_VULKANRENDERER_VULKANINSTANCE_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+
+#include <unordered_set>
 
 namespace at
 {
-	class ATEMA_VULKANRENDERER_API VulkanFramebuffer final : public Framebuffer
+	class VulkanPhysicalDevice;
+
+	class ATEMA_VULKANRENDERER_API VulkanInstance
 	{
 	public:
-		VulkanFramebuffer() = delete;
-		VulkanFramebuffer(const VulkanDevice& device, const Framebuffer::Settings& settings);
-		virtual ~VulkanFramebuffer();
+		VulkanInstance() = delete;
+		VulkanInstance(const VkInstanceCreateInfo& createInfo);
+		~VulkanInstance();
 
-		VkFramebuffer getHandle() const noexcept;
+		VkInstance getHandle() const noexcept;
 
-		Vector2u getSize() const noexcept override;
-		
+		operator VkInstance() const noexcept;
+
+		bool isExtensionLoaded(const std::string& extensionName) const;
+		bool isLayerLoaded(const std::string& layerName) const;
+
+		const std::vector<VulkanPhysicalDevice>& getPhysicalDevices() const noexcept;
+
+		PFN_vkVoidFunction getProcAddr(const char* name) const;
+
+#define ATEMA_MACROLIST_VULKAN_INSTANCE_FUNCTION(at_func) PFN_ ## at_func at_func;
+#include <Atema/VulkanRenderer/InstanceFunctionMacroList.hpp>
+
 	private:
-		const VulkanDevice& m_device;
-		VkFramebuffer m_framebuffer;
-		Vector2u m_size;
+		VkInstance m_instance;
+		uint32_t m_apiVersion;
+		std::unordered_set<std::string> m_extensions;
+		std::unordered_set<std::string> m_layers;
+		std::vector<VulkanPhysicalDevice> m_physicalDevices;
 	};
 }
 

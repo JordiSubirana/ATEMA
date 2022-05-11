@@ -24,10 +24,13 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Core/Error.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
 #include <Atema/Renderer/Vertex.hpp>
 
-#include <vulkan/vulkan.h>
+#define VK_NO_PROTOTYPES
+#include <vulkan/vk_platform.h>
+#include <vulkan/vulkan_core.h>
 
 #define ATEMA_VK_CHECK(functionCall) \
 	{ \
@@ -42,7 +45,7 @@
 	{ \
 		if (resource != VK_NULL_HANDLE) \
 		{ \
-			deleterFunc(device, resource, nullptr); \
+			device.deleterFunc(device, resource, nullptr); \
 			resource = VK_NULL_HANDLE; \
 		} \
 	}
@@ -57,20 +60,25 @@
 
 namespace at
 {
+	class Library;
+	class VulkanDevice;
+
 	class ATEMA_VULKANRENDERER_API Vulkan
 	{
 	public:
-		Vulkan() = delete;
-		Vulkan(VkInstance instance);
 		~Vulkan();
 
-		PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
-		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+		static Vulkan& instance();
 
-#ifdef ATEMA_SYSTEM_WINDOWS
-		PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
-#endif
+		// Vulkan functions
+		PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 
+		PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion;
+		PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties;
+		PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties;
+		PFN_vkCreateInstance vkCreateInstance;
+
+		// Helpers
 		static VkFormat getFormat(ImageFormat format);
 		static ImageFormat getFormat(VkFormat format);
 		static VkFormat getFormat(VertexFormat format);
@@ -125,6 +133,11 @@ namespace at
 		static VkSamplerMipmapMode getSamplerMipmapMode(SamplerFilter value);
 
 		static SwapChainResult getSwapChainResult(VkResult value);
+
+	private:
+		Vulkan();
+
+		UPtr<Library> m_vulkanLibrary;
 	};
 }
 

@@ -35,7 +35,7 @@ namespace at
 	{
 	public:
 		VulkanDescriptorPool() = delete;
-		VulkanDescriptorPool(const DescriptorPool::Settings& settings);
+		VulkanDescriptorPool(const VulkanDevice& device, const DescriptorPool::Settings& settings);
 		virtual ~VulkanDescriptorPool();
 
 		Ptr<DescriptorSet> createSet() override;
@@ -45,7 +45,7 @@ namespace at
 		{
 		public:
 			Pool() = delete;
-			Pool(VkDevice device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings);
+			Pool(const VulkanDevice& device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings);
 			~Pool();
 
 			bool isFull() const noexcept;
@@ -53,7 +53,7 @@ namespace at
 			Ptr<DescriptorSet> createSet();
 
 		private:
-			VkDevice m_device;
+			const VulkanDevice& m_device;
 			VkDescriptorPool m_pool;
 			VkDescriptorSetLayout m_layout;
 			const SparseSet<VkDescriptorType>& m_bindingTypes;
@@ -64,7 +64,7 @@ namespace at
 		
 		void addPool();
 		
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		std::vector<VkDescriptorPoolSize> m_poolSizes;
 		VkDescriptorPoolCreateInfo m_poolSettings;
 		std::vector<Ptr<Pool>> m_pools;

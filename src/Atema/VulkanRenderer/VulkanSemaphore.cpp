@@ -24,18 +24,15 @@
 
 using namespace at;
 
-VulkanSemaphore::VulkanSemaphore() :
+VulkanSemaphore::VulkanSemaphore(const VulkanDevice& device) :
 	Semaphore(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_semaphore(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	ATEMA_VK_CHECK(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_semaphore));
+	ATEMA_VK_CHECK(m_device.vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_semaphore));
 }
 
 VulkanSemaphore::~VulkanSemaphore()

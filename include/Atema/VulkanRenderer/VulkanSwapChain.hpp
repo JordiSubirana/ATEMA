@@ -30,6 +30,8 @@
 
 namespace at
 {
+	class VulkanPhysicalDevice;
+
 	class ATEMA_VULKANRENDERER_API VulkanSwapChain final : public SwapChain
 	{
 	public:
@@ -41,10 +43,10 @@ namespace at
 		};
 		
 		VulkanSwapChain() = delete;
-		VulkanSwapChain(const SwapChain::Settings& settings);
+		VulkanSwapChain(const VulkanDevice& device, const SwapChain::Settings& settings);
 		virtual ~VulkanSwapChain();
 
-		static SupportDetails getSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface);
+		SupportDetails getSupportDetails(const VulkanPhysicalDevice& physicalDevice, VkSurfaceKHR surface);
 
 		VkSwapchainKHR getHandle() const noexcept;
 		
@@ -57,7 +59,7 @@ namespace at
 	private:
 		SwapChainResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
 		
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkSurfaceKHR m_surface;
 		VkSwapchainKHR m_swapChain;
 		std::vector<Ptr<Image>> m_images;

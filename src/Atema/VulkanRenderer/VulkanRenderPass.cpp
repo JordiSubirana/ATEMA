@@ -219,14 +219,12 @@ namespace
 	};
 }
 
-VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
+VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass::Settings& settings) :
 	RenderPass(),
+	m_device(device),
 	m_renderPass(VK_NULL_HANDLE),
 	m_attachments(settings.attachments)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	ATEMA_ASSERT(!settings.attachments.empty(), "Invalid attachments");
 	ATEMA_ASSERT(!settings.subpasses.empty(), "RenderPass need at least one subpass");
 
@@ -636,7 +634,7 @@ VulkanRenderPass::VulkanRenderPass(const RenderPass::Settings& settings) :
 	renderPassInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
 	renderPassInfo.pDependencies = subpassDependencies.empty() ? nullptr : subpassDependencies.data();
 
-	ATEMA_VK_CHECK(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
+	ATEMA_VK_CHECK(m_device.vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
 }
 
 VulkanRenderPass::~VulkanRenderPass()

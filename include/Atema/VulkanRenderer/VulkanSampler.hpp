@@ -32,13 +32,13 @@ namespace at
 	{
 	public:
 		VulkanSampler() = delete;
-		VulkanSampler(const Sampler::Settings& settings);
+		VulkanSampler(const VulkanDevice& device, const Sampler::Settings& settings);
 		virtual ~VulkanSampler();
 
 		VkSampler getHandle() const noexcept;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkSampler m_sampler;
 	};
 }

@@ -81,9 +81,9 @@ namespace
 	}
 }
 
-VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
+VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const SwapChain::Settings& settings) :
 	SwapChain(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_surface(VK_NULL_HANDLE),
 	m_swapChain(VK_NULL_HANDLE),
 	m_extent({0, 0}),
@@ -97,9 +97,6 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 	}
 	
 	auto& renderer = VulkanRenderer::instance();
-	auto instance = renderer.getInstanceHandle();
-	auto physicalDevice = renderer.getPhysicalDeviceHandle();
-	m_device = renderer.getLogicalDeviceHandle();
 
 	m_surface = renderer.getWindowSurface(settings.window);
 
@@ -109,7 +106,7 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 		static_cast<uint32_t>(settings.window->getSize().y)
 	};
 
-	SupportDetails swapChainSupport = getSupportDetails(physicalDevice, m_surface);
+	SupportDetails swapChainSupport = getSupportDetails(m_device.getPhysicalDevice(), m_surface);
 
 	auto format = Vulkan::getFormat(settings.format);
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(format, swapChainSupport.formats);
@@ -165,21 +162,21 @@ VulkanSwapChain::VulkanSwapChain(const SwapChain::Settings& settings) :
 		createInfo.clipped = VK_TRUE; // Best performance but we won't be able to get pixels if another window is in front of this one
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		ATEMA_VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
+		ATEMA_VK_CHECK(m_device.vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
 	}
 
 	// Create images
 	{
 		// Get images created within the swapchain (will be cleaned up at swapchain's destruction)
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+		m_device.vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
 
 		std::vector<VkImage> swapChainImages(imageCount, VK_NULL_HANDLE);
 
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapChainImages.data());
+		m_device.vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapChainImages.data());
 
 		for (auto& swapChainImage : swapChainImages)
 		{
-			auto image = std::make_shared<VulkanImage>(swapChainImage, m_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			auto image = std::make_shared<VulkanImage>(m_device, swapChainImage, m_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
 			m_images.push_back(std::static_pointer_cast<Image>(image));
 		}
@@ -194,28 +191,30 @@ VulkanSwapChain::~VulkanSwapChain()
 	ATEMA_VK_DESTROY(m_device, vkDestroySwapchainKHR, m_swapChain);
 }
 
-VulkanSwapChain::SupportDetails VulkanSwapChain::getSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface)
+VulkanSwapChain::SupportDetails VulkanSwapChain::getSupportDetails(const VulkanPhysicalDevice& physicalDevice, VkSurfaceKHR surface)
 {
+	const auto& instance = m_device.getInstance();
+
 	SupportDetails swapChainSupportDetails;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &swapChainSupportDetails.capabilities);
+	instance.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &swapChainSupportDetails.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+	instance.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
 
 	if (formatCount != 0)
 	{
 		swapChainSupportDetails.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, swapChainSupportDetails.formats.data());
+		instance.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, swapChainSupportDetails.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+	instance.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
 	if (presentModeCount != 0)
 	{
 		swapChainSupportDetails.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, swapChainSupportDetails.presentModes.data());
+		instance.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, swapChainSupportDetails.presentModes.data());
 	}
 
 	return swapChainSupportDetails;
@@ -256,7 +255,7 @@ SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Pt
 
 SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence)
 {
-	const auto result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
+	const auto result = m_device.vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
 
 	return Vulkan::getSwapChainResult(result);
 }

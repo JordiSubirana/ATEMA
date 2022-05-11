@@ -24,17 +24,12 @@
 
 using namespace at;
 
-VulkanSampler::VulkanSampler(const Sampler::Settings& settings) :
+VulkanSampler::VulkanSampler(const VulkanDevice& device, const Sampler::Settings& settings) :
 	Sampler(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_sampler(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto physicalDevice = renderer.getPhysicalDeviceHandle();
-	m_device = renderer.getLogicalDeviceHandle();
-
-	VkPhysicalDeviceProperties properties{};
-	vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+	auto& physicalDeviceProperties = m_device.getPhysicalDevice().getProperties();
 
 	// Sampler creation
 	VkSamplerCreateInfo samplerInfo{};
@@ -54,7 +49,7 @@ VulkanSampler::VulkanSampler(const Sampler::Settings& settings) :
 	// REQUIRES PHYSICAL DEVICE FEATURE (see createDevice())
 	//TODO: Can be disabled to increase performance
 	samplerInfo.anisotropyEnable = settings.anisotropyEnable ? VK_TRUE : VK_FALSE;
-	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
 
 	// VK_TRUE : [0, texWidth) & [0, texHeight) / VK_FALSE : [0, 1) & [0, 1)
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -70,7 +65,7 @@ VulkanSampler::VulkanSampler(const Sampler::Settings& settings) :
 	samplerInfo.maxLod = settings.maxLod < 0.0f ? VK_LOD_CLAMP_NONE : settings.maxLod;
 	samplerInfo.mipLodBias = settings.loadBias; // Optional
 
-	ATEMA_VK_CHECK(vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler));
+	ATEMA_VK_CHECK(m_device.vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sampler));
 }
 
 VulkanSampler::~VulkanSampler()

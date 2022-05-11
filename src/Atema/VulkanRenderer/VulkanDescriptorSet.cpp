@@ -28,14 +28,12 @@
 using namespace at;
 
 // DescriptorSetLayout
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) :
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanDevice& device, const DescriptorSetLayout::Settings& settings) :
 	DescriptorSetLayout(),
+	m_device(device),
 	m_descriptorSetLayout(VK_NULL_HANDLE),
 	m_bindings(settings.bindings)
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 
 	for (auto& binding : settings.bindings)
@@ -56,15 +54,12 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const DescriptorSetLayout::
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	layoutInfo.pBindings = bindings.data();
 
-	ATEMA_VK_CHECK(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_descriptorSetLayout));
+	ATEMA_VK_CHECK(m_device.vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout));
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 {
-	auto& renderer = VulkanRenderer::instance();
-	auto device = renderer.getLogicalDeviceHandle();
-
-	ATEMA_VK_DESTROY(device, vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
+	ATEMA_VK_DESTROY(m_device, vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
 }
 
 VkDescriptorSetLayout VulkanDescriptorSetLayout::getHandle() const noexcept
@@ -78,15 +73,13 @@ const std::vector<DescriptorSetBinding>& VulkanDescriptorSetLayout::getBindings(
 }
 
 // DescriptorSet
-VulkanDescriptorSet::VulkanDescriptorSet(VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback) :
+VulkanDescriptorSet::VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback) :
 	DescriptorSet(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_descriptorSet(descriptorSet),
 	m_destroyCallback(destroyCallback),
 	m_bindingTypes(bindingTypes)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
 }
 
 VulkanDescriptorSet::~VulkanDescriptorSet()
@@ -207,5 +200,5 @@ void VulkanDescriptorSet::update(
 		descriptorWrites.push_back(descriptorWrite);
 	}
 
-	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	m_device.vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }

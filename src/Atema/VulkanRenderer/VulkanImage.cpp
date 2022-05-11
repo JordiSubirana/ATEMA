@@ -24,8 +24,9 @@
 
 using namespace at;
 
-VulkanImage::VulkanImage(const Image::Settings& settings) :
+VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& settings) :
 	Image(),
+	m_device(device),
 	m_ownsImage(true),
 	m_image(VK_NULL_HANDLE),
 	m_view(VK_NULL_HANDLE),
@@ -35,9 +36,6 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 	m_size(settings.width, settings.height),
 	m_mipLevels(settings.mipLevels)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	auto format = Vulkan::getFormat(settings.format);
 
 	// Create image
@@ -59,33 +57,34 @@ VulkanImage::VulkanImage(const Image::Settings& settings) :
 		imageInfo.samples = Vulkan::getSamples(settings.samples);
 		imageInfo.flags = 0; // Optional
 
-		ATEMA_VK_CHECK(vkCreateImage(m_device, &imageInfo, nullptr, &m_image));
+		ATEMA_VK_CHECK(m_device.vkCreateImage(m_device, &imageInfo, nullptr, &m_image));
 	}
 
 	// Allocate image memory
 	{
 		//TODO: Make this custom
-		VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		const VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(m_device, m_image, &memRequirements);
+		m_device.vkGetImageMemoryRequirements(m_device, m_image, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = renderer.findMemoryType(memRequirements.memoryTypeBits, memoryProperties);
+		allocInfo.memoryTypeIndex = m_device.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, memoryProperties);
 
-		ATEMA_VK_CHECK(vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory));
+		ATEMA_VK_CHECK(m_device.vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory));
 
-		vkBindImageMemory(m_device, m_image, m_memory, 0);
+		m_device.vkBindImageMemory(m_device, m_image, m_memory, 0);
 	}
 
 	// Create view
 	createView(format, Vulkan::getAspect(settings.format), settings.mipLevels);
 }
 
-VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels) :
+VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels) :
 	Image(),
+	m_device(device),
 	m_ownsImage(false),
 	m_image(imageHandle),
 	m_view(VK_NULL_HANDLE),
@@ -95,9 +94,6 @@ VulkanImage::VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlag
 	m_size(0, 0),
 	m_mipLevels(1)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-	
 	createView(format, aspect, mipLevels);
 }
 
@@ -160,6 +156,6 @@ void VulkanImage::createView(VkFormat format, VkImageAspectFlags aspect, uint32_
 		viewInfo.subresourceRange.baseArrayLayer = 0;
 		viewInfo.subresourceRange.layerCount = 1;
 
-		ATEMA_VK_CHECK(vkCreateImageView(m_device, &viewInfo, nullptr, &m_view));
+		ATEMA_VK_CHECK(m_device.vkCreateImageView(m_device, &viewInfo, nullptr, &m_view));
 	}
 }

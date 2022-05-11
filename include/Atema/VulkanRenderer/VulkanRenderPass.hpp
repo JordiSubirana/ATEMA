@@ -32,7 +32,7 @@ namespace at
 	{
 	public:
 		VulkanRenderPass() = delete;
-		VulkanRenderPass(const RenderPass::Settings& settings);
+		VulkanRenderPass(const VulkanDevice& device, const RenderPass::Settings& settings);
 		virtual ~VulkanRenderPass();
 
 		VkRenderPass getHandle() const noexcept;
@@ -40,7 +40,7 @@ namespace at
 		const std::vector<AttachmentDescription>& getAttachments() const noexcept override;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkRenderPass m_renderPass;
 		std::vector<AttachmentDescription> m_attachments;
 	};

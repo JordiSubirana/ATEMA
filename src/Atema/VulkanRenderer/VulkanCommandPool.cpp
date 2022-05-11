@@ -25,22 +25,20 @@
 
 using namespace at;
 
-VulkanCommandPool::VulkanCommandPool(const CommandPool::Settings& settings) :
+VulkanCommandPool::VulkanCommandPool(const VulkanDevice& device, const CommandPool::Settings& settings) :
 	CommandPool(),
+	m_device(device),
 	m_commandPool(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	//TODO: Make this custom
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = renderer.getGraphicsQueueIndex();
+	poolInfo.queueFamilyIndex = m_device.getDefaultGraphicsQueueFamilyIndex();
 	// VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : Command buffers may be rerecorded with new commands very often (can optimize memory allocations)
 	// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
-	ATEMA_VK_CHECK(vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool));
+	ATEMA_VK_CHECK(m_device.vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool));
 }
 
 VulkanCommandPool::~VulkanCommandPool()

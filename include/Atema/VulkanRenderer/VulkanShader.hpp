@@ -32,13 +32,13 @@ namespace at
 	{
 	public:
 		VulkanShader() = delete;
-		VulkanShader(const Shader::Settings& settings);
+		VulkanShader(const VulkanDevice& device, const Shader::Settings& settings);
 		virtual ~VulkanShader();
 
 		VkShaderModule getHandle() const noexcept;
 
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkShaderModule m_shaderModule;
 	};
 }

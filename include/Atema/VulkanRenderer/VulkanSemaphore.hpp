@@ -31,13 +31,14 @@ namespace at
 	class ATEMA_VULKANRENDERER_API VulkanSemaphore final : public Semaphore
 	{
 	public:
-		VulkanSemaphore();
+		VulkanSemaphore() = delete;
+		VulkanSemaphore(const VulkanDevice& device);
 		virtual ~VulkanSemaphore();
 
 		VkSemaphore getHandle() const noexcept;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkSemaphore m_semaphore;
 	};
 }

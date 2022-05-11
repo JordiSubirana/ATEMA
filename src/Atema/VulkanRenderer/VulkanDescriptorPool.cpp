@@ -26,7 +26,7 @@
 using namespace at;
 
 // Internal pool
-VulkanDescriptorPool::Pool::Pool(VkDevice device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings) :
+VulkanDescriptorPool::Pool::Pool(const VulkanDevice& device, VkDescriptorSetLayout layout, const SparseSet<VkDescriptorType>& bindingTypes, const VkDescriptorPoolCreateInfo& settings) :
 	m_device(device),
 	m_pool(VK_NULL_HANDLE),
 	m_layout(layout),
@@ -34,7 +34,7 @@ VulkanDescriptorPool::Pool::Pool(VkDevice device, VkDescriptorSetLayout layout, 
 	m_size(0),
 	m_maxSize(settings.maxSets)
 {
-	ATEMA_VK_CHECK(vkCreateDescriptorPool(m_device, &settings, nullptr, &m_pool));
+	ATEMA_VK_CHECK(m_device.vkCreateDescriptorPool(m_device, &settings, nullptr, &m_pool));
 }
 
 VulkanDescriptorPool::Pool::~Pool()
@@ -66,12 +66,12 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = &m_layout;
 
-		ATEMA_VK_CHECK(vkAllocateDescriptorSets(m_device, &allocInfo, &handle));
+		ATEMA_VK_CHECK(m_device.vkAllocateDescriptorSets(m_device, &allocInfo, &handle));
 	}
 
 	m_size++;
 
-	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(handle, m_bindingTypes, [this, handle]()
+	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(m_device, handle, m_bindingTypes, [this, handle]()
 	{
 		m_unusedSets.push(handle);
 		m_size--;
@@ -81,15 +81,12 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 }
 
 // Descriptor pool
-VulkanDescriptorPool::VulkanDescriptorPool(const DescriptorPool::Settings& settings) :
+VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const DescriptorPool::Settings& settings) :
 	DescriptorPool(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_poolSettings({}),
 	m_layout(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	m_layout = std::static_pointer_cast<VulkanDescriptorSetLayout>(settings.layout)->getHandle();
 	
 	// Save pool creation settings

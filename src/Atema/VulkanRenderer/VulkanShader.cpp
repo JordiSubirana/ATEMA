@@ -51,13 +51,11 @@ namespace
 	}
 }
 
-VulkanShader::VulkanShader(const Shader::Settings& settings) :
+VulkanShader::VulkanShader(const VulkanDevice& device, const Shader::Settings& settings) :
 	Shader(),
+	m_device(device),
 	m_shaderModule(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	auto shaderCode = readFile(settings.path);
 
 	VkShaderModuleCreateInfo createInfo{};
@@ -65,7 +63,7 @@ VulkanShader::VulkanShader(const Shader::Settings& settings) :
 	createInfo.codeSize = shaderCode.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
-	ATEMA_VK_CHECK(vkCreateShaderModule(m_device, &createInfo, nullptr, &m_shaderModule));
+	ATEMA_VK_CHECK(m_device.vkCreateShaderModule(m_device, &createInfo, nullptr, &m_shaderModule));
 }
 
 VulkanShader::~VulkanShader()

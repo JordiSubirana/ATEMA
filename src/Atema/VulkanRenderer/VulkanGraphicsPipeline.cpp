@@ -27,14 +27,12 @@
 
 using namespace at;
 
-VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings& settings) :
+VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings) :
 	GraphicsPipeline(),
+	m_device(device),
 	m_pipelineLayout(VK_NULL_HANDLE),
 	m_pipeline(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	//-----
 	// Shaders
 	// Assign shader modules to a specific pipeline stage
@@ -307,7 +305,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-		ATEMA_VK_CHECK(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
+		ATEMA_VK_CHECK(m_device.vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 	}
 
 	//-----
@@ -336,7 +334,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const GraphicsPipeline::Settings&
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	//pipelineInfo.basePipelineIndex = -1; // Optional
 
-	ATEMA_VK_CHECK(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
+	ATEMA_VK_CHECK(m_device.vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()

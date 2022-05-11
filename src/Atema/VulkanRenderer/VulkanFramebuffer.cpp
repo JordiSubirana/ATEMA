@@ -26,13 +26,11 @@
 
 using namespace at;
 
-VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
+VulkanFramebuffer::VulkanFramebuffer(const VulkanDevice& device, const Framebuffer::Settings& settings) :
 	Framebuffer(),
+	m_device(device),
 	m_framebuffer(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
 	std::vector<VkImageView> attachments;
 
@@ -52,7 +50,7 @@ VulkanFramebuffer::VulkanFramebuffer(const Framebuffer::Settings& settings) :
 	framebufferInfo.height = settings.height;
 	framebufferInfo.layers = 1;
 
-	ATEMA_VK_CHECK(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffer));
+	ATEMA_VK_CHECK(m_device.vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffer));
 
 	m_size.x = settings.width;
 	m_size.y = settings.height;

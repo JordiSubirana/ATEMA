@@ -30,6 +30,9 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
+#include <Atema/VulkanRenderer/VulkanDevice.hpp>
+#include <Atema/VulkanRenderer/VulkanInstance.hpp>
+#include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
 
 namespace at
 {
@@ -75,15 +78,13 @@ namespace at
 		// Vulkan specific
 		VkSurfaceKHR getWindowSurface(Ptr<Window> window) const;
 
-		VkInstance getInstanceHandle() const noexcept;
-		VkPhysicalDevice getPhysicalDeviceHandle() const noexcept;
-		VkDevice getLogicalDeviceHandle() const noexcept;
+		const VulkanInstance& getInstance() const noexcept;
+		const VulkanPhysicalDevice& getPhysicalDevice() const noexcept;
+		const VulkanDevice& getDevice() const noexcept;
 		
 		uint32_t getGraphicsQueueIndex() const noexcept;
 		uint32_t getPresentQueueIndex() const noexcept;
-		
-		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		
+
 	private:
 		struct QueueFamilyData
 		{
@@ -114,28 +115,22 @@ namespace at
 		bool checkValidationLayerSupport();
 		void createInstance();
 		void createSurface();
-		QueueFamilyData getQueueFamilyData(VkPhysicalDevice device);
-		SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device);
-		bool checkPhysicalDeviceExtensionSupport(VkPhysicalDevice device);
-		ImageSamples getMaxUsableSampleCount(VkPhysicalDevice device);
-		int getPhysicalDeviceScore(VkPhysicalDevice device, const QueueFamilyData& queueFamilyData);
-		void getPhysicalDevice();
+		QueueFamilyData getQueueFamilyData(const VulkanPhysicalDevice& device) const;
+		SwapChainSupportDetails getSwapChainSupport(const VulkanPhysicalDevice& device) const;
+		static bool checkPhysicalDeviceExtensionSupport(const VulkanPhysicalDevice& device);
+		static ImageSamples getMaxUsableSampleCount(const VulkanPhysicalDevice& device);
+		int getPhysicalDeviceScore(const VulkanPhysicalDevice& device, const QueueFamilyData& queueFamilyData);
+		void pickPhysicalDevice();
 		void createDevice();
 		void createThreadCommandPools();
 
 		void unregisterWindows();
-		
-		void destroy();
-		void destroyInstance();
-		void destroyDevice();
-		void destroyThreadCommandPools();
 
 		Limits m_limits;
-		VkInstance m_instance;
-		UPtr<Vulkan> m_vulkan;
-		VkPhysicalDevice m_physicalDevice;
+		UPtr<VulkanInstance> m_instance;
+		const VulkanPhysicalDevice* m_physicalDevice;
+		UPtr<VulkanDevice> m_device;
 		QueueFamilyData m_queueFamilyData;
-		VkDevice m_device;
 		VkQueue m_graphicsQueue;
 		VkQueue m_presentQueue;
 		ImageSamples m_maxSamples;

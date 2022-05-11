@@ -32,14 +32,14 @@ namespace at
 	{
 	public:
 		VulkanGraphicsPipeline() = delete;
-		VulkanGraphicsPipeline(const GraphicsPipeline::Settings& settings);
+		VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings);
 		virtual ~VulkanGraphicsPipeline();
 
 		VkPipeline getHandle() const noexcept;
 		VkPipelineLayout getLayoutHandle() const noexcept;
 		
 	private:
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		VkPipelineLayout m_pipelineLayout;
 		VkPipeline m_pipeline;
 	};

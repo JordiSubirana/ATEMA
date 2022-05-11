@@ -32,8 +32,8 @@ namespace at
 	{
 	public:
 		VulkanImage() = delete;
-		VulkanImage(const Image::Settings& settings);
-		VulkanImage(VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
+		VulkanImage(const VulkanDevice& device, const Image::Settings& settings);
+		VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
 		virtual ~VulkanImage();
 
 		VkImage getImageHandle() const noexcept;
@@ -50,7 +50,7 @@ namespace at
 	private:
 		void createView(VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
 
-		VkDevice m_device;
+		const VulkanDevice& m_device;
 		bool m_ownsImage;
 		VkImage m_image;
 		VkImageView m_view;

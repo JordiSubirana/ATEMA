@@ -24,19 +24,16 @@
 
 using namespace at;
 
-VulkanFence::VulkanFence(const Fence::Settings& settings) :
+VulkanFence::VulkanFence(const VulkanDevice& device, const Fence::Settings& settings) :
 	Fence(),
-	m_device(VK_NULL_HANDLE),
+	m_device(device),
 	m_fence(VK_NULL_HANDLE)
 {
-	auto& renderer = VulkanRenderer::instance();
-	m_device = renderer.getLogicalDeviceHandle();
-
 	VkFenceCreateInfo fenceInfo{};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = settings.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0; // Specify initial state
 
-	ATEMA_VK_CHECK(vkCreateFence(m_device, &fenceInfo, nullptr, &m_fence));
+	ATEMA_VK_CHECK(m_device.vkCreateFence(m_device, &fenceInfo, nullptr, &m_fence));
 }
 
 VulkanFence::~VulkanFence()
@@ -51,10 +48,10 @@ VkFence VulkanFence::getHandle() const noexcept
 
 void VulkanFence::wait()
 {
-	vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
+	m_device.vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
 }
 
 void VulkanFence::reset()
 {
-	vkResetFences(m_device, 1, &m_fence);
+	m_device.vkResetFences(m_device, 1, &m_fence);
 }
