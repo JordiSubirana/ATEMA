@@ -1,5 +1,14 @@
 AtemaProject/*
 bin/*
 
+# Xmake
+.xmake/*
+.vs/*
+.vsxmake*/*
+vs*/*
+CMakeLists.txt
+Makefile
+build/*
+
 # Autosave files
 *~
