@@ -25,13 +25,31 @@
 
 using namespace at;
 
+namespace
+{
+	bool isQueueFamilyCompatible(Flags<QueueType> flags, VkQueueFlags vkFlags)
+	{
+		// Check graphics bit if needed
+		if ((flags & QueueType::Graphics) && !(vkFlags & VK_QUEUE_GRAPHICS_BIT))
+			return false;
+
+		// Check compute bit if needed
+		if ((flags & QueueType::Compute) && !(vkFlags & VK_QUEUE_COMPUTE_BIT))
+			return false;
+
+		// Check transfer capability if needed (graphics & compute queues support transfers)
+		if (flags & QueueType::Transfer)
+			return vkFlags & (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+
+		return true;
+	}
+}
+
 VulkanDevice::VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalDevice& physicalDevice, const VkDeviceCreateInfo& createInfo) :
 	m_instance(instance),
 	m_physicalDevice(physicalDevice),
 	m_device(nullptr),
-	m_version(physicalDevice.getProperties().apiVersion),
-	m_graphicsQueueFamilyIndex(std::numeric_limits<uint32_t>::max()),
-	m_transferQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
+	m_version(physicalDevice.getProperties().apiVersion)
 {
 	ATEMA_VK_CHECK(m_instance.vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
 	
@@ -53,41 +71,39 @@ VulkanDevice::VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalD
 #define ATEMA_MACROLIST_VULKAN_DEVICE_FUNCTION_EXTENSION_END }
 #include <Atema/VulkanRenderer/DeviceFunctionMacroList.hpp>
 
-	// Initialize queues
-	uint32_t queueIndex = 0;
-	for (auto& queueFamily : m_physicalDevice.getQueueFamilyProperties())
+	// Initialize queues (try to find a unique queue family index for each requirement)
+	const std::vector<Flags<QueueType>> queueTypes =
 	{
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		QueueType::Graphics | QueueType::Compute,
+		QueueType::Graphics,
+		QueueType::Compute,
+		QueueType::Transfer
+	};
+
+	std::unordered_set<uint32_t> processedIndices;
+
+	for (auto& queueType : queueTypes)
+	{
+		uint32_t defaultIndex = std::numeric_limits<uint32_t>::max();
+
+		uint32_t queueIndex = 0;
+		for (auto& queueFamily : m_physicalDevice.getQueueFamilyProperties())
 		{
-			m_graphicsQueueFamilyIndex = queueIndex;
-			break;
+			// Check if the queue is compatible
+			if (isQueueFamilyCompatible(queueType, queueFamily.queueFlags))
+			{
+				// Save at least one compatible index (fall back on it if we don't get a unique index)
+				defaultIndex = queueIndex;
+
+				// Check if we already processed this family (we want a unique index if possible)
+				if (processedIndices.count(defaultIndex) == 0)
+					break;
+			}
+
+			queueIndex++;
 		}
 
-		queueIndex++;
-	}
-
-	queueIndex = 0;
-	for (auto& queueFamily : m_physicalDevice.getQueueFamilyProperties())
-	{
-		// Graphics and compute queues also allow transfers
-		VkQueueFlags transferFlags = VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-
-		if ((queueFamily.queueFlags & transferFlags) && queueIndex != m_graphicsQueueFamilyIndex)
-		{
-			m_transferQueueFamilyIndex = queueIndex;
-			break;
-		}
-
-		queueIndex++;
-	}
-
-	// Fall back on graphics queue family if we didn't find another one
-	if (m_transferQueueFamilyIndex == std::numeric_limits<uint32_t>::max())
-		m_transferQueueFamilyIndex = m_graphicsQueueFamilyIndex;
-
-	if (m_graphicsQueueFamilyIndex == std::numeric_limits<uint32_t>::max())
-	{
-		ATEMA_ERROR("Device does not support graphics operations");
+		m_defaultQueueFamilyIndices[queueType] = defaultIndex;
 	}
 }
 
@@ -123,14 +139,13 @@ const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept
 	return m_physicalDevice;
 }
 
-uint32_t VulkanDevice::getDefaultGraphicsQueueFamilyIndex() const noexcept
+uint32_t VulkanDevice::getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) const
 {
-	return m_graphicsQueueFamilyIndex;
-}
+	// If the requirements is not ONLY transfer, remove the bit (every other case implicitly supports it)
+	if (queueTypes != QueueType::Transfer)
+		queueTypes &= ~(static_cast<int>(QueueType::Transfer));
 
-uint32_t VulkanDevice::getDefaultTransferQueueFamilyIndex() const noexcept
-{
-	return m_transferQueueFamilyIndex;
+	return m_defaultQueueFamilyIndices.at(queueTypes);
 }
 
 void VulkanDevice::waitForIdle()

@@ -26,6 +26,7 @@
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 
 #include <unordered_set>
+#include <unordered_map>
 
 namespace at
 {
@@ -46,8 +47,7 @@ namespace at
 		const VulkanInstance& getInstance() const noexcept;
 		const VulkanPhysicalDevice& getPhysicalDevice() const noexcept;
 
-		uint32_t getDefaultGraphicsQueueFamilyIndex() const noexcept;
-		uint32_t getDefaultTransferQueueFamilyIndex() const noexcept;
+		uint32_t getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) const;
 
 		void waitForIdle();
 
@@ -66,8 +66,7 @@ namespace at
 		uint32_t m_version;
 		std::unordered_set<std::string> m_extensions;
 		std::unordered_set<std::string> m_layers;
-		uint32_t m_graphicsQueueFamilyIndex;
-		uint32_t m_transferQueueFamilyIndex;
+		std::unordered_map<int, uint32_t> m_defaultQueueFamilyIndices;
 	};
 }
 

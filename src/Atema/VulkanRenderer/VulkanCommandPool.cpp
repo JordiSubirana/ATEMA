@@ -33,7 +33,7 @@ VulkanCommandPool::VulkanCommandPool(const VulkanDevice& device, const CommandPo
 	//TODO: Make this custom
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = m_device.getDefaultGraphicsQueueFamilyIndex();
+	poolInfo.queueFamilyIndex = m_device.getDefaultQueueFamilyIndex(QueueType::Graphics);
 	// VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : Command buffers may be rerecorded with new commands very often (can optimize memory allocations)
 	// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
