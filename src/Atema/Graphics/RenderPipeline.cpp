@@ -120,9 +120,7 @@ void RenderPipeline::startFrame()
 	// Acquire next available swapchain image
 	auto& imageAvailableSemaphore = m_imageAvailableSemaphores[m_currentFrame];
 
-	SwapChainResult acquireResult = SwapChainResult::Success;
-
-	m_swapChain->acquireNextImage(m_currentSwapChainImage, imageAvailableSemaphore);
+	SwapChainResult acquireResult = m_swapChain->acquireNextImage(m_currentSwapChainImage, imageAvailableSemaphore);
 
 	if (acquireResult == SwapChainResult::OutOfDate ||
 		acquireResult == SwapChainResult::Suboptimal)
