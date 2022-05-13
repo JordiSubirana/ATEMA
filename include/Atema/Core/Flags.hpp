@@ -51,6 +51,7 @@ namespace at
 		int getValue() const noexcept;
 
 		operator bool() const noexcept;
+		operator int() const noexcept;
 
 		Flags operator|(E value) const noexcept;
 		Flags operator|(const Flags<E>& value) const noexcept;
@@ -60,6 +61,11 @@ namespace at
 		Flags& operator|=(const Flags<E>& value) noexcept;
 		Flags& operator&=(E value) noexcept;
 		Flags& operator&=(const Flags<E>& value) noexcept;
+
+		bool operator==(E value) const noexcept;
+		bool operator==(const Flags<E>& value) const noexcept;
+		bool operator!=(E value) const noexcept;
+		bool operator!=(const Flags<E>& value) const noexcept;
 		
 	private:
 		int m_value;

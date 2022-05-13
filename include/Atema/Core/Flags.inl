@@ -64,6 +64,12 @@ namespace at
 	}
 
 	template <typename E>
+	Flags<E>::operator int() const noexcept
+	{
+		return getValue();
+	}
+
+	template <typename E>
 	Flags<E> Flags<E>::operator|(E value) const noexcept
 	{
 		return Flags<E>(m_value | static_cast<int>(value));
@@ -113,6 +119,30 @@ namespace at
 	{
 		m_value &= value.getValue();
 		return *this;
+	}
+
+	template <typename E>
+	bool Flags<E>::operator==(E value) const noexcept
+	{
+		return m_value == static_cast<int>(value);
+	}
+
+	template <typename E>
+	bool Flags<E>::operator==(const Flags<E>& value) const noexcept
+	{
+		return m_value == value.getValue();
+	}
+
+	template <typename E>
+	bool Flags<E>::operator!=(E value) const noexcept
+	{
+		return m_value != static_cast<int>(value);
+	}
+
+	template <typename E>
+	bool Flags<E>::operator!=(const Flags<E>& value) const noexcept
+	{
+		return m_value != value.getValue();
 	}
 }
 
