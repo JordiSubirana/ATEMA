@@ -388,6 +388,17 @@ namespace at
 		// Unknown error
 		Error
 	};
+
+	enum class QueueType
+	{
+		Graphics = 0x0001,
+		Compute = 0x0002,
+		Transfer = 0x0004,
+
+		All = Graphics | Compute | Transfer
+	};
+
+	ATEMA_DECLARE_FLAGS(QueueType);
 }
 
 #endif
