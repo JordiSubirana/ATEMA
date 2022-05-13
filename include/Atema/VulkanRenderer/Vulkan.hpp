@@ -134,6 +134,8 @@ namespace at
 
 		static SwapChainResult getSwapChainResult(VkResult value);
 
+		static VkQueueFlags getQueueFlags(Flags<QueueType> queueTypes);
+
 	private:
 		Vulkan();
 

@@ -895,3 +895,19 @@ SwapChainResult Vulkan::getSwapChainResult(VkResult value)
 	return SwapChainResult::Error;
 }
 
+VkQueueFlags Vulkan::getQueueFlags(Flags<QueueType> queueTypes)
+{
+	VkQueueFlags flags = 0;
+
+	if (queueTypes & QueueType::Graphics)
+		flags |= VK_QUEUE_GRAPHICS_BIT;
+
+	if (queueTypes & QueueType::Compute)
+		flags |= VK_QUEUE_COMPUTE_BIT;
+
+	if (queueTypes & QueueType::Graphics)
+		flags |= VK_QUEUE_TRANSFER_BIT;
+
+	return flags;
+}
+
