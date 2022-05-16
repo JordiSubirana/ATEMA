@@ -62,7 +62,7 @@ RenderPipeline::RenderPipeline(const Settings& settings) :
 	for (uint32_t i = 0; i < m_maxFramesInFlight; i++)
 	{
 		// Command pools
-		m_commandPools.push_back(CommandPool::create({}));
+		m_commandPools.push_back(CommandPool::create({QueueType::Graphics}));
 		
 		// Fences
 		m_fences.push_back(Fence::create({ true }));
