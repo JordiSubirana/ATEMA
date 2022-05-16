@@ -61,8 +61,11 @@ namespace at
 			} depthStencil;
 			
 		} ClearValue;
-		
+
+		CommandBuffer() = delete;
 		virtual ~CommandBuffer();
+
+		Flags<QueueType> getQueueTypes() const noexcept;
 
 		virtual void begin() = 0;
 
@@ -102,7 +105,10 @@ namespace at
 		virtual void end() = 0;
 		
 	protected:
-		CommandBuffer();
+		CommandBuffer(Flags<QueueType> queueTypes);
+
+	private:
+		Flags<QueueType> m_queueTypes;
 	};
 }
 

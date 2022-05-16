@@ -24,10 +24,16 @@
 
 using namespace at;
 
-CommandBuffer::CommandBuffer()
+CommandBuffer::CommandBuffer(Flags<QueueType> queueTypes) :
+	m_queueTypes(queueTypes)
 {
 }
 
 CommandBuffer::~CommandBuffer()
 {
+}
+
+Flags<QueueType> CommandBuffer::getQueueTypes() const noexcept
+{
+	return m_queueTypes;
 }

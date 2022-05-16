@@ -32,7 +32,7 @@ namespace at
 	{
 	public:
 		VulkanCommandBuffer() = delete;
-		VulkanCommandBuffer(VkCommandPool commandPool, const CommandBuffer::Settings& settings);
+		VulkanCommandBuffer(VkCommandPool commandPool, Flags<QueueType> queueTypes, const CommandBuffer::Settings& settings);
 		virtual ~VulkanCommandBuffer();
 
 		VkCommandBuffer getHandle() const noexcept;

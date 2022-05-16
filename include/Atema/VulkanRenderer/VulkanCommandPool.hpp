@@ -41,6 +41,7 @@ namespace at
 		
 	private:
 		const VulkanDevice& m_device;
+		Flags<QueueType> m_queueTypes;
 		VkCommandPool m_commandPool;
 	};
 }

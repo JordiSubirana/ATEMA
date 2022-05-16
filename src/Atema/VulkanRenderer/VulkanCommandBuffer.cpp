@@ -33,17 +33,16 @@
 
 using namespace at;
 
-VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, const CommandBuffer::Settings& settings) :
-	CommandBuffer(),
+VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, Flags<QueueType> queueTypes, const CommandBuffer::Settings& settings) :
+	CommandBuffer(queueTypes),
 	m_device(VulkanRenderer::instance().getDevice()),
 	m_commandBuffer(VK_NULL_HANDLE),
+	m_commandPool(commandPool),
 	m_singleUse(settings.singleUse),
 	m_isSecondary(settings.secondary),
 	m_secondaryBegan(false),
 	m_currentPipelineLayout(VK_NULL_HANDLE)
 {
-	m_commandPool = commandPool;
-	
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = m_commandPool;
