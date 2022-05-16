@@ -34,7 +34,7 @@ namespace at
 	public:
 		struct Settings
 		{
-			
+			Flags<QueueType> queueTypes = QueueType::All;
 		};
 		
 		virtual ~CommandPool();
