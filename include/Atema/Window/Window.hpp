@@ -55,10 +55,11 @@ namespace at
 
 			std::string title;
 		};
-		
+
+		Window() = delete;
 		virtual ~Window();
 
-		static Ptr<Window> create(const Settings& description);
+		static Ptr<Window> create(const Settings& settings);
 
 		void setTitle(const std::string& title);
 
@@ -81,12 +82,11 @@ namespace at
 		
 		// Vulkan specific
 		static const std::vector<const char*>& getVulkanExtensions();
-		
+
+	protected:
+		Window(const Settings& settings);
+
 	private:
-		Window();
-
-		void initialize(const Settings& description);
-
 		void resizedCallback(unsigned int width, unsigned int height);
 		
 		class Implementation;

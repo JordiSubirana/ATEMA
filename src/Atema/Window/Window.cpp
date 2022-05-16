@@ -291,17 +291,17 @@ public:
 		m_eventCallback = callback;
 	}
 
-	void create(const Window::Settings& description)
+	void create(const Window::Settings& settings)
 	{
 		destroy(); // Ensure there is no previous window
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, description.resizable ? GLFW_TRUE : GLFW_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, settings.resizable ? GLFW_TRUE : GLFW_FALSE);
 		
 		m_window = glfwCreateWindow(
-			description.width,
-			description.height,
-			description.title.c_str(),
+			static_cast<int>(settings.width),
+			static_cast<int>(settings.height),
+			settings.title.c_str(),
 			nullptr,
 			nullptr);
 
@@ -459,7 +459,7 @@ private:
 };
 
 // Window
-Window::Window()
+Window::Window(const Settings& settings)
 {
 	m_implementation.reset(new Window::Implementation());
 	m_implementation->setResizedCallback([this](unsigned int w, unsigned int h)
@@ -471,17 +471,17 @@ Window::Window()
 		{
 			m_eventDispatcher.execute(event);
 		});
+
+	m_implementation->create(settings);
 }
 
 Window::~Window()
 {
 }
 
-Ptr<Window> Window::create(const Window::Settings& description)
+Ptr<Window> Window::create(const Window::Settings& settings)
 {
-	Ptr<Window> window(new Window());
-
-	window->initialize(description);
+	Ptr<Window> window(new Window(settings));
 	
 	return window;
 }
@@ -499,11 +499,6 @@ void Window::setCursorEnabled(bool enable)
 bool Window::isCursorEnabled() const noexcept
 {
 	return m_implementation->isCursorEnabled();
-}
-
-void Window::initialize(const Settings& description)
-{
-	m_implementation->create(description);
 }
 
 void Window::resizedCallback(unsigned width, unsigned height)
