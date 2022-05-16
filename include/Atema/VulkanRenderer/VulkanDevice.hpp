@@ -24,9 +24,9 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/SparseSet.hpp>
 
 #include <unordered_set>
-#include <unordered_map>
 
 namespace at
 {
@@ -66,7 +66,7 @@ namespace at
 		uint32_t m_version;
 		std::unordered_set<std::string> m_extensions;
 		std::unordered_set<std::string> m_layers;
-		std::unordered_map<int, uint32_t> m_defaultQueueFamilyIndices;
+		SparseSet<uint32_t, 8> m_defaultQueueFamilyIndices;
 	};
 }
 

@@ -103,7 +103,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalD
 			queueIndex++;
 		}
 
-		m_defaultQueueFamilyIndices[queueType] = defaultIndex;
+		m_defaultQueueFamilyIndices[static_cast<size_t>(queueType.getValue())] = defaultIndex;
 	}
 }
 
@@ -147,7 +147,7 @@ uint32_t VulkanDevice::getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) c
 	if (queueTypes != QueueType::Transfer)
 		queueTypes &= ~(static_cast<int>(QueueType::Transfer));
 
-	return m_defaultQueueFamilyIndices.at(queueTypes);
+	return m_defaultQueueFamilyIndices[static_cast<size_t>(queueTypes.getValue())];
 }
 
 void VulkanDevice::waitForIdle()
