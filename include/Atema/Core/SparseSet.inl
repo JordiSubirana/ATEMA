@@ -26,77 +26,77 @@
 
 namespace at
 {
-	template<typename T>
-	SparseSet<T>::SparseSet()
+	template <typename T, size_t PageSize>
+	SparseSet<T, PageSize>::SparseSet()
 	{
 	}
-	template<typename T>
-	SparseSet<T>::~SparseSet()
+	template <typename T, size_t PageSize>
+	SparseSet<T, PageSize>::~SparseSet()
 	{
 	}
 
-	template <typename T>
-	T* SparseSet<T>::data() noexcept
+	template <typename T, size_t PageSize>
+	T* SparseSet<T, PageSize>::data() noexcept
 	{
 		return getData();
 	}
 
-	template <typename T>
-	T* SparseSet<T>::getData() noexcept
+	template <typename T, size_t PageSize>
+	T* SparseSet<T, PageSize>::getData() noexcept
 	{
 		return m_data.data();
 	}
 
-	template <typename T>
-	const T* SparseSet<T>::data() const noexcept
+	template <typename T, size_t PageSize>
+	const T* SparseSet<T, PageSize>::data() const noexcept
 	{
 		return getData();
 	}
 
-	template <typename T>
-	const T* SparseSet<T>::getData() const noexcept
+	template <typename T, size_t PageSize>
+	const T* SparseSet<T, PageSize>::getData() const noexcept
 	{
 		return m_data.data();
 	}
 
-	template <typename T>
-	const std::vector<size_t>& SparseSet<T>::getIndices() const noexcept
+	template <typename T, size_t PageSize>
+	const std::vector<size_t>& SparseSet<T, PageSize>::getIndices() const noexcept
 	{
 		return m_indices;
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::size() const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::size() const
 	{
 		return getSize();
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::getSize() const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::getSize() const
 	{
 		return m_data.size();
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::capacity() const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::capacity() const
 	{
 		return getCapacity();
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::getCapacity() const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::getCapacity() const
 	{
 		return m_data.capacity();
 	}
 
-	template <typename T>
-	void SparseSet<T>::reserve(size_t size)
+	template <typename T, size_t PageSize>
+	void SparseSet<T, PageSize>::reserve(size_t size)
 	{
 		m_data.reserve(size);
 	}
 
-	template <typename T>
-	bool SparseSet<T>::contains(size_t index) const
+	template <typename T, size_t PageSize>
+	bool SparseSet<T, PageSize>::contains(size_t index) const
 	{
 		const auto pageIndex = getPageIndex(index);
 		const auto offset = getOffset(index);
@@ -104,50 +104,50 @@ namespace at
 		return m_pages.size() > pageIndex && m_pages[pageIndex] && m_pages[pageIndex]->indices[offset] != InvalidIndex;
 	}
 
-	template <typename T>
-	T& SparseSet<T>::operator[](size_t index)
+	template <typename T, size_t PageSize>
+	T& SparseSet<T, PageSize>::operator[](size_t index)
 	{
 		return m_data[getPackedIndex(index)];
 	}
 
-	template <typename T>
-	const T& SparseSet<T>::operator[](size_t index) const
+	template <typename T, size_t PageSize>
+	const T& SparseSet<T, PageSize>::operator[](size_t index) const
 	{
 		return m_data[getPackedIndex(index)];
 	}
 
-	template <typename T>
-	typename SparseSet<T>::Iterator SparseSet<T>::begin() noexcept
+	template <typename T, size_t PageSize>
+	typename SparseSet<T, PageSize>::Iterator SparseSet<T, PageSize>::begin() noexcept
 	{
 		return m_data.begin();
 	}
 
-	template <typename T>
-	typename SparseSet<T>::ConstIterator SparseSet<T>::begin() const noexcept
+	template <typename T, size_t PageSize>
+	typename SparseSet<T, PageSize>::ConstIterator SparseSet<T, PageSize>::begin() const noexcept
 	{
 		return m_data.begin();
 	}
 
-	template <typename T>
-	typename SparseSet<T>::Iterator SparseSet<T>::end() noexcept
+	template <typename T, size_t PageSize>
+	typename SparseSet<T, PageSize>::Iterator SparseSet<T, PageSize>::end() noexcept
 	{
 		return m_data.end();
 	}
 
-	template <typename T>
-	typename SparseSet<T>::ConstIterator SparseSet<T>::end() const noexcept
+	template <typename T, size_t PageSize>
+	typename SparseSet<T, PageSize>::ConstIterator SparseSet<T, PageSize>::end() const noexcept
 	{
 		return m_data.end();
 	}
 
-	template <typename T>
-	T& SparseSet<T>::emplace(size_t index)
+	template <typename T, size_t PageSize>
+	T& SparseSet<T, PageSize>::emplace(size_t index)
 	{
 		return checkElement(index);
 	}
 
-	template <typename T>
-	T& SparseSet<T>::insert(size_t index, const T& value)
+	template <typename T, size_t PageSize>
+	T& SparseSet<T, PageSize>::insert(size_t index, const T& value)
 	{
 		auto& element = checkElement(index);
 
@@ -156,8 +156,8 @@ namespace at
 		return element;
 	}
 
-	template <typename T>
-	void SparseSet<T>::erase(size_t index)
+	template <typename T, size_t PageSize>
+	void SparseSet<T, PageSize>::erase(size_t index)
 	{
 		const auto pageIndex = getPageIndex(index);
 		const auto offset = getOffset(index);
@@ -205,34 +205,34 @@ namespace at
 		}
 	}
 
-	template <typename T>
-	void SparseSet<T>::clear()
+	template <typename T, size_t PageSize>
+	void SparseSet<T, PageSize>::clear()
 	{
 		m_data.clear();
 		m_indices.clear();
 		m_pages.clear();
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::getPageIndex(size_t index) const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::getPageIndex(size_t index) const
 	{
 		return index / PageSize;
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::getOffset(size_t index) const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::getOffset(size_t index) const
 	{
 		return index & (PageSize - 1);
 	}
 
-	template <typename T>
-	size_t SparseSet<T>::getPackedIndex(size_t index) const
+	template <typename T, size_t PageSize>
+	size_t SparseSet<T, PageSize>::getPackedIndex(size_t index) const
 	{
 		return m_pages[getPageIndex(index)]->indices[getOffset(index)];
 	}
 
-	template <typename T>
-	typename SparseSet<T>::Page& SparseSet<T>::checkPage(size_t index)
+	template <typename T, size_t PageSize>
+	typename SparseSet<T, PageSize>::Page& SparseSet<T, PageSize>::checkPage(size_t index)
 	{
 		// Ensure there is a valid slot for the page
 		if (m_pages.size() <= index)
@@ -249,8 +249,8 @@ namespace at
 		return *(m_pages[index]);
 	}
 
-	template <typename T>
-	T& SparseSet<T>::checkElement(size_t index)
+	template <typename T, size_t PageSize>
+	T& SparseSet<T, PageSize>::checkElement(size_t index)
 	{
 		const auto pageIndex = getPageIndex(index);
 		const auto offset = getOffset(index);

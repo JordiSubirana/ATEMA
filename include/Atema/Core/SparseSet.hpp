@@ -29,13 +29,13 @@
 #include <vector>
 #include <array>
 
-#ifndef ATEMA_SPARSESET_PAGE_SIZE
-#define ATEMA_SPARSESET_PAGE_SIZE 4096
+#ifndef ATEMA_SPARSESET_DEFAULT_PAGE_SIZE
+#define ATEMA_SPARSESET_DEFAULT_PAGE_SIZE 4096
 #endif
 
 namespace at
 {
-	template <typename T>
+	template <typename T, size_t PageSize = ATEMA_SPARSESET_DEFAULT_PAGE_SIZE>
 	class SparseSet
 	{
 	public:
@@ -79,8 +79,6 @@ namespace at
 		void clear();
 
 	private:
-		static constexpr size_t PageSize = ATEMA_SPARSESET_PAGE_SIZE;
-
 		static_assert(IsPowerOfTwo<PageSize>::value, "Page size must be power of 2");
 		
 		struct Page
