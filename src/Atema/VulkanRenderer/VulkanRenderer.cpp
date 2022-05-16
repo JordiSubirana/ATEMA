@@ -861,7 +861,7 @@ void VulkanRenderer::createThreadCommandPools()
 
 	for (size_t i = 0; i < size; i++)
 	{
-		m_threadCommandPools.push_back(CommandPool::create({}));
+		m_threadCommandPools.push_back(CommandPool::create({QueueType::All}));
 	}
 }
 

@@ -141,6 +141,8 @@ const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept
 
 uint32_t VulkanDevice::getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) const
 {
+	ATEMA_ASSERT(queueTypes, "No queue types specified");
+
 	// If the requirements is not ONLY transfer, remove the bit (every other case implicitly supports it)
 	if (queueTypes != QueueType::Transfer)
 		queueTypes &= ~(static_cast<int>(QueueType::Transfer));
