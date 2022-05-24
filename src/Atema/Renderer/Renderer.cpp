@@ -28,7 +28,6 @@ Ptr<Renderer> Renderer::s_renderer = nullptr;
 
 Renderer::Renderer(const Settings& settings) : m_settings(settings)
 {
-	m_mainWindow = Window::create(settings.mainWindowSettings);
 }
 
 Renderer::~Renderer()
@@ -92,16 +91,11 @@ const Renderer::Settings& Renderer::getSettings() const noexcept
 	return m_settings;
 }
 
-Ptr<Window> Renderer::getMainWindow() const noexcept
-{
-	return m_mainWindow;
-}
-
 void Renderer::submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers)
 {
 	auto fence = Fence::create({});
 
-	submit(commandBuffers, {}, {}, {}, fence);
+	submit(commandBuffers, {}, {}, fence);
 
 	// Wait for the command to be done
 	fence->wait();

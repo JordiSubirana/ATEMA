@@ -25,11 +25,15 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Core/SparseSet.hpp>
+#include <Atema/Renderer/Semaphore.hpp>
 
 #include <unordered_set>
 
 namespace at
 {
+	class Fence;
+	class CommandBuffer;
+	class CommandPool;
 	class VulkanInstance;
 	class VulkanPhysicalDevice;
 
@@ -37,7 +41,13 @@ namespace at
 	{
 	public:
 		VulkanDevice() = delete;
-		VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalDevice& physicalDevice, const VkDeviceCreateInfo& createInfo);
+		VulkanDevice(
+			const VulkanInstance& instance,
+			const VulkanPhysicalDevice& physicalDevice,
+			const VkDeviceCreateInfo& createInfo,
+			uint32_t graphicsFamilyIndex,
+			uint32_t computeFamilyIndex,
+			uint32_t transferFamilyIndex);
 		~VulkanDevice();
 
 		VkDevice getHandle() const noexcept;
@@ -47,9 +57,16 @@ namespace at
 		const VulkanInstance& getInstance() const noexcept;
 		const VulkanPhysicalDevice& getPhysicalDevice() const noexcept;
 
-		uint32_t getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) const;
+		uint32_t getQueueFamilyIndex(QueueType queueType) const;
 
-		void waitForIdle();
+		VkQueue getQueue(QueueType queueType) const;
+
+		Ptr<CommandPool> getDefaultCommandPool(QueueType queueType) const;
+		Ptr<CommandPool> getDefaultCommandPool(QueueType queueType, size_t threadIndex) const;
+
+		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<WaitCondition>& waitConditions, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr);
+
+		void waitForIdle() const;
 
 		bool isExtensionLoaded(const std::string& extensionName) const;
 		bool isLayerLoaded(const std::string& layerName) const;
@@ -60,13 +77,22 @@ namespace at
 #include <Atema/VulkanRenderer/DeviceFunctionMacroList.hpp>
 
 	private:
+		struct QueueData
+		{
+			uint32_t familyIndex;
+			VkQueue queue;
+			std::vector<Ptr<CommandPool>> commandPools;
+		};
+
+		const QueueData& getQueueData(QueueType queueType) const;
+
 		const VulkanInstance& m_instance;
 		const VulkanPhysicalDevice& m_physicalDevice;
 		VkDevice m_device;
 		uint32_t m_version;
 		std::unordered_set<std::string> m_extensions;
 		std::unordered_set<std::string> m_layers;
-		SparseSet<uint32_t, 8> m_defaultQueueFamilyIndices;
+		std::vector<QueueData> m_queueDatas;
 	};
 }
 

@@ -19,33 +19,24 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/TaskManager.hpp>
+#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
+#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
 #include <Atema/VulkanRenderer/VulkanDevice.hpp>
+#include <Atema/VulkanRenderer/VulkanFence.hpp>
 #include <Atema/VulkanRenderer/VulkanInstance.hpp>
 #include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
+#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 
 using namespace at;
 
-namespace
-{
-	bool isQueueFamilyCompatible(Flags<QueueType> flags, VkQueueFlags vkFlags)
-	{
-		// Check graphics bit if needed
-		if ((flags & QueueType::Graphics) && !(vkFlags & VK_QUEUE_GRAPHICS_BIT))
-			return false;
-
-		// Check compute bit if needed
-		if ((flags & QueueType::Compute) && !(vkFlags & VK_QUEUE_COMPUTE_BIT))
-			return false;
-
-		// Check transfer capability if needed (graphics & compute queues support transfers)
-		if (flags & QueueType::Transfer)
-			return vkFlags & (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
-
-		return true;
-	}
-}
-
-VulkanDevice::VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalDevice& physicalDevice, const VkDeviceCreateInfo& createInfo) :
+VulkanDevice::VulkanDevice(
+	const VulkanInstance& instance,
+	const VulkanPhysicalDevice& physicalDevice,
+	const VkDeviceCreateInfo& createInfo,
+	uint32_t graphicsFamilyIndex,
+	uint32_t computeFamilyIndex,
+	uint32_t transferFamilyIndex) :
 	m_instance(instance),
 	m_physicalDevice(physicalDevice),
 	m_device(nullptr),
@@ -71,44 +62,63 @@ VulkanDevice::VulkanDevice(const VulkanInstance& instance, const VulkanPhysicalD
 #define ATEMA_MACROLIST_VULKAN_DEVICE_FUNCTION_EXTENSION_END }
 #include <Atema/VulkanRenderer/DeviceFunctionMacroList.hpp>
 
-	// Initialize queues (try to find a unique queue family index for each requirement)
-	const std::vector<Flags<QueueType>> queueTypes =
+	// Initialize queues
+	const auto threadCount = TaskManager::instance().getSize();
+	constexpr uint32_t invalidIndex = std::numeric_limits<uint32_t>::max();
+
+	const std::vector<uint32_t> queueFamilyIndices =
 	{
-		QueueType::Graphics | QueueType::Compute,
+		graphicsFamilyIndex,
+		computeFamilyIndex,
+		transferFamilyIndex
+	};
+
+	// Initialize other queues (try to find a unique queue family index for each requirement)
+	const std::vector<QueueType> queueTypes =
+	{
 		QueueType::Graphics,
 		QueueType::Compute,
 		QueueType::Transfer
 	};
 
-	std::unordered_set<uint32_t> processedIndices;
-
-	for (auto& queueType : queueTypes)
+	for (size_t i = 0; i < queueFamilyIndices.size(); i++)
 	{
-		uint32_t defaultIndex = std::numeric_limits<uint32_t>::max();
+		auto& queueFamilyIndex = queueFamilyIndices[i];
+		auto& queueType = queueTypes[i];
 
-		uint32_t queueIndex = 0;
-		for (auto& queueFamily : m_physicalDevice.getQueueFamilyProperties())
+		// Create unique queue family, queue and command pools
+		if (i == 0 || queueFamilyIndex != queueFamilyIndices[0])
 		{
-			// Check if the queue is compatible
-			if (isQueueFamilyCompatible(queueType, queueFamily.queueFlags))
-			{
-				// Save at least one compatible index (fall back on it if we don't get a unique index)
-				defaultIndex = queueIndex;
+			QueueData queueData;
 
-				// Check if we already processed this family (we want a unique index if possible)
-				if (processedIndices.count(defaultIndex) == 0)
-					break;
-			}
+			queueData.familyIndex = queueFamilyIndex;
 
-			queueIndex++;
+			vkGetDeviceQueue(m_device, queueFamilyIndex, 0, &queueData.queue);
+
+			queueData.commandPools.resize(threadCount + 1);
+
+			CommandPool::Settings commandPoolSettings;
+			commandPoolSettings.queueType = queueType;
+
+			for (auto& commandPool : queueData.commandPools)
+				commandPool = std::make_shared<VulkanCommandPool>(*this, queueFamilyIndex, commandPoolSettings);
+
+			m_queueDatas.emplace_back(std::move(queueData));
 		}
-
-		m_defaultQueueFamilyIndices[static_cast<size_t>(queueType.getValue())] = defaultIndex;
+		// Fall back on graphics family data
+		else
+		{
+			m_queueDatas.emplace_back(m_queueDatas[0]);
+		}
 	}
 }
 
 VulkanDevice::~VulkanDevice()
 {
+	waitForIdle();
+
+	m_queueDatas.clear();
+
 	if (m_device != VK_NULL_HANDLE)
 	{
 		vkDeviceWaitIdle(m_device);
@@ -139,18 +149,94 @@ const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept
 	return m_physicalDevice;
 }
 
-uint32_t VulkanDevice::getDefaultQueueFamilyIndex(Flags<QueueType> queueTypes) const
+uint32_t VulkanDevice::getQueueFamilyIndex(QueueType queueType) const
 {
-	ATEMA_ASSERT(queueTypes, "No queue types specified");
-
-	// If the requirements is not ONLY transfer, remove the bit (every other case implicitly supports it)
-	if (queueTypes != QueueType::Transfer)
-		queueTypes &= ~(static_cast<int>(QueueType::Transfer));
-
-	return m_defaultQueueFamilyIndices[static_cast<size_t>(queueTypes.getValue())];
+	return getQueueData(queueType).familyIndex;
 }
 
-void VulkanDevice::waitForIdle()
+VkQueue VulkanDevice::getQueue(QueueType queueType) const
+{
+	return getQueueData(queueType).queue;
+}
+
+Ptr<CommandPool> VulkanDevice::getDefaultCommandPool(QueueType queueType) const
+{
+	return getQueueData(queueType).commandPools.back();
+}
+
+Ptr<CommandPool> VulkanDevice::getDefaultCommandPool(QueueType queueType, size_t threadIndex) const
+{
+	return getQueueData(queueType).commandPools[threadIndex];
+}
+
+void VulkanDevice::submit(
+	const std::vector<Ptr<CommandBuffer>>& commandBuffers,
+	const std::vector<WaitCondition>& waitConditions,
+	const std::vector<Ptr<Semaphore>>& signalSemaphores,
+	Ptr<Fence> fence)
+{
+	ATEMA_ASSERT(!commandBuffers.empty(), "At least one command buffer must be submitted");
+	
+	const auto queueType = commandBuffers[0]->getQueueType();
+	
+	// Command buffers
+	std::vector<VkCommandBuffer> vkCommandBuffers;
+	vkCommandBuffers.reserve(commandBuffers.size());
+	for (auto& commandBuffer : commandBuffers)
+	{
+		if (commandBuffer->getQueueType() != queueType)
+		{
+			ATEMA_ERROR("All CommandBuffers submitted in a batch must share their QueueType");
+		}
+
+		vkCommandBuffers.emplace_back(static_cast<VulkanCommandBuffer&>(*commandBuffer).getHandle());
+	}
+
+	// Wait conditions (wait semaphores + pipeline stages)
+	std::vector<VkSemaphore> vkWaitSemaphores;
+	std::vector<VkPipelineStageFlags> vkWaitStages;
+	vkWaitSemaphores.reserve(waitConditions.size());
+	vkWaitStages.reserve(waitConditions.size());
+	for (auto& waitCondition : waitConditions)
+	{
+		vkWaitSemaphores.emplace_back(static_cast<VulkanSemaphore&>(*waitCondition.semaphore).getHandle());
+		vkWaitStages.emplace_back(Vulkan::getPipelineStages(waitCondition.pipelineStages));
+	}
+
+	// Signal semaphores
+	std::vector<VkSemaphore> vkSignalSemaphores;
+	vkSignalSemaphores.reserve(signalSemaphores.size());
+	for (auto& semaphore : signalSemaphores)
+	{
+		vkSignalSemaphores.emplace_back(static_cast<VulkanSemaphore&>(*semaphore).getHandle());
+	}
+
+	// Submission
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	// Which semaphores to wait, and on which pipeline stages
+	submitInfo.waitSemaphoreCount = static_cast<uint32_t>(vkWaitSemaphores.size());
+	submitInfo.pWaitSemaphores = vkWaitSemaphores.data();
+	submitInfo.pWaitDstStageMask = vkWaitStages.data();
+
+	// Command buffers to be submitted
+	submitInfo.commandBufferCount = static_cast<uint32_t>(vkCommandBuffers.size());
+	submitInfo.pCommandBuffers = vkCommandBuffers.data();
+
+	// Specify what semaphore will be used as the signal that command buffers were executed
+	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(vkSignalSemaphores.size());
+	submitInfo.pSignalSemaphores = vkSignalSemaphores.data();
+
+	VkFence vkFence = VK_NULL_HANDLE;
+
+	if (fence)
+		vkFence = std::static_pointer_cast<VulkanFence>(fence)->getHandle();
+
+	ATEMA_VK_CHECK(vkQueueSubmit(getQueue(queueType), 1, &submitInfo, vkFence));
+}
+
+void VulkanDevice::waitForIdle() const
 {
 	vkDeviceWaitIdle(m_device);
 }
@@ -174,4 +260,9 @@ PFN_vkVoidFunction VulkanDevice::getProcAddr(const char* name) const
 
 	// Try to get the function from the instance
 	return m_instance.getProcAddr(name);
+}
+
+const VulkanDevice::QueueData& VulkanDevice::getQueueData(QueueType queueType) const
+{
+	return m_queueDatas[static_cast<size_t>(queueType)];
 }

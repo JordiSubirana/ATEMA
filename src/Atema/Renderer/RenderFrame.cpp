@@ -19,44 +19,23 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_SWAPCHAIN_HPP
-#define ATEMA_RENDERER_SWAPCHAIN_HPP
+#include <Atema/Renderer/RenderFrame.hpp>
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Renderer/Enums.hpp>
+using namespace at;
 
-#include <vector>
-
-namespace at
+RenderFrame::RenderFrame()
 {
-	class Window;
-	class Image;
-	class Fence;
-	class Semaphore;
-	
-	class ATEMA_RENDERER_API SwapChain
-	{
-	public:
-		struct Settings
-		{
-			Ptr<Window> window;
-			ImageFormat format;
-		};
-
-		virtual ~SwapChain();
-
-		static Ptr<SwapChain> create(const Settings& settings);
-
-		virtual std::vector<Ptr<Image>>& getImages() noexcept = 0;
-		virtual const std::vector<Ptr<Image>>& getImages() const noexcept = 0;
-
-		virtual SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) = 0;
-		virtual SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) = 0;
-		
-	protected:
-		SwapChain();
-	};
 }
 
-#endif
+RenderFrame::~RenderFrame()
+{
+}
+
+WaitCondition RenderFrame::getImageAvailableWaitCondition() const noexcept
+{
+	WaitCondition waitCondition;
+	waitCondition.semaphore = getImageAvailableSemaphore();
+	waitCondition.pipelineStages = PipelineStage::ColorAttachmentOutput;
+
+	return waitCondition;
+}

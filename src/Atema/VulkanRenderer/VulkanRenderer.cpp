@@ -35,6 +35,7 @@
 #include <Atema/VulkanRenderer/VulkanFence.hpp>
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
+#include <Atema/VulkanRenderer/VulkanRenderWindow.hpp>
 #include <Atema/Core/TaskManager.hpp>
 
 #include <set>
@@ -55,16 +56,20 @@ namespace
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
+
+	const std::vector<const char*> instanceRequiredExtensions =
+	{
+#ifdef ATEMA_SYSTEM_WINDOWS
+		VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
+
+		VK_KHR_SURFACE_EXTENSION_NAME
+	};
 }
 
 VulkanRenderer::VulkanRenderer(const Renderer::Settings& settings) :
 	Renderer(settings),
-	m_instance(VK_NULL_HANDLE),
-	m_surface(VK_NULL_HANDLE),
-	m_physicalDevice(VK_NULL_HANDLE),
-	m_device(VK_NULL_HANDLE),
-	m_graphicsQueue(VK_NULL_HANDLE),
-	m_presentQueue(VK_NULL_HANDLE),
+	m_physicalDevice(nullptr),
 	m_maxSamples(ImageSamples::S1)
 {
 }
@@ -72,13 +77,6 @@ VulkanRenderer::VulkanRenderer(const Renderer::Settings& settings) :
 VulkanRenderer::~VulkanRenderer()
 {
 	waitForIdle();
-
-	unregisterWindows();
-
-	// Wait for asynchronous stuff to be done
-	m_device->waitForIdle();
-
-	m_threadCommandPools.clear();
 
 	m_device.reset();
 
@@ -99,14 +97,9 @@ void VulkanRenderer::initialize()
 {
 	createInstance();
 
-	registerWindow(getMainWindow());
-	createSurface();
-
 	pickPhysicalDevice();
 
 	createDevice();
-
-	createThreadCommandPools();
 }
 
 void VulkanRenderer::waitForIdle()
@@ -114,50 +107,14 @@ void VulkanRenderer::waitForIdle()
 	m_device->waitForIdle();
 }
 
-Ptr<CommandPool> VulkanRenderer::getDefaultCommandPool()
+Ptr<CommandPool> VulkanRenderer::getCommandPool(QueueType queueType)
 {
-	return m_threadCommandPools.back();
+	return m_device->getDefaultCommandPool(queueType);
 }
 
-Ptr<CommandPool> VulkanRenderer::getCommandPool(size_t threadIndex)
+Ptr<CommandPool> VulkanRenderer::getCommandPool(QueueType queueType, size_t threadIndex)
 {
-	ATEMA_ASSERT(threadIndex < m_threadCommandPools.size() - 1, "Thread index out of range");
-	
-	return m_threadCommandPools[threadIndex];
-}
-
-void VulkanRenderer::registerWindow(Ptr<Window> window)
-{
-	if (!window)
-		return;
-
-	// Create surface
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-
-#ifdef ATEMA_SYSTEM_WINDOWS
-	VkWin32SurfaceCreateInfoKHR createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = static_cast<HWND>(window->getHandle());
-	createInfo.hinstance = GetModuleHandle(nullptr);
-
-	ATEMA_VK_CHECK(m_instance->vkCreateWin32SurfaceKHR(m_instance->getHandle(), &createInfo, nullptr, &surface));
-#else
-#error VulkanRenderer is not available on this OS
-#endif
-
-	m_windowSurfaces[window.get()] = surface;
-}
-
-void VulkanRenderer::unregisterWindow(Ptr<Window> window)
-{
-	auto it = m_windowSurfaces.find(window.get());
-
-	if (it != m_windowSurfaces.end())
-	{
-		m_instance->vkDestroySurfaceKHR(m_instance->getHandle(), it->second, nullptr);
-
-		m_windowSurfaces.erase(it);
-	}
+	return m_device->getDefaultCommandPool(queueType, threadIndex);
 }
 
 Ptr<Image> VulkanRenderer::createImage(const Image::Settings& settings)
@@ -172,13 +129,6 @@ Ptr<Sampler> VulkanRenderer::createSampler(const Sampler::Settings& settings)
 	auto object = std::make_shared<VulkanSampler>(*m_device, settings);
 
 	return std::static_pointer_cast<Sampler>(object);
-}
-
-Ptr<SwapChain> VulkanRenderer::createSwapChain(const SwapChain::Settings& settings)
-{
-	auto object = std::make_shared<VulkanSwapChain>(*m_device, settings);
-
-	return std::static_pointer_cast<SwapChain>(object);
 }
 
 Ptr<RenderPass> VulkanRenderer::createRenderPass(const RenderPass::Settings& settings)
@@ -251,115 +201,20 @@ Ptr<Buffer> VulkanRenderer::createBuffer(const Buffer::Settings& settings)
 	return std::static_pointer_cast<Buffer>(object);
 }
 
+Ptr<RenderWindow> VulkanRenderer::createRenderWindow(const RenderWindow::Settings& settings)
+{
+	auto object = std::make_shared<VulkanRenderWindow>(*m_device, settings);
+
+	return std::static_pointer_cast<RenderWindow>(object);
+}
+
 void VulkanRenderer::submit(
 	const std::vector<Ptr<CommandBuffer>>& commandBuffers,
-	const std::vector<Ptr<Semaphore>>& waitSemaphores,
-	const std::vector<Flags<PipelineStage>>& waitStages,
+	const std::vector<WaitCondition>& waitConditions,
 	const std::vector<Ptr<Semaphore>>& signalSemaphores,
 	Ptr<Fence> fence)
 {
-	ATEMA_ASSERT(!commandBuffers.empty(), "At least one command buffer must be submitted");
-	ATEMA_ASSERT(waitSemaphores.size() == waitStages.size(), "Each wait semaphore must have a corresponding wait stage");
-
-	std::vector<VkCommandBuffer> vkCommandBuffers(commandBuffers.size());
-	std::vector<VkSemaphore> vkWaitSemaphores(waitSemaphores.size());
-	std::vector<VkPipelineStageFlags> vkWaitStages(waitStages.size());
-	std::vector<VkSemaphore> vkSignalSemaphores(signalSemaphores.size());
-
-	for (size_t i = 0; i < vkCommandBuffers.size(); i++)
-	{
-		auto vkCommandBuffer = std::static_pointer_cast<VulkanCommandBuffer>(commandBuffers[i]);
-
-		vkCommandBuffers[i] = vkCommandBuffer->getHandle();
-	}
-
-	for (size_t i = 0; i < vkWaitSemaphores.size(); i++)
-	{
-		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(waitSemaphores[i]);
-
-		vkWaitSemaphores[i] = vkSemaphore->getHandle();
-		vkWaitStages[i] = Vulkan::getPipelineStages(waitStages[i]);
-	}
-
-	for (size_t i = 0; i < vkSignalSemaphores.size(); i++)
-	{
-		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(signalSemaphores[i]);
-
-		vkSignalSemaphores[i] = vkSemaphore->getHandle();
-	}
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	// Which semaphores to wait, and on which pipeline stages
-	submitInfo.waitSemaphoreCount = static_cast<uint32_t>(vkWaitSemaphores.size());
-	submitInfo.pWaitSemaphores = vkWaitSemaphores.data();
-	submitInfo.pWaitDstStageMask = vkWaitStages.data();
-
-	// Command buffers to be submitted
-	submitInfo.commandBufferCount = static_cast<uint32_t>(vkCommandBuffers.size());
-	submitInfo.pCommandBuffers = vkCommandBuffers.data();
-
-	// Specify what semaphore will be used as the signal that command buffers were executed
-	submitInfo.signalSemaphoreCount = static_cast<uint32_t>(vkSignalSemaphores.size());
-	submitInfo.pSignalSemaphores = vkSignalSemaphores.data();
-
-	VkFence vkFence = VK_NULL_HANDLE;
-
-	if (fence)
-		vkFence = std::static_pointer_cast<VulkanFence>(fence)->getHandle();
-
-	ATEMA_VK_CHECK(m_device->vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, vkFence));
-}
-
-SwapChainResult VulkanRenderer::present(
-	const Ptr<SwapChain>& swapChain,
-	uint32_t imageIndex,
-	const std::vector<Ptr<Semaphore>>& waitSemaphores)
-{
-	ATEMA_ASSERT(swapChain, "Invalid SwapChain");
-
-	std::vector<VkSemaphore> vkSemaphores(waitSemaphores.size());
-
-	for (size_t i = 0; i < vkSemaphores.size(); i++)
-	{
-		auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(waitSemaphores[i]);
-
-		vkSemaphores[i] = vkSemaphore->getHandle();
-	}
-
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	// Which semaphores to wait on before presentation can happen
-	presentInfo.waitSemaphoreCount = static_cast<uint32_t>(vkSemaphores.size());
-	presentInfo.pWaitSemaphores = vkSemaphores.data();
-
-	auto vkSwapChain = std::static_pointer_cast<VulkanSwapChain>(swapChain);
-
-	VkSwapchainKHR swapChains[] = { vkSwapChain->getHandle() };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
-	// Array of VkResult values to check for every individual swap chain if presentation was successful
-	//presentInfo.pResults = nullptr; // Optional
-
-	const auto result = m_device->vkQueuePresentKHR(m_presentQueue, &presentInfo);
-
-	return Vulkan::getSwapChainResult(result);
-}
-
-VkSurfaceKHR VulkanRenderer::getWindowSurface(Ptr<Window> window) const
-{
-	auto it = m_windowSurfaces.find(window.get());
-
-	if (it == m_windowSurfaces.end())
-	{
-		ATEMA_ERROR("Windows need to be registered in the Renderer in order to access their surface");
-
-		return VK_NULL_HANDLE;
-	}
-
-	return it->second;
+	m_device->submit(commandBuffers, waitConditions, signalSemaphores, fence);
 }
 
 const VulkanInstance& VulkanRenderer::getInstance() const noexcept
@@ -375,16 +230,6 @@ const VulkanPhysicalDevice& VulkanRenderer::getPhysicalDevice() const noexcept
 const VulkanDevice& VulkanRenderer::getDevice() const noexcept
 {
 	return *m_device;
-}
-
-uint32_t VulkanRenderer::getGraphicsQueueIndex() const noexcept
-{
-	return m_queueFamilyData.graphicsIndex;
-}
-
-uint32_t VulkanRenderer::getPresentQueueIndex() const noexcept
-{
-	return m_queueFamilyData.presentIndex;
 }
 
 bool VulkanRenderer::checkValidationLayerSupport()
@@ -447,25 +292,9 @@ void VulkanRenderer::createInstance()
 	std::vector<VkExtensionProperties> availableExtensions(availableExtensionCount);
 	Vulkan::instance().vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionCount, availableExtensions.data());
 
-	// GLFW required extensions
-	auto& glfwRequiredExtensionNames = Window::getVulkanExtensions();
-	const auto glfwRequiredExtensionCount = glfwRequiredExtensionNames.size();
-
-	//TODO: User required extensions
-	std::vector<std::string> userRequiredExtensionNames;
-
-	// Required extensions (glfw required + user required)
-	std::vector<const char*> requiredExtensionNames;
-	requiredExtensionNames.reserve(glfwRequiredExtensionCount + userRequiredExtensionNames.size());
-
-	for (uint32_t i = 0; i < glfwRequiredExtensionCount; i++)
-		requiredExtensionNames.push_back(glfwRequiredExtensionNames[i]);
-
-	for (auto& extensionName : userRequiredExtensionNames)
-		requiredExtensionNames.push_back(extensionName.c_str());
-
+	// Required extensions (instance required + user required)
 	// Check if the required extensions are available
-	for (auto& requiredExtensionName : requiredExtensionNames)
+	for (auto& requiredExtensionName : instanceRequiredExtensions)
 	{
 		bool found = false;
 
@@ -491,79 +320,12 @@ void VulkanRenderer::createInstance()
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensionNames.size());
-	createInfo.ppEnabledExtensionNames = requiredExtensionNames.data();
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceRequiredExtensions.size());
+	createInfo.ppEnabledExtensionNames = instanceRequiredExtensions.data();
 	createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 	createInfo.ppEnabledLayerNames = validationLayers.data();
 
 	m_instance = std::make_unique<VulkanInstance>(createInfo);
-}
-
-void VulkanRenderer::createSurface()
-{
-	m_surface = getWindowSurface(getMainWindow());
-}
-
-VulkanRenderer::QueueFamilyData VulkanRenderer::getQueueFamilyData(const VulkanPhysicalDevice& device) const
-{
-	QueueFamilyData queueFamilyData;
-
-	int index = 0;
-
-	for (auto& queueFamily : device.getQueueFamilyProperties())
-	{
-		// Graphics features
-		{
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			{
-				queueFamilyData.hasGraphics = true;
-				queueFamilyData.graphicsIndex = index;
-			}
-		}
-
-		// Presentation features
-		{
-			VkBool32 presentSupport = false;
-			m_instance->vkGetPhysicalDeviceSurfaceSupportKHR(device.getHandle(), index, m_surface, &presentSupport);
-
-			if (presentSupport)
-			{
-				queueFamilyData.hasPresent = true;
-				queueFamilyData.presentIndex = index;
-			}
-		}
-
-		index++;
-	}
-
-	return queueFamilyData;
-}
-
-VulkanRenderer::SwapChainSupportDetails VulkanRenderer::getSwapChainSupport(const VulkanPhysicalDevice& device) const
-{
-	SwapChainSupportDetails swapChainSupportDetails;
-
-	m_instance->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &swapChainSupportDetails.capabilities);
-
-	uint32_t formatCount;
-	m_instance->vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
-
-	if (formatCount != 0)
-	{
-		swapChainSupportDetails.formats.resize(formatCount);
-		m_instance->vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, swapChainSupportDetails.formats.data());
-	}
-
-	uint32_t presentModeCount;
-	m_instance->vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
-
-	if (presentModeCount != 0)
-	{
-		swapChainSupportDetails.presentModes.resize(presentModeCount);
-		m_instance->vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, swapChainSupportDetails.presentModes.data());
-	}
-
-	return swapChainSupportDetails;
 }
 
 bool VulkanRenderer::checkPhysicalDeviceExtensionSupport(const VulkanPhysicalDevice& device)
@@ -606,30 +368,37 @@ ImageSamples VulkanRenderer::getMaxUsableSampleCount(const VulkanPhysicalDevice&
 	return ImageSamples::S1;
 }
 
-int VulkanRenderer::getPhysicalDeviceScore(const VulkanPhysicalDevice& device, const QueueFamilyData& queueFamilyData)
+int VulkanRenderer::getPhysicalDeviceScore(const VulkanPhysicalDevice& physicalDevice)
 {
 	//TODO: Make this function complete and custom
 
 	int score = -1;
 
-	if (!queueFamilyData.isComplete())
-		return score;
+	// Ensure physical device can perform graphics operation
+	bool supportGraphics = false;
 
-	bool swapChainAdequate = false;
-	if (checkPhysicalDeviceExtensionSupport(device))
+	for (auto& queueFamilyProperties : physicalDevice.getQueueFamilyProperties())
 	{
-		SwapChainSupportDetails swapChainSupport = getSwapChainSupport(device);
-		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+		if (queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			supportGraphics = true;
+			break;
+		}
 	}
 
-	if (!swapChainAdequate)
+	if (!supportGraphics)
+		return score;
+
+	// Check for extension support
+	if (!checkPhysicalDeviceExtensionSupport(physicalDevice))
 		return score;
 
 	//TODO: Make this an option (see createDevice())
-	if (!device.getFeatures().samplerAnisotropy)
+	if (!physicalDevice.getFeatures().samplerAnisotropy)
 		return score;
 
-	switch (device.getProperties().deviceType)
+	// Set score depending on device type
+	switch (physicalDevice.getProperties().deviceType)
 	{
 		// CPU
 		case VK_PHYSICAL_DEVICE_TYPE_CPU:
@@ -670,15 +439,12 @@ void VulkanRenderer::pickPhysicalDevice()
 
 	for (auto& physicalDevice : m_instance->getPhysicalDevices())
 	{
-		auto queueFamilyData = getQueueFamilyData(physicalDevice);
-
-		auto score = getPhysicalDeviceScore(physicalDevice, queueFamilyData);
+		auto score = getPhysicalDeviceScore(physicalDevice);
 
 		if (score > 0 && score > currentScore)
 		{
 			currentScore = score;
 			m_physicalDevice = &physicalDevice;
-			m_queueFamilyData = queueFamilyData;
 			m_maxSamples = getMaxUsableSampleCount(physicalDevice);
 		}
 	}
@@ -813,20 +579,71 @@ void VulkanRenderer::createDevice()
 	constexpr float queuePriority = 1.0f; // Between 0.0 & 1.0
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies =
+
+	constexpr uint32_t invalidIndex = std::numeric_limits<uint32_t>::max();
+
+	// Initialize other queues (try to find a unique queue family index for each requirement)
+	const std::vector<QueueType> queueTypes =
 	{
-		m_queueFamilyData.graphicsIndex,
-		m_queueFamilyData.presentIndex
+		QueueType::Graphics,
+		QueueType::Compute,
+		QueueType::Transfer
 	};
 
-	for (uint32_t queueFamily : uniqueQueueFamilies)
+	std::vector<uint32_t> queueFamilyIndices(3, invalidIndex);
+	std::unordered_set<uint32_t> processedIndices;
+
+	for (auto& queueType : queueTypes)
 	{
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
+		// Insert a default invalid index for the given command type
+		auto& queueFamilyIndex = queueFamilyIndices[static_cast<size_t>(queueType)];
+
+		// Initialize queue family indices
+		uint32_t queueIndex = 0;
+		for (auto& queueFamily : m_physicalDevice->getQueueFamilyProperties())
+		{
+			// Check for queue family compatibility
+			const bool isCompatible = Vulkan::isQueueFamilyCompatible(queueType, queueFamily.queueFlags);
+
+			// We want an unique index if possible
+			const bool isUnique = (processedIndices.count(queueIndex) == 0);
+
+			// Save at least one compatible index (fall back on it if we don't get a unique index)
+			if (isCompatible)
+			{
+				queueFamilyIndex = queueIndex;
+
+				// We got an unique index, perfect
+				if (isUnique)
+					break;
+			}
+
+			queueIndex++;
+		}
+
+		// If invalid, fall back to graphics family (can also manages compute & transfer operations)
+		if (queueFamilyIndex == invalidIndex)
+		{
+			if (queueType == QueueType::Graphics)
+			{
+				ATEMA_ERROR("Current device does not support graphics operations");
+			}
+
+			queueFamilyIndex = queueFamilyIndices[0];
+		}
+		// If valid, create associated pools for each thread
+		else
+		{
+			processedIndices.emplace(queueFamilyIndex);
+
+			VkDeviceQueueCreateInfo queueCreateInfo{};
+			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex = queueFamilyIndex;
+			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.pQueuePriorities = &queuePriority;
+
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
 	}
 
 	// Require some features
@@ -847,30 +664,5 @@ void VulkanRenderer::createDevice()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-	m_device = std::make_unique<VulkanDevice>(*m_instance, *m_physicalDevice, createInfo);
-
-	// Get required queues
-	m_device->vkGetDeviceQueue(m_device->getHandle(), m_queueFamilyData.graphicsIndex, 0, &m_graphicsQueue);
-	m_device->vkGetDeviceQueue(m_device->getHandle(), m_queueFamilyData.presentIndex, 0, &m_presentQueue);
-}
-
-void VulkanRenderer::createThreadCommandPools()
-{
-	const auto size = TaskManager::instance().getSize() + 1;
-	m_threadCommandPools.reserve(size);
-
-	for (size_t i = 0; i < size; i++)
-	{
-		m_threadCommandPools.push_back(CommandPool::create({QueueType::All}));
-	}
-}
-
-void VulkanRenderer::unregisterWindows()
-{
-	for (auto& it : m_windowSurfaces)
-	{
-		m_instance->vkDestroySurfaceKHR(m_instance->getHandle(), it.second, nullptr);
-	}
-
-	m_windowSurfaces.clear();
+	m_device = std::make_unique<VulkanDevice>(*m_instance, *m_physicalDevice, createInfo, queueFamilyIndices[0], queueFamilyIndices[1], queueFamilyIndices[2]);
 }

@@ -24,6 +24,7 @@
 #include <Atema/VulkanRenderer/VulkanFence.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
+#include <Atema/VulkanRenderer/VulkanRenderWindow.hpp>
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 
 using namespace at;
@@ -81,34 +82,24 @@ namespace
 	}
 }
 
-VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const SwapChain::Settings& settings) :
-	SwapChain(),
-	m_device(device),
-	m_surface(VK_NULL_HANDLE),
+VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Settings& settings) :
+	m_device(renderWindow.getDevice()),
+	m_renderWindow(renderWindow),
 	m_swapChain(VK_NULL_HANDLE),
 	m_extent({0, 0}),
 	m_format(VK_FORMAT_UNDEFINED)
 {
-	//TODO: Make this custom
-
-	if (!settings.window)
-	{
-		ATEMA_ERROR("Invalid window");
-	}
-	
-	auto& renderer = VulkanRenderer::instance();
-
-	m_surface = renderer.getWindowSurface(settings.window);
+	auto surface = m_renderWindow.getSurface();
 
 	m_extent =
 	{
-		static_cast<uint32_t>(settings.window->getSize().x),
-		static_cast<uint32_t>(settings.window->getSize().y)
+		static_cast<uint32_t>(renderWindow.getSize().x),
+		static_cast<uint32_t>(renderWindow.getSize().y)
 	};
 
-	SupportDetails swapChainSupport = getSupportDetails(m_device.getPhysicalDevice(), m_surface);
+	SupportDetails swapChainSupport = getSupportDetails(m_device.getPhysicalDevice(), surface);
 
-	auto format = Vulkan::getFormat(settings.format);
+	auto format = Vulkan::getFormat(settings.imageFormat);
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(format, swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 	m_extent = chooseSwapExtent(m_extent, swapChainSupport.capabilities);
@@ -126,7 +117,7 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const SwapChain::Se
 	{
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = m_surface;
+		createInfo.surface = surface;
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -135,8 +126,8 @@ VulkanSwapChain::VulkanSwapChain(const VulkanDevice& device, const SwapChain::Se
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // To render directly to it
 		//createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT; // To copy from some image (for post-processing)
 
-		auto graphicsIndex = renderer.getGraphicsQueueIndex();
-		auto presentIndex = renderer.getPresentQueueIndex();
+		auto graphicsIndex = m_device.getQueueFamilyIndex(QueueType::Graphics);
+		auto presentIndex = m_renderWindow.getPresentQueueFamilyIndex();
 		uint32_t queueFamilyIndices[] = { graphicsIndex, presentIndex };
 
 		if (graphicsIndex != presentIndex)
@@ -233,24 +224,6 @@ std::vector<Ptr<Image>>& VulkanSwapChain::getImages() noexcept
 const std::vector<Ptr<Image>>& VulkanSwapChain::getImages() const noexcept
 {
 	return m_images;
-}
-
-SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence)
-{
-	ATEMA_ASSERT(fence, "Invalid Fence");
-
-	auto vkFence = std::static_pointer_cast<VulkanFence>(fence);
-	
-	return acquireNextImage(imageIndex, VK_NULL_HANDLE, vkFence->getHandle());
-}
-
-SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore)
-{
-	ATEMA_ASSERT(semaphore, "Invalid Semaphore");
-
-	auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(semaphore);
-
-	return acquireNextImage(imageIndex, vkSemaphore->getHandle(), VK_NULL_HANDLE);
 }
 
 SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence)

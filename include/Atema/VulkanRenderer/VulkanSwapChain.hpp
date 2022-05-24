@@ -23,18 +23,26 @@
 #define ATEMA_VULKANRENDERER_VULKANSWAPCHAIN_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 
 #include <vector>
 
 namespace at
 {
+	class Image;
+	class VulkanFence;
 	class VulkanPhysicalDevice;
+	class VulkanRenderWindow;
+	class VulkanSemaphore;
 
-	class ATEMA_VULKANRENDERER_API VulkanSwapChain final : public SwapChain
+	class ATEMA_VULKANRENDERER_API VulkanSwapChain final
 	{
 	public:
+		struct Settings
+		{
+			ImageFormat imageFormat = ImageFormat::BGRA8_SRGB;
+		};
+
 		struct SupportDetails
 		{
 			VkSurfaceCapabilitiesKHR capabilities;
@@ -43,24 +51,22 @@ namespace at
 		};
 		
 		VulkanSwapChain() = delete;
-		VulkanSwapChain(const VulkanDevice& device, const SwapChain::Settings& settings);
+		VulkanSwapChain(VulkanRenderWindow& renderWindow, const Settings& settings);
 		virtual ~VulkanSwapChain();
 
 		SupportDetails getSupportDetails(const VulkanPhysicalDevice& physicalDevice, VkSurfaceKHR surface);
 
 		VkSwapchainKHR getHandle() const noexcept;
 		
-		std::vector<Ptr<Image>>& getImages() noexcept override;
-		const std::vector<Ptr<Image>>& getImages() const noexcept override;
-
-		SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Fence>& fence) override;
-		SwapChainResult acquireNextImage(uint32_t& imageIndex, const Ptr<Semaphore>& semaphore) override;
+		std::vector<Ptr<Image>>& getImages() noexcept;
+		const std::vector<Ptr<Image>>& getImages() const noexcept;
 		
-	private:
 		SwapChainResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
 		
+	private:
+		
 		const VulkanDevice& m_device;
-		VkSurfaceKHR m_surface;
+		const VulkanRenderWindow& m_renderWindow;
 		VkSwapchainKHR m_swapChain;
 		std::vector<Ptr<Image>> m_images;
 		VkExtent2D m_extent;

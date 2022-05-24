@@ -134,7 +134,7 @@ namespace at
 
 		static SwapChainResult getSwapChainResult(VkResult value);
 
-		static VkQueueFlags getQueueFlags(Flags<QueueType> queueTypes);
+		static bool isQueueFamilyCompatible(QueueType queueType, VkQueueFlags vkFlags);
 
 	private:
 		Vulkan();

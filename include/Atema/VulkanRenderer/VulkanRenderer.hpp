@@ -24,15 +24,14 @@
 
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/Vertex.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/VulkanRenderer/VulkanDevice.hpp>
+#include <Atema/VulkanRenderer/VulkanInstance.hpp>
+#include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
 
 #include <vector>
 #include <array>
 #include <unordered_map>
-#include <Atema/VulkanRenderer/VulkanDevice.hpp>
-#include <Atema/VulkanRenderer/VulkanInstance.hpp>
-#include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
 
 namespace at
 {
@@ -52,15 +51,11 @@ namespace at
 
 		void waitForIdle() override;
 
-		Ptr<CommandPool> getDefaultCommandPool() override;
-		Ptr<CommandPool> getCommandPool(size_t threadIndex) override;
+		Ptr<CommandPool> getCommandPool(QueueType queueType) override;
+		Ptr<CommandPool> getCommandPool(QueueType queueType, size_t threadIndex) override;
 		
-		void registerWindow(Ptr<Window> window) override;
-		void unregisterWindow(Ptr<Window> window) override;
-
 		Ptr<Image> createImage(const Image::Settings& settings) override;
 		Ptr<Sampler> createSampler(const Sampler::Settings& settings) override;
-		Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) override;
 		Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) override;
 		Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) override;
 		Ptr<Shader> createShader(const Shader::Settings& settings) override;
@@ -71,74 +66,29 @@ namespace at
 		Ptr<Fence> createFence(const Fence::Settings& settings) override;
 		Ptr<Semaphore> createSemaphore() override;
 		Ptr<Buffer> createBuffer(const Buffer::Settings& settings) override;
+		Ptr<RenderWindow> createRenderWindow(const RenderWindow::Settings& settings) override;
 
-		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<Ptr<Semaphore>>& waitSemaphores, const std::vector<Flags<PipelineStage>>& waitStages, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr) override;
-		SwapChainResult present(const Ptr<SwapChain>& swapChain, uint32_t imageIndex, const std::vector<Ptr<Semaphore>>& waitSemaphores) override;
-
+		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<WaitCondition>& waitConditions, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr) override;
+		
 		// Vulkan specific
-		VkSurfaceKHR getWindowSurface(Ptr<Window> window) const;
-
 		const VulkanInstance& getInstance() const noexcept;
 		const VulkanPhysicalDevice& getPhysicalDevice() const noexcept;
 		const VulkanDevice& getDevice() const noexcept;
-		
-		uint32_t getGraphicsQueueIndex() const noexcept;
-		uint32_t getPresentQueueIndex() const noexcept;
 
 	private:
-		struct QueueFamilyData
-		{
-			QueueFamilyData() :
-				hasGraphics(false), graphicsIndex(0),
-				hasPresent(false), presentIndex(0)
-			{
-			}
-
-			bool isComplete() const
-			{
-				return hasGraphics && hasPresent;
-			}
-
-			bool hasGraphics;
-			uint32_t graphicsIndex;
-			bool hasPresent;
-			uint32_t presentIndex;
-		};
-
-		struct SwapChainSupportDetails
-		{
-			VkSurfaceCapabilitiesKHR capabilities;
-			std::vector<VkSurfaceFormatKHR> formats;
-			std::vector<VkPresentModeKHR> presentModes;
-		};
-
 		bool checkValidationLayerSupport();
 		void createInstance();
-		void createSurface();
-		QueueFamilyData getQueueFamilyData(const VulkanPhysicalDevice& device) const;
-		SwapChainSupportDetails getSwapChainSupport(const VulkanPhysicalDevice& device) const;
 		static bool checkPhysicalDeviceExtensionSupport(const VulkanPhysicalDevice& device);
 		static ImageSamples getMaxUsableSampleCount(const VulkanPhysicalDevice& device);
-		int getPhysicalDeviceScore(const VulkanPhysicalDevice& device, const QueueFamilyData& queueFamilyData);
+		static int getPhysicalDeviceScore(const VulkanPhysicalDevice& device);
 		void pickPhysicalDevice();
 		void createDevice();
-		void createThreadCommandPools();
-
-		void unregisterWindows();
 
 		Limits m_limits;
 		UPtr<VulkanInstance> m_instance;
 		const VulkanPhysicalDevice* m_physicalDevice;
 		UPtr<VulkanDevice> m_device;
-		QueueFamilyData m_queueFamilyData;
-		VkQueue m_graphicsQueue;
-		VkQueue m_presentQueue;
 		ImageSamples m_maxSamples;
-		VkSurfaceKHR m_surface;
-
-		std::unordered_map<Window*, VkSurfaceKHR> m_windowSurfaces;
-		
-		std::vector<Ptr<CommandPool>> m_threadCommandPools;
 	};
 }
 

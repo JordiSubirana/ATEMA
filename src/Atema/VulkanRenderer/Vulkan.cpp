@@ -895,19 +895,23 @@ SwapChainResult Vulkan::getSwapChainResult(VkResult value)
 	return SwapChainResult::Error;
 }
 
-VkQueueFlags Vulkan::getQueueFlags(Flags<QueueType> queueTypes)
+bool Vulkan::isQueueFamilyCompatible(QueueType queueType, VkQueueFlags vkFlags)
 {
-	VkQueueFlags flags = 0;
+	switch (queueType)
+	{
+		// We want graphics AND compute bits for this queue type
+		case QueueType::Graphics:
+			return (vkFlags & VK_QUEUE_GRAPHICS_BIT) && (vkFlags & VK_QUEUE_COMPUTE_BIT);
+		// Check for compute bit
+		case QueueType::Compute:
+			return vkFlags & VK_QUEUE_COMPUTE_BIT;
+		// Check transfer capability (graphics & compute queues support transfers)
+		case QueueType::Transfer:
+			return vkFlags & (VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
+		default:
+			break;
+	}
 
-	if (queueTypes & QueueType::Graphics)
-		flags |= VK_QUEUE_GRAPHICS_BIT;
-
-	if (queueTypes & QueueType::Compute)
-		flags |= VK_QUEUE_COMPUTE_BIT;
-
-	if (queueTypes & QueueType::Graphics)
-		flags |= VK_QUEUE_TRANSFER_BIT;
-
-	return flags;
+	return false;
 }
 

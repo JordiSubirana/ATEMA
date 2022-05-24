@@ -31,10 +31,10 @@
 #include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/SwapChain.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Renderer/RenderWindow.hpp>
 #include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
@@ -46,10 +46,6 @@ namespace at
 	public:
 		struct Settings
 		{
-			Window::Settings mainWindowSettings;
-
-			size_t maxFramesInFlight = 2;
-
 			bool sampleShading = true;
 		};
 
@@ -180,23 +176,20 @@ namespace at
 		virtual void initialize() = 0;
 
 		const Settings& getSettings() const noexcept;
-		
-		Ptr<Window> getMainWindow() const noexcept;
 
 		virtual const Limits& getLimits() const noexcept = 0;
 
-		virtual void registerWindow(Ptr<Window> window) = 0;
-		virtual void unregisterWindow(Ptr<Window> window) = 0;
-
 		virtual void waitForIdle() = 0;
-		
-		virtual Ptr<CommandPool> getDefaultCommandPool() = 0;
-		virtual Ptr<CommandPool> getCommandPool(size_t threadIndex) = 0;
+
+		// Returns the default command pool for a given queue command type
+		virtual Ptr<CommandPool> getCommandPool(QueueType queueType) = 0;
+		// Returns the default command pool for a given queue command type for the desired thread
+		// 'threadIndex' refers to the index of the thread in TaskManager (AtemaCore)
+		virtual Ptr<CommandPool> getCommandPool(QueueType queueType, size_t threadIndex) = 0;
 		
 		// Object creation
 		virtual Ptr<Image> createImage(const Image::Settings& settings) = 0;
 		virtual Ptr<Sampler> createSampler(const Sampler::Settings& settings) = 0;
-		virtual Ptr<SwapChain> createSwapChain(const SwapChain::Settings& settings) = 0;
 		virtual Ptr<RenderPass> createRenderPass(const RenderPass::Settings& settings) = 0;
 		virtual Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) = 0;
 		virtual Ptr<Shader> createShader(const Shader::Settings& settings) = 0;
@@ -207,21 +200,16 @@ namespace at
 		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;
 		virtual Ptr<Semaphore> createSemaphore() = 0;
 		virtual Ptr<Buffer> createBuffer(const Buffer::Settings& settings) = 0;
+		virtual Ptr<RenderWindow> createRenderWindow(const RenderWindow::Settings& settings) = 0;
 
 		// Rendering
 		virtual void submit(
 			const std::vector<Ptr<CommandBuffer>>& commandBuffers,
-			const std::vector<Ptr<Semaphore>>& waitSemaphores,
-			const std::vector<Flags<PipelineStage>>& waitStages,
+			const std::vector<WaitCondition>& waitConditions,
 			const std::vector<Ptr<Semaphore>>& signalSemaphores,
 			Ptr<Fence> fence = nullptr) = 0;
 
 		void submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers);
-
-		virtual SwapChainResult present(
-			const Ptr<SwapChain>& swapChain,
-			uint32_t imageIndex,
-			const std::vector<Ptr<Semaphore>>& waitSemaphores) = 0;
 		
 	protected:
 		Renderer(const Settings& settings);
@@ -229,7 +217,6 @@ namespace at
 	private:
 		static Ptr<Renderer> s_renderer;
 		Settings m_settings;
-		Ptr<Window> m_mainWindow;
 	};
 
 	template <typename T>
