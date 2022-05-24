@@ -72,6 +72,19 @@ namespace at
 	};
 }
 
+// std::hash overload for flags
+namespace std
+{
+	template <typename E>
+	struct hash<at::Flags<E>>
+	{
+		size_t operator()(const at::Flags<E>& flags) const
+		{
+			return hash<int>(flags.getValue());
+		}
+	};
+}
+
 #include <Atema/Core/Flags.inl>
 
 #endif
