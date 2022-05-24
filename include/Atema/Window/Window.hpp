@@ -79,12 +79,11 @@ namespace at
 
 		// Platform specific
 		void* getHandle() const;
-		
-		// Vulkan specific
-		static const std::vector<const char*>& getVulkanExtensions();
 
 	protected:
 		Window(const Settings& settings);
+
+		virtual void onResize(const Vector2u& newSize);
 
 	private:
 		void resizedCallback(unsigned int width, unsigned int height);

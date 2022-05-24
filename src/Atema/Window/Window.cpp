@@ -23,6 +23,7 @@
 #include <Atema/Core/Error.hpp>
 #include <Atema/Window/KeyEvent.hpp>
 #include <Atema/Window/MouseEvent.hpp>
+#include <Atema/Window/WindowResizeEvent.hpp>
 #include <Atema/Window/KeyboardLayout.hpp>
 
 #define GLFW_INCLUDE_NONE
@@ -505,6 +506,12 @@ void Window::resizedCallback(unsigned width, unsigned height)
 {
 	m_size.x = width;
 	m_size.y = height;
+
+	WindowResizeEvent resizeEvent(this, m_size);
+
+	m_eventDispatcher.execute(resizeEvent);
+
+	this->onResize(m_size);
 }
 
 bool Window::shouldClose() const noexcept
@@ -542,18 +549,6 @@ void* Window::getHandle() const
 	return m_implementation->getHandle();
 }
 
-const std::vector<const char*>& Window::getVulkanExtensions()
+void Window::onResize(const Vector2u& newSize)
 {
-	static std::vector<const char*> requiredExtensions;
-
-	if (requiredExtensions.empty())
-	{
-		uint32_t requiredExtensionCount = 0;
-		auto requiredExtensionNames = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
-
-		for (uint32_t i = 0; i < requiredExtensionCount; i++)
-			requiredExtensions.push_back(requiredExtensionNames[i]);
-	}
-
-	return requiredExtensions;
 }
