@@ -189,7 +189,7 @@ void VulkanRenderWindow::onResize(const Vector2u& newSize)
 {
 	m_recreateSwapChain = true;
 
-	RenderWindow::onResized(newSize);
+	RenderWindow::onResize(newSize);
 }
 
 void VulkanRenderWindow::createSurface()
