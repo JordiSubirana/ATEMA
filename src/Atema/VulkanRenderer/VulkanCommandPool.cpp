@@ -26,15 +26,22 @@
 using namespace at;
 
 VulkanCommandPool::VulkanCommandPool(const VulkanDevice& device, const CommandPool::Settings& settings) :
+	VulkanCommandPool(device, device.getQueueFamilyIndex(settings.queueType), settings)
+{
+	
+}
+
+VulkanCommandPool::VulkanCommandPool(const VulkanDevice& device, uint32_t queueFamilyIndex, const CommandPool::Settings& settings) :
 	CommandPool(),
 	m_device(device),
-	m_queueTypes(settings.queueTypes),
+	m_queueFamilyIndex(queueFamilyIndex),
+	m_queueType(settings.queueType),
 	m_commandPool(VK_NULL_HANDLE)
 {
 	//TODO: Make this custom
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = m_device.getDefaultQueueFamilyIndex(m_queueTypes);
+	poolInfo.queueFamilyIndex = m_queueFamilyIndex;
 	// VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : Command buffers may be rerecorded with new commands very often (can optimize memory allocations)
 	// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT : Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
@@ -54,7 +61,12 @@ VkCommandPool VulkanCommandPool::getHandle() const noexcept
 
 Ptr<CommandBuffer> VulkanCommandPool::createBuffer(const CommandBuffer::Settings& settings)
 {
-	auto commandBuffer = std::make_shared<VulkanCommandBuffer>(m_commandPool, m_queueTypes, settings);
+	auto commandBuffer = std::make_shared<VulkanCommandBuffer>(m_commandPool, m_queueType, m_queueFamilyIndex, settings);
 
 	return std::static_pointer_cast<CommandBuffer>(commandBuffer);
+}
+
+uint32_t VulkanCommandPool::getQueueFamilyIndex() const noexcept
+{
+	return m_queueFamilyIndex;
 }

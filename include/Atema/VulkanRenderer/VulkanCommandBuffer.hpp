@@ -32,10 +32,12 @@ namespace at
 	{
 	public:
 		VulkanCommandBuffer() = delete;
-		VulkanCommandBuffer(VkCommandPool commandPool, Flags<QueueType> queueTypes, const CommandBuffer::Settings& settings);
+		VulkanCommandBuffer(VkCommandPool commandPool, QueueType queueType, uint32_t queueFamilyIndex, const CommandBuffer::Settings& settings);
 		virtual ~VulkanCommandBuffer();
 
 		VkCommandBuffer getHandle() const noexcept;
+
+		uint32_t getQueueFamilyIndex() const noexcept;
 
 		void begin() override;
 
@@ -78,6 +80,7 @@ namespace at
 		const VulkanDevice& m_device;
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;
+		uint32_t m_queueFamilyIndex;
 		bool m_singleUse;
 		bool m_isSecondary;
 		bool m_secondaryBegan;

@@ -33,15 +33,19 @@ namespace at
 	public:
 		VulkanCommandPool() = delete;
 		VulkanCommandPool(const VulkanDevice& device, const CommandPool::Settings& settings);
+		VulkanCommandPool(const VulkanDevice& device, uint32_t queueFamilyIndex, const CommandPool::Settings& settings);
 		virtual ~VulkanCommandPool();
 
 		VkCommandPool getHandle() const noexcept;
 
 		Ptr<CommandBuffer> createBuffer(const CommandBuffer::Settings& settings) override;
+
+		uint32_t getQueueFamilyIndex() const noexcept;
 		
 	private:
 		const VulkanDevice& m_device;
-		Flags<QueueType> m_queueTypes;
+		uint32_t m_queueFamilyIndex;
+		QueueType m_queueType;
 		VkCommandPool m_commandPool;
 	};
 }

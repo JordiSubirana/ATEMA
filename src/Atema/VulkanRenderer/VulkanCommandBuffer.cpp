@@ -33,11 +33,12 @@
 
 using namespace at;
 
-VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, Flags<QueueType> queueTypes, const CommandBuffer::Settings& settings) :
-	CommandBuffer(queueTypes),
+VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, QueueType queueType, uint32_t queueFamilyIndex, const CommandBuffer::Settings& settings) :
+	CommandBuffer(queueType),
 	m_device(VulkanRenderer::instance().getDevice()),
 	m_commandBuffer(VK_NULL_HANDLE),
 	m_commandPool(commandPool),
+	m_queueFamilyIndex(queueFamilyIndex),
 	m_singleUse(settings.singleUse),
 	m_isSecondary(settings.secondary),
 	m_secondaryBegan(false),
@@ -62,6 +63,11 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 VkCommandBuffer VulkanCommandBuffer::getHandle() const noexcept
 {
 	return m_commandBuffer;
+}
+
+uint32_t VulkanCommandBuffer::getQueueFamilyIndex() const noexcept
+{
+	return m_queueFamilyIndex;
 }
 
 void VulkanCommandBuffer::begin()

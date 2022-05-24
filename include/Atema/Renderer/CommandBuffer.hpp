@@ -65,7 +65,7 @@ namespace at
 		CommandBuffer() = delete;
 		virtual ~CommandBuffer();
 
-		Flags<QueueType> getQueueTypes() const noexcept;
+		QueueType getQueueType() const noexcept;
 
 		virtual void begin() = 0;
 
@@ -105,10 +105,10 @@ namespace at
 		virtual void end() = 0;
 		
 	protected:
-		CommandBuffer(Flags<QueueType> queueTypes);
+		CommandBuffer(QueueType queueType);
 
 	private:
-		Flags<QueueType> m_queueTypes;
+		QueueType m_queueType;
 	};
 }
 

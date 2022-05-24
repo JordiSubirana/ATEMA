@@ -391,14 +391,13 @@ namespace at
 
 	enum class QueueType
 	{
-		Graphics = 0x0001,
-		Compute = 0x0002,
-		Transfer = 0x0004,
-
-		All = Graphics | Compute | Transfer
+		// Support Graphics / Compute / Transfer operations
+		Graphics,
+		// Support Compute / Transfer operations
+		Compute,
+		// Support Transfer operations
+		Transfer,
 	};
-
-	ATEMA_DECLARE_FLAGS(QueueType);
 }
 
 #endif
