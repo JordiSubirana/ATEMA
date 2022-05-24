@@ -444,7 +444,15 @@ void GraphicsSystem::onResize(const Vector2u& size)
 
 void GraphicsSystem::updateFrame()
 {
-	auto& renderFrame = m_renderWindow.lock()->acquireFrame();
+	RenderFrame* _frame = nullptr;
+
+	{
+		ATEMA_BENCHMARK("RenderWindow::acquireFrame");
+
+		_frame = &m_renderWindow.lock()->acquireFrame();
+	}
+
+	auto& renderFrame = *_frame;
 
 	const auto frameIndex = renderFrame.getFrameIndex();
 
@@ -476,7 +484,7 @@ void GraphicsSystem::updateFrame()
 
 	// Update objects buffers
 	{
-		ATEMA_BENCHMARK("CommandBuffers fill");
+		ATEMA_BENCHMARK("CommandBuffer (scene)");
 
 		// Clear previous command buffers
 		for (auto& threadCommandBuffers : m_threadCommandBuffers)
@@ -559,39 +567,51 @@ void GraphicsSystem::updateFrame()
 	commandBuffer->endRenderPass();
 
 	// Post process pass
-	const std::vector<CommandBuffer::ClearValue> postProcessClearValues =
 	{
-		{ 0.0f, 0.0f, 0.0f, 1.0f },
-		{ 1.0f, 0 }
-	};
+		ATEMA_BENCHMARK("CommandBuffer (post process)");
 
-	commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), postProcessClearValues, false);
+		const std::vector<CommandBuffer::ClearValue> postProcessClearValues =
+		{
+			{ 0.0f, 0.0f, 0.0f, 1.0f },
+			{ 1.0f, 0 }
+		};
 
-	commandBuffer->bindPipeline(m_ppPipeline);
+		commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), postProcessClearValues, false);
 
-	commandBuffer->setViewport(m_viewport);
+		commandBuffer->bindPipeline(m_ppPipeline);
 
-	commandBuffer->setScissor(Vector2i(), m_windowSize);
+		commandBuffer->setViewport(m_viewport);
 
-	commandBuffer->bindVertexBuffer(m_ppQuad, 0);
+		commandBuffer->setScissor(Vector2i(), m_windowSize);
 
-	commandBuffer->bindDescriptorSet(0, m_ppDescriptorSet);
+		commandBuffer->bindVertexBuffer(m_ppQuad, 0);
 
-	commandBuffer->draw(static_cast<uint32_t>(quadVertices.size()));
+		commandBuffer->bindDescriptorSet(0, m_ppDescriptorSet);
 
-	commandBuffer->endRenderPass();
+		commandBuffer->draw(static_cast<uint32_t>(quadVertices.size()));
 
-	commandBuffer->end();
+		commandBuffer->endRenderPass();
+
+		commandBuffer->end();
+	}
 
 	renderFrame.getFence()->reset();
 
-	renderFrame.submit(
-		{ commandBuffer },
-		{ renderFrame.getImageAvailableWaitCondition() },
-		{ renderFrame.getRenderFinishedSemaphore() },
-		renderFrame.getFence());
+	{
+		ATEMA_BENCHMARK("RenderFrame::submit");
 
-	renderFrame.present();
+		renderFrame.submit(
+			{ commandBuffer },
+			{ renderFrame.getImageAvailableWaitCondition() },
+			{ renderFrame.getRenderFinishedSemaphore() },
+			renderFrame.getFence());
+	}
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::present");
+
+		renderFrame.present();
+	}
 }
 
 void GraphicsSystem::updateUniformBuffers(FrameData& frameData)

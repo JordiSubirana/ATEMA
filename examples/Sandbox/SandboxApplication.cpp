@@ -39,6 +39,17 @@
 
 using namespace at;
 
+namespace
+{
+	std::vector<std::string> systemNames =
+	{
+		"SceneUpdateSystem",
+		"CameraSystem",
+		"FirstPersonCameraSystem",
+		"GraphicsSystem"
+	};
+}
+
 SandboxApplication::SandboxApplication():
 	Application(),
 	m_frameCount(0),
@@ -136,8 +147,15 @@ void SandboxApplication::update(at::TimeStep ms)
 
 	m_window->processEvents();
 
+	size_t systemCount = 0;
 	for (auto& system : m_systems)
+	{
+		ATEMA_BENCHMARK(systemNames[systemCount]);
+
 		system->update(ms);
+
+		systemCount++;
+	}
 
 	//m_window->swapBuffers();
 
