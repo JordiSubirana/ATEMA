@@ -36,3 +36,13 @@ Ptr<Semaphore> Semaphore::create()
 {
 	return Renderer::instance().createSemaphore();
 }
+
+WaitCondition::WaitCondition()
+{
+}
+
+WaitCondition::WaitCondition(Ptr<Semaphore> semaphore, Flags<PipelineStage> pipelineStages) :
+	semaphore(semaphore),
+	pipelineStages(pipelineStages)
+{
+}

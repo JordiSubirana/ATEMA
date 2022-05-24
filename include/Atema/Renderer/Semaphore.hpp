@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Renderer/Enums.hpp>
 
 namespace at
 {
@@ -37,6 +38,15 @@ namespace at
 
 	protected:
 		Semaphore();
+	};
+
+	struct ATEMA_RENDERER_API WaitCondition
+	{
+		WaitCondition();
+		WaitCondition(Ptr<Semaphore> semaphore, Flags<PipelineStage> pipelineStages);
+
+		Ptr<Semaphore> semaphore;
+		Flags<PipelineStage> pipelineStages;
 	};
 }
 
