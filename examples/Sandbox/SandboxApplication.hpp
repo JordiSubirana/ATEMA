@@ -43,7 +43,7 @@ private:
 	void createCamera();
 	void createPlayer();
 	
-	at::Ptr<at::Window> m_window;
+	at::Ptr<at::RenderWindow> m_window;
 
 	at::EntityManager m_entityManager;
 	

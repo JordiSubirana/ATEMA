@@ -31,7 +31,7 @@ using namespace at;
 
 ModelData::ModelData(const std::filesystem::path& path)
 {
-	auto commandPool = Renderer::instance().getDefaultCommandPool();
+	auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
 
 	std::vector<BasicVertex> modelVertices;
 	std::vector<uint32_t> modelIndices;
@@ -150,7 +150,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 MaterialData::MaterialData(const std::filesystem::path& path)
 {
-	auto commandPool = Renderer::instance().getDefaultCommandPool();
+	auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
 
 	// Load the texture data
 	int texWidth, texHeight, texChannels;

@@ -20,6 +20,9 @@
 */
 
 #include "GraphicsSystem.hpp"
+
+#include <Atema/Window/WindowResizeEvent.hpp>
+
 #include "../Resources.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Components/CameraComponent.hpp"
@@ -101,31 +104,18 @@ namespace
 	};
 }
 
-GraphicsSystem::GraphicsSystem() :
+GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	System(),
-	m_maxFramesInFlight(2),
+	m_renderWindow(renderWindow),
 	m_totalTime(0.0f)
 {
+	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
+
 	auto& renderer = Renderer::instance();
-	auto window = renderer.getMainWindow();
 
-	//----- RENDER PIPELINE -----//
-	RenderPipeline::Settings renderPipelineSettings;
-	renderPipelineSettings.window = window;
-	renderPipelineSettings.maxFramesInFlight = m_maxFramesInFlight;
-	renderPipelineSettings.resizeCallback = [this](const Vector2u& size)
-	{
-		onResize(size);
-	};
-	renderPipelineSettings.updateFrameCallback = [this](uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
-	{
-		onUpdateFrame(frameIndex, commandBuffer);
-	};
+	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
 
-	m_renderPipeline = std::make_unique<RenderPipeline>(renderPipelineSettings);
-
-	// Keep default values
-	m_depthFormat = renderPipelineSettings.depthFormat;
+	m_depthFormat = renderWindow->getDepthFormat();
 
 	//----- DEFERRED RESOURCES -----//
 	// Create RenderPass
@@ -185,7 +175,7 @@ GraphicsSystem::GraphicsSystem() :
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.vertexShader = Shader::create({ deferredPostProcessVertexPath });
 		pipelineSettings.fragmentShader = Shader::create({ deferredPostProcessFragmentPath });
-		pipelineSettings.renderPass = m_renderPipeline->getRenderPass();
+		pipelineSettings.renderPass = renderWindow->getRenderPass();
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.inputs =
@@ -213,7 +203,7 @@ GraphicsSystem::GraphicsSystem() :
 
 	// Create quad
 	{
-		m_ppQuad = createQuad(renderer.getDefaultCommandPool());
+		m_ppQuad = createQuad(renderer.getCommandPool(QueueType::Graphics));
 	}
 
 	//----- OBJECT RESOURCES -----//
@@ -273,16 +263,12 @@ GraphicsSystem::GraphicsSystem() :
 	{
 		DescriptorPool::Settings descriptorPoolSettings;
 		descriptorPoolSettings.layout = m_frameDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = m_maxFramesInFlight;
+		descriptorPoolSettings.pageSize = maxFramesInFlight;
 
 		m_frameDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
 	}
 
 	// Uniform buffers & descriptor sets
-	m_frameUniformBuffers.reserve(m_maxFramesInFlight);
-	m_frameDescriptorSets.reserve(m_maxFramesInFlight);
-	m_frameObjectsUniformBuffers.reserve(m_maxFramesInFlight);
-
 	const uint32_t elementByteSize = sizeof(UniformObjectElement);
 	const uint32_t minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 
@@ -300,45 +286,36 @@ GraphicsSystem::GraphicsSystem() :
 		}
 	}
 
-	for (uint32_t j = 0; j < m_maxFramesInFlight; j++)
+	m_frameDatas.resize(maxFramesInFlight);
+	for (auto& frameData : m_frameDatas)
 	{
 		// Frame uniform buffers
-		auto frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
-
-		m_frameUniformBuffers.push_back(frameUniformBuffer);
+		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
 
 		// Frame object uniform buffers
-		auto objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, objectCount * m_dynamicObjectBufferOffset, true });
-
-		m_frameObjectsUniformBuffers.push_back(objectsUniformBuffer);
+		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(objectCount * m_dynamicObjectBufferOffset), true });
 
 		// Add descriptor set
-		auto descriptorSet = m_frameDescriptorPool->createSet();
-
-		descriptorSet->update(0, frameUniformBuffer);
-		descriptorSet->update(1, objectsUniformBuffer, sizeof(UniformObjectElement));
-
-		m_frameDescriptorSets.push_back(descriptorSet);
+		frameData.descriptorSet = m_frameDescriptorPool->createSet();
+		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
+		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
 	}
-	
+
 	//----- THREAD RESOURCES -----//
-	auto& taskManager = TaskManager::instance();
-	const auto coreCount = taskManager.getSize();
+	m_threadCommandBuffers.resize(TaskManager::instance().getSize());
 
-	m_threadCommandBuffers.resize(coreCount);
+	for (auto& threadCommandBuffers : m_threadCommandBuffers)
+		threadCommandBuffers.resize(maxFramesInFlight);
 
-	for (auto& commandBuffers : m_threadCommandBuffers)
-		commandBuffers.resize(m_maxFramesInFlight);
-	
+	//----- MISC -----//
+
 	// Create size dependent resources
-	onResize(window->getSize());
+	onResize(renderWindow->getSize());
 }
 
 GraphicsSystem::~GraphicsSystem()
 {
 	Renderer::instance().waitForIdle();
-
-	m_renderPipeline.reset();
 
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
@@ -355,14 +332,10 @@ GraphicsSystem::~GraphicsSystem()
 
 	m_ppPipeline.reset();
 
-	// Thread resources
-	m_threadCommandBuffers.clear();
-
 	// Frame resources
 	m_frameDescriptorSetLayout.reset();
-	m_frameDescriptorSets.clear();
 	m_frameDescriptorPool.reset();
-	m_frameUniformBuffers.clear();
+	m_frameDatas.clear();
 
 	// Object resources
 	m_materialDescriptorSet.reset();
@@ -389,14 +362,26 @@ void GraphicsSystem::update(TimeStep timeStep)
 	}
 	
 	// Start frame
-	m_renderPipeline->startFrame();
+	updateFrame();
 
 	// Update total time
 	m_totalTime += timeStep.getSeconds();
 }
 
+void GraphicsSystem::onEvent(Event& event)
+{
+	if (event.is<WindowResizeEvent>())
+	{
+		const auto& windowResizeEvent = static_cast<WindowResizeEvent&>(event);
+
+		onResize(windowResizeEvent.size);
+	}
+}
+
 void GraphicsSystem::onResize(const Vector2u& size)
 {
+	Renderer::instance().waitForIdle();
+
 	// Create color images
 	{
 		m_deferredImages.clear();
@@ -447,24 +432,47 @@ void GraphicsSystem::onResize(const Vector2u& size)
 	m_viewport.size.x = static_cast<float>(size.x);
 	m_viewport.size.y = static_cast<float>(size.y);
 	m_windowSize = size;
+
+	// Clear command buffers
+	for (auto& threadCommandBuffers : m_threadCommandBuffers)
+		for (auto& commandBuffers : threadCommandBuffers)
+			commandBuffers.clear();
+
+	for (auto& frameData : m_frameDatas)
+		frameData.commandBuffer.reset();
 }
 
-void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> commandBuffer)
+void GraphicsSystem::updateFrame()
 {
+	auto& renderFrame = m_renderWindow.lock()->acquireFrame();
+
+	const auto frameIndex = renderFrame.getFrameIndex();
+
+	auto& frameData = m_frameDatas[frameIndex];
+
 	// Update scene data
-	updateUniformBuffers(frameIndex);
+	updateUniformBuffers(frameData);
+
+	// CommandBuffer
+	CommandBuffer::Settings commandBufferSettings;
+	commandBufferSettings.singleUse = true;
+
+	// Save command buffer
+	frameData.commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+
+	// Local variable for convenience
+	auto& commandBuffer = frameData.commandBuffer;
+	commandBuffer->begin();
 
 	// Deferred pass
-	std::vector<CommandBuffer::ClearValue> clearValues;
+	std::vector<CommandBuffer::ClearValue> gBufferClearValues;
 
 	for (auto& format : gBuffer)
-		clearValues.push_back({ 0.0f, 0.0f, 0.0f, 1.0f });
+		gBufferClearValues.push_back({ 0.0f, 0.0f, 0.0f, 1.0f });
 
-	clearValues.push_back({ 1.0f, 0 });
+	gBufferClearValues.push_back({ 1.0f, 0 });
 
-	commandBuffer->beginRenderPass(m_deferredRenderPass, m_deferredFramebuffer, clearValues, true);
-
-	auto& globalDescriptorSet = m_frameDescriptorSets[frameIndex];
+	commandBuffer->beginRenderPass(m_deferredRenderPass, m_deferredFramebuffer, gBufferClearValues, true);
 
 	// Update objects buffers
 	{
@@ -472,9 +480,7 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 		// Clear previous command buffers
 		for (auto& threadCommandBuffers : m_threadCommandBuffers)
-		{
 			threadCommandBuffers[frameIndex].clear();
-		}
 
 		auto& entityManager = getEntityManager();
 
@@ -502,10 +508,9 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, globalDescriptorSet, frameIndex](size_t threadIndex)
+			auto task = taskManager.createTask([this, &renderFrame, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
 				{
-					auto commandPool = Renderer::instance().getCommandPool(threadIndex);
-					auto commandBuffer = commandPool->createBuffer({ true, true });
+					auto commandBuffer = renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
 
 					commandBuffer->beginSecondary(m_deferredRenderPass, m_deferredFramebuffer);
 
@@ -526,7 +531,7 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 						commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
 						
-						commandBuffer->bindDescriptorSet(0, globalDescriptorSet, { i * m_dynamicObjectBufferOffset });
+						commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
 
 						commandBuffer->drawIndexed(graphics.indexCount);
 
@@ -554,7 +559,13 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 	commandBuffer->endRenderPass();
 
 	// Post process pass
-	m_renderPipeline->beginScreenRenderPass();
+	const std::vector<CommandBuffer::ClearValue> postProcessClearValues =
+	{
+		{ 0.0f, 0.0f, 0.0f, 1.0f },
+		{ 1.0f, 0 }
+	};
+
+	commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), postProcessClearValues, false);
 
 	commandBuffer->bindPipeline(m_ppPipeline);
 
@@ -568,10 +579,22 @@ void GraphicsSystem::onUpdateFrame(uint32_t frameIndex, Ptr<CommandBuffer> comma
 
 	commandBuffer->draw(static_cast<uint32_t>(quadVertices.size()));
 
-	m_renderPipeline->endScreenRenderPass();
+	commandBuffer->endRenderPass();
+
+	commandBuffer->end();
+
+	renderFrame.getFence()->reset();
+
+	renderFrame.submit(
+		{ commandBuffer },
+		{ renderFrame.getImageAvailableWaitCondition() },
+		{ renderFrame.getRenderFinishedSemaphore() },
+		renderFrame.getFence());
+
+	renderFrame.present();
 }
 
-void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
+void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 {
 	ATEMA_BENCHMARK("GraphicsSystem::updateUniformBuffers");
 
@@ -603,13 +626,11 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 				frameTransforms.proj = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
 				frameTransforms.proj[1][1] *= -1;
 
-				auto buffer = m_frameUniformBuffers[frameIndex];
-
-				void* data = buffer->map();
+				void* data = frameData.frameUniformBuffer->map();
 
 				memcpy(data, static_cast<void*>(&frameTransforms), sizeof(UniformFrameElement));
 
-				buffer->unmap();
+				frameData.frameUniformBuffer->unmap();
 
 				break;
 			}
@@ -618,7 +639,7 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 
 	// Update objects buffers
 	{
-		auto data = static_cast<uint8_t*>(m_frameObjectsUniformBuffers[frameIndex]->map());
+		auto data = static_cast<uint8_t*>(frameData.objectsUniformBuffer->map());
 
 		const auto basisChange = Matrix4f::createRotation({ Math::toRadians(90.0f), 0.0f, 0.0f });
 
@@ -646,7 +667,7 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &entities, frameIndex]()
+			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &entities]()
 				{
 					auto it = entities.begin() + firstIndex;
 
@@ -671,6 +692,6 @@ void GraphicsSystem::updateUniformBuffers(uint32_t frameIndex)
 		for (auto& task : tasks)
 			task->wait();
 
-		m_frameObjectsUniformBuffers[frameIndex]->unmap();
+		frameData.objectsUniformBuffer->unmap();
 	}
 }

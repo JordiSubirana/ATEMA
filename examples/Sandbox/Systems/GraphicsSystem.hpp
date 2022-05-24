@@ -27,20 +27,29 @@
 class GraphicsSystem : public System
 {
 public:
-	GraphicsSystem();
+	GraphicsSystem() = delete;
+	GraphicsSystem(const at::Ptr<at::RenderWindow>& renderWindow);
 	virtual ~GraphicsSystem();
 
 	void update(at::TimeStep timeStep) override;
+	void onEvent(at::Event& event) override;
 
 private:
+	struct FrameData
+	{
+		at::Ptr<at::Buffer> frameUniformBuffer;
+		at::Ptr<at::Buffer> objectsUniformBuffer;
+		at::Ptr<at::DescriptorSet> descriptorSet;
+		at::Ptr<at::CommandBuffer> commandBuffer;
+	};
+
 	void onResize(const at::Vector2u& size);
-	void onUpdateFrame(uint32_t frameIndex, at::Ptr<at::CommandBuffer> commandBuffer);
+	void updateFrame();
 
-	void updateUniformBuffers(uint32_t frameIndex);
+	void updateUniformBuffers(FrameData& frameData);
 
-	at::UPtr<at::RenderPipeline> m_renderPipeline;
+	at::WPtr<at::RenderWindow> m_renderWindow;
 	
-	uint32_t m_maxFramesInFlight;
 	float m_totalTime;
 
 	at::ImageFormat m_depthFormat;
@@ -70,15 +79,13 @@ private:
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
-	std::vector<at::Ptr<at::Buffer>> m_frameUniformBuffers;
 	uint32_t m_dynamicObjectBufferOffset;
-	std::vector<at::Ptr<at::Buffer>> m_frameObjectsUniformBuffers;
-	std::vector<at::Ptr<at::DescriptorSet>> m_frameDescriptorSets;
+	std::vector<FrameData> m_frameDatas;
 
 	// Pipeline resources
 	at::Ptr<at::GraphicsPipeline> m_pipeline;
 
-	// Thread resources
+	// Thread data
 	std::vector<std::vector<std::vector<at::Ptr<at::CommandBuffer>>>> m_threadCommandBuffers;
 };
 

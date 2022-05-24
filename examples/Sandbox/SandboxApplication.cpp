@@ -20,7 +20,12 @@
 */
 
 #include "SandboxApplication.hpp"
-#include "Resources.hpp"
+
+#include <Atema/Core/Variant.hpp>
+#include <Atema/Shader.hpp>
+#include <Atema/Core/Library.hpp>
+#include <Atema/Renderer/RenderWindow.hpp>
+
 #include "Components/GraphicsComponent.hpp"
 #include "Components/VelocityComponent.hpp"
 #include "Components/CameraComponent.hpp"
@@ -28,6 +33,9 @@
 #include "Systems/GraphicsSystem.hpp"
 #include "Systems/CameraSystem.hpp"
 #include "Systems/FirstPersonCameraSystem.hpp"
+#include "Resources.hpp"
+
+#include <fstream>
 
 using namespace at;
 
@@ -36,13 +44,15 @@ SandboxApplication::SandboxApplication():
 	m_frameCount(0),
 	m_frameDuration(0.0f)
 {
+	// Let default settings for now
 	Renderer::Settings settings;
-	settings.maxFramesInFlight = 2;
 
 	Renderer::create<VulkanRenderer>(settings);
 
 	// Window / SwapChain
-	m_window = Renderer::instance().getMainWindow();
+	RenderWindow::Settings renderWindowSettings;
+
+	m_window = Renderer::instance().createRenderWindow(renderWindowSettings);
 	m_window->getEventDispatcher().addListener([this](Event& event)
 		{
 			onEvent(event);
@@ -54,7 +64,7 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(sceneUpdateSystem);
 
-	auto cameraSystem = std::make_shared<CameraSystem>();
+	auto cameraSystem = std::make_shared<CameraSystem>(m_window);
 	cameraSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(cameraSystem);
@@ -64,7 +74,7 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(firstPersonCameraSystem);
 
-	auto graphicsSystem = std::make_shared<GraphicsSystem>();
+	auto graphicsSystem = std::make_shared<GraphicsSystem>(m_window);
 	graphicsSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(graphicsSystem);
@@ -126,12 +136,10 @@ void SandboxApplication::update(at::TimeStep ms)
 
 	m_window->processEvents();
 
-	//m_renderPipeline->update();
-
 	for (auto& system : m_systems)
 		system->update(ms);
 
-	m_window->swapBuffers();
+	//m_window->swapBuffers();
 
 	m_frameCount++;
 

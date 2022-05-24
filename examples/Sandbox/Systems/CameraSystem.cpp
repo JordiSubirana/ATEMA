@@ -20,14 +20,19 @@
 */
 
 #include "CameraSystem.hpp"
+
+#include <Atema/Window/WindowResizeEvent.hpp>
+
 #include "../Components/CameraComponent.hpp"
 #include "../Resources.hpp"
 
 using namespace at;
 
-CameraSystem::CameraSystem() :
+CameraSystem::CameraSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 	System(),
-	m_totalTime(0.0f)
+	m_window(renderWindow.get()),
+	m_totalTime(0.0f),
+	m_size(renderWindow->getSize())
 {
 }
 
@@ -37,8 +42,6 @@ CameraSystem::~CameraSystem()
 
 void CameraSystem::update(TimeStep timeStep)
 {
-	const auto windowSize = Renderer::instance().getMainWindow()->getSize();
-
 	// Update automatic cameras
 	auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
 
@@ -46,7 +49,7 @@ void CameraSystem::update(TimeStep timeStep)
 	{
 		auto& camera = selection.get<CameraComponent>(entity);
 
-		camera.aspectRatio = static_cast<float>(windowSize.x) / static_cast<float>(windowSize.y);
+		camera.aspectRatio = static_cast<float>(m_size.x) / static_cast<float>(m_size.y);
 
 		if (camera.isAuto)
 		{
@@ -102,5 +105,12 @@ void CameraSystem::onEvent(Event& event)
 				}
 			}
 		}
+	}
+	else if (event.is<WindowResizeEvent>())
+	{
+		auto& windowResizeEvent = static_cast<WindowResizeEvent&>(event);
+
+		if (windowResizeEvent.window == m_window)
+			m_size = windowResizeEvent.size;
 	}
 }

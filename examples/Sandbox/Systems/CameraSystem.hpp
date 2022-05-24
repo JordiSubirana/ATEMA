@@ -27,14 +27,17 @@
 class CameraSystem : public System
 {
 public:
-	CameraSystem();
+	CameraSystem() = delete;
+	CameraSystem(const at::Ptr<at::RenderWindow>& renderWindow);
 	virtual ~CameraSystem();
 
 	void update(at::TimeStep timeStep) override;
 	void onEvent(at::Event& event) override;
 
 private:
+	at::RenderWindow* m_window;
 	float m_totalTime;
+	at::Vector2u m_size;
 };
 
 #endif
