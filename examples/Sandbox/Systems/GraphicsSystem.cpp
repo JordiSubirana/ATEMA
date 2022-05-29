@@ -131,7 +131,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			AttachmentDescription attachment;
 			attachment.format = format;
 			attachment.initialLayout = ImageLayout::Undefined;
-			attachment.finalLayout = ImageLayout::ShaderInput;
+			attachment.finalLayout = ImageLayout::ShaderRead;
 
 			renderPassSettings.attachments.push_back(attachment);
 			
@@ -392,7 +392,7 @@ void GraphicsSystem::onResize(const Vector2u& size)
 			imageSettings.format = format;
 			imageSettings.width = size.x;
 			imageSettings.height = size.y;
-			imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderInput;
+			imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderRead;
 
 			auto image = Image::create(imageSettings);
 
@@ -562,9 +562,17 @@ void GraphicsSystem::updateFrame()
 			task->wait();
 
 		commandBuffer->executeSecondaryCommands(commandBuffers);
-	}
 
-	commandBuffer->endRenderPass();
+		commandBuffer->endRenderPass();
+
+		for (auto& image : m_deferredImages)
+		{
+			commandBuffer->imageBarrier(
+				image,
+				PipelineStage::ColorAttachmentOutput, MemoryAccess::ColorAttachmentWrite, ImageLayout::ShaderRead,
+				PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
+		}
+	}
 
 	// Post process pass
 	{

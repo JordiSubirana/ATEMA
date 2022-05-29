@@ -183,7 +183,7 @@ MaterialData::MaterialData(const std::filesystem::path& path)
 	imageSettings.width = texWidth;
 	imageSettings.height = texHeight;
 	imageSettings.mipLevels = textureMipLevels;
-	imageSettings.usages = ImageUsage::ShaderInput | ImageUsage::TransferDst | ImageUsage::TransferSrc;
+	imageSettings.usages = ImageUsage::ShaderRead | ImageUsage::TransferDst | ImageUsage::TransferSrc;
 
 	texture = Image::create(imageSettings);
 
@@ -191,14 +191,12 @@ MaterialData::MaterialData(const std::filesystem::path& path)
 	auto commandBuffer = commandPool->createBuffer({ true });
 
 	commandBuffer->begin();
+	
+	commandBuffer->imageBarrier(texture, ImageBarrier::InitializeTransferDst);
 
-	commandBuffer->setImageLayout(texture, ImageLayout::TransferDst);
+	commandBuffer->copyBuffer(stagingBuffer, texture, ImageLayout::TransferDst);
 
-	commandBuffer->copyBuffer(stagingBuffer, texture);
-
-	commandBuffer->createMipmaps(texture);
-
-	commandBuffer->setImageLayout(texture, ImageLayout::ShaderInput);
+	commandBuffer->createMipmaps(texture, PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
 
 	commandBuffer->end();
 

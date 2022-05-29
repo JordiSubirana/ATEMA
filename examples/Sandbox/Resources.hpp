@@ -24,7 +24,7 @@
 
 #include <Atema/Atema.hpp>
 
-constexpr uint32_t objectRow = 30;
+constexpr uint32_t objectRow = 50;
 constexpr uint32_t objectCount = objectRow * objectRow;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources/";
