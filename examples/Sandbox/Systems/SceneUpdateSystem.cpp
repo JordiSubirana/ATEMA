@@ -24,6 +24,13 @@
 
 using namespace at;
 
+namespace
+{
+	constexpr size_t targetThreadCount = 8;
+
+	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
+}
+
 SceneUpdateSystem::SceneUpdateSystem() : System()
 {
 }
@@ -38,14 +45,47 @@ void SceneUpdateSystem::update(TimeStep timeStep)
 
 	auto entities = entityManager.getUnion<Transform, VelocityComponent>();
 
-	for (auto& entity : entities)
-	{
-		auto& transform = entities.get<Transform>(entity);
-		auto& velocity = entities.get<VelocityComponent>(entity);
+	auto& taskManager = TaskManager::instance();
 
-		Vector3f rotation;
-		rotation.z = velocity.speed * timeStep.getSeconds();
-		
-		transform.rotate(rotation);
+	std::vector<Ptr<Task>> tasks;
+	tasks.reserve(threadCount);
+
+	size_t firstIndex = 0;
+	const size_t size = entities.size() / threadCount;
+
+	for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+	{
+		auto lastIndex = firstIndex + size;
+
+		if (taskIndex == threadCount - 1)
+		{
+			const auto remainingSize = entities.size() - lastIndex;
+
+			lastIndex += remainingSize;
+		}
+
+		auto task = taskManager.createTask([this, &entities, firstIndex, lastIndex, timeStep](size_t threadIndex)
+			{
+				uint32_t i = static_cast<uint32_t>(firstIndex);
+				for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+				{
+					auto& transform = entities.get<Transform>(*it);
+					auto& velocity = entities.get<VelocityComponent>(*it);
+
+					Vector3f rotation;
+					rotation.z = velocity.speed * timeStep.getSeconds();
+
+					transform.rotate(rotation);
+
+					i++;
+				}
+			});
+
+		tasks.push_back(task);
+
+		firstIndex += size;
 	}
+
+	for (auto& task : tasks)
+		task->wait();
 }
