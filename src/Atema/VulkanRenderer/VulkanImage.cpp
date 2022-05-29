@@ -32,7 +32,6 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	m_view(VK_NULL_HANDLE),
 	m_memory(VK_NULL_HANDLE),
 	m_format(settings.format),
-	m_layouts(settings.mipLevels, VK_IMAGE_LAYOUT_UNDEFINED),
 	m_size(settings.width, settings.height),
 	m_mipLevels(settings.mipLevels)
 {
@@ -90,7 +89,6 @@ VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkForm
 	m_view(VK_NULL_HANDLE),
 	m_memory(VK_NULL_HANDLE),
 	m_format(Vulkan::getFormat(format)),
-	m_layouts(1, VK_IMAGE_LAYOUT_UNDEFINED),
 	m_size(0, 0),
 	m_mipLevels(1)
 {
@@ -115,11 +113,6 @@ VkImage VulkanImage::getImageHandle() const noexcept
 VkImageView VulkanImage::getViewHandle() const noexcept
 {
 	return m_view;
-}
-
-std::vector<VkImageLayout>& VulkanImage::getLayouts() noexcept
-{
-	return m_layouts;
 }
 
 ImageFormat VulkanImage::getFormat() const noexcept

@@ -223,14 +223,15 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buf
 	m_device.vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer->getHandle(), vkDstBuffer->getHandle(), 1, &copyRegion);
 }
 
-void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage)
+void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage, ImageLayout dstLayout)
 {
 	ATEMA_ASSERT(srcBuffer, "Invalid source buffer");
 	ATEMA_ASSERT(dstImage, "Invalid destination image");
 
 	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(srcBuffer);
 	const auto vkImage = std::static_pointer_cast<VulkanImage>(dstImage);
-	const auto layout = vkImage->getLayouts()[0];
+	const auto format = vkImage->getFormat();
+	const auto layout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
 	
 	ATEMA_ASSERT(layout == VK_IMAGE_LAYOUT_GENERAL || layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid image layout");
 
@@ -311,31 +312,31 @@ void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCoun
 	m_device.vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel, uint32_t levelCount)
+void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
+	Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout,
+	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
 {
 	ATEMA_ASSERT(image, "Invalid image");
 
 	const auto vkImage = std::static_pointer_cast<VulkanImage>(image);
 	const auto format = vkImage->getFormat();
-	auto& layouts = vkImage->getLayouts();
 
-	if (levelCount == 0)
-		levelCount = static_cast<uint32_t>(layouts.size()) - firstMipLevel;
-
-	const auto oldLayout = layouts[firstMipLevel];
-	const auto newLayout = Vulkan::getLayout(layout, Renderer::isDepthImageFormat(format));
-	
-	if (oldLayout == newLayout)
-		return;
+	// Pipeline stages
+	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
+	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
 
 	// Pipeline barriers are used to synchronize resources (ensure we are not writing & reading at the same time)
 	// We can also change layout or change queue family ownership for a resource (when VK_SHARING_MODE_EXCLUSIVE is used)
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 
+	// Access mask
+	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
+	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+
 	// Change layout
-	barrier.oldLayout = oldLayout; // or VK_IMAGE_LAYOUT_UNDEFINED if we don't care about previous content
-	barrier.newLayout = newLayout;
+	barrier.oldLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(format)); // or VK_IMAGE_LAYOUT_UNDEFINED if we don't care about previous content
+	barrier.newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
 
 	// Change queue ownership (indices of the queue families if we want to use it)
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -343,12 +344,12 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 
 	// Specify image & subResourceRange (used for mipmaps or arrays)
 	barrier.image = vkImage->getImageHandle();
-	barrier.subresourceRange.baseMipLevel = firstMipLevel;
-	barrier.subresourceRange.levelCount = levelCount;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	if (barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 	{
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
@@ -362,58 +363,13 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
-	// Depends on what happens before and after the barrier
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
-
-	// Undefined to transfer destination : we don't need to wait on anything
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-	{
-		// We don't need to wait : empty access mask
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		// We don't need to wait : earliest possible pipeline stage
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		// Not a real stage for graphics & compute pipelines
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-	{
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-	// Transfer destination to shader reading : shader reads should wait on transfer writes (here fragment shader)
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-	{
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-	{
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		// Earliest stage when we'll need to use the depth buffer (here to read)
-		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	}
-	else
-	{
-		ATEMA_ERROR("Unsupported layout transition");
-	}
-
+	// Pipeline barrier
 	m_device.vkCmdPipelineBarrier(
 		m_commandBuffer,
+
 		// Depends on what happens before and after the barrier
-		sourceStage, // In which pipeline stage the operations occur (before the barrier)
-		destinationStage, // The pipeline stage in which operations will wait on the barrier
+		srcStages, // In which pipeline stage the operations occur (before the barrier)
+		dstStages, // The pipeline stage in which operations will wait on the barrier
 
 		0,
 
@@ -422,12 +378,9 @@ void VulkanCommandBuffer::setImageLayout(const Ptr<Image>& image, ImageLayout la
 		0, nullptr,
 		1, &barrier
 	);
-
-	for (uint32_t i = 0; i < levelCount; i++)
-		layouts[i] = newLayout;
 }
 
-void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
+void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
 {
 	//TODO: Use mipmaps in different files, to avoid generating it a runtime
 
@@ -438,8 +391,10 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 	const auto format = Vulkan::getFormat(vkImage->getFormat());
 	const auto size = vkImage->getSize();
 	const auto imageHandle = vkImage->getImageHandle();
-	auto& layouts = vkImage->getLayouts();
-	auto oldLayouts = layouts;
+
+	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
+	const auto dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+	const auto newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(vkImage->getFormat()));
 
 	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
 	auto& renderer = VulkanRenderer::instance();
@@ -454,9 +409,6 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 		//TODO: Instead of throwing an error, make a custom mipmap generation without using vkCmdBlitImage
 		ATEMA_ERROR("Texture image format does not support linear blitting");
 	}
-
-	// Set image layout to TransferDst, then we'll transition each mip level to src when needed
-	setImageLayout(image, ImageLayout::TransferDst);
 
 	// Generate mip levels
 	VkImageMemoryBarrier barrier{};
@@ -489,8 +441,6 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 			0, nullptr,
 			1, &barrier);
 
-		layouts[i - 1] = barrier.newLayout;
-
 		// Which regions will be used for the blit
 		VkImageBlit blit{};
 		blit.srcOffsets[0] = { 0, 0, 0 };
@@ -515,21 +465,19 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 			1, &blit,
 			VK_FILTER_LINEAR);
 
-		// Transition level i-1 to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		// Transition level i-1 to the desired layout
 		// Will wait on the blit command to finish
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.newLayout = newLayout;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.dstAccessMask = dstAccessMask;
 
 		m_device.vkCmdPipelineBarrier(
 			m_commandBuffer,
-			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, dstStages, 0,
 			0, nullptr,
 			0, nullptr,
 			1, &barrier);
-
-		layouts[i - 1] = barrier.newLayout;
 
 		if (mipWidth > 1)
 			mipWidth /= 2;
@@ -538,21 +486,19 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image)
 			mipHeight /= 2;
 	}
 
-	// Transition the last level to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	// Transition the last level to the desired layout
 	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
 	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.newLayout = newLayout;
 	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.dstAccessMask = dstAccessMask;
 
 	m_device.vkCmdPipelineBarrier(
 		m_commandBuffer,
-		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, dstStages, 0,
 		0, nullptr,
 		0, nullptr,
 		1, &barrier);
-
-	layouts[mipLevels - 1] = barrier.newLayout;
 }
 
 void VulkanCommandBuffer::executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers)

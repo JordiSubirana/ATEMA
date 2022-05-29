@@ -173,11 +173,11 @@ namespace at
 	enum class ImageUsage
 	{
 		RenderTarget = 0x0001,
-		ShaderInput = 0x0002,
+		ShaderRead = 0x0002,
 		TransferSrc = 0x0004,
 		TransferDst = 0x0008,
 
-		All = RenderTarget | ShaderInput | TransferDst | TransferSrc
+		All = RenderTarget | ShaderRead | TransferDst | TransferSrc
 	};
 
 	ATEMA_DECLARE_FLAGS(ImageUsage);
@@ -186,7 +186,7 @@ namespace at
 	{
 		Undefined,
 		Attachment,
-		ShaderInput,
+		ShaderRead,
 		TransferSrc,
 		TransferDst,
 		Present,
@@ -346,6 +346,83 @@ namespace at
 	};
 
 	ATEMA_DECLARE_FLAGS(PipelineStage);
+
+	enum class MemoryAccess
+	{
+		// Read access to indirect command data (build / trace / draw / dispatch)
+		// Occurs in PipelineStage::DrawIndirect
+		IndirectCommandRead = 1 << 0,
+
+		// Read access to an index buffer during an indexed drawing command
+		// Occurs in PipelineStage::VertexInput
+		IndexBufferRead = 1 << 1,
+
+		// Read access to a vertex buffer during a drawing command
+		// Occurs in PipelineStage::VertexInput
+		VertexBufferRead = 1 << 2,
+
+		// Read access to an uniform buffer
+		// Can occur in any shader PipelineStage
+		UniformBufferRead = 1 << 3,
+
+		// Read access to an input attachment within a render pass (subpass shading / fragment shading)
+		// Occurs in PipelineStage::FragmentShader
+		InputAttachmentRead = 1 << 4,
+
+		// Read access to a uniform buffer / uniform texel buffer / sampled image / storage buffer / physical storage buffer / shader binding table / storage texel buffer / storage image
+		// Can occur in any shader PipelineStage
+		ShaderRead = 1 << 5,
+
+		// Write access to a storage buffer / physical storage buffer / storage texel buffer / storage image
+		// Can occur in any shader PipelineStage
+		ShaderWrite = 1 << 6,
+
+		// Read access to a color attachment (blending / logic operations / subpass load operations)
+		// Occurs in PipelineStage::ColorAttachmentOutput
+		ColorAttachmentRead = 1 << 7,
+
+		// Write access to a color / resolve / depth-stencil resolve attachment (render pass / load & store operations)
+		// Occurs in PipelineStage::ColorAttachmentOutput
+		ColorAttachmentWrite = 1 << 8,
+
+		// Read access to a depth-stencil attachment (depth & stencil operations / subpass load operations)
+		// Occurs in PipelineStage::EarlyFragmentTests or PipelineStage::LateFragmentTests
+		DepthStencilAttachmentRead = 1 << 9,
+
+		// Write access to a depth-stencil attachment (depth & stencil operations / load & store operations)
+		// Occurs in PipelineStage::EarlyFragmentTests or PipelineStage::LateFragmentTests
+		DepthStencilAttachmentWrite = 1 << 10,
+
+		// Read access to an image / buffer during a copy operation
+		// Occurs in PipelineStage::Transfer
+		TransferRead = 1 << 11,
+
+		// Write access to an image / buffer during a clear / copy operation
+		// Occurs in PipelineStage::Transfer
+		TransferWrite = 1 << 12,
+
+		// Read access to a resource memory during a host operation
+		// Occurs in PipelineStage::Host
+		HostRead = 1 << 13,
+		
+		// Write access to a resource memory during a host operation
+		// Occurs in PipelineStage::Host
+		HostWrite = 1 << 14,
+
+		// Equivalent to all read members
+		MemoryRead = 1 << 15,
+
+		// Equivalent to all write members
+		MemoryWrite = 1 << 16,
+	};
+
+	ATEMA_DECLARE_FLAGS(MemoryAccess);
+
+	enum class ImageBarrier
+	{
+		InitializeTransferDst,
+		TransferDstToFragmentShaderRead
+	};
 
 	enum class BufferUsage
 	{

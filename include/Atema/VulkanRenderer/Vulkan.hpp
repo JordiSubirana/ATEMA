@@ -120,6 +120,8 @@ namespace at
 
 		static VkPipelineStageFlags getPipelineStages(Flags<PipelineStage> value);
 
+		static VkAccessFlags getMemoryAccesses(Flags<MemoryAccess> value);
+
 		static VkBufferUsageFlags getBufferUsages(BufferUsage value);
 
 		static VkMemoryPropertyFlags getMemoryProperties(bool mappable);

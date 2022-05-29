@@ -55,7 +55,7 @@ namespace at
 
 		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;
 
-		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage) override;
+		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage, ImageLayout dstLayout) override;
 		
 		void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) override;
 
@@ -68,9 +68,9 @@ namespace at
 
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
 
-		void setImageLayout(const Ptr<Image>& image, ImageLayout layout, uint32_t firstMipLevel = 0, uint32_t levelCount = 0) override;
+		void imageBarrier(const Ptr<Image>& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) override;
 
-		void createMipmaps(const Ptr<Image>& image) override;
+		void createMipmaps(const Ptr<Image>& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) override;
 
 		void executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers) override;
 		

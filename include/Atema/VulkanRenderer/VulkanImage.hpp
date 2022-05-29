@@ -39,8 +39,6 @@ namespace at
 		VkImage getImageHandle() const noexcept;
 		VkImageView getViewHandle() const noexcept;
 
-		std::vector<VkImageLayout>& getLayouts() noexcept;
-
 		ImageFormat getFormat() const noexcept override;
 
 		Vector2u getSize() const noexcept override;
@@ -56,7 +54,6 @@ namespace at
 		VkImageView m_view;
 		VkDeviceMemory m_memory;
 		ImageFormat m_format;
-		std::vector<VkImageLayout> m_layouts;
 		Vector2u m_size;
 		uint32_t m_mipLevels;
 	};

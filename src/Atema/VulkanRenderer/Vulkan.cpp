@@ -396,7 +396,7 @@ VkImageUsageFlags Vulkan::getUsages(Flags<ImageUsage> usages, bool isDepth)
 			flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
 
-	if (usages & ImageUsage::ShaderInput)
+	if (usages & ImageUsage::ShaderRead)
 	{
 		//TODO: See for VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
 		flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -427,7 +427,7 @@ VkImageLayout Vulkan::getLayout(ImageLayout layout, bool isDepth)
 			
 			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
-		case ImageLayout::ShaderInput: return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		case ImageLayout::ShaderRead: return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		case ImageLayout::TransferSrc: return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		case ImageLayout::TransferDst: return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		case ImageLayout::Present: return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -772,6 +772,64 @@ VkPipelineStageFlags Vulkan::getPipelineStages(Flags<PipelineStage> value)
 
 	if (value & PipelineStage::Host)
 		flags |= VK_PIPELINE_STAGE_HOST_BIT;
+
+	return flags;
+}
+
+VkAccessFlags Vulkan::getMemoryAccesses(Flags<MemoryAccess> value)
+{
+	VkAccessFlags flags = 0;
+
+	if (value & MemoryAccess::IndirectCommandRead)
+		flags |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+
+	if (value & MemoryAccess::IndexBufferRead)
+		flags |= VK_ACCESS_INDEX_READ_BIT;
+
+	if (value & MemoryAccess::VertexBufferRead)
+		flags |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+
+	if (value & MemoryAccess::UniformBufferRead)
+		flags |= VK_ACCESS_UNIFORM_READ_BIT;
+
+	if (value & MemoryAccess::InputAttachmentRead)
+		flags |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+
+	if (value & MemoryAccess::ShaderRead)
+		flags |= VK_ACCESS_SHADER_READ_BIT;
+
+	if (value & MemoryAccess::ShaderWrite)
+		flags |= VK_ACCESS_SHADER_WRITE_BIT;
+
+	if (value & MemoryAccess::ColorAttachmentRead)
+		flags |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+	if (value & MemoryAccess::ColorAttachmentWrite)
+		flags |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	if (value & MemoryAccess::DepthStencilAttachmentRead)
+		flags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
+	if (value & MemoryAccess::DepthStencilAttachmentWrite)
+		flags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	if (value & MemoryAccess::TransferRead)
+		flags |= VK_ACCESS_TRANSFER_READ_BIT;
+
+	if (value & MemoryAccess::TransferWrite)
+		flags |= VK_ACCESS_TRANSFER_WRITE_BIT;
+
+	if (value & MemoryAccess::HostRead)
+		flags |= VK_ACCESS_HOST_READ_BIT;
+
+	if (value & MemoryAccess::HostWrite)
+		flags |= VK_ACCESS_HOST_WRITE_BIT;
+
+	if (value & MemoryAccess::MemoryRead)
+		flags |= VK_ACCESS_MEMORY_READ_BIT;
+
+	if (value & MemoryAccess::MemoryWrite)
+		flags |= VK_ACCESS_MEMORY_WRITE_BIT;
 
 	return flags;
 }

@@ -37,3 +37,54 @@ QueueType CommandBuffer::getQueueType() const noexcept
 {
 	return m_queueType;
 }
+
+void CommandBuffer::imageBarrier(const Ptr<Image>& image, ImageBarrier barrier)
+{
+	Flags<PipelineStage> srcPipelineStages;
+	Flags<MemoryAccess> srcMemoryAccesses;
+	ImageLayout srcLayout = ImageLayout::Undefined;
+
+	Flags<PipelineStage> dstPipelineStages;
+	Flags<MemoryAccess> dstMemoryAccesses;
+	ImageLayout dstLayout = ImageLayout::Undefined;
+
+	switch (barrier)
+	{
+		case ImageBarrier::InitializeTransferDst:
+		{
+			srcLayout = ImageLayout::Undefined;
+			dstLayout = ImageLayout::TransferDst;
+
+			// We don't need to wait : earliest possible pipeline stage
+			srcPipelineStages = PipelineStage::TopOfPipe;
+			// Not a real stage for graphics & compute pipelines
+			dstPipelineStages = PipelineStage::Transfer;
+
+			// We don't need to wait : empty access mask
+			srcMemoryAccesses = 0;
+			dstMemoryAccesses = MemoryAccess::TransferWrite;
+
+			break;
+		}
+		case ImageBarrier::TransferDstToFragmentShaderRead:
+		{
+			srcLayout = ImageLayout::TransferDst;
+			dstLayout = ImageLayout::ShaderRead;
+
+			srcPipelineStages = PipelineStage::Transfer;
+			dstPipelineStages = PipelineStage::FragmentShader;
+
+			srcMemoryAccesses = MemoryAccess::TransferWrite;
+			dstMemoryAccesses = MemoryAccess::ShaderRead;
+
+			break;
+		}
+		default:
+		{
+			ATEMA_ERROR("Invalid ImageBarrier");
+			return;
+		}
+	}
+
+	this->imageBarrier(image, srcPipelineStages, srcMemoryAccesses, srcLayout, dstPipelineStages, dstMemoryAccesses, dstLayout);
+}
