@@ -148,7 +148,7 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 	{
 		writeLayout(variable.location);
 
-		m_ostream << " ";
+		m_ostream << " in ";
 
 		writeVariableDeclaration(variable.type, variable.name);
 
@@ -164,7 +164,7 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 	{
 		writeLayout(variable.location);
 
-		m_ostream << " ";
+		m_ostream << " out ";
 
 		writeVariableDeclaration(variable.type, variable.name);
 
