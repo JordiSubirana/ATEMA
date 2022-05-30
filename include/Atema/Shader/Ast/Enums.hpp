@@ -75,8 +75,8 @@ namespace at
 
 	enum class VariableQualifier
 	{
-		None = 0 << 0,
-		Const = 0 << 1
+		None = 1 << 0,
+		Const = 1 << 1
 	};
 
 	ATEMA_DECLARE_FLAGS(VariableQualifier);
