@@ -19,12 +19,10 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <iostream>
 #include <Atema/Shader/Spirv/SpirvShaderWriter.hpp>
 
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-#include <glslang/Include/glslang_c_interface.h>
 
 using namespace at;
 
@@ -170,33 +168,20 @@ SpirvShaderWriter::~SpirvShaderWriter()
 
 void SpirvShaderWriter::compile(std::vector<uint32_t>& spirv)
 {
-	glslang::InitializeProcess();
-
 	compileSpirv(spirv);
-
-	glslang::FinalizeProcess();
 }
 
 void SpirvShaderWriter::compile(std::ostream& ostream)
 {
-	const auto eShLanguage = getEShLanguage(m_stage);
-
 	std::vector<uint32_t> spirv;
 
-	glslang::InitializeProcess();
-
 	compileSpirv(spirv);
-
-	//glslang::OutputSpvHex(spirv, eShLanguage, variableName);
-	//glslang::OutputSpvBin(spirv, GetBinaryName((EShLanguage)stage));
 
 	const auto codeData = reinterpret_cast<char*>(spirv.data());
 	const auto codeSize = spirv.size() * sizeof(uint32_t);
 
 	for (size_t i = 0; i < codeSize; i++)
 		ostream << codeData[i];
-
-	glslang::FinalizeProcess();
 }
 
 void SpirvShaderWriter::visit(ConditionalStatement& statement)
@@ -346,6 +331,8 @@ void SpirvShaderWriter::visit(TernaryExpression& expression)
 
 void SpirvShaderWriter::compileSpirv(std::vector<uint32_t>& spirv)
 {
+	glslang::InitializeProcess();
+
 	const auto eShLanguage = getEShLanguage(m_stage);
 
 	// Create shader
@@ -361,25 +348,32 @@ void SpirvShaderWriter::compileSpirv(std::vector<uint32_t>& spirv)
 	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
 	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_1);
 
-	shader.parse(&defaultBuiltInResource, 100, ECoreProfile, false, false, EShMsgDefault);
+	auto success = shader.parse(&defaultBuiltInResource, 100, ECoreProfile, false, false, EShMsgDefault);
 
-	// Get info log
-	const auto shaderInfoLog = shader.getInfoLog();
+	// Compilation failed
+	if (!success)
+	{
+		const auto infoLog = shader.getInfoLog();
 
-	std::cout << shaderInfoLog << std::endl;
+		ATEMA_ERROR("Compilation failed :\n" + std::string(infoLog));
+	}
 
 	// Create program
 	glslang::TProgram program;
 
 	program.addShader(&shader);
 
-	const auto linkResult = program.link(EShMsgDefault);
+	success = program.link(EShMsgDefault);
 
-	const auto programInfoLog = program.getInfoLog();
+	// Linking failed
+	if (!success)
+	{
+		const auto infoLog = program.getInfoLog();
 
-	std::cout << programInfoLog << std::endl;
+		ATEMA_ERROR("Linking failed :\n" + std::string(infoLog));
+	}
 
-	auto intermediate = program.getIntermediate(eShLanguage);
+	const auto intermediate = program.getIntermediate(eShLanguage);
 
 	spv::SpvBuildLogger logger;
 
@@ -392,4 +386,6 @@ void SpirvShaderWriter::compileSpirv(std::vector<uint32_t>& spirv)
 	spvOptions.disassemble = false;
 	spvOptions.validate = false;
 	glslang::GlslangToSpv(*intermediate, spirv, &logger, &spvOptions);
+
+	glslang::FinalizeProcess();
 }
