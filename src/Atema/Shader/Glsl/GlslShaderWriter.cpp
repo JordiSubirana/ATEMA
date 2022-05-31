@@ -25,11 +25,29 @@
 
 using namespace at;
 
-GlslShaderWriter::GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, OpenGLSettings openglSettings) :
+namespace
+{
+	std::string getInterfaceBlockSuffix(AstShaderStage stage)
+	{
+		switch (stage)
+		{
+			case AstShaderStage::Vertex: return "VS";
+			case AstShaderStage::Fragment: return "FS";
+			default:
+			{
+				ATEMA_ERROR("Invalid shader stage");
+			}
+		}
+
+		return "";
+	}
+}
+
+GlslShaderWriter::GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, Settings settings) :
 	m_isSequenceProcessed(false),
 	m_stage(stage),
 	m_ostream(ostream),
-	m_openglSettings(openglSettings),
+	m_settings(settings),
 	m_indent(0)
 {
 }
@@ -140,6 +158,13 @@ void GlslShaderWriter::visit(StructDeclarationStatement& statement)
 	endBlock();
 
 	addDelimiter();
+
+	// Save struct declaration for uniform interface block declaration
+	if (!m_settings.allowLegacyUniformStructs)
+	{
+		AstCloner cloner;
+		m_structDeclarations[statement.name] = cloner.clone(statement);
+	}
 }
 
 void GlslShaderWriter::visit(InputDeclarationStatement& statement)
@@ -147,10 +172,23 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 	for (auto& variable : statement.variables)
 	{
 		writeLayout(variable.location);
-
+		
 		m_ostream << " in ";
 
-		writeVariableDeclaration(variable.type, variable.name);
+		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		{
+			const auto suffix = "I" + getInterfaceBlockSuffix(statement.stage);
+
+			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, suffix);
+
+			// Add line except for last element
+			if (&variable != &statement.variables.back())
+				newLine();
+		}
+		else
+		{
+			writeVariableDeclaration(variable.type, variable.name);
+		}
 
 		// Add line except for last element
 		if (&variable != &statement.variables.back())
@@ -166,7 +204,20 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 
 		m_ostream << " out ";
 
-		writeVariableDeclaration(variable.type, variable.name);
+		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		{
+			const auto suffix = "O" + getInterfaceBlockSuffix(statement.stage);
+
+			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, suffix);
+
+			// Add line except for last element
+			if (&variable != &statement.variables.back())
+				newLine();
+		}
+		else
+		{
+			writeVariableDeclaration(variable.type, variable.name);
+		}
 
 		// Add line except for last element
 		if (&variable != &statement.variables.back())
@@ -182,7 +233,18 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 
 		m_ostream << " uniform ";
 
-		writeVariableDeclaration(variable.type, variable.name);
+		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		{
+			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, "U");
+
+			// Add line except for last element
+			if (&variable != &statement.variables.back())
+				newLine();
+		}
+		else
+		{
+			writeVariableDeclaration(variable.type, variable.name);
+		}
 
 		// Add line except for last element
 		if (&variable != &statement.variables.back())
@@ -818,7 +880,7 @@ void GlslShaderWriter::addDelimiter()
 void GlslShaderWriter::writeHeader()
 {
 	// Version
-	const auto version = m_openglSettings.versionMajor * 100 + m_openglSettings.versionMinor * 10;
+	const auto version = m_settings.versionMajor * 100 + m_settings.versionMinor * 10;
 
 	m_ostream << "#version " << version;
 
@@ -1036,4 +1098,39 @@ void GlslShaderWriter::writeFunctionCall(const std::string& functionName, const 
 	}
 
 	m_ostream << ")";
+}
+
+void GlslShaderWriter::writeInterfaceBlock(const std::string& blockName, const std::string& instanceName, const std::string& suffix)
+{
+	auto structIt = m_structDeclarations.find(blockName);
+
+	if (structIt == m_structDeclarations.end())
+	{
+		ATEMA_ERROR("Struct '" + blockName + "' is not defined");
+	}
+
+	const auto interfaceName = blockName + "_" + suffix;
+
+	auto& count = m_interfaceBlockCount.try_emplace(interfaceName, 0).first->second;
+
+	m_ostream << interfaceName << count++;
+
+	auto& statement = *(structIt->second);
+
+	beginBlock();
+
+	for (auto& member : statement.members)
+	{
+		writeVariableDeclaration(member.type, member.name);
+
+		// Add line except for last element
+		if (&member != &statement.members.back())
+			newLine();
+	}
+
+	endBlock();
+
+	m_ostream << " " << instanceName;
+
+	addDelimiter();
 }

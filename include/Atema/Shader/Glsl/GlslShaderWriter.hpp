@@ -26,20 +26,28 @@
 #include <Atema/Shader/ShaderWriter.hpp>
 
 #include <ostream>
+#include <unordered_map>
 
 namespace at
 {
-	class ATEMA_SHADER_API GlslShaderWriter : public ShaderWriter
+	// Inherits NonCopyable to store unique pointers
+	class ATEMA_SHADER_API GlslShaderWriter : public ShaderWriter, public NonCopyable
 	{
 	public:
-		struct OpenGLSettings
+		struct Settings
 		{
+			// OpenGL version major
 			unsigned versionMajor = 3;
+			// OpenGL version minor
 			unsigned versionMinor = 3;
+
+			// true: allow uniform structs (legacy)
+			// false: convert uniform struct (legacy) to uniform blocks (modern)
+			bool allowLegacyUniformStructs = false;
 		};
 
 		GlslShaderWriter() = delete;
-		GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, OpenGLSettings openglSettings = OpenGLSettings());
+		GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, Settings settings = Settings());
 		~GlslShaderWriter();
 
 		void visit(ConditionalStatement& statement) override;
@@ -90,12 +98,15 @@ namespace at
 		void writeType(Type type);
 		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);
+		void writeInterfaceBlock(const std::string& blockName, const std::string& instanceName, const std::string& suffix);
 
 		bool m_isSequenceProcessed;
 		AstShaderStage m_stage;
 		std::ostream& m_ostream;
-		OpenGLSettings m_openglSettings;
+		Settings m_settings;
 		int m_indent;
+		std::unordered_map<std::string, UPtr<StructDeclarationStatement>> m_structDeclarations;
+		std::unordered_map<std::string, size_t> m_interfaceBlockCount;
 	};
 }
 
