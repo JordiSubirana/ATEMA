@@ -83,9 +83,11 @@ namespace at
 
 	enum class AstShaderStage
 	{
-		Vertex,
-		Fragment
+		Vertex = 1 << 0,
+		Fragment = 1 << 1
 	};
+
+	ATEMA_DECLARE_FLAGS(AstShaderStage);
 }
 
 #endif
