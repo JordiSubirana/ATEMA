@@ -40,5 +40,6 @@
 #include <Atema/Shader/Atsl/AtslToken.hpp>
 #include <Atema/Shader/Atsl/AtslUtils.hpp>
 #include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
+#include <Atema/Shader/Spirv/SpirvShaderWriter.hpp>
 
 #endif
