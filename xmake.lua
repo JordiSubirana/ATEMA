@@ -33,7 +33,8 @@ local modules =
 	},
 	Shader =
 	{
-		dependencies = {"AtemaCore", "AtemaMath"}
+		dependencies = {"AtemaCore", "AtemaMath"},
+		packages = {"glslang"}
 	},
 	VulkanRenderer =
 	{
@@ -54,7 +55,7 @@ set_xmakever("2.6.5")
 
 set_project("Atema")
 
-add_requires("glfw")
+add_requires("glfw", "glslang")
 
 add_includedirs(includeDir)
 add_sysincludedirs(thirdPartyIncludeDir)
