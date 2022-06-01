@@ -20,6 +20,7 @@
 */
 
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
+#include <Atema/VulkanRenderer/VulkanDescriptorSetLayout.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>

@@ -28,7 +28,7 @@
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorPool.hpp>
+#include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
@@ -194,7 +194,6 @@ namespace at
 		virtual Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) = 0;
 		virtual Ptr<Shader> createShader(const Shader::Settings& settings) = 0;
 		virtual Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) = 0;
-		virtual Ptr<DescriptorPool> createDescriptorPool(const DescriptorPool::Settings& settings) = 0;
 		virtual Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) = 0;
 		virtual Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) = 0;
 		virtual Ptr<Fence> createFence(const Fence::Settings& settings) = 0;

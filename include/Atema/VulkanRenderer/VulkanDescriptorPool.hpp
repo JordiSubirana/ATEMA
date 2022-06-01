@@ -23,7 +23,6 @@
 #define ATEMA_VULKANRENDERER_VULKANDESCRIPTORPOOL_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Core/SparseSet.hpp>
 
@@ -31,14 +30,17 @@
 
 namespace at
 {
-	class ATEMA_VULKANRENDERER_API VulkanDescriptorPool final : public DescriptorPool
+	class DescriptorSet;
+	class VulkanDescriptorSetLayout;
+
+	class ATEMA_VULKANRENDERER_API VulkanDescriptorPool final
 	{
 	public:
 		VulkanDescriptorPool() = delete;
-		VulkanDescriptorPool(const VulkanDevice& device, const DescriptorPool::Settings& settings);
+		VulkanDescriptorPool(const VulkanDevice& device, const VulkanDescriptorSetLayout& descriptorSetLayout, uint32_t pageSize);
 		virtual ~VulkanDescriptorPool();
 
-		Ptr<DescriptorSet> createSet() override;
+		Ptr<DescriptorSet> createSet();
 
 	private:
 		class Pool

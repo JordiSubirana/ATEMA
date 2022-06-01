@@ -70,17 +70,14 @@ private:
 	at::Ptr<at::Sampler> m_ppSampler;
 	at::Ptr<at::GraphicsPipeline> m_ppPipeline;
 	at::Ptr<at::DescriptorSetLayout> m_ppDescriptorSetLayout;
-	at::Ptr<at::DescriptorPool> m_ppDescriptorPool;
 	at::Ptr<at::DescriptorSet> m_ppDescriptorSet;
 
 	// Object resources
 	at::Ptr<at::DescriptorSetLayout> m_materialDescriptorSetLayout;
-	at::Ptr<at::DescriptorPool> m_materialDescriptorPool;
 	at::Ptr<at::DescriptorSet> m_materialDescriptorSet;
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
-	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
 

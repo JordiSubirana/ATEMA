@@ -27,8 +27,8 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DescriptorPool.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Enums.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>

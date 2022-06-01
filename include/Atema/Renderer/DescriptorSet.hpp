@@ -35,35 +35,6 @@ namespace at
 	class Image;
 	class Sampler;
 
-	struct ATEMA_RENDERER_API DescriptorSetBinding
-	{
-		DescriptorSetBinding();
-		DescriptorSetBinding(DescriptorType type, uint32_t binding, uint32_t count, Flags<ShaderStage> shaderStages);
-		
-		DescriptorType type;
-		uint32_t binding;
-		uint32_t count;
-		Flags<ShaderStage> shaderStages;
-	};
-
-	class ATEMA_RENDERER_API DescriptorSetLayout : public NonCopyable
-	{
-	public:
-		struct Settings
-		{
-			std::vector<DescriptorSetBinding> bindings;
-		};
-
-		virtual ~DescriptorSetLayout();
-
-		static Ptr<DescriptorSetLayout> create(const Settings& settings);
-
-		virtual const std::vector<DescriptorSetBinding>& getBindings() const noexcept = 0;
-		
-	protected:
-		DescriptorSetLayout();
-	};
-
 	class ATEMA_RENDERER_API DescriptorSet : public NonCopyable
 	{
 	public:

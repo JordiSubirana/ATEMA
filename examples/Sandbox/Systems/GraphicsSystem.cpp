@@ -166,6 +166,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
 			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment }
 		};
+		descriptorSetLayoutSettings.pageSize = 1;
 
 		m_ppDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
@@ -187,18 +188,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
 
-	// Create DescriptorPool
-	{
-		DescriptorPool::Settings descriptorPoolSettings;
-		descriptorPoolSettings.layout = m_ppDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = 1;
-
-		m_ppDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
-	}
-
 	// Create descriptor set
 	{
-		m_ppDescriptorSet = m_ppDescriptorPool->createSet();
+		m_ppDescriptorSet = m_ppDescriptorSetLayout->createSet();
 	}
 
 	// Create quad
@@ -215,17 +207,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment }
 		};
+		descriptorSetLayoutSettings.pageSize = 1;
 
 		m_materialDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
-
-	// Descriptor pool
-	{
-		DescriptorPool::Settings descriptorPoolSettings;
-		descriptorPoolSettings.layout = m_materialDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = 1;
-
-		m_materialDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
 	}
 
 	//----- FRAME RESOURCES -----//
@@ -238,17 +222,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
 			{ DescriptorType::UniformBufferDynamic, 1, 1, ShaderStage::Vertex }
 		};
+		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
 
 		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
-
-	// Descriptor pool
-	{
-		DescriptorPool::Settings descriptorPoolSettings;
-		descriptorPoolSettings.layout = m_frameDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = maxFramesInFlight;
-
-		m_frameDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
 	}
 
 	// Gbuffer pipeline
@@ -296,7 +272,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(objectCount * m_dynamicObjectBufferOffset), true });
 
 		// Add descriptor set
-		frameData.descriptorSet = m_frameDescriptorPool->createSet();
+		frameData.descriptorSet = m_frameDescriptorSetLayout->createSet();
 		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
 		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
 	}
@@ -320,7 +296,6 @@ GraphicsSystem::~GraphicsSystem()
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
 	m_ppDescriptorSet.reset();
-	m_ppDescriptorPool.reset();
 
 	m_renderPass.reset();
 
@@ -334,13 +309,11 @@ GraphicsSystem::~GraphicsSystem()
 
 	// Frame resources
 	m_frameDescriptorSetLayout.reset();
-	m_frameDescriptorPool.reset();
 	m_frameDatas.clear();
 
 	// Object resources
 	m_materialDescriptorSet.reset();
 	m_materialDescriptorSetLayout.reset();
-	m_materialDescriptorPool.reset();
 
 	m_gbufferPipeline.reset();
 }
@@ -356,7 +329,7 @@ void GraphicsSystem::update(TimeStep timeStep)
 		{
 			auto& graphics = sparseUnion.get<GraphicsComponent>(*sparseUnion.begin());
 
-			m_materialDescriptorSet = m_materialDescriptorPool->createSet();
+			m_materialDescriptorSet = m_materialDescriptorSetLayout->createSet();
 			m_materialDescriptorSet->update(0, graphics.texture, graphics.sampler);
 		}
 	}

@@ -19,60 +19,14 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
+#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanSampler.hpp>
 
 using namespace at;
 
-// DescriptorSetLayout
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const VulkanDevice& device, const DescriptorSetLayout::Settings& settings) :
-	DescriptorSetLayout(),
-	m_device(device),
-	m_descriptorSetLayout(VK_NULL_HANDLE),
-	m_bindings(settings.bindings)
-{
-	std::vector<VkDescriptorSetLayoutBinding> bindings;
-
-	for (auto& binding : settings.bindings)
-	{
-		VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
-		descriptorSetLayoutBinding.binding = binding.binding;
-		descriptorSetLayoutBinding.descriptorType = Vulkan::getDescriptorType(binding.type);
-		descriptorSetLayoutBinding.descriptorCount = binding.count;
-		descriptorSetLayoutBinding.stageFlags = Vulkan::getShaderStages(binding.shaderStages);
-		descriptorSetLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-		bindings.push_back(descriptorSetLayoutBinding);
-	}
-	
-	// Create layout
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
-
-	ATEMA_VK_CHECK(m_device.vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout));
-}
-
-VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
-{
-	ATEMA_VK_DESTROY(m_device, vkDestroyDescriptorSetLayout, m_descriptorSetLayout);
-}
-
-VkDescriptorSetLayout VulkanDescriptorSetLayout::getHandle() const noexcept
-{
-	return m_descriptorSetLayout;
-}
-
-const std::vector<DescriptorSetBinding>& VulkanDescriptorSetLayout::getBindings() const noexcept
-{
-	return m_bindings;
-}
-
-// DescriptorSet
 VulkanDescriptorSet::VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback) :
 	DescriptorSet(),
 	m_device(device),

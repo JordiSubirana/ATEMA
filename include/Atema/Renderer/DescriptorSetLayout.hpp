@@ -19,20 +19,50 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Renderer/DescriptorPool.hpp>
-#include <Atema/Renderer/Renderer.hpp>
+#ifndef ATEMA_RENDERER_DESCRIPTORSETLAYOUT_HPP
+#define ATEMA_RENDERER_DESCRIPTORSETLAYOUT_HPP
 
-using namespace at;
+#include <Atema/Core/NonCopyable.hpp>
+#include <Atema/Core/Pointer.hpp>
+#include <Atema/Renderer/Config.hpp>
+#include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Renderer/Enums.hpp>
 
-DescriptorPool::DescriptorPool()
+#include <vector>
+
+namespace at
 {
+	struct ATEMA_RENDERER_API DescriptorSetBinding
+	{
+		DescriptorSetBinding();
+		DescriptorSetBinding(DescriptorType type, uint32_t binding, uint32_t count, Flags<ShaderStage> shaderStages);
+
+		DescriptorType type;
+		uint32_t binding;
+		uint32_t count;
+		Flags<ShaderStage> shaderStages;
+	};
+
+	class ATEMA_RENDERER_API DescriptorSetLayout : public NonCopyable
+	{
+	public:
+		struct Settings
+		{
+			std::vector<DescriptorSetBinding> bindings;
+			uint32_t pageSize = 128;
+		};
+
+		virtual ~DescriptorSetLayout();
+
+		static Ptr<DescriptorSetLayout> create(const Settings& settings);
+
+		virtual const std::vector<DescriptorSetBinding>& getBindings() const noexcept = 0;
+
+		virtual Ptr<DescriptorSet> createSet() = 0;
+
+	protected:
+		DescriptorSetLayout();
+	};
 }
 
-DescriptorPool::~DescriptorPool()
-{
-}
-
-Ptr<DescriptorPool> DescriptorPool::create(const Settings& settings)
-{
-	return Renderer::instance().createDescriptorPool(settings);
-}
+#endif

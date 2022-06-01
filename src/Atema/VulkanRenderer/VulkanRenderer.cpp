@@ -20,14 +20,12 @@
 */
 
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/Window/Window.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanSampler.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
+#include <Atema/VulkanRenderer/VulkanDescriptorSetLayout.hpp>
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
@@ -157,13 +155,6 @@ Ptr<DescriptorSetLayout> VulkanRenderer::createDescriptorSetLayout(const Descrip
 	auto object = std::make_shared<VulkanDescriptorSetLayout>(*m_device, settings);
 
 	return std::static_pointer_cast<DescriptorSetLayout>(object);
-}
-
-Ptr<DescriptorPool> VulkanRenderer::createDescriptorPool(const DescriptorPool::Settings& settings)
-{
-	auto object = std::make_shared<VulkanDescriptorPool>(*m_device, settings);
-
-	return std::static_pointer_cast<DescriptorPool>(object);
 }
 
 Ptr<GraphicsPipeline> VulkanRenderer::createGraphicsPipeline(const GraphicsPipeline::Settings& settings)

@@ -21,6 +21,7 @@
 
 #include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
+#include <Atema/VulkanRenderer/VulkanDescriptorSetLayout.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
 using namespace at;
@@ -81,16 +82,14 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 }
 
 // Descriptor pool
-VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const DescriptorPool::Settings& settings) :
-	DescriptorPool(),
+
+VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const VulkanDescriptorSetLayout& descriptorSetLayout, uint32_t pageSize) :
 	m_device(device),
 	m_poolSettings({}),
-	m_layout(VK_NULL_HANDLE)
+	m_layout(descriptorSetLayout.getHandle())
 {
-	m_layout = std::static_pointer_cast<VulkanDescriptorSetLayout>(settings.layout)->getHandle();
-	
 	// Save pool creation settings
-	const auto& bindings = settings.layout->getBindings();
+	const auto& bindings = descriptorSetLayout.getBindings();
 	
 	m_poolSizes.reserve(bindings.size());
 	m_bindingTypes.reserve(bindings.size());
@@ -101,7 +100,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const Des
 
 		VkDescriptorPoolSize poolSize;
 		poolSize.type = bindingType;
-		poolSize.descriptorCount = settings.pageSize * binding.count;
+		poolSize.descriptorCount = pageSize * binding.count;
 
 		m_poolSizes.push_back(poolSize);
 
@@ -111,7 +110,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const Des
 	m_poolSettings.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	m_poolSettings.poolSizeCount = static_cast<uint32_t>(m_poolSizes.size());
 	m_poolSettings.pPoolSizes = m_poolSizes.data();
-	m_poolSettings.maxSets = settings.pageSize;
+	m_poolSettings.maxSets = pageSize;
 	m_poolSettings.flags = 0;
 	
 	// We need at least one pool

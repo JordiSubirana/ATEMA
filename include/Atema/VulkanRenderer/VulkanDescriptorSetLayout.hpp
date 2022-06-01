@@ -19,35 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_DESCRIPTORPOOL_HPP
-#define ATEMA_RENDERER_DESCRIPTORPOOL_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANDESCRIPTORSETLAYOUT_HPP
+#define ATEMA_VULKANRENDERER_VULKANDESCRIPTORSETLAYOUT_HPP
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
+#include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Renderer/DescriptorSetLayout.hpp>
 
 namespace at
 {
-	class DescriptorSet;
-	class DescriptorSetLayout;
+	class VulkanDevice;
+	class VulkanDescriptorPool;
 
-	class ATEMA_RENDERER_API DescriptorPool : public NonCopyable
+	class ATEMA_VULKANRENDERER_API VulkanDescriptorSetLayout final : public DescriptorSetLayout
 	{
 	public:
-		struct Settings
-		{
-			Ptr<DescriptorSetLayout> layout;
-			uint32_t pageSize = 1;
-		};
+		VulkanDescriptorSetLayout() = delete;
+		VulkanDescriptorSetLayout(const VulkanDevice& device, const DescriptorSetLayout::Settings& settings);
+		virtual ~VulkanDescriptorSetLayout();
 
-		virtual ~DescriptorPool();
+		VkDescriptorSetLayout getHandle() const noexcept;
 
-		static Ptr<DescriptorPool> create(const Settings& settings);
+		const std::vector<DescriptorSetBinding>& getBindings() const noexcept override;
 
-		virtual Ptr<DescriptorSet> createSet() = 0;
+		Ptr<DescriptorSet> createSet() override;
 
-	protected:
-		DescriptorPool();
+	private:
+		const VulkanDevice& m_device;
+		VkDescriptorSetLayout m_descriptorSetLayout;
+
+		std::vector<DescriptorSetBinding> m_bindings;
+
+		UPtr<VulkanDescriptorPool> m_descriptorPool;
 	};
 }
 

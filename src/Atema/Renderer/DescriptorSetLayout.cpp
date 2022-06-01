@@ -19,26 +19,38 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_VULKAN_RENDERER_HPP
-#define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
+#include <Atema/Renderer/DescriptorSetLayout.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 
-#include <Atema/VulkanRenderer/Config.hpp>
-#include <Atema/VulkanRenderer/VulkanBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
-#include <Atema/VulkanRenderer/Vulkan.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorPool.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
-#include <Atema/VulkanRenderer/VulkanDescriptorSetLayout.hpp>
-#include <Atema/VulkanRenderer/VulkanFence.hpp>
-#include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-#include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
-#include <Atema/VulkanRenderer/VulkanSampler.hpp>
-#include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
-#include <Atema/VulkanRenderer/VulkanShader.hpp>
-#include <Atema/VulkanRenderer/VulkanSwapChain.hpp>
+using namespace at;
 
-#endif
+// DescriptorSetBinding
+DescriptorSetBinding::DescriptorSetBinding() :
+	type(DescriptorType::UniformBuffer),
+	binding(0),
+	count(1),
+	shaderStages(ShaderStage::Vertex)
+{
+}
+
+DescriptorSetBinding::DescriptorSetBinding(DescriptorType type, uint32_t binding, uint32_t count, Flags<ShaderStage> shaderStages) :
+	type(type),
+	binding(binding),
+	count(count),
+	shaderStages(shaderStages)
+{
+}
+
+// DescriptorSetLayout
+DescriptorSetLayout::DescriptorSetLayout()
+{
+}
+
+DescriptorSetLayout::~DescriptorSetLayout()
+{
+}
+
+Ptr<DescriptorSetLayout> DescriptorSetLayout::create(const Settings& settings)
+{
+	return Renderer::instance().createDescriptorSetLayout(settings);
+}

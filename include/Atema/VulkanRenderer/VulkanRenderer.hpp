@@ -60,7 +60,6 @@ namespace at
 		Ptr<Framebuffer> createFramebuffer(const Framebuffer::Settings& settings) override;
 		Ptr<Shader> createShader(const Shader::Settings& settings) override;
 		Ptr<DescriptorSetLayout> createDescriptorSetLayout(const DescriptorSetLayout::Settings& settings) override;
-		Ptr<DescriptorPool> createDescriptorPool(const DescriptorPool::Settings& settings) override;
 		Ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipeline::Settings& settings) override;
 		Ptr<CommandPool> createCommandPool(const CommandPool::Settings& settings) override;
 		Ptr<Fence> createFence(const Fence::Settings& settings) override;

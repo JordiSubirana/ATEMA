@@ -31,24 +31,6 @@
 
 namespace at
 {
-	class ATEMA_VULKANRENDERER_API VulkanDescriptorSetLayout final : public DescriptorSetLayout
-	{
-	public:
-		VulkanDescriptorSetLayout() = delete;
-		VulkanDescriptorSetLayout(const VulkanDevice& device, const DescriptorSetLayout::Settings& settings);
-		virtual ~VulkanDescriptorSetLayout();
-		
-		VkDescriptorSetLayout getHandle() const noexcept;
-
-		const std::vector<DescriptorSetBinding>& getBindings() const noexcept override;
-		
-	private:
-		const VulkanDevice& m_device;
-		VkDescriptorSetLayout m_descriptorSetLayout;
-
-		std::vector<DescriptorSetBinding> m_bindings;
-	};
-
 	class ATEMA_VULKANRENDERER_API VulkanDescriptorSet final : public DescriptorSet
 	{
 	public:
