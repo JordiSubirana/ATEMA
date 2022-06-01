@@ -58,6 +58,12 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 
+#define ATEMA_VULKAN_VERSION VK_API_VERSION_1_1
+#define VMA_VULKAN_VERSION 1001000
+
+VK_DEFINE_HANDLE(VmaAllocator)
+VK_DEFINE_HANDLE(VmaAllocation)
+
 namespace at
 {
 	class Library;

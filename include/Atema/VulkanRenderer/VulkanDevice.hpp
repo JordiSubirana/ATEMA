@@ -57,6 +57,8 @@ namespace at
 		const VulkanInstance& getInstance() const noexcept;
 		const VulkanPhysicalDevice& getPhysicalDevice() const noexcept;
 
+		VmaAllocator getVmaAllocator() const noexcept;
+
 		uint32_t getQueueFamilyIndex(QueueType queueType) const;
 
 		VkQueue getQueue(QueueType queueType) const;
@@ -93,6 +95,7 @@ namespace at
 		std::unordered_set<std::string> m_extensions;
 		std::unordered_set<std::string> m_layers;
 		std::vector<QueueData> m_queueDatas;
+		VmaAllocator m_vmaAllocator;
 	};
 }
 

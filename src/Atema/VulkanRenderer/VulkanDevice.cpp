@@ -28,6 +28,11 @@
 #include <Atema/VulkanRenderer/VulkanPhysicalDevice.hpp>
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 
+#define VMA_IMPLEMENTATION
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
+#include <vma/vk_mem_alloc.h>
+
 using namespace at;
 
 VulkanDevice::VulkanDevice(
@@ -40,7 +45,8 @@ VulkanDevice::VulkanDevice(
 	m_instance(instance),
 	m_physicalDevice(physicalDevice),
 	m_device(nullptr),
-	m_version(physicalDevice.getProperties().apiVersion)
+	m_version(physicalDevice.getProperties().apiVersion),
+	m_vmaAllocator(nullptr)
 {
 	ATEMA_VK_CHECK(m_instance.vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device));
 	
@@ -111,6 +117,52 @@ VulkanDevice::VulkanDevice(
 			m_queueDatas.emplace_back(m_queueDatas[0]);
 		}
 	}
+
+	// Initialize VMA
+	VmaVulkanFunctions vulkanFunctions = {};
+	vulkanFunctions.vkGetInstanceProcAddr = Vulkan::instance().vkGetInstanceProcAddr;
+	vulkanFunctions.vkGetDeviceProcAddr = m_instance.vkGetDeviceProcAddr;
+	vulkanFunctions.vkGetPhysicalDeviceProperties = m_instance.vkGetPhysicalDeviceProperties;
+	vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = m_instance.vkGetPhysicalDeviceMemoryProperties;
+	vulkanFunctions.vkAllocateMemory = vkAllocateMemory;
+	vulkanFunctions.vkFreeMemory = vkFreeMemory;
+	vulkanFunctions.vkMapMemory = vkMapMemory;
+	vulkanFunctions.vkUnmapMemory = vkUnmapMemory;
+	vulkanFunctions.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+	vulkanFunctions.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+	vulkanFunctions.vkBindBufferMemory = vkBindBufferMemory;
+	vulkanFunctions.vkBindImageMemory = vkBindImageMemory;
+	vulkanFunctions.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+	vulkanFunctions.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+	vulkanFunctions.vkCreateBuffer = vkCreateBuffer;
+	vulkanFunctions.vkDestroyBuffer = vkDestroyBuffer;
+	vulkanFunctions.vkCreateImage = vkCreateImage;
+	vulkanFunctions.vkDestroyImage = vkDestroyImage;
+	vulkanFunctions.vkCmdCopyBuffer = vkCmdCopyBuffer;
+#if VMA_DEDICATED_ALLOCATION || VMA_VULKAN_VERSION >= 1001000
+	vulkanFunctions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2;
+	vulkanFunctions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2;
+#endif
+#if VMA_BIND_MEMORY2 || VMA_VULKAN_VERSION >= 1001000
+	vulkanFunctions.vkBindBufferMemory2KHR = vkBindBufferMemory2;
+	vulkanFunctions.vkBindImageMemory2KHR = vkBindImageMemory2;
+#endif
+#if VMA_MEMORY_BUDGET || VMA_VULKAN_VERSION >= 1001000
+	vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = m_instance.vkGetPhysicalDeviceMemoryProperties2;
+#endif
+#if VMA_VULKAN_VERSION >= 1003000
+	vulkanFunctions.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
+	vulkanFunctions.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
+#endif
+
+	VmaAllocatorCreateInfo allocatorCreateInfo = {};
+	allocatorCreateInfo.vulkanApiVersion = ATEMA_VULKAN_VERSION;
+	allocatorCreateInfo.physicalDevice = physicalDevice;
+	allocatorCreateInfo.device = m_device;
+	allocatorCreateInfo.instance = instance;
+	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+	ATEMA_VK_CHECK(vmaCreateAllocator(&allocatorCreateInfo, &m_vmaAllocator));
 }
 
 VulkanDevice::~VulkanDevice()
@@ -118,6 +170,9 @@ VulkanDevice::~VulkanDevice()
 	waitForIdle();
 
 	m_queueDatas.clear();
+
+	if (m_vmaAllocator)
+		vmaDestroyAllocator(m_vmaAllocator);
 
 	if (m_device != VK_NULL_HANDLE)
 	{
@@ -147,6 +202,11 @@ const VulkanInstance& VulkanDevice::getInstance() const noexcept
 const VulkanPhysicalDevice& VulkanDevice::getPhysicalDevice() const noexcept
 {
 	return m_physicalDevice;
+}
+
+VmaAllocator VulkanDevice::getVmaAllocator() const noexcept
+{
+	return m_vmaAllocator;
 }
 
 uint32_t VulkanDevice::getQueueFamilyIndex(QueueType queueType) const

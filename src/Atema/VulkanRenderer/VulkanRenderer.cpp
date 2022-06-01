@@ -283,7 +283,7 @@ void VulkanRenderer::createInstance()
 	appInfo.applicationVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
 	appInfo.pEngineName = "Atema";
 	appInfo.engineVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_1;
+	appInfo.apiVersion = ATEMA_VULKAN_VERSION;
 
 	// Check for available extensions
 	uint32_t availableExtensionCount = 0;
