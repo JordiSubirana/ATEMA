@@ -57,5 +57,5 @@ I'm working on **ATEMA** during my spare time to learn how rendering engines are
 * [Sascha Willems Vulkan examples](https://github.com/SaschaWillems/Vulkan)
 * [Riccardo Loggini posts](https://logins.github.io/)
 * [entt](https://github.com/skypjack/entt)
-* All open source libraries I&#39;m using (see [Dependencies](https://github.com/JordiSubirana/ATEMA#dependencies) section)
+* All open source libraries I'm using (see [Dependencies](https://github.com/JordiSubirana/ATEMA#dependencies) section)
 * And sooo much more
