@@ -147,7 +147,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		renderPassSettings.subpasses[0].depthStencil = attachmentIndex;
 
 		// Create RenderPass
-		m_gbufferRenderPass = RenderPass::create(renderPassSettings);
+		m_renderPass = RenderPass::create(renderPassSettings);
 	}
 
 	// Create Sampler
@@ -242,12 +242,21 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
-	// Deferred pipeline
+	// Descriptor pool
+	{
+		DescriptorPool::Settings descriptorPoolSettings;
+		descriptorPoolSettings.layout = m_frameDescriptorSetLayout;
+		descriptorPoolSettings.pageSize = maxFramesInFlight;
+
+		m_frameDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
+	}
+
+	// Gbuffer pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.vertexShader = Shader::create({ gbufferPassVS });
 		pipelineSettings.fragmentShader = Shader::create({ gbufferPassFS });
-		pipelineSettings.renderPass = m_gbufferRenderPass;
+		pipelineSettings.renderPass = m_renderPass;
 		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
@@ -256,16 +265,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ 0, 2, VertexFormat::RG32_SFLOAT }
 		};
 
-		m_pipeline = GraphicsPipeline::create(pipelineSettings);
-	}
-
-	// Descriptor pool
-	{
-		DescriptorPool::Settings descriptorPoolSettings;
-		descriptorPoolSettings.layout = m_frameDescriptorSetLayout;
-		descriptorPoolSettings.pageSize = maxFramesInFlight;
-
-		m_frameDescriptorPool = DescriptorPool::create(descriptorPoolSettings);
+		m_gbufferPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
 
 	// Uniform buffers & descriptor sets
@@ -322,7 +322,7 @@ GraphicsSystem::~GraphicsSystem()
 	m_ppDescriptorSet.reset();
 	m_ppDescriptorPool.reset();
 
-	m_gbufferRenderPass.reset();
+	m_renderPass.reset();
 
 	m_gbufferFramebuffer.reset();
 	m_gbufferDepthImage.reset();
@@ -342,7 +342,7 @@ GraphicsSystem::~GraphicsSystem()
 	m_materialDescriptorSetLayout.reset();
 	m_materialDescriptorPool.reset();
 
-	m_pipeline.reset();
+	m_gbufferPipeline.reset();
 }
 
 void GraphicsSystem::update(TimeStep timeStep)
@@ -411,14 +411,14 @@ void GraphicsSystem::onResize(const Vector2u& size)
 		m_gbufferDepthImage = Image::create(imageSettings);
 	}
 
-	// Create framebuffer
+	// Create gbuffer framebuffer
 	{
 		Framebuffer::Settings framebufferSettings;
 		framebufferSettings.width = size.x;
 		framebufferSettings.height = size.y;
 		framebufferSettings.images = m_gbufferImages;
 		framebufferSettings.images.push_back(m_gbufferDepthImage);
-		framebufferSettings.renderPass = m_gbufferRenderPass;
+		framebufferSettings.renderPass = m_renderPass;
 
 		m_gbufferFramebuffer = Framebuffer::create(framebufferSettings);
 	}
@@ -480,7 +480,7 @@ void GraphicsSystem::updateFrame()
 
 	gBufferClearValues.push_back({ 1.0f, 0 });
 
-	commandBuffer->beginRenderPass(m_gbufferRenderPass, m_gbufferFramebuffer, gBufferClearValues, true);
+	commandBuffer->beginRenderPass(m_renderPass, m_gbufferFramebuffer, gBufferClearValues, true);
 
 	// Update objects buffers
 	{
@@ -520,9 +520,9 @@ void GraphicsSystem::updateFrame()
 				{
 					auto commandBuffer = renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
 
-					commandBuffer->beginSecondary(m_gbufferRenderPass, m_gbufferFramebuffer);
+					commandBuffer->beginSecondary(m_renderPass, m_gbufferFramebuffer);
 
-					commandBuffer->bindPipeline(m_pipeline);
+					commandBuffer->bindPipeline(m_gbufferPipeline);
 
 					commandBuffer->setViewport(m_viewport);
 

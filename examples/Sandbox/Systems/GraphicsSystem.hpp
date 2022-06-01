@@ -58,10 +58,12 @@ private:
 	at::Vector2u m_windowSize;
 
 	// Rendering resources (deferred)
+	at::Ptr<at::RenderPass> m_renderPass;
+
 	std::vector<at::Ptr<at::Image>> m_gbufferImages;
 	at::Ptr<at::Image> m_gbufferDepthImage;
 	at::Ptr<at::Framebuffer> m_gbufferFramebuffer;
-	at::Ptr<at::RenderPass> m_gbufferRenderPass;
+	at::Ptr<at::GraphicsPipeline> m_gbufferPipeline;
 
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;
@@ -81,9 +83,6 @@ private:
 	at::Ptr<at::DescriptorPool> m_frameDescriptorPool;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
-
-	// Pipeline resources
-	at::Ptr<at::GraphicsPipeline> m_pipeline;
 
 	// Thread data
 	std::vector<std::vector<std::vector<at::Ptr<at::CommandBuffer>>>> m_threadCommandBuffers;
