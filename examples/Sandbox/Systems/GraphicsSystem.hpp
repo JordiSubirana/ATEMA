@@ -58,10 +58,10 @@ private:
 	at::Vector2u m_windowSize;
 
 	// Rendering resources (deferred)
-	std::vector<at::Ptr<at::Image>> m_deferredImages;
-	at::Ptr<at::Image> m_deferredDepthImage;
-	at::Ptr<at::Framebuffer> m_deferredFramebuffer;
-	at::Ptr<at::RenderPass> m_deferredRenderPass;
+	std::vector<at::Ptr<at::Image>> m_gbufferImages;
+	at::Ptr<at::Image> m_gbufferDepthImage;
+	at::Ptr<at::Framebuffer> m_gbufferFramebuffer;
+	at::Ptr<at::RenderPass> m_gbufferRenderPass;
 
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;

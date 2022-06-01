@@ -1,0 +1,77 @@
+option
+{
+	bool option1;
+	vec2f option2 = vec2f(12.0, 11.3);
+	int option3 = a * (b + c) * d;
+}
+
+struct FrameData
+{
+	mat4f proj;
+	mat4f view;
+}
+
+struct ObjectData
+{
+	mat4f model;
+}
+
+external
+{
+	[set(0), binding(0)] FrameData frameData;
+	[set(0), binding(1)] ObjectData objectData;
+	[set(1), binding(0)] sampler2Df texSampler;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec3f inColor;
+	[location(2)] vec2f inTexCoord;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec3f outColor;
+	[location(1)] vec2f outTexCoord;
+	[location(2)] vec3f outPosition;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f position = frameData.proj * frameData.view * objectData.model * vec4f(inPosition, 1.0);
+	
+	outColor = inColor;
+	outTexCoord = inTexCoord;
+	outPosition = position.xyz;
+	
+	setVertexPosition(position);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec3f inColor;
+	[location(1)] vec2f inTexCoord;
+	[location(2)] vec3f inPosition;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outPosition;
+	[location(1)] vec4f outNormal;
+	[location(2)] vec4f outColor;
+}
+
+[entry(fragment)]
+void main()
+{
+	outPosition = vec4f(inPosition, 1.0);
+	outNormal = vec4f(inPosition, 0.0);
+    outColor = sample(texSampler, inTexCoord);
+}
+

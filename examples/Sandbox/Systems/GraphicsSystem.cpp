@@ -147,7 +147,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		renderPassSettings.subpasses[0].depthStencil = attachmentIndex;
 
 		// Create RenderPass
-		m_deferredRenderPass = RenderPass::create(renderPassSettings);
+		m_gbufferRenderPass = RenderPass::create(renderPassSettings);
 	}
 
 	// Create Sampler
@@ -173,8 +173,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create post process pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = Shader::create({ deferredPostProcessVertexPath });
-		pipelineSettings.fragmentShader = Shader::create({ deferredPostProcessFragmentPath });
+		pipelineSettings.vertexShader = Shader::create({ ppOutputColorVS });
+		pipelineSettings.fragmentShader = Shader::create({ ppOutputColorFS });
 		pipelineSettings.renderPass = renderWindow->getRenderPass();
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
@@ -245,9 +245,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Deferred pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = Shader::create({ deferredMaterialVertexPath });
-		pipelineSettings.fragmentShader = Shader::create({ deferredMaterialFragmentPath });
-		pipelineSettings.renderPass = m_deferredRenderPass;
+		pipelineSettings.vertexShader = Shader::create({ gbufferPassVS });
+		pipelineSettings.fragmentShader = Shader::create({ gbufferPassFS });
+		pipelineSettings.renderPass = m_gbufferRenderPass;
 		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
@@ -322,11 +322,11 @@ GraphicsSystem::~GraphicsSystem()
 	m_ppDescriptorSet.reset();
 	m_ppDescriptorPool.reset();
 
-	m_deferredRenderPass.reset();
+	m_gbufferRenderPass.reset();
 
-	m_deferredFramebuffer.reset();
-	m_deferredDepthImage.reset();
-	m_deferredImages.clear();
+	m_gbufferFramebuffer.reset();
+	m_gbufferDepthImage.reset();
+	m_gbufferImages.clear();
 
 	m_ppSampler.reset();
 
@@ -384,7 +384,7 @@ void GraphicsSystem::onResize(const Vector2u& size)
 
 	// Create color images
 	{
-		m_deferredImages.clear();
+		m_gbufferImages.clear();
 
 		for (auto& format : gBuffer)
 		{
@@ -396,7 +396,7 @@ void GraphicsSystem::onResize(const Vector2u& size)
 
 			auto image = Image::create(imageSettings);
 
-			m_deferredImages.push_back(image);
+			m_gbufferImages.push_back(image);
 		}
 	}
 
@@ -408,7 +408,7 @@ void GraphicsSystem::onResize(const Vector2u& size)
 		imageSettings.height = size.y;
 		imageSettings.usages = ImageUsage::RenderTarget;
 
-		m_deferredDepthImage = Image::create(imageSettings);
+		m_gbufferDepthImage = Image::create(imageSettings);
 	}
 
 	// Create framebuffer
@@ -416,17 +416,17 @@ void GraphicsSystem::onResize(const Vector2u& size)
 		Framebuffer::Settings framebufferSettings;
 		framebufferSettings.width = size.x;
 		framebufferSettings.height = size.y;
-		framebufferSettings.images = m_deferredImages;
-		framebufferSettings.images.push_back(m_deferredDepthImage);
-		framebufferSettings.renderPass = m_deferredRenderPass;
+		framebufferSettings.images = m_gbufferImages;
+		framebufferSettings.images.push_back(m_gbufferDepthImage);
+		framebufferSettings.renderPass = m_gbufferRenderPass;
 
-		m_deferredFramebuffer = Framebuffer::create(framebufferSettings);
+		m_gbufferFramebuffer = Framebuffer::create(framebufferSettings);
 	}
 
 	// Write descriptor set
 	{
 		for (uint32_t i = 0; i < gBuffer.size(); i++)
-			m_ppDescriptorSet->update(i, m_deferredImages[i], m_ppSampler);
+			m_ppDescriptorSet->update(i, m_gbufferImages[i], m_ppSampler);
 	}
 
 	m_viewport.size.x = static_cast<float>(size.x);
@@ -480,7 +480,7 @@ void GraphicsSystem::updateFrame()
 
 	gBufferClearValues.push_back({ 1.0f, 0 });
 
-	commandBuffer->beginRenderPass(m_deferredRenderPass, m_deferredFramebuffer, gBufferClearValues, true);
+	commandBuffer->beginRenderPass(m_gbufferRenderPass, m_gbufferFramebuffer, gBufferClearValues, true);
 
 	// Update objects buffers
 	{
@@ -520,7 +520,7 @@ void GraphicsSystem::updateFrame()
 				{
 					auto commandBuffer = renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
 
-					commandBuffer->beginSecondary(m_deferredRenderPass, m_deferredFramebuffer);
+					commandBuffer->beginSecondary(m_gbufferRenderPass, m_gbufferFramebuffer);
 
 					commandBuffer->bindPipeline(m_pipeline);
 
@@ -565,7 +565,7 @@ void GraphicsSystem::updateFrame()
 
 		commandBuffer->endRenderPass();
 
-		for (auto& image : m_deferredImages)
+		for (auto& image : m_gbufferImages)
 		{
 			commandBuffer->imageBarrier(
 				image,

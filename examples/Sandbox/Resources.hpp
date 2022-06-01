@@ -28,14 +28,13 @@ constexpr uint32_t objectRow = 50;
 constexpr uint32_t objectCount = objectRow * objectRow;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources/";
+const auto shaderPath = rscPath / "Shaders";
 
-const std::filesystem::path materialVertexPath = rscPath / "Shaders/ForwardVert.spv";
-const std::filesystem::path materialFragmentPath = rscPath / "Shaders/ForwardFrag.spv";
-
-const std::filesystem::path deferredMaterialVertexPath = rscPath / "Shaders/GeometryPassVert.spv";
-const std::filesystem::path deferredMaterialFragmentPath = rscPath / "Shaders/GeometryPassFrag.spv";
-const std::filesystem::path deferredPostProcessVertexPath = rscPath / "Shaders/PostProcessOutputColorVert.spv";
-const std::filesystem::path deferredPostProcessFragmentPath = rscPath / "Shaders/PostProcessOutputColorFrag.spv";
+const auto gbufferATSL = shaderPath / "gbuffer.atsl";
+const auto gbufferPassVS = shaderPath / "gbufferVS.spv";
+const auto gbufferPassFS = shaderPath / "gbufferFS.spv";
+const auto ppOutputColorVS = shaderPath / "PP_OutputColorVS.spv";
+const auto ppOutputColorFS = shaderPath / "PP_OutputColorFS.spv";
 
 const float cameraScale = 0.001f;
 
