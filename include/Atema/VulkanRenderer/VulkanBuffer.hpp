@@ -43,9 +43,10 @@ namespace at
 	private:
 		const VulkanDevice& m_device;
 		VkBuffer m_buffer;
-		VkDeviceMemory m_memory;
+		VmaAllocation m_allocation;
 		BufferUsage m_usage;
 		bool m_mappable;
+		void* m_mappedData;
 	};
 }
 

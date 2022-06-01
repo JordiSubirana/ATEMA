@@ -52,7 +52,7 @@ namespace at
 		bool m_ownsImage;
 		VkImage m_image;
 		VkImageView m_view;
-		VkDeviceMemory m_memory;
+		VmaAllocation m_allocation;
 		ImageFormat m_format;
 		Vector2u m_size;
 		uint32_t m_mipLevels;

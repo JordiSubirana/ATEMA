@@ -22,51 +22,45 @@
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
+#include <vma/vk_mem_alloc.h>
+
 using namespace at;
 
 VulkanBuffer::VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& settings) :
 	Buffer(),
 	m_device(device),
 	m_buffer(VK_NULL_HANDLE),
-	m_memory(VK_NULL_HANDLE),
+	m_allocation(VK_NULL_HANDLE),
 	m_usage(settings.usage),
-	m_mappable(settings.mappable)
+	m_mappable(settings.mappable),
+	m_mappedData(nullptr)
 {
 	ATEMA_ASSERT(settings.byteSize != 0, "Invalid buffer size");
 
-	// Buffer creation
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = static_cast<VkDeviceSize>(settings.byteSize);
-	bufferInfo.usage = Vulkan::getBufferUsages(settings.usage);
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	VkBufferCreateInfo bufferCreateInfo{};
+	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferCreateInfo.size = static_cast<VkDeviceSize>(settings.byteSize);
+	bufferCreateInfo.usage = Vulkan::getBufferUsages(settings.usage);
+	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	ATEMA_VK_CHECK(m_device.vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_buffer));
+	VmaAllocationCreateInfo allocCreateInfo = {};
+	allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-	// Memory allcoation
-	VkMemoryRequirements memRequirements;
-	m_device.vkGetBufferMemoryRequirements(m_device, m_buffer, &memRequirements);
+	VmaAllocationInfo allocInfo;
 
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : Ensure we can map the memory into CPU visible memory
-	// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Ensure the memory can be written at the time we specify it
-	allocInfo.memoryTypeIndex = m_device.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, Vulkan::getMemoryProperties(settings.mappable));
+	// Persistent mapped buffer
+	if (settings.mappable)
+		allocCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-	//TODO: Should not be called for individual buffers
-	// Check physical device's maxMemoryAllocationCount
-	// Use an allocator with offset parameters
-	ATEMA_VK_CHECK(m_device.vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory));
+	ATEMA_VK_CHECK(vmaCreateBuffer(m_device.getVmaAllocator(), &bufferCreateInfo, &allocCreateInfo, &m_buffer, &m_allocation, &allocInfo));
 
-	// Set the memory to the buffer
-	ATEMA_VK_CHECK(m_device.vkBindBufferMemory(m_device, m_buffer, m_memory, 0));
+	if (settings.mappable)
+		m_mappedData = allocInfo.pMappedData;
 }
 
 VulkanBuffer::~VulkanBuffer()
 {
-	ATEMA_VK_DESTROY(m_device, vkDestroyBuffer, m_buffer);
-	ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_memory);
+	vmaDestroyBuffer(m_device.getVmaAllocator(), m_buffer, m_allocation);
 }
 
 VkBuffer VulkanBuffer::getHandle() const noexcept
@@ -78,25 +72,9 @@ void* VulkanBuffer::map(size_t byteOffset, size_t byteSize)
 {
 	ATEMA_ASSERT(m_mappable, "Only mappable buffers can be mapped");
 	
-	if (m_mappable)
-	{
-		void* data = nullptr;
-
-		const VkDeviceSize offset = static_cast<VkDeviceSize>(byteOffset);
-		const VkDeviceSize size = byteSize ? static_cast<VkDeviceSize>(byteSize) : VK_WHOLE_SIZE;
-
-		ATEMA_VK_CHECK(m_device.vkMapMemory(m_device, m_memory, offset, size, 0, &data));
-
-		return data;
-	}
-
-	return nullptr;
+	return m_mappedData;
 }
 
 void VulkanBuffer::unmap()
 {
-	if (m_mappable)
-	{
-		m_device.vkUnmapMemory(m_device, m_memory);
-	}
 }

@@ -22,6 +22,8 @@
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
+#include <vma/vk_mem_alloc.h>
+
 using namespace at;
 
 VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& settings) :
@@ -30,52 +32,36 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	m_ownsImage(true),
 	m_image(VK_NULL_HANDLE),
 	m_view(VK_NULL_HANDLE),
-	m_memory(VK_NULL_HANDLE),
+	m_allocation(VK_NULL_HANDLE),
 	m_format(settings.format),
 	m_size(settings.width, settings.height),
 	m_mipLevels(settings.mipLevels)
 {
-	auto format = Vulkan::getFormat(settings.format);
+	const auto format = Vulkan::getFormat(settings.format);
 
-	// Create image
-	{
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.extent.width = settings.width;
-		imageInfo.extent.height = settings.height;
-		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = settings.mipLevels;
-		imageInfo.arrayLayers = 1;
-		imageInfo.format = format; // Use the same format than the buffer
-		imageInfo.tiling = Vulkan::getTiling(settings.tiling); // Optimal or linear if we want to change pixels client side
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage = Vulkan::getUsages(settings.usages, Renderer::isDepthImageFormat(settings.format));
-		//TODO: Make this custom
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Here used by only one queue
-		imageInfo.samples = Vulkan::getSamples(settings.samples);
-		imageInfo.flags = 0; // Optional
+	VkImageCreateInfo imageCreateInfo{};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.extent.width = settings.width;
+	imageCreateInfo.extent.height = settings.height;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.mipLevels = settings.mipLevels;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.format = format; // Use the same format than the buffer
+	imageCreateInfo.tiling = Vulkan::getTiling(settings.tiling); // Optimal or linear if we want to change pixels client side
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.usage = Vulkan::getUsages(settings.usages, Renderer::isDepthImageFormat(settings.format));
+	//TODO: Make this custom
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Here used by only one queue
+	imageCreateInfo.samples = Vulkan::getSamples(settings.samples);
+	imageCreateInfo.flags = 0; // Optional
 
-		ATEMA_VK_CHECK(m_device.vkCreateImage(m_device, &imageInfo, nullptr, &m_image));
-	}
+	VmaAllocationCreateInfo allocCreateInfo = {};
+	allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+	allocCreateInfo.priority = 1.0f;
 
-	// Allocate image memory
-	{
-		//TODO: Make this custom
-		const VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-		VkMemoryRequirements memRequirements;
-		m_device.vkGetImageMemoryRequirements(m_device, m_image, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = m_device.getPhysicalDevice().findMemoryType(memRequirements.memoryTypeBits, memoryProperties);
-
-		ATEMA_VK_CHECK(m_device.vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory));
-
-		m_device.vkBindImageMemory(m_device, m_image, m_memory, 0);
-	}
+	ATEMA_VK_CHECK(vmaCreateImage(m_device.getVmaAllocator(), &imageCreateInfo, &allocCreateInfo, &m_image, &m_allocation, nullptr));
 
 	// Create view
 	createView(format, Vulkan::getAspect(settings.format), settings.mipLevels);
@@ -87,7 +73,7 @@ VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkForm
 	m_ownsImage(false),
 	m_image(imageHandle),
 	m_view(VK_NULL_HANDLE),
-	m_memory(VK_NULL_HANDLE),
+	m_allocation(VK_NULL_HANDLE),
 	m_format(Vulkan::getFormat(format)),
 	m_size(0, 0),
 	m_mipLevels(1)
@@ -98,11 +84,9 @@ VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkForm
 VulkanImage::~VulkanImage()
 {
 	ATEMA_VK_DESTROY(m_device, vkDestroyImageView, m_view);
+
 	if (m_ownsImage)
-	{
-		ATEMA_VK_DESTROY(m_device, vkDestroyImage, m_image);
-		ATEMA_VK_DESTROY(m_device, vkFreeMemory, m_memory);
-	}
+		vmaDestroyImage(m_device.getVmaAllocator(), m_image, m_allocation);
 }
 
 VkImage VulkanImage::getImageHandle() const noexcept
