@@ -183,7 +183,7 @@ MaterialData::MaterialData(const std::filesystem::path& path)
 	imageSettings.width = texWidth;
 	imageSettings.height = texHeight;
 	imageSettings.mipLevels = textureMipLevels;
-	imageSettings.usages = ImageUsage::ShaderRead | ImageUsage::TransferDst | ImageUsage::TransferSrc;
+	imageSettings.usages = ImageUsage::ShaderSampling | ImageUsage::TransferDst | ImageUsage::TransferSrc;
 
 	texture = Image::create(imageSettings);
 

@@ -172,12 +172,13 @@ namespace at
 
 	enum class ImageUsage
 	{
-		RenderTarget = 0x0001,
-		ShaderRead = 0x0002,
-		TransferSrc = 0x0004,
-		TransferDst = 0x0008,
+		RenderTarget = 1 << 0,
+		ShaderSampling = 1 << 1,
+		ShaderInput = 1 << 2,
+		TransferSrc = 1 << 3,
+		TransferDst = 1 << 4,
 
-		All = RenderTarget | ShaderRead | TransferDst | TransferSrc
+		All = RenderTarget | ShaderSampling | ShaderInput | TransferDst | TransferSrc
 	};
 
 	ATEMA_DECLARE_FLAGS(ImageUsage);

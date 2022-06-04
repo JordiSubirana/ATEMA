@@ -365,7 +365,7 @@ void GraphicsSystem::onResize(const Vector2u& size)
 			imageSettings.format = format;
 			imageSettings.width = size.x;
 			imageSettings.height = size.y;
-			imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderRead;
+			imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderSampling;
 
 			auto image = Image::create(imageSettings);
 

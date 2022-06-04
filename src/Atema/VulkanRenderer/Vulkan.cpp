@@ -396,21 +396,17 @@ VkImageUsageFlags Vulkan::getUsages(Flags<ImageUsage> usages, bool isDepth)
 			flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
 
-	if (usages & ImageUsage::ShaderRead)
-	{
-		//TODO: See for VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+	if (usages & ImageUsage::ShaderSampling)
 		flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
-	}
+
+	if (usages & ImageUsage::ShaderInput)
+		flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
 	if (usages & ImageUsage::TransferSrc)
-	{
 		flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-	}
 
 	if (usages & ImageUsage::TransferDst)
-	{
 		flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	}
 
 	return flags;
 }
