@@ -22,12 +22,16 @@
 #ifndef ATEMA_VULKANRENDERER_VULKANGRAPHICSPIPELINE_HPP
 #define ATEMA_VULKANRENDERER_VULKANGRAPHICSPIPELINE_HPP
 
+#include <shared_mutex>
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/Signal.hpp>
 
 namespace at
 {
+	class VulkanRenderPass;
+
 	class ATEMA_VULKANRENDERER_API VulkanGraphicsPipeline final : public GraphicsPipeline
 	{
 	public:
@@ -35,13 +39,52 @@ namespace at
 		VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings);
 		virtual ~VulkanGraphicsPipeline();
 
-		VkPipeline getHandle() const noexcept;
+		VkPipeline getHandle(VulkanRenderPass& renderPass, uint32_t subpassIndex);
+
 		VkPipelineLayout getLayoutHandle() const noexcept;
 		
 	private:
+		VkPipeline readPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex);
+		VkPipeline createPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex);
+
+		struct RenderPassData
+		{
+			ConnectionGuard connectionGuard;
+			std::unordered_map<uint32_t, VkPipeline> pipelines;
+		};
+
 		const VulkanDevice& m_device;
+
+		std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+
+		VkPipelineVertexInputStateCreateInfo m_vertexInputInfo;
+		std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
+		std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
+
+		VkPipelineInputAssemblyStateCreateInfo m_inputAssembly;
+
+		VkPipelineViewportStateCreateInfo m_viewportState;
+
+		VkPipelineRasterizationStateCreateInfo m_rasterizer;
+
+		VkPipelineMultisampleStateCreateInfo m_multisampling;
+
+		VkPipelineColorBlendAttachmentState m_colorBlendAttachment;
+
+		std::vector<VkPipelineColorBlendAttachmentState> m_colorBlendAttachments;
+
+		VkPipelineColorBlendStateCreateInfo m_colorBlending;
+
+		VkPipelineDepthStencilStateCreateInfo m_depthStencil;
+
+		std::vector<VkDynamicState> m_dynamicStates;
+
+		VkPipelineDynamicStateCreateInfo m_dynamicState;
+
 		VkPipelineLayout m_pipelineLayout;
-		VkPipeline m_pipeline;
+
+		std::unordered_map<VkRenderPass, Ptr<RenderPassData>> m_renderPassDatas;
+		std::shared_mutex m_pipelineMutex;
 	};
 }
 

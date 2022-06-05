@@ -42,7 +42,9 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, QueueType qu
 	m_singleUse(settings.singleUse),
 	m_isSecondary(settings.secondary),
 	m_secondaryBegan(false),
-	m_currentPipelineLayout(VK_NULL_HANDLE)
+	m_currentPipelineLayout(VK_NULL_HANDLE),
+	m_currentRenderPass(nullptr),
+	m_currentSubpassIndex(0)
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -95,6 +97,9 @@ void VulkanCommandBuffer::beginSecondary(const Ptr<RenderPass>& renderPass, cons
 	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
 	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
 
+	m_currentRenderPass = vkRenderPass.get();
+	m_currentSubpassIndex = 0;
+
 	auto framebufferSize = vkFramebuffer->getSize();
 
 	// Inheritance info for the secondary command buffers
@@ -126,6 +131,9 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
 	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
+
+	m_currentRenderPass = vkRenderPass.get();
+	m_currentSubpassIndex = 0;
 	
 	auto framebufferSize = vkFramebuffer->getSize();
 	auto& attachments = vkRenderPass->getAttachments();
@@ -171,11 +179,17 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
 {
-	auto vkPipeline = std::static_pointer_cast<VulkanGraphicsPipeline>(pipeline);
+	if (!m_currentRenderPass)
+	{
+		ATEMA_ERROR("No RenderPass is active");
+	}
 
-	m_device.vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline->getHandle());
+	auto& vkPipeline = static_cast<VulkanGraphicsPipeline&>(*pipeline);
+	auto pipelineHandle = vkPipeline.getHandle(*m_currentRenderPass, m_currentSubpassIndex);
 
-	m_currentPipelineLayout = vkPipeline->getLayoutHandle();
+	m_device.vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineHandle);
+
+	m_currentPipelineLayout = vkPipeline.getLayoutHandle();
 }
 
 void VulkanCommandBuffer::setViewport(const Viewport& viewport)
@@ -202,9 +216,19 @@ void VulkanCommandBuffer::setScissor(const Vector2i& position, const Vector2u& s
 	m_device.vkCmdSetScissor(m_commandBuffer, 0, 1, &vkScissor);
 }
 
+void VulkanCommandBuffer::nextSubpass(bool useSecondaryCommands)
+{
+	m_device.vkCmdNextSubpass(m_commandBuffer, useSecondaryCommands ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
+
+	m_currentSubpassIndex++;
+}
+
 void VulkanCommandBuffer::endRenderPass()
 {
 	m_device.vkCmdEndRenderPass(m_commandBuffer);
+
+	m_currentRenderPass = nullptr;
+	m_currentSubpassIndex = 0;
 }
 
 void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset)

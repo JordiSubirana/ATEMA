@@ -83,6 +83,9 @@ private:
 
 	// Thread data
 	std::vector<std::vector<std::vector<at::Ptr<at::CommandBuffer>>>> m_threadCommandBuffers;
+
+	// Shaders
+	std::unordered_map<std::string, at::Ptr<at::Shader>> m_shaders;
 };
 
 #endif

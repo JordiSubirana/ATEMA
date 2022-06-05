@@ -31,14 +31,12 @@ using namespace at;
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings) :
 	GraphicsPipeline(),
 	m_device(device),
-	m_pipelineLayout(VK_NULL_HANDLE),
-	m_pipeline(VK_NULL_HANDLE)
+	m_pipelineLayout(VK_NULL_HANDLE)
 {
 	//-----
 	// Shaders
 	// Assign shader modules to a specific pipeline stage
-	
-	VkPipelineShaderStageCreateInfo shaderStages[2];
+	m_shaderStages.resize(2);
 	{
 		// Vertex shader
 		auto vertShader = std::static_pointer_cast<VulkanShader>(settings.vertexShader);
@@ -48,40 +46,37 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 			ATEMA_ERROR("Invalid vertex shader");
 		}
 		
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+		auto& vertShaderStageInfo = m_shaderStages[0];
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.flags = 0;
 		vertShaderStageInfo.module = vertShader->getHandle();
 		vertShaderStageInfo.pName = "main";
-		//vertShaderStageInfo.pSpecializationInfo = nullptr; // Used to specify constants and optimize stuff
-
-		shaderStages[0] = vertShaderStageInfo;
+		vertShaderStageInfo.pSpecializationInfo = nullptr; // Used to specify constants and optimize stuff
+		vertShaderStageInfo.pNext = nullptr;
 
 		// Fragment shader
 		auto fragShader = std::static_pointer_cast<VulkanShader>(settings.fragmentShader);
 
-		if (!vertShader)
+		if (!fragShader)
 		{
 			ATEMA_ERROR("Invalid fragment shader");
 		}
 		
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		auto& fragShaderStageInfo = m_shaderStages[1];
 		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.flags = 0;
 		fragShaderStageInfo.module = fragShader->getHandle();
 		fragShaderStageInfo.pName = "main";
-		//fragShaderStageInfo.pSpecializationInfo = nullptr; // Used to specify constants and optimize stuff
-
-		shaderStages[1] = fragShaderStageInfo;
+		fragShaderStageInfo.pSpecializationInfo = nullptr; // Used to specify constants and optimize stuff
+		fragShaderStageInfo.pNext = nullptr;
 	}
 
 	//-----
 	// Vertex input (format of vertex data passed to the shader)
 	// Bindings : spacing between data & per-vertex/per-instance
 	// Attributes : types, binding to load them from, at which offset
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-	std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 	{
 		auto& inputs = settings.vertexInput.inputs;
 
@@ -96,7 +91,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 			description.format = Vulkan::getFormat(input.format);
 			description.offset = offset;
 
-			attributeDescriptions.push_back(description);
+			m_attributeDescriptions.push_back(description);
 
 			offset += static_cast<uint32_t>(input.getByteSize());
 		}
@@ -108,98 +103,82 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 			bindingDescription.stride = offset;
 			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-			bindingDescriptions.push_back(bindingDescription);
+			m_bindingDescriptions.push_back(bindingDescription);
 		}
 
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+		m_vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		m_vertexInputInfo.vertexBindingDescriptionCount = 1;
+		m_vertexInputInfo.pVertexBindingDescriptions = m_bindingDescriptions.data();
+		m_vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size());
+		m_vertexInputInfo.pVertexAttributeDescriptions = m_attributeDescriptions.data();
+		m_vertexInputInfo.flags = 0;
+		m_vertexInputInfo.pNext = nullptr;
 	}
 
 	//-----
 	// Input assembly (what kind of geometry)
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = Vulkan::getPrimitiveTopology(settings.inputAssembly.topology);
-	inputAssembly.primitiveRestartEnable = settings.inputAssembly.primitiveRestart ? VK_TRUE : VK_FALSE;
-
-	//-----
-	// Viewport (region of the framebuffer to draw to)
-	VkViewport viewport{};
-	/*
-	viewport.x = settings.viewport.position.x;
-	viewport.y = settings.viewport.position.y;
-	viewport.width = settings.viewport.size.x;
-	viewport.height = settings.viewport.size.y;
-	viewport.minDepth = settings.viewport.minDepth;
-	viewport.maxDepth = settings.viewport.maxDepth;
-	//*/
-
-	//-----
-	// Scissors (use rasterizer to discard pixels)
-	VkRect2D scissor{};
-	/*
-	scissor.offset.x = settings.scissor.offset.x;
-	scissor.offset.y = settings.scissor.offset.y;
-	scissor.extent.width = settings.scissor.size.x;
-	scissor.extent.height = settings.scissor.size.y;
-	//*/
+	m_inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	m_inputAssembly.topology = Vulkan::getPrimitiveTopology(settings.inputAssembly.topology);
+	m_inputAssembly.primitiveRestartEnable = settings.inputAssembly.primitiveRestart ? VK_TRUE : VK_FALSE;
+	m_inputAssembly.flags = 0;
+	m_inputAssembly.pNext = nullptr;
 
 	//-----
 	// Possible to use multiple viewports & scissors but requires to enable a GPU feature (device creation)
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
+	m_viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	m_viewportState.viewportCount = 1;
+	m_viewportState.pViewports = nullptr;
+	m_viewportState.scissorCount = 1;
+	m_viewportState.pScissors = nullptr;
+	m_viewportState.flags = 0;
+	m_viewportState.pNext = nullptr;
 
 	//-----
 	// Rasterizer
 	// Takes geometry from vertex shader and create fragments using fragment shaders
 	// Applies depth testing, face culling, scissors test
-	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	{
 		auto& rasterizerState = settings.rasterization;
 
-		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		m_rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		// We can clamp fragments outside near/far planes to those planes instead of discarding (requires GPU feature)
-		rasterizer.depthClampEnable = rasterizerState.depthClamp ? VK_TRUE : VK_FALSE;
+		m_rasterizer.depthClampEnable = rasterizerState.depthClamp ? VK_TRUE : VK_FALSE;
 		// We can disable rasterization to prevent the geometry to pass to this stage (no output)
-		rasterizer.rasterizerDiscardEnable = rasterizerState.rasterizerDiscard ? VK_TRUE : VK_FALSE;
+		m_rasterizer.rasterizerDiscardEnable = rasterizerState.rasterizerDiscard ? VK_TRUE : VK_FALSE;
 		// Select the polygon mode : fill, point, line (point & line require GPU feature)
-		rasterizer.polygonMode = Vulkan::getPolygonMode(rasterizerState.polygonMode);
-		rasterizer.lineWidth = rasterizerState.lineWidth; // Thicker requires GPU feature
-		rasterizer.cullMode = Vulkan::getCullMode(rasterizerState.cullMode); // None, front, back, both
-		rasterizer.frontFace = Vulkan::getFrontFace(rasterizerState.frontFace); // VK_FRONT_FACE_CLOCKWISE
-		rasterizer.depthBiasEnable = VK_FALSE;
-		//rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-		//rasterizer.depthBiasClamp = 0.0f; // Optional
-		//rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+		m_rasterizer.polygonMode = Vulkan::getPolygonMode(rasterizerState.polygonMode);
+		m_rasterizer.lineWidth = rasterizerState.lineWidth; // Thicker requires GPU feature
+		m_rasterizer.cullMode = Vulkan::getCullMode(rasterizerState.cullMode); // None, front, back, both
+		m_rasterizer.frontFace = Vulkan::getFrontFace(rasterizerState.frontFace); // VK_FRONT_FACE_CLOCKWISE
+		m_rasterizer.depthBiasEnable = VK_FALSE;
+		m_rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+		m_rasterizer.depthBiasClamp = 0.0f; // Optional
+		m_rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+		m_rasterizer.flags = 0;
+		m_rasterizer.pNext = nullptr;
 	}
 
 	//-----
 	// Multisampling (can be used to perform anti-aliasing but requires GPU feature)
-	VkPipelineMultisampleStateCreateInfo multisampling{};
 	{
 		auto& multisampleSettings = settings.multisample;
 
-		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampling.rasterizationSamples = Vulkan::getSamples(multisampleSettings.samples);
+		m_multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		m_multisampling.rasterizationSamples = Vulkan::getSamples(multisampleSettings.samples);
 		if (multisampleSettings.sampleShading)
 		{
-			multisampling.sampleShadingEnable = VK_TRUE; // Enable sample shading in the pipeline
-			multisampling.minSampleShading = multisampleSettings.minSampleShading; // Min fraction for sample shading (closer to 1 is smoother)
+			m_multisampling.sampleShadingEnable = VK_TRUE; // Enable sample shading in the pipeline
+			m_multisampling.minSampleShading = multisampleSettings.minSampleShading; // Min fraction for sample shading (closer to 1 is smoother)
 		}
 		else
 		{
-			multisampling.sampleShadingEnable = VK_FALSE;
+			m_multisampling.sampleShadingEnable = VK_FALSE;
 		}
-		//multisampling.pSampleMask = nullptr; // Optional
-		//multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-		//multisampling.alphaToOneEnable = VK_FALSE; // Optional
+		m_multisampling.pSampleMask = nullptr; // Optional
+		m_multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+		m_multisampling.alphaToOneEnable = VK_FALSE; // Optional
+		m_multisampling.flags = 0;
+		m_multisampling.pNext = nullptr;
 	}
 	
 	//-----
@@ -207,86 +186,73 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 
 	//-----
 	// Color blending (configuration per attached framebuffer)
-	uint32_t colorAttachmentCount = 0;
-
-	for (auto& attachment : settings.renderPass->getAttachments())
-	{
-		if (!Renderer::isDepthImageFormat(attachment.format) && !Renderer::isStencilImageFormat(attachment.format))
-			colorAttachmentCount++;
-	}
+	m_colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	m_colorBlendAttachment.blendEnable = settings.colorBlend.enabled ? VK_TRUE : VK_FALSE;
+	m_colorBlendAttachment.srcColorBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.colorSrcFactor);
+	m_colorBlendAttachment.dstColorBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.colorDstFactor);
+	m_colorBlendAttachment.colorBlendOp = Vulkan::getBlendOperation(settings.colorBlend.colorOperation);
+	m_colorBlendAttachment.srcAlphaBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.alphaSrcFactor);
+	m_colorBlendAttachment.dstAlphaBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.alphaDstFactor);
+	m_colorBlendAttachment.alphaBlendOp = Vulkan::getBlendOperation(settings.colorBlend.alphaOperation);
 	
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-	colorBlendAttachments.reserve(colorAttachmentCount);
-	{
-		auto& colorBlendSettings = settings.colorBlend;
-
-		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = colorBlendSettings.enabled ? VK_TRUE : VK_FALSE;
-		colorBlendAttachment.srcColorBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.colorSrcFactor);
-		colorBlendAttachment.dstColorBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.colorDstFactor);
-		colorBlendAttachment.colorBlendOp = Vulkan::getBlendOperation(colorBlendSettings.colorOperation);
-		colorBlendAttachment.srcAlphaBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.alphaSrcFactor);
-		colorBlendAttachment.dstAlphaBlendFactor = Vulkan::getBlendFactor(colorBlendSettings.alphaDstFactor);
-		colorBlendAttachment.alphaBlendOp = Vulkan::getBlendOperation(colorBlendSettings.alphaOperation);
-
-		for (size_t i = 0; i < colorAttachmentCount; i++)
-			colorBlendAttachments.push_back(colorBlendAttachment);
-	}
 
 	// Color blending (global configuration)
-	VkPipelineColorBlendStateCreateInfo colorBlending{};
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlending.logicOpEnable = VK_FALSE; // True to use bitwise combination blending, false to use previous method
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-	colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
-	colorBlending.pAttachments = colorBlendAttachments.data();
-	colorBlending.blendConstants[0] = 0.0f; // Optional
-	colorBlending.blendConstants[1] = 0.0f; // Optional
-	colorBlending.blendConstants[2] = 0.0f; // Optional
-	colorBlending.blendConstants[3] = 0.0f; // Optional
+	m_colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	m_colorBlending.logicOpEnable = VK_FALSE; // True to use bitwise combination blending, false to use previous method
+	m_colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+	m_colorBlending.blendConstants[0] = 0.0f; // Optional
+	m_colorBlending.blendConstants[1] = 0.0f; // Optional
+	m_colorBlending.blendConstants[2] = 0.0f; // Optional
+	m_colorBlending.blendConstants[3] = 0.0f; // Optional
+	// Fill attachments during pipeline creation (depends on render pass)
+	m_colorBlending.attachmentCount = 0;
+	m_colorBlending.pAttachments = nullptr;
+	m_colorBlending.flags = 0;
+	m_colorBlending.pNext = nullptr;
 
 	// Enable depth testing (optionnal if we don't use any depth buffer)
-	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	{
-		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencil.depthTestEnable = settings.depth.test ? VK_TRUE : VK_FALSE;
-		depthStencil.depthWriteEnable = settings.depth.write ? VK_TRUE : VK_FALSE;
-		depthStencil.depthCompareOp = Vulkan::getCompareOperation(settings.depth.compareOperation);
-		depthStencil.depthBoundsTestEnable = settings.depth.boundsTest ? VK_TRUE : VK_FALSE;
-		depthStencil.minDepthBounds = settings.depth.boundsMin; // Optional
-		depthStencil.maxDepthBounds = settings.depth.boundsMax; // Optional
-		depthStencil.stencilTestEnable = settings.stencil ? VK_TRUE : VK_FALSE;
-		depthStencil.front = {}; // Optional
-		depthStencil.front.failOp = Vulkan::getStencilOperation(settings.stencilFront.failOperation);
-		depthStencil.front.passOp = Vulkan::getStencilOperation(settings.stencilFront.passOperation);
-		depthStencil.front.depthFailOp = Vulkan::getStencilOperation(settings.stencilFront.depthFailOperation);
-		depthStencil.front.compareOp = Vulkan::getCompareOperation(settings.stencilFront.compareOperation);
-		depthStencil.front.compareMask = settings.stencilFront.compareMask;
-		depthStencil.front.writeMask = settings.stencilFront.writeMask;
-		depthStencil.front.reference = settings.stencilFront.reference;
-		depthStencil.back = {}; // Optional
-		depthStencil.back.failOp = Vulkan::getStencilOperation(settings.stencilBack.failOperation);
-		depthStencil.back.passOp = Vulkan::getStencilOperation(settings.stencilBack.passOperation);
-		depthStencil.back.depthFailOp = Vulkan::getStencilOperation(settings.stencilBack.depthFailOperation);
-		depthStencil.back.compareOp = Vulkan::getCompareOperation(settings.stencilBack.compareOperation);
-		depthStencil.back.compareMask = settings.stencilBack.compareMask;
-		depthStencil.back.writeMask = settings.stencilBack.writeMask;
-		depthStencil.back.reference = settings.stencilBack.reference;
+		m_depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		m_depthStencil.depthTestEnable = settings.depth.test ? VK_TRUE : VK_FALSE;
+		m_depthStencil.depthWriteEnable = settings.depth.write ? VK_TRUE : VK_FALSE;
+		m_depthStencil.depthCompareOp = Vulkan::getCompareOperation(settings.depth.compareOperation);
+		m_depthStencil.depthBoundsTestEnable = settings.depth.boundsTest ? VK_TRUE : VK_FALSE;
+		m_depthStencil.minDepthBounds = settings.depth.boundsMin; // Optional
+		m_depthStencil.maxDepthBounds = settings.depth.boundsMax; // Optional
+		m_depthStencil.stencilTestEnable = settings.stencil ? VK_TRUE : VK_FALSE;
+		m_depthStencil.front = {}; // Optional
+		m_depthStencil.front.failOp = Vulkan::getStencilOperation(settings.stencilFront.failOperation);
+		m_depthStencil.front.passOp = Vulkan::getStencilOperation(settings.stencilFront.passOperation);
+		m_depthStencil.front.depthFailOp = Vulkan::getStencilOperation(settings.stencilFront.depthFailOperation);
+		m_depthStencil.front.compareOp = Vulkan::getCompareOperation(settings.stencilFront.compareOperation);
+		m_depthStencil.front.compareMask = settings.stencilFront.compareMask;
+		m_depthStencil.front.writeMask = settings.stencilFront.writeMask;
+		m_depthStencil.front.reference = settings.stencilFront.reference;
+		m_depthStencil.back = {}; // Optional
+		m_depthStencil.back.failOp = Vulkan::getStencilOperation(settings.stencilBack.failOperation);
+		m_depthStencil.back.passOp = Vulkan::getStencilOperation(settings.stencilBack.passOperation);
+		m_depthStencil.back.depthFailOp = Vulkan::getStencilOperation(settings.stencilBack.depthFailOperation);
+		m_depthStencil.back.compareOp = Vulkan::getCompareOperation(settings.stencilBack.compareOperation);
+		m_depthStencil.back.compareMask = settings.stencilBack.compareMask;
+		m_depthStencil.back.writeMask = settings.stencilBack.writeMask;
+		m_depthStencil.back.reference = settings.stencilBack.reference;
+		m_depthStencil.flags = 0;
+		m_depthStencil.pNext = nullptr;
 	}
 
 	//-----
 	// Dynamic states (instead of being fixed at pipeline creation)
-	std::vector<VkDynamicState> dynamicStates =
+	m_dynamicStates =
 	{
 		VK_DYNAMIC_STATE_VIEWPORT,
 		VK_DYNAMIC_STATE_SCISSOR
 	};
 
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
+	m_dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	m_dynamicState.dynamicStateCount = static_cast<uint32_t>(m_dynamicStates.size());
+	m_dynamicState.pDynamicStates = m_dynamicStates.data();
+	m_dynamicState.flags = 0;
+	m_dynamicState.pNext = nullptr;
 
 	//-----
 	// Pipeline layout (to use uniform variables & push constants)
@@ -305,51 +271,149 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 		pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+		pipelineLayoutInfo.flags = 0;
+		pipelineLayoutInfo.pNext = nullptr;
 
 		ATEMA_VK_CHECK(m_device.vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 	}
-
-	//-----
-	// Pipeline creation
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.pStages = shaderStages;
-
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &rasterizer;
-	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.layout = m_pipelineLayout;
-	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
-	pipelineInfo.pDynamicState = &dynamicState; // Optional
-
-	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
-	
-	pipelineInfo.renderPass = renderPass->getHandle(); // Can still be used with other render pass instances (if compatible)
-	pipelineInfo.subpass = 0;
-
-	// We can derivate pipelines, which can optimize creation & switch performance
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	//pipelineInfo.basePipelineIndex = -1; // Optional
-
-	ATEMA_VK_CHECK(m_device.vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline));
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 {
-	ATEMA_VK_DESTROY(m_device, vkDestroyPipeline, m_pipeline);
+	for (auto& renderPassData : m_renderPassDatas)
+	{
+		for (auto& subpassPipelines : renderPassData.second->pipelines)
+			ATEMA_VK_DESTROY(m_device, vkDestroyPipeline, subpassPipelines.second);
+	}
+
+	m_renderPassDatas.clear();
+
 	ATEMA_VK_DESTROY(m_device, vkDestroyPipelineLayout, m_pipelineLayout);
 }
 
-VkPipeline VulkanGraphicsPipeline::getHandle() const noexcept
+VkPipeline VulkanGraphicsPipeline::getHandle(VulkanRenderPass& renderPass, uint32_t subpassIndex)
 {
-	return m_pipeline;
+	const auto pipeline = readPipeline(renderPass, subpassIndex);
+
+	if (pipeline != VK_NULL_HANDLE)
+		return pipeline;
+
+	return createPipeline(renderPass, subpassIndex);
 }
 
 VkPipelineLayout VulkanGraphicsPipeline::getLayoutHandle() const noexcept
 {
 	return m_pipelineLayout;
+}
+
+VkPipeline VulkanGraphicsPipeline::readPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex)
+{
+	std::shared_lock readLock(m_pipelineMutex);
+
+	// Return the pipeline if it exists
+	const auto renderPassDataIt = m_renderPassDatas.find(renderPass.getHandle());
+	if (renderPassDataIt != m_renderPassDatas.end())
+	{
+		const auto& pipelines = renderPassDataIt->second->pipelines;
+		const auto subpassPipelineIt = pipelines.find(subpassIndex);
+
+		if (subpassPipelineIt != pipelines.end())
+			return subpassPipelineIt->second;
+	}
+
+	// Needs to be created!
+	return VK_NULL_HANDLE;
+}
+
+VkPipeline VulkanGraphicsPipeline::createPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex)
+{
+	std::unique_lock writeLock(m_pipelineMutex);
+
+	const auto renderPassHandle = renderPass.getHandle();
+
+	// Return the pipeline if it exists
+	const auto renderPassDataIt = m_renderPassDatas.find(renderPass.getHandle());
+	if (renderPassDataIt != m_renderPassDatas.end())
+	{
+		const auto& pipelines = renderPassDataIt->second->pipelines;
+		const auto subpassPipelineIt = pipelines.find(subpassIndex);
+
+		if (subpassPipelineIt != pipelines.end())
+			return subpassPipelineIt->second;
+	}
+	// We will create an entry for this RenderPass for the first time
+	// On RenderPass's destruction, we'll want to free all created pipelines
+	else
+	{
+		auto data = std::make_shared<RenderPassData>();
+		data->connectionGuard.connect(renderPass.onDestroy, [this, renderPassHandle]()
+			{
+				std::unique_lock writeLock(m_pipelineMutex);
+
+				auto& data = m_renderPassDatas[renderPassHandle];
+
+				if (data)
+				{
+					for (auto& subpassPipelines : data->pipelines)
+						ATEMA_VK_DESTROY(m_device, vkDestroyPipeline, subpassPipelines.second);
+				}
+
+				m_renderPassDatas.erase(renderPassHandle);
+			});
+
+		m_renderPassDatas.emplace(renderPassHandle, std::move(data));
+	}
+
+	// Create the pipeline if it does not exist
+	auto& pipeline = m_renderPassDatas[renderPassHandle]->pipelines[subpassIndex];
+	{
+		// Color blending (configuration per attached framebuffer)
+		uint32_t colorAttachmentCount = 0;
+
+		for (auto& attachment : renderPass.getAttachments())
+		{
+			if (!Renderer::isDepthImageFormat(attachment.format) && !Renderer::isStencilImageFormat(attachment.format))
+				colorAttachmentCount++;
+		}
+
+		if (m_colorBlendAttachments.size() < colorAttachmentCount)
+		{
+			const auto previousSize = m_colorBlendAttachments.size();
+
+			m_colorBlendAttachments.resize(colorAttachmentCount);
+
+			for (size_t i = previousSize; i < m_colorBlendAttachments.size(); i++)
+				m_colorBlendAttachments[i] = m_colorBlendAttachment;
+		}
+
+		m_colorBlending.attachmentCount = static_cast<uint32_t>(m_colorBlendAttachments.size());
+		m_colorBlending.pAttachments = m_colorBlendAttachments.data();
+
+		// Pipeline creation
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = m_shaderStages.data();
+
+		pipelineInfo.pVertexInputState = &m_vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &m_inputAssembly;
+		pipelineInfo.pViewportState = &m_viewportState;
+		pipelineInfo.pRasterizationState = &m_rasterizer;
+		pipelineInfo.pMultisampleState = &m_multisampling;
+		pipelineInfo.pColorBlendState = &m_colorBlending;
+		pipelineInfo.layout = m_pipelineLayout;
+		pipelineInfo.pDepthStencilState = &m_depthStencil; // Optional
+		pipelineInfo.pDynamicState = &m_dynamicState; // Optional
+
+		pipelineInfo.renderPass = renderPassHandle; // Can still be used with other render pass instances (if compatible)
+		pipelineInfo.subpass = subpassIndex;
+
+		// We can derivate pipelines, which can optimize creation & switch performance
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+		//pipelineInfo.basePipelineIndex = -1; // Optional
+
+		ATEMA_VK_CHECK(m_device.vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+	}
+
+	return pipeline;
 }

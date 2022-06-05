@@ -28,6 +28,8 @@
 
 namespace at
 {
+	class VulkanRenderPass;
+
 	class ATEMA_VULKANRENDERER_API VulkanCommandBuffer final : public CommandBuffer
 	{
 	public:
@@ -50,6 +52,8 @@ namespace at
 		void setViewport(const Viewport& viewport) override;
 
 		void setScissor(const Vector2i& position, const Vector2u& size) override;
+
+		void nextSubpass(bool useSecondaryCommands) override;
 
 		void endRenderPass() override;
 
@@ -85,6 +89,8 @@ namespace at
 		bool m_isSecondary;
 		bool m_secondaryBegan;
 		VkPipelineLayout m_currentPipelineLayout;
+		VulkanRenderPass* m_currentRenderPass;
+		uint32_t m_currentSubpassIndex;
 	};
 }
 

@@ -78,7 +78,9 @@ namespace at
 		virtual void setViewport(const Viewport& viewport) = 0;
 		
 		virtual void setScissor(const Vector2i& position, const Vector2u& size) = 0;
-		
+
+		virtual void nextSubpass(bool useSecondaryCommands = false) = 0;
+
 		virtual void endRenderPass() = 0;
 
 		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset = 0, size_t dstOffset = 0) = 0;

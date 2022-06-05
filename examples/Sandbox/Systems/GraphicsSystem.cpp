@@ -21,6 +21,7 @@
 
 #include "GraphicsSystem.hpp"
 
+#include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
 
 #include "../Resources.hpp"
@@ -117,6 +118,16 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	m_depthFormat = renderWindow->getDepthFormat();
 
+	//----- SHADERS -----//
+	std::vector<std::filesystem::path> shaderPathes =
+	{
+		gbufferPassVS, gbufferPassFS,
+		ppOutputColorVS, ppOutputColorFS
+	};
+
+	for (auto& path : shaderPathes)
+		m_shaders[path.string()] = Shader::create({ path });
+
 	//----- DEFERRED RESOURCES -----//
 	// Create RenderPass
 	{
@@ -174,9 +185,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create post process pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = Shader::create({ ppOutputColorVS });
-		pipelineSettings.fragmentShader = Shader::create({ ppOutputColorFS });
-		pipelineSettings.renderPass = renderWindow->getRenderPass();
+		pipelineSettings.vertexShader = m_shaders[ppOutputColorVS.string()];
+		pipelineSettings.fragmentShader = m_shaders[ppOutputColorFS.string()];
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.inputs =
@@ -230,9 +240,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Gbuffer pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = Shader::create({ gbufferPassVS });
-		pipelineSettings.fragmentShader = Shader::create({ gbufferPassFS });
-		pipelineSettings.renderPass = m_renderPass;
+		pipelineSettings.vertexShader = m_shaders[gbufferPassVS.string()];
+		pipelineSettings.fragmentShader = m_shaders[gbufferPassFS.string()];
 		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
@@ -292,6 +301,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 GraphicsSystem::~GraphicsSystem()
 {
 	Renderer::instance().waitForIdle();
+
+	m_shaders.clear();
 
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
@@ -417,6 +428,50 @@ void GraphicsSystem::onResize(const Vector2u& size)
 
 void GraphicsSystem::updateFrame()
 {
+	//-----
+
+	FrameGraphBuilder builder;
+
+	FrameGraphTextureSettings textureSettings;
+
+	auto t11 = builder.createTexture(textureSettings);
+	auto t12 = builder.createTexture(textureSettings);
+	auto t21 = builder.createTexture(textureSettings);
+	auto t22 = builder.createTexture(textureSettings);
+	auto t1 = builder.createTexture(textureSettings);
+	auto t2 = builder.createTexture(textureSettings);
+	auto tf = builder.importTexture(m_gbufferImages[0]);
+
+	auto& p11 = builder.createPass("Pass #11");
+	auto& p12 = builder.createPass("Pass #12");
+	auto& p21 = builder.createPass("Pass #21");
+	auto& p22 = builder.createPass("Pass #22");
+	auto& p1 = builder.createPass("Pass #1");
+	auto& p2 = builder.createPass("Pass #2");
+	auto& pf = builder.createPass("Pass #final");
+
+	p11.setOutputTexture(t11);
+	p12.setOutputTexture(t12);
+
+	p21.setOutputTexture(t21);
+	p22.setOutputTexture(t22);
+
+	p1.setInputTexture(t11);
+	p1.setInputTexture(t12);
+	p1.setOutputTexture(t1);
+
+	p2.setInputTexture(t21);
+	p2.setInputTexture(t22);
+	p2.setOutputTexture(t2);
+
+	pf.setInputTexture(t1);
+	pf.setInputTexture(t2);
+	pf.setOutputTexture(tf);
+
+	builder.build();
+
+	//-----
+
 	RenderFrame* _frame = nullptr;
 
 	{

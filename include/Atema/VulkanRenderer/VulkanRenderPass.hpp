@@ -25,6 +25,7 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
+#include <Atema/Core/Signal.hpp>
 
 namespace at
 {
@@ -38,7 +39,9 @@ namespace at
 		VkRenderPass getHandle() const noexcept;
 
 		const std::vector<AttachmentDescription>& getAttachments() const noexcept override;
-		
+
+		Signal<> onDestroy;
+
 	private:
 		const VulkanDevice& m_device;
 		VkRenderPass m_renderPass;

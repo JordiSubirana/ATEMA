@@ -639,6 +639,8 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 
 VulkanRenderPass::~VulkanRenderPass()
 {
+	onDestroy();
+
 	ATEMA_VK_DESTROY(m_device, vkDestroyRenderPass, m_renderPass);
 }
 

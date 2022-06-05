@@ -113,8 +113,6 @@ namespace at
 			StencilState stencilBack;
 
 			std::vector<Ptr<DescriptorSetLayout>> descriptorSetLayouts;
-
-			Ptr<RenderPass> renderPass;
 			
 			Ptr<Shader> vertexShader;
 			Ptr<Shader> fragmentShader;
