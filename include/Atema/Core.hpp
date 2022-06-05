@@ -34,6 +34,7 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
+#include <Atema/Core/Signal.hpp>
 #include <Atema/Core/SparseSet.hpp>
 #include <Atema/Core/SparseSetUnion.hpp>
 #include <Atema/Core/TaskManager.hpp>
