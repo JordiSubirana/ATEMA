@@ -39,6 +39,7 @@ namespace at
 		VkRenderPass getHandle() const noexcept;
 
 		const std::vector<AttachmentDescription>& getAttachments() const noexcept override;
+		size_t getColorAttachmentCount(uint32_t subpassIndex) const;
 
 		Signal<> onDestroy;
 
@@ -46,6 +47,7 @@ namespace at
 		const VulkanDevice& m_device;
 		VkRenderPass m_renderPass;
 		std::vector<AttachmentDescription> m_attachments;
+		std::vector<uint32_t> m_subpassColorAttachmentCount;
 	};
 }
 

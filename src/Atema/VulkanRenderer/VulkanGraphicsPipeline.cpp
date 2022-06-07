@@ -368,13 +368,7 @@ VkPipeline VulkanGraphicsPipeline::createPipeline(VulkanRenderPass& renderPass, 
 	auto& pipeline = m_renderPassDatas[renderPassHandle]->pipelines[subpassIndex];
 	{
 		// Color blending (configuration per attached framebuffer)
-		uint32_t colorAttachmentCount = 0;
-
-		for (auto& attachment : renderPass.getAttachments())
-		{
-			if (!Renderer::isDepthImageFormat(attachment.format) && !Renderer::isStencilImageFormat(attachment.format))
-				colorAttachmentCount++;
-		}
+		const auto colorAttachmentCount = renderPass.getColorAttachmentCount(subpassIndex);
 
 		if (m_colorBlendAttachments.size() < colorAttachmentCount)
 		{

@@ -223,7 +223,8 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 	RenderPass(),
 	m_device(device),
 	m_renderPass(VK_NULL_HANDLE),
-	m_attachments(settings.attachments)
+	m_attachments(settings.attachments),
+	m_subpassColorAttachmentCount(settings.subpasses.size(), 0)
 {
 	ATEMA_ASSERT(!settings.attachments.empty(), "Invalid attachments");
 	ATEMA_ASSERT(!settings.subpasses.empty(), "RenderPass need at least one subpass");
@@ -243,8 +244,10 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 	std::vector<SubpassData> subpasses;
 	subpasses.reserve(settings.subpasses.size());
 
-	for (auto& subpassSettings : settings.subpasses)
+	for (size_t subpassIndex = 0; subpassIndex < settings.subpasses.size(); subpassIndex++)
 	{
+		const auto& subpassSettings = settings.subpasses[subpassIndex];
+
 		SubpassData subpass;
 
 		// Initialize attachment references
@@ -272,6 +275,8 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 			// Color
 			for (auto& attachmentIndex : subpassSettings.color)
 			{
+				m_subpassColorAttachmentCount[subpassIndex]++;
+
 				if (attachmentIndex == RenderPass::UnusedAttachment)
 				{
 					subpass.color.push_back({ VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_UNDEFINED });
@@ -652,4 +657,9 @@ VkRenderPass VulkanRenderPass::getHandle() const noexcept
 const std::vector<AttachmentDescription>& VulkanRenderPass::getAttachments() const noexcept
 {
 	return m_attachments;
+}
+
+size_t VulkanRenderPass::getColorAttachmentCount(uint32_t subpassIndex) const
+{
+	return m_subpassColorAttachmentCount[subpassIndex];
 }
