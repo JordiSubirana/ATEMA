@@ -68,11 +68,27 @@ namespace at
 			// Depth/Stencil output attachment (Unused by default)
 			uint32_t depthStencil = RenderPass::UnusedAttachment;
 		};
+
+		struct ExternalBarrier
+		{
+			size_t subpassIndex = 0;
+
+			Flags<PipelineStage> srcPipelineStages;
+			Flags<MemoryAccess> srcMemoryAccesses;
+
+			Flags<PipelineStage> dstPipelineStages;
+			Flags<MemoryAccess> dstMemoryAccesses;
+		};
 		
 		struct Settings
 		{
 			std::vector<AttachmentDescription> attachments;
 			std::vector<SubpassSettings> subpasses;
+
+			// External barriers to synchronize attachments with the first subpass using them
+			std::vector<ExternalBarrier> inputBarriers;
+			// External barriers to synchronize attachments from the last subpass using them to the next user operation
+			std::vector<ExternalBarrier> outputBarriers;
 		};
 		
 		virtual ~RenderPass();

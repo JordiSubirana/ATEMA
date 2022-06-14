@@ -205,8 +205,7 @@ namespace
 	{
 		std::vector<Flags<AttachmentSubpassRole>> roles;
 		std::vector<VkImageLayout> layouts;
-
-		Flags<SubpassExternalDependency> externalDependencies;
+		
 		Flags<SubpassFeedbackDependency> feedbackDependencies;
 
 		Flags<AttachmentSubpassRole> subpassRoles;
@@ -388,29 +387,7 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 
 			// First subpass using this attachment
 			if (!isUsed && roles)
-			{
 				isUsed = true;
-
-				// Ensure the initial layout is compatible to avoid useless transitions
-				if (!isLayoutCompatible(currentLayout, roles))
-				{
-					//TODO: Implement this 
-					// Override the initial layout to match the one we need during the first subpass
-					// Only usable for certain image types and depending on loadOp
-					//attachment.description.initialLayout = subpass.layouts[attachmentIndex];
-					//currentLayout = attachment.description.initialLayout;
-
-					// As we change the layout, we need an external dependency
-					if (roles & AttachmentSubpassRole::Input)
-						subpass.externalDependencies |= SubpassExternalDependency::Input;
-
-					if (roles & AttachmentSubpassRole::Color)
-						subpass.externalDependencies |= SubpassExternalDependency::Color;
-
-					if (roles & AttachmentSubpassRole::Depth)
-						subpass.externalDependencies |= SubpassExternalDependency::Depth;
-				}
-			}
 
 			// Feedback dependencies if an attachment is used as an Input and as a Color/Depth
 			{
@@ -512,45 +489,37 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 	// Subpass dependencies
 	std::vector<VkSubpassDependency> subpassDependencies;
 
+	for (auto& barrier : settings.inputBarriers)
+	{
+		auto& subpassDependency = subpassDependencies.emplace_back();
+
+		subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		subpassDependency.dstSubpass = static_cast<uint32_t>(barrier.subpassIndex);
+
+		subpassDependency.srcStageMask = Vulkan::getPipelineStages(barrier.srcPipelineStages);
+		subpassDependency.srcAccessMask = Vulkan::getMemoryAccesses(barrier.srcMemoryAccesses);
+
+		subpassDependency.dstStageMask = Vulkan::getPipelineStages(barrier.dstPipelineStages);
+		subpassDependency.dstAccessMask = Vulkan::getMemoryAccesses(barrier.dstMemoryAccesses);
+	}
+
+	for (auto& barrier : settings.inputBarriers)
+	{
+		auto& subpassDependency = subpassDependencies.emplace_back();
+
+		subpassDependency.srcSubpass = static_cast<uint32_t>(barrier.subpassIndex);
+		subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+
+		subpassDependency.srcStageMask = Vulkan::getPipelineStages(barrier.srcPipelineStages);
+		subpassDependency.srcAccessMask = Vulkan::getMemoryAccesses(barrier.srcMemoryAccesses);
+
+		subpassDependency.dstStageMask = Vulkan::getPipelineStages(barrier.dstPipelineStages);
+		subpassDependency.dstAccessMask = Vulkan::getMemoryAccesses(barrier.dstMemoryAccesses);
+	}
+
 	for (size_t subpassIndex = 0; subpassIndex < subpasses.size(); subpassIndex++)
 	{
 		const auto& subpass = subpasses[subpassIndex];
-
-		// External dependencies
-		if (subpass.externalDependencies)
-		{
-			auto& subpassDependency = subpassDependencies.emplace_back();
-
-			subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-			subpassDependency.dstSubpass = static_cast<uint32_t>(subpassIndex);
-
-			if (subpass.externalDependencies & SubpassExternalDependency::Input)
-			{
-				subpassDependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-				subpassDependency.srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				
-				subpassDependency.dstStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				subpassDependency.dstAccessMask |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-			}
-
-			if (subpass.externalDependencies & SubpassExternalDependency::Color)
-			{
-				subpassDependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				subpassDependency.srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				
-				subpassDependency.dstStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				subpassDependency.dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			}
-
-			if (subpass.externalDependencies & SubpassExternalDependency::Depth)
-			{
-				subpassDependency.srcStageMask |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-				subpassDependency.srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				
-				subpassDependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-				subpassDependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-			}
-		}
 
 		// Feedback dependencies
 		if (subpass.feedbackDependencies)
