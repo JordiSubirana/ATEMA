@@ -23,11 +23,13 @@
 #define ATEMA_CORE_BENCHMARK_HPP
 
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
+#include <Atema/Core/Timer.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #define ATEMA_BENCHMARK_ENABLE 1
 
@@ -52,15 +54,19 @@ namespace at
 		std::vector<BenchmarkData*> children;
 	};
 
-	class ATEMA_CORE_API Benchmark final : public ScopedTimer
+	class ATEMA_CORE_API Benchmark
 	{
 	public:
-		Benchmark() = delete;
+		Benchmark();
 		Benchmark(const std::string& label);
 		~Benchmark();
+
+		void start(const std::string& label);
+		TimeStep stop();
 		
 	private:
 		Ptr<BenchmarkData> m_data;
+		Timer m_timer;
 	};
 
 	class ATEMA_CORE_API BenchmarkManager final : public NonCopyable
