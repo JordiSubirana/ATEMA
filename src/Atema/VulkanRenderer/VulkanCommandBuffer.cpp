@@ -148,15 +148,19 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 		if (Renderer::isDepthImageFormat(attachment.format) || Renderer::isStencilImageFormat(attachment.format))
 		{
-			vkClearValues[i].depthStencil.depth = value.depthStencil.depth;
-			vkClearValues[i].depthStencil.stencil = value.depthStencil.stencil;
+			const auto& depthStencil = value.get<DepthStencil>();
+
+			vkClearValues[i].depthStencil.depth = depthStencil.depth;
+			vkClearValues[i].depthStencil.stencil = depthStencil.stencil;
 		}
 		else
 		{
-			vkClearValues[i].color.float32[0] = value.color[0];
-			vkClearValues[i].color.float32[1] = value.color[1];
-			vkClearValues[i].color.float32[2] = value.color[2];
-			vkClearValues[i].color.float32[3] = value.color[3];
+			const auto& color = value.get<Color>();
+
+			vkClearValues[i].color.float32[0] = color.r;
+			vkClearValues[i].color.float32[1] = color.g;
+			vkClearValues[i].color.float32[2] = color.b;
+			vkClearValues[i].color.float32[3] = color.a;
 		}
 	}
 

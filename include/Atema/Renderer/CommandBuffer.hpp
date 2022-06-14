@@ -27,6 +27,9 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
 #include <Atema/Math/Vector.hpp>
+#include <Atema/Renderer/Color.hpp>
+#include <Atema/Core/Variant.hpp>
+#include <Atema/Renderer/DepthStencil.hpp>
 
 #include <vector>
 
@@ -49,18 +52,8 @@ namespace at
 			bool singleUse = false;
 			bool secondary = false;
 		};
-		
-		typedef union ClearValue
-		{
-			float color[4];
-			
-			struct
-			{
-				float depth;
-				uint32_t stencil;
-			} depthStencil;
-			
-		} ClearValue;
+
+		using ClearValue = Variant<Color, DepthStencil>;
 
 		CommandBuffer() = delete;
 		virtual ~CommandBuffer();
