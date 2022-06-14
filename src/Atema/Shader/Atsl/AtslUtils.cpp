@@ -73,6 +73,7 @@ namespace
 		{ BuiltInFunction::Cross, "cross" },
 		{ BuiltInFunction::Dot, "dot" },
 		{ BuiltInFunction::Norm, "norm" },
+		{ BuiltInFunction::Normalize, "normalize" },
 		{ BuiltInFunction::Sample, "sample" },
 		{ BuiltInFunction::SetVertexPosition, "setVertexPosition" },
 	};
@@ -84,6 +85,7 @@ namespace
 		{ "cross", BuiltInFunction::Cross },
 		{ "dot", BuiltInFunction::Dot },
 		{ "norm", BuiltInFunction::Norm },
+		{ "normalize", BuiltInFunction::Normalize },
 		{ "sample", BuiltInFunction::Sample },
 		{ "setVertexPosition", BuiltInFunction::SetVertexPosition },
 	};

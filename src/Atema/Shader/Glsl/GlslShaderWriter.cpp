@@ -745,6 +745,11 @@ void GlslShaderWriter::visit(BuiltInFunctionCallExpression& expression)
 				functionName = "length";
 				break;
 			}
+			case BuiltInFunction::Normalize:
+			{
+				functionName = "normalize";
+				break;
+			}
 			case BuiltInFunction::Sample:
 			{
 				functionName = "texture";

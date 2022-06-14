@@ -67,6 +67,7 @@ namespace at
 		Cross,
 		Dot,
 		Norm,
+		Normalize,
 		
 		Sample, // Arguments : sampler, index (primitive type or vector)
 
