@@ -451,10 +451,10 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 			// - cast
 			case AtslTokenType::Identifier:
 			{
-				// The identifier must be the first thing we get in this loop
-				ATEMA_ASSERT(!expression, "Unexpected identifier");
-
 				auto& identifier = token.value.get<AtslIdentifier>();
+
+				// The identifier must be the first thing we get in this loop
+				ATEMA_ASSERT(!expression, "Unexpected identifier '" + identifier + "'");
 
 				// Cast
 				if (atsl::isType(identifier))
