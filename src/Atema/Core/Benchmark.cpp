@@ -35,24 +35,40 @@ BenchmarkData::BenchmarkData() :
 }
 
 // Benchmark
-Benchmark::Benchmark(const std::string& label) :
-	ScopedTimer()
+Benchmark::Benchmark()
 {
-	m_data = BenchmarkManager::instance().getData(label);
+}
 
-	auto data = m_data;
-	
-	auto callback = [data](TimeStep timeStep)
-	{
-		data->timeStep += timeStep;
-	};
-
-	setCallback(callback);
+Benchmark::Benchmark(const std::string& label)
+{
+	start(label);
 }
 
 Benchmark::~Benchmark()
 {
+	stop();
+}
+
+void Benchmark::start(const std::string& label)
+{
+	stop();
+
+	m_data = BenchmarkManager::instance().getData(label);
+}
+
+TimeStep Benchmark::stop()
+{
+	const auto timeStep = m_timer.getStep();
+
+	if (!m_data)
+		return 0;
+
+	m_data->timeStep += timeStep;
+	m_data.reset();
+
 	BenchmarkManager::instance().decrement();
+
+	return timeStep;
 }
 
 // BenchmarkManager
@@ -133,10 +149,10 @@ Ptr<BenchmarkData> BenchmarkManager::getData(const std::string& label)
 
 		m_data[label] = data;
 
-		if (m_currentIndent == 0)
-			m_roots.push_back(data.get());
-		else
+		if (data->parent)
 			data->parent->children.push_back(data.get());
+		else
+			m_roots.push_back(data.get());
 	}
 
 	// Increment indent/data
