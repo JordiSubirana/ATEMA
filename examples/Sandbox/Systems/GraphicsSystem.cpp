@@ -22,6 +22,7 @@
 #include "GraphicsSystem.hpp"
 
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
+#include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
 
 #include "../Resources.hpp"
@@ -129,38 +130,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		m_shaders[path.string()] = Shader::create({ path });
 
 	//----- DEFERRED RESOURCES -----//
-	// Create RenderPass
-	{
-		RenderPass::Settings renderPassSettings;
-		renderPassSettings.subpasses.resize(1);
-
-		uint32_t attachmentIndex = 0;
-		
-		// Color attachments
-		for (auto& format : gBuffer)
-		{
-			AttachmentDescription attachment;
-			attachment.format = format;
-			attachment.initialLayout = ImageLayout::Undefined;
-			attachment.finalLayout = ImageLayout::ShaderRead;
-
-			renderPassSettings.attachments.push_back(attachment);
-			
-			renderPassSettings.subpasses[0].color.push_back(attachmentIndex++);
-		}
-
-		// Depth attachment
-		AttachmentDescription attachment;
-		attachment.format = m_depthFormat;
-
-		renderPassSettings.attachments.push_back(attachment);
-
-		renderPassSettings.subpasses[0].depthStencil = attachmentIndex;
-
-		// Create RenderPass
-		m_renderPass = RenderPass::create(renderPassSettings);
-	}
-
 	// Create Sampler
 	{
 		Sampler::Settings samplerSettings(SamplerFilter::Nearest);
@@ -196,11 +165,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		};
 
 		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
-	}
-
-	// Create descriptor set
-	{
-		m_ppDescriptorSet = m_ppDescriptorSetLayout->createSet();
 	}
 
 	// Create quad
@@ -286,12 +250,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
 	}
 
-	//----- THREAD RESOURCES -----//
-	m_threadCommandBuffers.resize(TaskManager::instance().getSize());
-
-	for (auto& threadCommandBuffers : m_threadCommandBuffers)
-		threadCommandBuffers.resize(maxFramesInFlight);
-
 	//----- MISC -----//
 
 	// Create size dependent resources
@@ -306,13 +264,6 @@ GraphicsSystem::~GraphicsSystem()
 
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
-	m_ppDescriptorSet.reset();
-
-	m_renderPass.reset();
-
-	m_gbufferFramebuffer.reset();
-	m_gbufferDepthImage.reset();
-	m_gbufferImages.clear();
 
 	m_ppSampler.reset();
 
@@ -362,125 +313,191 @@ void GraphicsSystem::onEvent(Event& event)
 	}
 }
 
+void GraphicsSystem::createFrameGraph()
+{
+	FrameGraphTextureSettings textureSettings;
+	textureSettings.width = m_windowSize.x;
+	textureSettings.height = m_windowSize.y;
+
+	FrameGraphBuilder frameGraphBuilder;
+
+	//-----
+	// Texture setup
+	std::vector<FrameGraphTextureHandle> gbufferTextures;
+	gbufferTextures.reserve(gBuffer.size());
+
+	for (auto& format : gBuffer)
+	{
+		textureSettings.format = format;
+
+		auto texture = frameGraphBuilder.createTexture(textureSettings);
+
+		gbufferTextures.emplace_back(texture);
+	}
+
+	textureSettings.format = m_depthFormat;
+	auto gbufferDepthTexture = frameGraphBuilder.createTexture(textureSettings);
+
+	//-----
+	// Pass setup
+
+	// Geometry
+	{
+		auto& pass = frameGraphBuilder.createPass("geometry");
+
+		uint32_t gbufferTextureIndex = 0;
+		for (const auto& texture : gbufferTextures)
+			pass.addOutputTexture(texture, gbufferTextureIndex++, Color::Black);
+
+		pass.setDepthTexture(gbufferDepthTexture, DepthStencil(1.0f, 0));
+
+		pass.enableSecondaryCommandBuffers(true);
+
+		pass.setExecutionCallback([this](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (scene)");
+
+				const auto frameIndex = context.getFrameIndex();
+				auto& frameData = m_frameDatas[frameIndex];
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				auto& entityManager = getEntityManager();
+
+				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
+
+				auto& taskManager = TaskManager::instance();
+
+				std::vector<Ptr<Task>> tasks;
+				tasks.reserve(threadCount);
+
+				std::vector<Ptr<CommandBuffer>> commandBuffers;
+				commandBuffers.resize(threadCount);
+
+				size_t firstIndex = 0;
+				const size_t size = entities.size() / threadCount;
+
+				for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+				{
+					auto lastIndex = firstIndex + size;
+
+					if (taskIndex == threadCount - 1)
+					{
+						const auto remainingSize = entities.size() - lastIndex;
+
+						lastIndex += remainingSize;
+					}
+
+					auto task = taskManager.createTask([this, &context, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
+						{
+							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
+
+							commandBuffer->bindPipeline(m_gbufferPipeline);
+
+							commandBuffer->setViewport(m_viewport);
+
+							commandBuffer->setScissor(Vector2i(), m_windowSize);
+
+							commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
+
+							uint32_t i = static_cast<uint32_t>(firstIndex);
+							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+							{
+								auto& graphics = entities.get<GraphicsComponent>(*it);
+
+								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
+
+								commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
+
+								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
+
+								commandBuffer->drawIndexed(graphics.indexCount);
+
+								i++;
+							}
+
+							commandBuffer->end();
+
+							commandBuffers[taskIndex] = commandBuffer;
+						});
+
+					tasks.push_back(task);
+
+					firstIndex += size;
+				}
+
+				for (auto& task : tasks)
+					task->wait();
+
+				commandBuffer.executeSecondaryCommands(commandBuffers);
+			});
+	}
+
+	// Post process
+	{
+		auto& pass = frameGraphBuilder.createPass("post process");
+
+		for (const auto& texture : gbufferTextures)
+			pass.addSampledTexture(texture, ShaderStage::Fragment);
+
+		pass.enableRenderFrameOutput(true);
+
+		pass.setExecutionCallback([this, gbufferTextures](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (post process)");
+
+				auto ppDescriptorSet = m_ppDescriptorSetLayout->createSet();
+
+				// Write descriptor set
+				{
+					for (uint32_t i = 0; i < gbufferTextures.size(); i++)
+					{
+						auto gbufferImage = context.getTexture(gbufferTextures[i]);
+						ppDescriptorSet->update(i, gbufferImage, m_ppSampler);
+					}
+				}
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				commandBuffer.bindPipeline(m_ppPipeline);
+
+				commandBuffer.setViewport(m_viewport);
+
+				commandBuffer.setScissor(Vector2i(), m_windowSize);
+
+				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+
+				commandBuffer.bindDescriptorSet(0, ppDescriptorSet);
+
+				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+
+				context.destroyAfterUse(std::move(ppDescriptorSet));
+			});
+	}
+
+	//-----
+	// Build frame graph
+	m_frameGraph = frameGraphBuilder.build();
+}
+
 void GraphicsSystem::onResize(const Vector2u& size)
 {
 	Renderer::instance().waitForIdle();
-
-	// Create color images
-	{
-		m_gbufferImages.clear();
-
-		for (auto& format : gBuffer)
-		{
-			Image::Settings imageSettings;
-			imageSettings.format = format;
-			imageSettings.width = size.x;
-			imageSettings.height = size.y;
-			imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderSampling;
-
-			auto image = Image::create(imageSettings);
-
-			m_gbufferImages.push_back(image);
-		}
-	}
-
-	// Create depth image
-	{
-		Image::Settings imageSettings;
-		imageSettings.format = m_depthFormat;
-		imageSettings.width = size.x;
-		imageSettings.height = size.y;
-		imageSettings.usages = ImageUsage::RenderTarget;
-
-		m_gbufferDepthImage = Image::create(imageSettings);
-	}
-
-	// Create gbuffer framebuffer
-	{
-		Framebuffer::Settings framebufferSettings;
-		framebufferSettings.width = size.x;
-		framebufferSettings.height = size.y;
-		framebufferSettings.images = m_gbufferImages;
-		framebufferSettings.images.push_back(m_gbufferDepthImage);
-		framebufferSettings.renderPass = m_renderPass;
-
-		m_gbufferFramebuffer = Framebuffer::create(framebufferSettings);
-	}
-
-	// Write descriptor set
-	{
-		for (uint32_t i = 0; i < gBuffer.size(); i++)
-			m_ppDescriptorSet->update(i, m_gbufferImages[i], m_ppSampler);
-	}
 
 	m_viewport.size.x = static_cast<float>(size.x);
 	m_viewport.size.y = static_cast<float>(size.y);
 	m_windowSize = size;
 
-	// Clear command buffers
-	for (auto& threadCommandBuffers : m_threadCommandBuffers)
-		for (auto& commandBuffers : threadCommandBuffers)
-			commandBuffers.clear();
-
-	for (auto& frameData : m_frameDatas)
-		frameData.commandBuffer.reset();
+	createFrameGraph();
 }
 
 void GraphicsSystem::updateFrame()
 {
-	//-----
+	Benchmark benchmark("RenderWindow::acquireFrame");
 
-	FrameGraphBuilder builder;
+	auto& renderFrame = m_renderWindow.lock()->acquireFrame();
 
-	FrameGraphTextureSettings textureSettings;
-
-	auto t11 = builder.createTexture(textureSettings);
-	auto t12 = builder.createTexture(textureSettings);
-	auto t21 = builder.createTexture(textureSettings);
-	auto t22 = builder.createTexture(textureSettings);
-	auto t1 = builder.createTexture(textureSettings);
-	auto t2 = builder.createTexture(textureSettings);
-	auto tf = builder.importTexture(m_gbufferImages[0]);
-
-	auto& p11 = builder.createPass("Pass #11");
-	auto& p12 = builder.createPass("Pass #12");
-	auto& p21 = builder.createPass("Pass #21");
-	auto& p22 = builder.createPass("Pass #22");
-	auto& p1 = builder.createPass("Pass #1");
-	auto& p2 = builder.createPass("Pass #2");
-	auto& pf = builder.createPass("Pass #final");
-
-	p11.setOutputTexture(t11);
-	p12.setOutputTexture(t12);
-
-	p21.setOutputTexture(t21);
-	p22.setOutputTexture(t22);
-
-	p1.setInputTexture(t11);
-	p1.setInputTexture(t12);
-	p1.setOutputTexture(t1);
-
-	p2.setInputTexture(t21);
-	p2.setInputTexture(t22);
-	p2.setOutputTexture(t2);
-
-	pf.setInputTexture(t1);
-	pf.setInputTexture(t2);
-	pf.setOutputTexture(tf);
-
-	builder.build();
-
-	//-----
-
-	RenderFrame* _frame = nullptr;
-
-	{
-		ATEMA_BENCHMARK("RenderWindow::acquireFrame");
-
-		_frame = &m_renderWindow.lock()->acquireFrame();
-	}
-
-	auto& renderFrame = *_frame;
+	benchmark.stop();
 
 	const auto frameIndex = renderFrame.getFrameIndex();
 
@@ -489,165 +506,9 @@ void GraphicsSystem::updateFrame()
 	// Update scene data
 	updateUniformBuffers(frameData);
 
-	// CommandBuffer
-	CommandBuffer::Settings commandBufferSettings;
-	commandBufferSettings.singleUse = true;
+	benchmark.start("FrameGraph::execute");
 
-	// Save command buffer
-	frameData.commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
-
-	// Local variable for convenience
-	auto& commandBuffer = frameData.commandBuffer;
-	commandBuffer->begin();
-
-	// Deferred pass
-	std::vector<CommandBuffer::ClearValue> gBufferClearValues;
-
-	for (auto& format : gBuffer)
-		gBufferClearValues.push_back({ 0.0f, 0.0f, 0.0f, 1.0f });
-
-	gBufferClearValues.push_back({ 1.0f, 0 });
-
-	commandBuffer->beginRenderPass(m_renderPass, m_gbufferFramebuffer, gBufferClearValues, true);
-
-	// Update objects buffers
-	{
-		ATEMA_BENCHMARK("CommandBuffer (scene)");
-
-		// Clear previous command buffers
-		for (auto& threadCommandBuffers : m_threadCommandBuffers)
-			threadCommandBuffers[frameIndex].clear();
-
-		auto& entityManager = getEntityManager();
-
-		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
-
-		auto& taskManager = TaskManager::instance();
-
-		std::vector<Ptr<Task>> tasks;
-		tasks.reserve(threadCount);
-
-		std::vector<Ptr<CommandBuffer>> commandBuffers;
-		commandBuffers.resize(threadCount);
-
-		size_t firstIndex = 0;
-		const size_t size = entities.size() / threadCount;
-
-		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
-		{
-			auto lastIndex = firstIndex + size;
-
-			if (taskIndex == threadCount - 1)
-			{
-				const auto remainingSize = entities.size() - lastIndex;
-
-				lastIndex += remainingSize;
-			}
-
-			auto task = taskManager.createTask([this, &renderFrame, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
-				{
-					auto commandBuffer = renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
-
-					commandBuffer->beginSecondary(m_renderPass, m_gbufferFramebuffer);
-
-					commandBuffer->bindPipeline(m_gbufferPipeline);
-
-					commandBuffer->setViewport(m_viewport);
-
-					commandBuffer->setScissor(Vector2i(), m_windowSize);
-
-					commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
-
-					uint32_t i = static_cast<uint32_t>(firstIndex);
-					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
-					{
-						auto& graphics = entities.get<GraphicsComponent>(*it);
-						
-						commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
-
-						commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
-						
-						commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
-
-						commandBuffer->drawIndexed(graphics.indexCount);
-
-						i++;
-					}
-
-					commandBuffer->end();
-
-					m_threadCommandBuffers[threadIndex][frameIndex].push_back(commandBuffer);
-
-					commandBuffers[taskIndex] = commandBuffer;
-				});
-
-			tasks.push_back(task);
-
-			firstIndex += size;
-		}
-
-		for (auto& task : tasks)
-			task->wait();
-
-		commandBuffer->executeSecondaryCommands(commandBuffers);
-
-		commandBuffer->endRenderPass();
-
-		for (auto& image : m_gbufferImages)
-		{
-			commandBuffer->imageBarrier(
-				image,
-				PipelineStage::ColorAttachmentOutput, MemoryAccess::ColorAttachmentWrite, ImageLayout::ShaderRead,
-				PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
-		}
-	}
-
-	// Post process pass
-	{
-		ATEMA_BENCHMARK("CommandBuffer (post process)");
-
-		const std::vector<CommandBuffer::ClearValue> postProcessClearValues =
-		{
-			{ 0.0f, 0.0f, 0.0f, 1.0f },
-			{ 1.0f, 0 }
-		};
-
-		commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), postProcessClearValues, false);
-
-		commandBuffer->bindPipeline(m_ppPipeline);
-
-		commandBuffer->setViewport(m_viewport);
-
-		commandBuffer->setScissor(Vector2i(), m_windowSize);
-
-		commandBuffer->bindVertexBuffer(m_ppQuad, 0);
-
-		commandBuffer->bindDescriptorSet(0, m_ppDescriptorSet);
-
-		commandBuffer->draw(static_cast<uint32_t>(quadVertices.size()));
-
-		commandBuffer->endRenderPass();
-
-		commandBuffer->end();
-	}
-
-	renderFrame.getFence()->reset();
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::submit");
-
-		renderFrame.submit(
-			{ commandBuffer },
-			{ renderFrame.getImageAvailableWaitCondition() },
-			{ renderFrame.getRenderFinishedSemaphore() },
-			renderFrame.getFence());
-	}
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::present");
-
-		renderFrame.present();
-	}
+	m_frameGraph->execute(renderFrame);
 }
 
 void GraphicsSystem::updateUniformBuffers(FrameData& frameData)

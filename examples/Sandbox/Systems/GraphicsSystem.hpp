@@ -40,9 +40,9 @@ private:
 		at::Ptr<at::Buffer> frameUniformBuffer;
 		at::Ptr<at::Buffer> objectsUniformBuffer;
 		at::Ptr<at::DescriptorSet> descriptorSet;
-		at::Ptr<at::CommandBuffer> commandBuffer;
 	};
 
+	void createFrameGraph();
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
 
@@ -57,12 +57,10 @@ private:
 	at::Viewport m_viewport;
 	at::Vector2u m_windowSize;
 
-	// Rendering resources (deferred)
-	at::Ptr<at::RenderPass> m_renderPass;
+	// FrameGraph
+	at::Ptr<at::FrameGraph> m_frameGraph;
 
-	std::vector<at::Ptr<at::Image>> m_gbufferImages;
-	at::Ptr<at::Image> m_gbufferDepthImage;
-	at::Ptr<at::Framebuffer> m_gbufferFramebuffer;
+	// Rendering resources (deferred)
 	at::Ptr<at::GraphicsPipeline> m_gbufferPipeline;
 
 	// Rendering resources (post process)
@@ -70,7 +68,6 @@ private:
 	at::Ptr<at::Sampler> m_ppSampler;
 	at::Ptr<at::GraphicsPipeline> m_ppPipeline;
 	at::Ptr<at::DescriptorSetLayout> m_ppDescriptorSetLayout;
-	at::Ptr<at::DescriptorSet> m_ppDescriptorSet;
 
 	// Object resources
 	at::Ptr<at::DescriptorSetLayout> m_materialDescriptorSetLayout;
@@ -80,9 +77,6 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
-
-	// Thread data
-	std::vector<std::vector<std::vector<at::Ptr<at::CommandBuffer>>>> m_threadCommandBuffers;
 
 	// Shaders
 	std::unordered_map<std::string, at::Ptr<at::Shader>> m_shaders;
