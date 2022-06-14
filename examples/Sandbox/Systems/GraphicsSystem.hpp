@@ -42,6 +42,8 @@ private:
 		at::Ptr<at::DescriptorSet> descriptorSet;
 	};
 
+	void translateShaders();
+
 	void createFrameGraph();
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
@@ -77,9 +79,6 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
-
-	// Shaders
-	std::unordered_map<std::string, at::Ptr<at::Shader>> m_shaders;
 };
 
 #endif

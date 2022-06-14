@@ -1,10 +1,3 @@
-option
-{
-	bool option1;
-	vec2f option2 = vec2f(12.0, 11.3);
-	int option3 = a * (b + c) * d;
-}
-
 struct FrameData
 {
 	mat4f proj;

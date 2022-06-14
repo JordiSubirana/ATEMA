@@ -21,6 +21,7 @@
 
 #include "GraphicsSystem.hpp"
 
+#include <fstream>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
@@ -33,6 +34,21 @@ using namespace at;
 
 namespace
 {
+	const auto shaderPath = rscPath / "Shaders";
+
+	const auto gbufferVS = shaderPath / "GBufferVS.spv";
+	const auto gbufferFS = shaderPath / "GBufferFS.spv";
+	const auto postProcessVS = shaderPath / "PostProcessVS.spv";
+	const auto colorFS = shaderPath / "ColorFS.spv";
+
+	const std::vector<std::filesystem::path> shaderPaths =
+	{
+		gbufferVS,
+		gbufferFS,
+		postProcessVS,
+		colorFS
+	};
+
 	constexpr size_t targetThreadCount = 8;
 
 	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
@@ -113,6 +129,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
+	translateShaders();
+
 	auto& renderer = Renderer::instance();
 
 	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
@@ -120,14 +138,10 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_depthFormat = renderWindow->getDepthFormat();
 
 	//----- SHADERS -----//
-	std::vector<std::filesystem::path> shaderPathes =
-	{
-		gbufferPassVS, gbufferPassFS,
-		ppOutputColorVS, ppOutputColorFS
-	};
+	std::unordered_map<std::string, Ptr<Shader>> shaders;
 
-	for (auto& path : shaderPathes)
-		m_shaders[path.string()] = Shader::create({ path });
+	for (auto& path : shaderPaths)
+		shaders[path.string()] = Shader::create({ path });
 
 	//----- DEFERRED RESOURCES -----//
 	// Create Sampler
@@ -154,8 +168,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create post process pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = m_shaders[ppOutputColorVS.string()];
-		pipelineSettings.fragmentShader = m_shaders[ppOutputColorFS.string()];
+		pipelineSettings.vertexShader = shaders[postProcessVS.string()];
+		pipelineSettings.fragmentShader = shaders[colorFS.string()];
 		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.inputs =
@@ -204,8 +218,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Gbuffer pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = m_shaders[gbufferPassVS.string()];
-		pipelineSettings.fragmentShader = m_shaders[gbufferPassFS.string()];
+		pipelineSettings.vertexShader = shaders[gbufferVS.string()];
+		pipelineSettings.fragmentShader = shaders[gbufferFS.string()];
 		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
@@ -260,8 +274,6 @@ GraphicsSystem::~GraphicsSystem()
 {
 	Renderer::instance().waitForIdle();
 
-	m_shaders.clear();
-
 	// Rendering resources
 	m_ppDescriptorSetLayout.reset();
 
@@ -310,6 +322,86 @@ void GraphicsSystem::onEvent(Event& event)
 		const auto& windowResizeEvent = static_cast<WindowResizeEvent&>(event);
 
 		onResize(windowResizeEvent.size);
+	}
+}
+
+void GraphicsSystem::translateShaders()
+{
+	ATEMA_BENCHMARK("GraphicsSystem::translateShaders")
+
+	std::filesystem::directory_iterator shaderDir(shaderPath);
+
+	for (const auto& entry : shaderDir)
+	{
+		auto& path = entry.path();
+
+		if (path.extension() == ".atsl")
+		{
+			std::cout << "Parsing shader : " << path.filename() << std::endl;
+
+			std::stringstream code;
+
+			{
+				std::ifstream file(path);
+
+				if (!file.is_open())
+				{
+					ATEMA_ERROR("Failed to open file '" + path.string() + "'");
+				}
+
+				code << file.rdbuf();
+			}
+
+			AtslParser parser;
+
+			const auto atslTokens = parser.createTokens(code.str());
+
+			AtslToAstConverter converter;
+
+			auto ast = converter.createAst(atslTokens);
+
+			std::vector<AstShaderStage> shaderStages = { AstShaderStage::Vertex, AstShaderStage::Fragment };
+			std::vector<std::string> glslSuffixes = { ".vert", ".frag" };
+			std::vector<std::string> spirvSuffixes = { "VS.spv", "FS.spv" };
+
+			for (size_t i = 0; i < shaderStages.size(); i++)
+			{
+				const auto& shaderStage = shaderStages[i];
+				const auto& glslSuffix = glslSuffixes[i];
+				const auto& spirvSuffix = spirvSuffixes[i];
+
+				AstStageExtractor stageExtractor;
+
+				ast->accept(stageExtractor);
+
+				try
+				{
+					auto stageAst = stageExtractor.getAst(shaderStage);
+
+					{
+						std::ofstream file(shaderPath / (path.stem().string() + glslSuffix));
+
+						GlslShaderWriter glslWriter(shaderStage, file);
+
+						stageAst->accept(glslWriter);
+					}
+
+					{
+						std::ofstream file(shaderPath / (path.stem().string() + spirvSuffix), std::ios::binary);
+
+						SpirvShaderWriter spvWriter(shaderStage);
+
+						stageAst->accept(spvWriter);
+
+						spvWriter.compile(file);
+					}
+				}
+				catch (...)
+				{
+					
+				}
+			}
+		}
 	}
 }
 

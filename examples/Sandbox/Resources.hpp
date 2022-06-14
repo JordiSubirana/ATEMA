@@ -27,14 +27,7 @@
 constexpr uint32_t objectRow = 50;
 constexpr uint32_t objectCount = objectRow * objectRow;
 
-const std::filesystem::path rscPath = "../../examples/Sandbox/Resources/";
-const auto shaderPath = rscPath / "Shaders";
-
-const auto gbufferATSL = shaderPath / "gbuffer.atsl";
-const auto gbufferPassVS = shaderPath / "gbufferVS.spv";
-const auto gbufferPassFS = shaderPath / "gbufferFS.spv";
-const auto ppOutputColorVS = shaderPath / "PP_OutputColorVS.spv";
-const auto ppOutputColorFS = shaderPath / "PP_OutputColorFS.spv";
+const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
 
 const float cameraScale = 0.001f;
 

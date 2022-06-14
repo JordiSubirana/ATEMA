@@ -1,0 +1,22 @@
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoord;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec2f outTexCoord;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f position = vec4f(inPosition, 1.0);
+	
+	outTexCoord = inTexCoord;
+	
+	setVertexPosition(position);
+}
