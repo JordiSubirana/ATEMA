@@ -19,14 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_FRAMEGRAPHTEXTURE_HPP
+#define ATEMA_GRAPHICS_FRAMEGRAPHTEXTURE_HPP
 
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
+#include <Atema/Renderer/Enums.hpp>
+
+namespace at
+{
+	using FrameGraphTextureHandle = size_t;
+
+	struct ATEMA_GRAPHICS_API FrameGraphTextureSettings
+	{
+		FrameGraphTextureSettings();
+		FrameGraphTextureSettings(uint32_t width, uint32_t height, ImageFormat format);
+
+		uint32_t width;
+		uint32_t height;
+		ImageFormat format;
+	};
+}
 
 #endif

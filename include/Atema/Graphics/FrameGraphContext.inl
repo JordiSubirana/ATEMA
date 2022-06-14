@@ -19,14 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_FRAMEGRAPHCONTEXT_INL
+#define ATEMA_GRAPHICS_FRAMEGRAPHCONTEXT_INL
 
-#include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
+
+namespace at
+{
+	template <typename T>
+	void FrameGraphContext::destroyAfterUse(T&& resource)
+	{
+		m_renderFrame.destroyAfterUse(std::forward<T>(resource));
+	}
+}
 
 #endif

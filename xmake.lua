@@ -23,6 +23,10 @@ local modules =
 	{
 		
 	},
+	Graphics =
+	{
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaWindow"}
+	},
 	Math =
 	{
 		
