@@ -88,6 +88,7 @@ VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t fr
 
 VulkanRenderFrame::~VulkanRenderFrame()
 {
+	destroyResources();
 }
 
 void VulkanRenderFrame::wait()

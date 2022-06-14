@@ -19,31 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#ifndef ATEMA_RENDERER_RENDERFRAME_INL
+#define ATEMA_RENDERER_RENDERFRAME_INL
+
 #include <Atema/Renderer/RenderFrame.hpp>
 
-using namespace at;
-
-RenderFrame::RenderFrame()
+namespace at
 {
+	template <typename T>
+	void RenderFrame::destroyAfterUse(T&& resource)
+	{
+		std::lock_guard lockGuard(m_resourceMutex);
+
+		auto resourceHandler = std::make_shared<ResourceHandler<T>>(std::forward<T>(resource));
+
+		m_resources.emplace_back(std::static_pointer_cast<AbstractResourceHandler>(resourceHandler));
+	}
+
+	template <typename T>
+	RenderFrame::ResourceHandler<T>::ResourceHandler(T&& resource) :
+		resource(std::forward<T>(resource))
+	{
+	}
 }
 
-RenderFrame::~RenderFrame()
-{
-	destroyResources();
-}
-
-WaitCondition RenderFrame::getImageAvailableWaitCondition() const noexcept
-{
-	WaitCondition waitCondition;
-	waitCondition.semaphore = getImageAvailableSemaphore();
-	waitCondition.pipelineStages = PipelineStage::ColorAttachmentOutput;
-
-	return waitCondition;
-}
-
-void RenderFrame::destroyResources()
-{
-	std::lock_guard lockGuard(m_resourceMutex);
-
-	m_resources.clear();
-}
+#endif

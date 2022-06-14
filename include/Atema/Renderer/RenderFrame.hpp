@@ -29,10 +29,14 @@
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 
+#include <shared_mutex>
+
 namespace at
 {
-	class ATEMA_RENDERER_API RenderFrame
+	class ATEMA_RENDERER_API RenderFrame : public NonCopyable
 	{
+		friend class RenderWindow;
+
 	public:
 		RenderFrame();
 		~RenderFrame();
@@ -59,7 +63,38 @@ namespace at
 			Ptr<Fence> fence = nullptr) = 0;
 
 		virtual void present() = 0;
+
+		template <typename T>
+		void destroyAfterUse(T&& resource);
+
+	protected:
+		void destroyResources();
+
+	private:
+		class AbstractResourceHandler
+		{
+		public:
+			AbstractResourceHandler() = default;
+			virtual ~AbstractResourceHandler() = default;
+		};
+
+		template <typename T>
+		class ResourceHandler : public AbstractResourceHandler
+		{
+		public:
+			ResourceHandler() = delete;
+			ResourceHandler(T&& resource);
+			virtual ~ResourceHandler() = default;
+
+		private:
+			T resource;
+		};
+
+		std::vector<Ptr<AbstractResourceHandler>> m_resources;
+		std::shared_mutex m_resourceMutex;
 	};
 }
+
+#include <Atema/Renderer/RenderFrame.inl>
 
 #endif

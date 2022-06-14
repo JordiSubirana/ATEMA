@@ -29,6 +29,11 @@ RenderWindow::RenderWindow(const RenderWindow::Settings& settings) :
 {
 }
 
+void RenderWindow::destroyResources(RenderFrame& renderFrame)
+{
+	renderFrame.destroyResources();
+}
+
 RenderWindow::~RenderWindow()
 {
 }

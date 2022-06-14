@@ -55,6 +55,8 @@ namespace at
 		
 	protected:
 		RenderWindow(const RenderWindow::Settings& settings);
+
+		void destroyResources(RenderFrame& renderFrame);
 	};
 }
 
