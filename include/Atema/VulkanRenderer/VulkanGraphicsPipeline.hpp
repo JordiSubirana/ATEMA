@@ -55,6 +55,9 @@ namespace at
 
 		const VulkanDevice& m_device;
 
+		Ptr<Shader> m_vertexShader;
+		Ptr<Shader> m_fragmentShader;
+
 		std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
 
 		VkPipelineVertexInputStateCreateInfo m_vertexInputInfo;

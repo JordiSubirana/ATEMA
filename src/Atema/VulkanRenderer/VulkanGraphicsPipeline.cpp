@@ -31,6 +31,8 @@ using namespace at;
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings) :
 	GraphicsPipeline(),
 	m_device(device),
+	m_vertexShader(settings.vertexShader),
+	m_fragmentShader(settings.fragmentShader),
 	m_pipelineLayout(VK_NULL_HANDLE)
 {
 	//-----
@@ -39,7 +41,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	m_shaderStages.resize(2);
 	{
 		// Vertex shader
-		auto vertShader = std::static_pointer_cast<VulkanShader>(settings.vertexShader);
+		auto vertShader = std::static_pointer_cast<VulkanShader>(m_vertexShader);
 
 		if (!vertShader)
 		{
@@ -56,7 +58,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 		vertShaderStageInfo.pNext = nullptr;
 
 		// Fragment shader
-		auto fragShader = std::static_pointer_cast<VulkanShader>(settings.fragmentShader);
+		auto fragShader = std::static_pointer_cast<VulkanShader>(m_fragmentShader);
 
 		if (!fragShader)
 		{
