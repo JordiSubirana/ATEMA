@@ -19,28 +19,22 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
-
-#include <Atema/Renderer/Buffer.hpp>
-#include <Atema/Renderer/Color.hpp>
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/DescriptorSetLayout.hpp>
-#include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Fence.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Sampler.hpp>
-#include <Atema/Renderer/Semaphore.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/Vertex.hpp>
-#include <Atema/Renderer/Viewport.hpp>
 
-#endif
+using namespace at;
+
+DepthStencil::DepthStencil() :
+	depth(1.0f),
+	stencil(0)
+{
+}
+
+DepthStencil::DepthStencil(float depth, uint32_t stencil) :
+	depth(depth),
+	stencil(stencil)
+{
+}
+
+DepthStencil::~DepthStencil()
+{
+}
