@@ -232,3 +232,8 @@ SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaph
 
 	return Vulkan::getSwapChainResult(result);
 }
+
+ImageFormat VulkanSwapChain::getFormat() const
+{
+	return Vulkan::getFormat(m_format);
+}

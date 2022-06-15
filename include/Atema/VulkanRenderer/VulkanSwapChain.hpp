@@ -62,6 +62,8 @@ namespace at
 		const std::vector<Ptr<Image>>& getImages() const noexcept;
 		
 		SwapChainResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
+
+		ImageFormat getFormat() const;
 		
 	private:
 		

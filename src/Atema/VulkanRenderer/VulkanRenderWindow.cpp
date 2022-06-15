@@ -300,6 +300,14 @@ void VulkanRenderWindow::createSwapChainResources()
 
 	m_swapChain = std::make_shared<VulkanSwapChain>(*this, swapChainSettings);
 
+	const auto colorFormat = m_swapChain->getFormat();
+
+	if (colorFormat != m_colorFormat)
+	{
+		m_colorFormat = colorFormat;
+		createRenderPass();
+	}
+
 	// Depth image
 	Image::Settings depthSettings;
 	depthSettings.width = windowSize.x;
