@@ -293,7 +293,7 @@ void FrameGraphBuilder::createRenderFrameOutput()
 	textureSettings.height = 0;
 
 	// Dummy color texture settings
-	textureSettings.format = ImageFormat::RGBA8_SRGB;
+	textureSettings.format = ImageFormat::RGBA8_UNORM;
 
 	m_renderFrameColorTextureHandle = createTexture(textureSettings);
 
