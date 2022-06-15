@@ -62,6 +62,7 @@ SandboxApplication::SandboxApplication():
 
 	// Window / SwapChain
 	RenderWindow::Settings renderWindowSettings;
+	renderWindowSettings.colorFormat = ImageFormat::RGBA8_UNORM;
 
 	m_window = Renderer::instance().createRenderWindow(renderWindowSettings);
 	m_window->getEventDispatcher().addListener([this](Event& event)
@@ -183,7 +184,7 @@ void SandboxApplication::createScene()
 	// Resources
 	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	m_materialData = std::make_shared<MaterialData>(modelTexturePath);
+	m_materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
 
 	// Create objects
 	const auto origin = -modelScale * (objectRow / 2.0f);
@@ -213,7 +214,12 @@ void SandboxApplication::createScene()
 			graphics.vertexBuffer = m_modelData->vertexBuffer;
 			graphics.indexBuffer = m_modelData->indexBuffer;
 			graphics.indexCount = m_modelData->indexCount;
-			graphics.texture = m_materialData->texture;
+			graphics.color = m_materialData->color;
+			graphics.normal = m_materialData->normal;
+			graphics.ambientOcclusion = m_materialData->ambientOcclusion;
+			graphics.emissive = m_materialData->emissive;
+			graphics.metalness = m_materialData->metalness;
+			graphics.roughness = m_materialData->roughness;
 			graphics.sampler = m_materialData->sampler;
 
 			// Velocity component

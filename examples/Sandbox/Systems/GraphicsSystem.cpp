@@ -24,6 +24,8 @@
 #include <fstream>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
+#include <Atema/Renderer/Buffer.hpp>
+#include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
 
 #include "../Resources.hpp"
@@ -39,14 +41,16 @@ namespace
 	const auto gbufferVS = shaderPath / "GBufferVS.spv";
 	const auto gbufferFS = shaderPath / "GBufferFS.spv";
 	const auto postProcessVS = shaderPath / "PostProcessVS.spv";
-	const auto colorFS = shaderPath / "ColorFS.spv";
+	const auto phongLightingFS = shaderPath / "PhongLightingFS.spv";
+	const auto screenFS = shaderPath / "ScreenFS.spv";
 
 	const std::vector<std::filesystem::path> shaderPaths =
 	{
 		gbufferVS,
 		gbufferFS,
 		postProcessVS,
-		colorFS
+		phongLightingFS,
+		screenFS
 	};
 
 	constexpr size_t targetThreadCount = 8;
@@ -60,13 +64,27 @@ namespace
 		// Normal
 		ImageFormat::RGBA32_SFLOAT,
 		// Color
-		ImageFormat::RGBA8_SRGB
+		ImageFormat::RGBA8_UNORM,
+		// Ambient occlusion
+		ImageFormat::RGBA8_UNORM,
+		// Emissive
+		ImageFormat::RGBA8_UNORM,
+		// Metalness
+		ImageFormat::RGBA8_UNORM,
+		// Roughness
+		ImageFormat::RGBA8_UNORM,
 	};
 	
 	struct PPVertex
 	{
 		Vector3f position;
 		Vector2f texCoords;
+	};
+
+	std::vector<VertexInput> postProcessVertexInput =
+	{
+		{ 0, 0, VertexFormat::RGB32_SFLOAT },
+		{ 0, 1, VertexFormat::RG32_SFLOAT }
 	};
 
 	std::vector<PPVertex> quadVertices =
@@ -120,6 +138,13 @@ namespace
 	{
 		Matrix4f model;
 	};
+
+	struct UniformPhongLightingData
+	{
+		Vector4f lightPosition;
+		Vector4f lightColor;
+		float ambientStrength;
+	};
 }
 
 GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
@@ -158,27 +183,39 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment },
 			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment }
+			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 6, 1, ShaderStage::Fragment }
 		};
 		descriptorSetLayoutSettings.pageSize = 1;
 
 		m_ppDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
-	// Create post process pipeline
+	// Create screen descriptor set layout
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment }
+		};
+		descriptorSetLayoutSettings.pageSize = 1;
+
+		m_screenDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	}
+
+	// Create screen pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.vertexShader = shaders[postProcessVS.string()];
-		pipelineSettings.fragmentShader = shaders[colorFS.string()];
-		pipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout };
+		pipelineSettings.fragmentShader = shaders[screenFS.string()];
+		pipelineSettings.descriptorSetLayouts = { m_screenDescriptorSetLayout };
 		// Position / TexCoords
-		pipelineSettings.vertexInput.inputs =
-		{
-			{ 0, 0, VertexFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexFormat::RG32_SFLOAT }
-		};
+		pipelineSettings.vertexInput.inputs = postProcessVertexInput;
 
-		m_ppPipeline = GraphicsPipeline::create(pipelineSettings);
+		m_screenPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
 
 	// Create quad
@@ -193,7 +230,12 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment }
+			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment }
 		};
 		descriptorSetLayoutSettings.pageSize = 1;
 
@@ -225,7 +267,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			{ 0, 0, VertexFormat::RGB32_SFLOAT },
 			{ 0, 1, VertexFormat::RGB32_SFLOAT },
-			{ 0, 2, VertexFormat::RG32_SFLOAT }
+			{ 0, 2, VertexFormat::RGB32_SFLOAT },
+			{ 0, 3, VertexFormat::RGB32_SFLOAT },
+			{ 0, 4, VertexFormat::RG32_SFLOAT }
 		};
 
 		m_gbufferPipeline = GraphicsPipeline::create(pipelineSettings);
@@ -264,6 +308,54 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
 	}
 
+	//----- PHONG LIGHTING -----//
+
+	// Fill pass data buffer
+	{
+		UniformPhongLightingData passData;
+		passData.lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+		passData.lightPosition = { 0.0f, 10.0f, 10.0f, 1.0f };
+		passData.ambientStrength = 0.1f;
+
+		Buffer::Settings bufferSettings;
+		bufferSettings.usage = BufferUsage::Uniform;
+		bufferSettings.byteSize = sizeof(passData);
+		bufferSettings.mappable = true;
+
+		m_phongBufferData = Buffer::create(bufferSettings);
+
+		void* data = m_phongBufferData->map();
+
+		memcpy(data, static_cast<void*>(&passData), sizeof(passData));
+
+		m_phongBufferData->unmap();
+	}
+
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.pageSize = 1;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
+		};
+
+		m_phongDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+
+		m_phongDescriptorSet = m_phongDescriptorSetLayout->createSet();
+
+		m_phongDescriptorSet->update(0, m_phongBufferData);
+	}
+
+	{
+		GraphicsPipeline::Settings graphicsPipelineSettings;
+		graphicsPipelineSettings.vertexShader = shaders[postProcessVS.string()];
+		graphicsPipelineSettings.fragmentShader = shaders[phongLightingFS.string()];
+		graphicsPipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout, m_phongDescriptorSetLayout };
+		graphicsPipelineSettings.vertexInput.inputs = postProcessVertexInput;
+
+		m_phongPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
+	}
+
 	//----- MISC -----//
 
 	// Create size dependent resources
@@ -279,7 +371,9 @@ GraphicsSystem::~GraphicsSystem()
 
 	m_ppSampler.reset();
 
-	m_ppPipeline.reset();
+	m_screenDescriptorSetLayout.reset();
+
+	m_screenPipeline.reset();
 
 	// Frame resources
 	m_frameDescriptorSetLayout.reset();
@@ -304,7 +398,12 @@ void GraphicsSystem::update(TimeStep timeStep)
 			auto& graphics = sparseUnion.get<GraphicsComponent>(*sparseUnion.begin());
 
 			m_materialDescriptorSet = m_materialDescriptorSetLayout->createSet();
-			m_materialDescriptorSet->update(0, graphics.texture, graphics.sampler);
+			m_materialDescriptorSet->update(0, graphics.color, graphics.sampler);
+			m_materialDescriptorSet->update(1, graphics.normal, graphics.sampler);
+			m_materialDescriptorSet->update(2, graphics.ambientOcclusion, graphics.sampler);
+			m_materialDescriptorSet->update(3, graphics.emissive, graphics.sampler);
+			m_materialDescriptorSet->update(4, graphics.metalness, graphics.sampler);
+			m_materialDescriptorSet->update(5, graphics.roughness, graphics.sampler);
 		}
 	}
 	
@@ -396,6 +495,10 @@ void GraphicsSystem::translateShaders()
 						spvWriter.compile(file);
 					}
 				}
+				catch (const std::exception& e)
+				{
+					std::cout << e.what() << std::endl;
+				}
 				catch (...)
 				{
 					
@@ -429,6 +532,9 @@ void GraphicsSystem::createFrameGraph()
 
 	textureSettings.format = m_depthFormat;
 	auto gbufferDepthTexture = frameGraphBuilder.createTexture(textureSettings);
+
+	textureSettings.format = gBuffer[0];
+	auto phongOutputTexture = frameGraphBuilder.createTexture(textureSettings);
 
 	//-----
 	// Pass setup
@@ -525,18 +631,18 @@ void GraphicsSystem::createFrameGraph()
 			});
 	}
 
-	// Post process
+	// Phong Lighting
 	{
-		auto& pass = frameGraphBuilder.createPass("post process");
+		auto& pass = frameGraphBuilder.createPass("phong lighting");
 
 		for (const auto& texture : gbufferTextures)
 			pass.addSampledTexture(texture, ShaderStage::Fragment);
 
-		pass.enableRenderFrameOutput(true);
+		pass.addOutputTexture(phongOutputTexture, 0, Color::Black);
 
-		pass.setExecutionCallback([this, gbufferTextures](FrameGraphContext& context)
+		pass.setExecutionCallback([this, gbufferTextures, phongOutputTexture](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (post process)");
+				ATEMA_BENCHMARK("CommandBuffer (phong lighting)");
 
 				auto ppDescriptorSet = m_ppDescriptorSetLayout->createSet();
 
@@ -551,7 +657,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto& commandBuffer = context.getCommandBuffer();
 
-				commandBuffer.bindPipeline(m_ppPipeline);
+				commandBuffer.bindPipeline(m_phongPipeline);
 
 				commandBuffer.setViewport(m_viewport);
 
@@ -560,10 +666,45 @@ void GraphicsSystem::createFrameGraph()
 				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
 
 				commandBuffer.bindDescriptorSet(0, ppDescriptorSet);
+				commandBuffer.bindDescriptorSet(1, m_phongDescriptorSet);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
 				context.destroyAfterUse(std::move(ppDescriptorSet));
+			});
+	}
+
+	// Screen
+	{
+		auto& pass = frameGraphBuilder.createPass("screen");
+
+		pass.addSampledTexture(phongOutputTexture, ShaderStage::Fragment);
+
+		pass.enableRenderFrameOutput(true);
+
+		pass.setExecutionCallback([this, phongOutputTexture](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (screen)");
+
+				auto descriptorSet = m_screenDescriptorSetLayout->createSet();
+
+				descriptorSet->update(0, context.getTexture(phongOutputTexture), m_ppSampler);
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				commandBuffer.bindPipeline(m_screenPipeline);
+
+				commandBuffer.setViewport(m_viewport);
+
+				commandBuffer.setScissor(Vector2i(), m_windowSize);
+
+				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+
+				commandBuffer.bindDescriptorSet(0, descriptorSet);
+
+				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+
+				context.destroyAfterUse(std::move(descriptorSet));
 			});
 	}
 
@@ -650,8 +791,6 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	{
 		auto data = static_cast<uint8_t*>(frameData.objectsUniformBuffer->map());
 
-		const auto basisChange = Matrix4f::createRotation({ Math::toRadians(90.0f), 0.0f, 0.0f });
-
 		auto& entityManager = getEntityManager();
 
 		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
@@ -676,7 +815,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, data, basisChange, firstIndex, lastIndex, &entities]()
+			auto task = taskManager.createTask([this, data, firstIndex, lastIndex, &entities]()
 				{
 					auto it = entities.begin() + firstIndex;
 
@@ -685,7 +824,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 						auto& transform = entities.get<Transform>(*it);
 
 						UniformObjectElement objectTransforms;
-						objectTransforms.model = transform.getMatrix() * basisChange;
+						objectTransforms.model = transform.getMatrix();
 
 						memcpy(static_cast<void*>(&data[j * m_dynamicObjectBufferOffset]), static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
 

@@ -29,7 +29,14 @@ struct GraphicsComponent
 	at::Ptr<at::Buffer> vertexBuffer;
 	at::Ptr<at::Buffer> indexBuffer;
 	uint32_t indexCount = 0;
-	at::Ptr<at::Image> texture;
+
+	at::Ptr<at::Image> color;
+	at::Ptr<at::Image> normal;
+	at::Ptr<at::Image> ambientOcclusion;
+	at::Ptr<at::Image> emissive;
+	at::Ptr<at::Image> metalness;
+	at::Ptr<at::Image> roughness;
+
 	at::Ptr<at::Sampler> sampler;
 };
 

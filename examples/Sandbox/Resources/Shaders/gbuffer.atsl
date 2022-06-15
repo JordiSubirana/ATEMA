@@ -13,43 +13,58 @@ external
 {
 	[set(0), binding(0)] FrameData frameData;
 	[set(0), binding(1)] ObjectData objectData;
-	[set(1), binding(0)] sampler2Df texSampler;
+	
+	[set(1), binding(0)] sampler2Df materialColor;
+	[set(1), binding(1)] sampler2Df materialNormal;
+	[set(1), binding(2)] sampler2Df materialAO;
+	[set(1), binding(3)] sampler2Df materialEmissive;
+	[set(1), binding(4)] sampler2Df materialMetalness;
+	[set(1), binding(5)] sampler2Df materialRoughness;
 }
 
 [stage(vertex)]
 input
 {
 	[location(0)] vec3f inPosition;
-	[location(1)] vec3f inColor;
-	[location(2)] vec2f inTexCoord;
+	[location(1)] vec3f inNormal;
+	[location(2)] vec3f inTangent;
+	[location(3)] vec3f inBitangent;
+	[location(4)] vec2f inTexCoord;
 }
 
 [stage(vertex)]
 output
 {
-	[location(0)] vec3f outColor;
+	[location(0)] vec3f outPosition;
 	[location(1)] vec2f outTexCoord;
-	[location(2)] vec3f outPosition;
+	[location(2)] mat3f outTBN;
 }
 
 [entry(vertex)]
 void main()
 {
-	vec4f position = frameData.proj * frameData.view * objectData.model * vec4f(inPosition, 1.0);
+	vec4f worldPos = objectData.model * vec4f(inPosition, 1.0);
+	vec3f worldNormal = normalize(objectData.model * vec4f(inNormal, 0.0)).xyz;
+	vec3f worldTangent = normalize(objectData.model * vec4f(inTangent, 0.0)).xyz;
+	vec3f worldBitangent = normalize(objectData.model * vec4f(inBitangent, 0.0)).xyz;
 	
-	outColor = inColor;
+	outPosition = worldPos.xyz;
+	
+	outTBN = mat3f(worldTangent, worldBitangent, worldNormal);
+	
 	outTexCoord = inTexCoord;
-	outPosition = position.xyz;
 	
-	setVertexPosition(position);
+	vec4f screenPosition = frameData.proj * frameData.view * worldPos;
+	
+	setVertexPosition(screenPosition);
 }
 
 [stage(fragment)]
 input
 {
-	[location(0)] vec3f inColor;
+	[location(0)] vec3f inPosition;
 	[location(1)] vec2f inTexCoord;
-	[location(2)] vec3f inPosition;
+	[location(2)] mat3f inTBN;
 }
 
 [stage(fragment)]
@@ -58,13 +73,33 @@ output
 	[location(0)] vec4f outPosition;
 	[location(1)] vec4f outNormal;
 	[location(2)] vec4f outColor;
+	[location(3)] vec4f outAO;
+	[location(4)] vec4f outEmissive;
+	[location(5)] vec4f outMetalness;
+	[location(6)] vec4f outRoughness;
 }
 
 [entry(fragment)]
 void main()
 {
+	vec4f matColor = sample(materialColor, inTexCoord);
+	vec3f matNormal = sample(materialNormal, inTexCoord).xyz;
+	float matAO = sample(materialAO, inTexCoord).r;
+	vec3f matEmissive = sample(materialEmissive, inTexCoord).rgb;
+	float matMetalness = sample(materialMetalness, inTexCoord).r;
+	float matRoughness = sample(materialRoughness, inTexCoord).r;
+	
 	outPosition = vec4f(inPosition, 1.0);
-	outNormal = vec4f(inPosition, 0.0);
-    outColor = sample(texSampler, inTexCoord);
+	
+	vec3f normal = (matNormal * 2.0) - 1.0;
+	normal = normalize(inTBN * normal);
+	
+	outNormal = vec4f(normal, 0.0);
+	
+    outColor = sample(materialColor, inTexCoord);
+    outAO = vec4f(matAO, matAO, matAO, 1.0);
+    outEmissive = vec4f(matEmissive, 1.0);
+    outMetalness = vec4f(matMetalness, matMetalness, matMetalness, 1.0);
+    outRoughness = vec4f(matRoughness, matRoughness, matRoughness, 1.0);
 }
 

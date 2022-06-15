@@ -44,7 +44,8 @@ const auto zoomOffset = 40.0f;
 // Tardis
 //*
 const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
-const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis_blue_color.png";
+const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis";
+const std::string modelTextureExtension = "png";
 const float modelScale = 4.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 100.0f;
@@ -77,13 +78,15 @@ inline at::Vector2f toCartesian(const at::Vector2f& polar)
 
 struct BasicVertex
 {
-	at::Vector3f pos;
-	at::Vector3f color;
+	at::Vector3f position;
+	at::Vector3f normal;
+	at::Vector3f tangent;
+	at::Vector3f bitangent;
 	at::Vector2f texCoord;
 
 	bool operator==(const BasicVertex& other) const
 	{
-		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+		return position == other.position && normal == other.normal && tangent == other.tangent && bitangent == other.bitangent && texCoord == other.texCoord;
 	}
 };
 
@@ -93,9 +96,9 @@ namespace std
 	{
 		size_t operator()(at::Vector3f const& vertex) const noexcept
 		{
-			size_t h1 = std::hash<double>()(vertex.x);
-			size_t h2 = std::hash<double>()(vertex.y);
-			size_t h3 = std::hash<double>()(vertex.z);
+			size_t h1 = std::hash<float>()(vertex.x);
+			size_t h2 = std::hash<float>()(vertex.y);
+			size_t h3 = std::hash<float>()(vertex.z);
 			return (h1 ^ (h2 << 1)) ^ h3;
 		}
 	};
@@ -112,8 +115,8 @@ namespace std
 	{
 		size_t operator()(BasicVertex const& vertex) const noexcept
 		{
-			return ((hash<at::Vector3f>()(vertex.pos) ^
-				(hash<at::Vector3f>()(vertex.color) << 1)) >> 1) ^
+			return ((hash<at::Vector3f>()(vertex.position) ^
+				(hash<at::Vector3f>()(vertex.normal) << 1)) >> 1) ^
 				(hash<at::Vector2f>()(vertex.texCoord) << 1);
 		}
 	};
@@ -132,9 +135,15 @@ struct ModelData
 struct MaterialData
 {
 	MaterialData() = delete;
-	MaterialData(const std::filesystem::path& path);
+	MaterialData(const std::filesystem::path& path, const std::string& format);
 
-	at::Ptr<at::Image> texture;
+	at::Ptr<at::Image> color;
+	at::Ptr<at::Image> normal;
+	at::Ptr<at::Image> ambientOcclusion;
+	at::Ptr<at::Image> emissive;
+	at::Ptr<at::Image> metalness;
+	at::Ptr<at::Image> roughness;
+
 	at::Ptr<at::Sampler> sampler;
 };
 

@@ -68,7 +68,6 @@ private:
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;
 	at::Ptr<at::Sampler> m_ppSampler;
-	at::Ptr<at::GraphicsPipeline> m_ppPipeline;
 	at::Ptr<at::DescriptorSetLayout> m_ppDescriptorSetLayout;
 
 	// Object resources
@@ -79,6 +78,16 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
+
+	// Phong lighting
+	at::Ptr<at::Buffer> m_phongBufferData;
+	at::Ptr<at::DescriptorSetLayout> m_phongDescriptorSetLayout;
+	at::Ptr<at::DescriptorSet> m_phongDescriptorSet;
+	at::Ptr<at::GraphicsPipeline> m_phongPipeline;
+
+	// Screen
+	at::Ptr<at::DescriptorSetLayout> m_screenDescriptorSetLayout;
+	at::Ptr<at::GraphicsPipeline> m_screenPipeline;
 };
 
 #endif
