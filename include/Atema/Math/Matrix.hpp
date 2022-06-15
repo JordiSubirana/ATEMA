@@ -43,7 +43,8 @@ namespace at
 
 		Matrix<COL, ROW, T> operator +(const Matrix<COL, ROW, T>& arg) const;
 		Matrix<COL, ROW, T> operator -(const Matrix<COL, ROW, T>& arg) const;
-		Matrix<ROW, ROW, T> operator *(const Matrix<ROW, COL, T>& arg) const;
+		template <size_t OTHER_COL>
+		Matrix<OTHER_COL, ROW, T> operator *(const Matrix<OTHER_COL, COL, T>& arg) const;
 		Vector<ROW, T> operator *(const Vector<COL, T>& arg) const;
 		Matrix<COL, ROW, T> operator +(T arg) const;
 		Matrix<COL, ROW, T> operator -(T arg) const;
@@ -74,6 +75,22 @@ namespace at
 	};
 
 	// Specializations
+	template <typename T>
+	class Matrix2 : public Matrix<2, 2, T>
+	{
+	public:
+		Matrix2();
+		Matrix2(T arg);
+		Matrix2(const Matrix<2, 2, T>& arg);
+		~Matrix2();
+
+		static Matrix2<T> createInverse(const Matrix2<T>& m);
+
+		Matrix2<T> createInverse() const;
+
+		Matrix2<T>& inverse();
+	};
+
 	template <typename T>
 	class Matrix3 : public Matrix<3, 3, T>
 	{
@@ -121,7 +138,6 @@ namespace at
 	};
 
 	// Aliases
-	template <typename T> using Matrix2 = Matrix<2, 2, T>;
 	template <typename T> using Matrix2x2 = Matrix2<T>;
 	template <typename T> using Matrix2x3 = Matrix<2, 3, T>;
 	template <typename T> using Matrix2x4 = Matrix<2, 4, T>;

@@ -104,18 +104,17 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<ROW, ROW, T> Matrix<COL, ROW, T>::operator *(const Matrix<ROW, COL, T>& arg) const
+	template <size_t OTHER_COL>
+	Matrix<OTHER_COL, ROW, T> Matrix<COL, ROW, T>::operator*(const Matrix<OTHER_COL, COL, T>& arg) const
 	{
-		Matrix<ROW, ROW, T> tmp;
+		Matrix<OTHER_COL, ROW, T> tmp;
 
-		for (size_t t_c = 0; t_c < ROW; t_c++)
+		for (size_t tmpCol = 0; tmpCol < OTHER_COL; tmpCol++)
 		{
-			for (size_t t_r = 0; t_r < ROW; t_r++)
+			for (size_t row = 0; row < ROW; row++)
 			{
-				for (size_t c = 0; c < COL; c++)
-				{
-					tmp[t_c][t_r] += this->m_columns[c][t_r] * arg[t_c][c];
-				}
+				for (size_t col = 0; col < COL; col++)
+					tmp[tmpCol][row] += this->m_columns[col][row] * arg[tmpCol][col];
 			}
 		}
 
@@ -291,6 +290,55 @@ namespace at
 	const T* Matrix<COL, ROW, T>::get() const
 	{
 		return this->m_data;
+	}
+
+	//----- Matrix3f -----//
+	template <typename T>
+	Matrix2<T>::Matrix2() : Matrix<2, 2, T>()
+	{
+	}
+
+	template <typename T>
+	Matrix2<T>::Matrix2(T arg) : Matrix<2, 2, T>(arg)
+	{
+	}
+
+	template <typename T>
+	Matrix2<T>::Matrix2(const Matrix<2, 2, T>& arg) :Matrix<2, 2, T>(arg)
+	{
+	}
+
+	template <typename T>
+	Matrix2<T>::~Matrix2()
+	{
+	}
+
+	template <typename T>
+	Matrix2<T> Matrix2<T>::createInverse(const Matrix2<T>& m)
+	{
+		T oneOverDeterminant = static_cast<T>(1) / (m[0][0] * m[1][1] - m[0][1] * m[1][0]);
+
+		Matrix2<T> inverse;
+		inverse[0][0] = +m[1][1] * oneOverDeterminant;
+		inverse[1][0] = -m[1][0] * oneOverDeterminant;
+		inverse[0][1] = -m[0][1] * oneOverDeterminant;
+		inverse[1][1] = +m[0][0] * oneOverDeterminant;
+
+		return inverse;
+	}
+
+	template <typename T>
+	Matrix2<T> Matrix2<T>::createInverse() const
+	{
+		return createInverse(*this);
+	}
+
+	template <typename T>
+	Matrix2<T>& Matrix2<T>::inverse()
+	{
+		std::swap(*this, createInverse());
+
+		return *this;
 	}
 
 	//----- Matrix3f -----//
