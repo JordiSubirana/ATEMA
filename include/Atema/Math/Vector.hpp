@@ -22,6 +22,8 @@
 #ifndef ATEMA_MATH_VECTOR_HPP
 #define ATEMA_MATH_VECTOR_HPP
 
+#include <array>
+
 namespace at
 {
 	namespace detail
@@ -29,7 +31,7 @@ namespace at
 		template <size_t N, typename T>
 		struct VectorBase
 		{
-			T data[N];
+			std::array<T, N> data;
 		};
 
 		template <typename T>
@@ -37,7 +39,7 @@ namespace at
 		{
 			union
 			{
-				T data[2];
+				std::array<T, 2> data;
 				struct { T x, y; };
 			};
 		};
@@ -47,7 +49,7 @@ namespace at
 		{
 			union
 			{
-				T data[3];
+				std::array<T, 3> data;
 				struct { T x, y, z; };
 			};
 		};
@@ -57,7 +59,7 @@ namespace at
 		{
 			union
 			{
-				T data[4];
+				std::array<T, 4> data;
 				struct { T x, y, z, w; };
 			};
 		};
@@ -67,36 +69,10 @@ namespace at
 	struct Vector : detail::VectorBase<N, T>
 	{
 		Vector();
-
+		Vector(const Vector& other);
+		Vector(Vector&& other) noexcept;
 		template <typename...Args>
-		Vector(Args...args) : Vector()
-		{
-			auto tmp = { static_cast<T>(args)... };
-
-			size_t size = tmp.size();
-			if (size == 1)
-			{
-				auto el = *tmp.begin();
-
-				for (size_t i = 0; i < N; i++)
-					data[i] = el;
-			}
-			else
-			{
-				size_t i = 0;
-				for (auto t : tmp)
-				{
-					if (i >= N)
-						break;
-
-					data[i++] = t;
-				}
-				for (; i < N; i++)
-				{
-					data[i] = static_cast<T>(0);
-				}
-			}
-		}
+		Vector(Args...args);
 		~Vector() noexcept;
 
 		Vector<N, T>& normalize() noexcept;
@@ -120,6 +96,9 @@ namespace at
 		Vector<N, T>& operator -=(T arg);
 		Vector<N, T>& operator *=(T arg);
 		Vector<N, T>& operator /=(T arg);
+
+		Vector& operator=(const Vector& other);
+		Vector& operator=(Vector&& other) noexcept;
 
 		bool operator==(const Vector<N, T>& other) const;
 

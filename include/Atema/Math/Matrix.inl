@@ -30,29 +30,30 @@ namespace at
 	template <size_t COL, size_t ROW, typename T>
 	Matrix<COL, ROW, T>::Matrix()
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
 			this->m_data[i] = static_cast<T>(0);
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>::Matrix(T arg) :
+	Matrix<COL, ROW, T>::Matrix(T value) :
 		Matrix()
 	{
-		size_t min = (COL < ROW ? COL : ROW);
+		constexpr size_t min = (COL < ROW ? COL : ROW);
 
 		for (size_t i = 0; i < min; i++)
-			this->m_columns[i][i] = arg;
+			this->m_columns[i][i] = value;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>::Matrix(const Matrix<COL, ROW, T>& arg)
+	Matrix<COL, ROW, T>::Matrix(const Matrix& other)
 	{
-		size_t size = COL*ROW;
+		operator=(other);
+	}
 
-		for (size_t i = 0; i < size; i++)
-			this->m_data[i] = arg.m_data[i];
+	template <size_t COL, size_t ROW, typename T>
+	Matrix<COL, ROW, T>::Matrix(Matrix&& other) noexcept
+	{
+		operator=(std::move(other));
 	}
 
 	template <size_t COL, size_t ROW, typename T>
@@ -80,32 +81,30 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator +(const Matrix<COL, ROW, T>& arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator+(const Matrix<COL, ROW, T>& value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] += arg.m_data[i];
+			tmp.m_data[i] += value.m_data[i];
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator -(const Matrix<COL, ROW, T>& arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator-(const Matrix<COL, ROW, T>& value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] -= arg.m_data[i];
+			tmp.m_data[i] -= value.m_data[i];
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
 	template <size_t OTHER_COL>
-	Matrix<OTHER_COL, ROW, T> Matrix<COL, ROW, T>::operator*(const Matrix<OTHER_COL, COL, T>& arg) const
+	Matrix<OTHER_COL, ROW, T> Matrix<COL, ROW, T>::operator*(const Matrix<OTHER_COL, COL, T>& value) const
 	{
 		Matrix<OTHER_COL, ROW, T> tmp;
 
@@ -114,7 +113,7 @@ namespace at
 			for (size_t row = 0; row < ROW; row++)
 			{
 				for (size_t col = 0; col < COL; col++)
-					tmp[tmpCol][row] += this->m_columns[col][row] * arg[tmpCol][col];
+					tmp[tmpCol][row] += this->m_columns[col][row] * value[tmpCol][col];
 			}
 		}
 
@@ -122,7 +121,7 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Vector<ROW, T> Matrix<COL, ROW, T>::operator *(const Vector<COL, T>& arg) const
+	Vector<ROW, T> Matrix<COL, ROW, T>::operator*(const Vector<COL, T>& value) const
 	{
 		Vector<ROW, T> tmp;
 
@@ -130,7 +129,7 @@ namespace at
 		{
 			for (size_t t_c = 0; t_c < COL; t_c++)
 			{
-				tmp[t_r] += this->m_columns[t_c][t_r] * arg[t_c];
+				tmp[t_r] += this->m_columns[t_c][t_r] * value[t_c];
 			}
 		}
 
@@ -138,115 +137,99 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator +(T arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator+(T value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] += arg;
+			tmp.m_data[i] += value;
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator -(T arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator-(T value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] -= arg;
+			tmp.m_data[i] -= value;
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator *(T arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator*(T value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] *= arg;
+			tmp.m_data[i] *= value;
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator /(T arg) const
+	Matrix<COL, ROW, T> Matrix<COL, ROW, T>::operator/(T value) const
 	{
 		Matrix<COL, ROW, T> tmp(*this);
-		size_t size = COL*ROW;
 
 		for (size_t i = 0; i < size; i++)
-			tmp.m_data[i] /= arg;
+			tmp.m_data[i] /= value;
 
 		return tmp;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator +=(const Matrix<COL, ROW, T>& arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator+=(const Matrix<COL, ROW, T>& value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] += arg.m_data[i];
+			this->m_data[i] += value.m_data[i];
 
 		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator -=(const Matrix<COL, ROW, T>& arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator-=(const Matrix<COL, ROW, T>& value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] -= arg.m_data[i];
+			this->m_data[i] -= value.m_data[i];
 
 		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator +=(T arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator+=(T value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] += arg;
+			this->m_data[i] += value;
 
 		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator -=(T arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator-=(T value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] -= arg;
+			this->m_data[i] -= value;
 
 		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator *=(T arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator*=(T value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] *= arg;
+			this->m_data[i] *= value;
 
 		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator /=(T arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator/=(T value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] /= arg;
+			this->m_data[i] /= value;
 
 		return *this;
 	}
@@ -270,12 +253,18 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(const Matrix<COL, ROW, T>& arg)
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(const Matrix& value)
 	{
-		size_t size = COL*ROW;
-
 		for (size_t i = 0; i < size; i++)
-			this->m_data[i] = arg.m_data[i];
+			this->m_data[i] = value.m_data[i];
+
+		return *this;
+	}
+
+	template <size_t COL, size_t ROW, typename T>
+	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(Matrix&& other) noexcept
+	{
+		this->m_data = std::move(other.m_data);
 
 		return *this;
 	}
@@ -292,25 +281,76 @@ namespace at
 		return this->m_data;
 	}
 
-	//----- Matrix3f -----//
+	//----- Matrix2f -----//
 	template <typename T>
 	Matrix2<T>::Matrix2() : Matrix<2, 2, T>()
 	{
 	}
 
 	template <typename T>
-	Matrix2<T>::Matrix2(T arg) : Matrix<2, 2, T>(arg)
+	Matrix2<T>::Matrix2(const Matrix2& other)
 	{
+		operator=(other);
 	}
 
 	template <typename T>
-	Matrix2<T>::Matrix2(const Matrix<2, 2, T>& arg) :Matrix<2, 2, T>(arg)
+	Matrix2<T>::Matrix2(const Matrix<2, 2, T>& other)
+	{
+		operator=(other);
+	}
+
+	template <typename T>
+	Matrix2<T>::Matrix2(Matrix2&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix2<T>::Matrix2(Matrix<2, 2, T>&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix2<T>::Matrix2(T value) : Matrix<2, 2, T>(value)
 	{
 	}
 
 	template <typename T>
 	Matrix2<T>::~Matrix2()
 	{
+	}
+
+	template <typename T>
+	Matrix2<T>& Matrix2<T>::operator=(const Matrix2& other)
+	{
+		Matrix<2, 2, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix2<T>& Matrix2<T>::operator=(const Matrix<2, 2, T>& other)
+	{
+		Matrix<2, 2, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix2<T>& Matrix2<T>::operator=(Matrix2&& other) noexcept
+	{
+		Matrix<2, 2, T>::operator=(std::move(other));
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix2<T>& Matrix2<T>::operator=(Matrix<2, 2, T>&& other) noexcept
+	{
+		Matrix<2, 2, T>::operator=(std::move(other));
+
+		return *this;
 	}
 
 	template <typename T>
@@ -348,18 +388,69 @@ namespace at
 	}
 
 	template <typename T>
-	Matrix3<T>::Matrix3(T arg) : Matrix<3, 3, T>(arg)
+	Matrix3<T>::Matrix3(const Matrix3& other)
 	{
+		operator=(other);
 	}
 
 	template <typename T>
-	Matrix3<T>::Matrix3(const Matrix<3, 3, T>& arg) : Matrix<3, 3, T>(arg)
+	Matrix3<T>::Matrix3(const Matrix<3, 3, T>& other)
+	{
+		operator=(other);
+	}
+
+	template <typename T>
+	Matrix3<T>::Matrix3(Matrix3&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix3<T>::Matrix3(Matrix<3, 3, T>&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix3<T>::Matrix3(T value) : Matrix<3, 3, T>(value)
 	{
 	}
 
 	template <typename T>
 	Matrix3<T>::~Matrix3()
 	{
+	}
+
+	template <typename T>
+	Matrix3<T>& Matrix3<T>::operator=(const Matrix3& other)
+	{
+		Matrix<3, 3, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix3<T>& Matrix3<T>::operator=(const Matrix<3, 3, T>& other)
+	{
+		Matrix<3, 3, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix3<T>& Matrix3<T>::operator=(Matrix3&& other) noexcept
+	{
+		Matrix<3, 3, T>::operator=(std::move(other));
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix3<T>& Matrix3<T>::operator=(Matrix<3, 3, T>&& other) noexcept
+	{
+		Matrix<3, 3, T>::operator=(std::move(other));
+
+		return *this;
 	}
 
 	template <typename T>
@@ -425,18 +516,69 @@ namespace at
 	}
 
 	template <typename T>
-	Matrix4<T>::Matrix4(T arg) : Matrix<4, 4, T>(arg)
+	Matrix4<T>::Matrix4(const Matrix4& other)
 	{
+		operator=(other);
 	}
 
 	template <typename T>
-	Matrix4<T>::Matrix4(const Matrix<4, 4, T>& arg) : Matrix<4, 4, T>(arg)
+	Matrix4<T>::Matrix4(const Matrix<4, 4, T>& other)
+	{
+		operator=(other);
+	}
+
+	template <typename T>
+	Matrix4<T>::Matrix4(Matrix4&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix4<T>::Matrix4(Matrix<4, 4, T>&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <typename T>
+	Matrix4<T>::Matrix4(T value) : Matrix<4, 4, T>(value)
 	{
 	}
 
 	template <typename T>
 	Matrix4<T>::~Matrix4()
 	{
+	}
+
+	template <typename T>
+	Matrix4<T>& Matrix4<T>::operator=(const Matrix4& other)
+	{
+		Matrix<4, 4, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix4<T>& Matrix4<T>::operator=(const Matrix<4, 4, T>& other)
+	{
+		Matrix<4, 4, T>::operator=(other);
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix4<T>& Matrix4<T>::operator=(Matrix4&& other) noexcept
+	{
+		Matrix<4, 4, T>::operator=(std::move(other));
+
+		return *this;
+	}
+
+	template <typename T>
+	Matrix4<T>& Matrix4<T>::operator=(Matrix<4, 4, T>&& other) noexcept
+	{
+		Matrix<4, 4, T>::operator=(std::move(other));
+
+		return *this;
 	}
 
 	template <typename T>

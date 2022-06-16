@@ -35,6 +35,49 @@ namespace at
 	}
 
 	template <size_t N, typename T>
+	Vector<N, T>::Vector(const Vector& other)
+	{
+		operator=(other);
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T>::Vector(Vector&& other) noexcept
+	{
+		operator=(std::move(other));
+	}
+
+	template <size_t N, typename T>
+	template <typename ... Args>
+	Vector<N, T>::Vector(Args... args): Vector()
+	{
+		auto tmp = { static_cast<T>(args)... };
+
+		size_t size = tmp.size();
+		if (size == 1)
+		{
+			auto el = *tmp.begin();
+
+			for (size_t i = 0; i < N; i++)
+				data[i] = el;
+		}
+		else
+		{
+			size_t i = 0;
+			for (auto t : tmp)
+			{
+				if (i >= N)
+					break;
+
+				data[i++] = t;
+			}
+			for (; i < N; i++)
+			{
+				data[i] = static_cast<T>(0);
+			}
+		}
+	}
+
+	template <size_t N, typename T>
 	Vector<N, T>::~Vector() noexcept
 	{
 
@@ -221,6 +264,22 @@ namespace at
 			this->data[i] = this->data[i] / arg;
 
 		return (*this);
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T>& Vector<N, T>::operator=(const Vector& other)
+	{
+		this->data = other.data;
+
+		return *this;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T>& Vector<N, T>::operator=(Vector&& other) noexcept
+	{
+		this->data = std::move(other.data);
+
+		return *this;
 	}
 
 	template <size_t N, typename T>

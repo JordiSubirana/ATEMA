@@ -33,44 +33,48 @@ namespace at
 	{
 	public:
 		Matrix();
-		Matrix(T arg);
-		Matrix(const Matrix<COL, ROW, T>& arg);
+		Matrix(const Matrix& other);
+		Matrix(Matrix&& other) noexcept;
+		Matrix(T value);
 		~Matrix() noexcept;
 
 		static Matrix<ROW, COL, T> createIdentity();
 
 		Matrix<ROW, COL, T> getTransposed() const noexcept;
 
-		Matrix<COL, ROW, T> operator +(const Matrix<COL, ROW, T>& arg) const;
-		Matrix<COL, ROW, T> operator -(const Matrix<COL, ROW, T>& arg) const;
+		Matrix operator+(const Matrix& value) const;
+		Matrix operator-(const Matrix& value) const;
 		template <size_t OTHER_COL>
-		Matrix<OTHER_COL, ROW, T> operator *(const Matrix<OTHER_COL, COL, T>& arg) const;
-		Vector<ROW, T> operator *(const Vector<COL, T>& arg) const;
-		Matrix<COL, ROW, T> operator +(T arg) const;
-		Matrix<COL, ROW, T> operator -(T arg) const;
-		Matrix<COL, ROW, T> operator *(T arg) const;
-		Matrix<COL, ROW, T> operator /(T arg) const;
+		Matrix<OTHER_COL, ROW, T> operator*(const Matrix<OTHER_COL, COL, T>& value) const;
+		Vector<ROW, T> operator*(const Vector<COL, T>& value) const;
+		Matrix operator+(T value) const;
+		Matrix operator-(T value) const;
+		Matrix operator*(T value) const;
+		Matrix operator/(T value) const;
 
-		Matrix<COL, ROW, T>& operator +=(const Matrix<COL, ROW, T>& arg);
-		Matrix<COL, ROW, T>& operator -=(const Matrix<COL, ROW, T>& arg);
-		Matrix<COL, ROW, T>& operator +=(T arg);
-		Matrix<COL, ROW, T>& operator -=(T arg);
-		Matrix<COL, ROW, T>& operator *=(T arg);
-		Matrix<COL, ROW, T>& operator /=(T arg);
+		Matrix& operator+=(const Matrix& value);
+		Matrix& operator-=(const Matrix& value);
+		Matrix& operator+=(T value);
+		Matrix& operator-=(T value);
+		Matrix& operator*=(T value);
+		Matrix& operator/=(T value);
 
 		Vector<ROW, T>& operator[](size_t index);
 		const Vector<ROW, T>& operator[](size_t index) const;
 
-		Matrix<COL, ROW, T>& operator=(const Matrix<COL, ROW, T>& arg);
+		Matrix& operator=(const Matrix& other);
+		Matrix& operator=(Matrix&& other) noexcept;
 
 		T* get();
 		const T* get() const;
 
 	private:
+		static constexpr size_t size = COL * ROW;
+
 		union
 		{
-			T m_data[COL*ROW];
-			Vector<ROW, T> m_columns[COL];
+			std::array<T, size> m_data;
+			std::array<Vector<ROW, T>, COL> m_columns;
 		};
 	};
 
@@ -80,9 +84,17 @@ namespace at
 	{
 	public:
 		Matrix2();
-		Matrix2(T arg);
-		Matrix2(const Matrix<2, 2, T>& arg);
+		Matrix2(const Matrix2& other);
+		Matrix2(const Matrix<2, 2, T>& other);
+		Matrix2(Matrix2&& other) noexcept;
+		Matrix2(Matrix<2, 2, T>&& other) noexcept;
+		Matrix2(T value);
 		~Matrix2();
+
+		Matrix2& operator=(const Matrix2& other);
+		Matrix2& operator=(const Matrix<2, 2, T>& other);
+		Matrix2& operator=(Matrix2&& other) noexcept;
+		Matrix2& operator=(Matrix<2, 2, T>&& other) noexcept;
 
 		static Matrix2<T> createInverse(const Matrix2<T>& m);
 
@@ -96,9 +108,17 @@ namespace at
 	{
 	public:
 		Matrix3();
-		Matrix3(T arg);
-		Matrix3(const Matrix<3, 3, T>& arg);
+		Matrix3(const Matrix3& other);
+		Matrix3(const Matrix<3, 3, T>& other);
+		Matrix3(Matrix3&& other) noexcept;
+		Matrix3(Matrix<3, 3, T>&& other) noexcept;
+		Matrix3(T value);
 		~Matrix3();
+
+		Matrix3& operator=(const Matrix3& other);
+		Matrix3& operator=(const Matrix<3, 3, T>& other);
+		Matrix3& operator=(Matrix3&& other) noexcept;
+		Matrix3& operator=(Matrix<3, 3, T>&& other) noexcept;
 
 		static Matrix3<T> createRotation(const Vector3<T>& angles);
 
@@ -114,9 +134,17 @@ namespace at
 	{
 	public:
 		Matrix4();
-		Matrix4(T arg);
-		Matrix4(const Matrix<4, 4, T>& arg);
+		Matrix4(const Matrix4& other);
+		Matrix4(const Matrix<4, 4, T>& other);
+		Matrix4(Matrix4&& other) noexcept;
+		Matrix4(Matrix<4, 4, T>&& other) noexcept;
+		Matrix4(T value);
 		~Matrix4();
+
+		Matrix4& operator=(const Matrix4& other);
+		Matrix4& operator=(const Matrix<4, 4, T>& other);
+		Matrix4& operator=(Matrix4&& other) noexcept;
+		Matrix4& operator=(Matrix<4, 4, T>&& other) noexcept;
 
 		static Matrix4<T> createTranslation(const Vector3<T>& offset);
 
