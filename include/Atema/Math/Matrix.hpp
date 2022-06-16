@@ -126,9 +126,9 @@ namespace at
 
 		static Matrix4<T> createLookAt(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up);
 
-		static Matrix4<T> createPerspective(T fov, T ratio, T z_near, T z_far);
+		static Matrix4<T> createPerspective(T fov, T ratio, T zNear, T zFar);
 
-		static Matrix4<T> createOrtho(T left, T right, T bottom, T top, T z_near, T z_far);
+		static Matrix4<T> createOrtho(T left, T right, T bottom, T top, T zNear, T zFar);
 
 		static Matrix4<T> createInverse(const Matrix4<T>& m);
 
