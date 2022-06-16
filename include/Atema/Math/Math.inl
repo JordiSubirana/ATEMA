@@ -50,6 +50,18 @@ namespace at
 		{
 			return radians * static_cast<T>(180) / Pi<T>;
 		}
+
+		template <typename T>
+		bool isInside(T value, T min, T max) noexcept
+		{
+			return min <= value && value <= max;
+		}
+
+		template <typename T>
+		bool isStrictlyInside(T value, T min, T max) noexcept
+		{
+			return min < value && value < max;
+		}
 	}
 }
 

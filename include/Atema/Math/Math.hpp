@@ -47,6 +47,12 @@ namespace at
 
 		template <typename T>
 		constexpr T toDegrees(T radians);
+
+		template <typename T>
+		bool isInside(T value, T min, T max) noexcept;
+
+		template <typename T>
+		bool isStrictlyInside(T value, T min, T max) noexcept;
 	}
 }
 
