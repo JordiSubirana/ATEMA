@@ -87,7 +87,7 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 	if (offset.getNorm() > 1e-6)
 		offset.normalize();
 	offset *= timeStep.getSeconds() * metersPerSec;
-	offset = rotationMatrix * offset;
+	offset = rotationMatrix.transformPosition(offset);
 
 	transform->translate(offset);
 }
