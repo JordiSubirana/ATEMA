@@ -582,6 +582,26 @@ namespace at
 	}
 
 	template <typename T>
+	Vector3<T> Matrix4<T>::transformPosition(const Vector3<T>& position) const
+	{
+		Vector4<T> tmp(position.x, position.y, position.z, static_cast<T>(1));
+
+		tmp = operator*(tmp);
+
+		return { tmp.x, tmp.y, tmp.z };
+	}
+
+	template <typename T>
+	Vector3<T> Matrix4<T>::transformVector(const Vector3<T>& vector) const
+	{
+		Vector4<T> tmp(vector.x, vector.y, vector.z, static_cast<T>(0));
+
+		tmp = operator*(tmp);
+
+		return { tmp.x, tmp.y, tmp.z };
+	}
+
+	template <typename T>
 	Matrix4<T> Matrix4<T>::createTranslation(const Vector3<T>& offset)
 	{
 		Matrix4<T> m = createIdentity();
@@ -795,26 +815,6 @@ namespace at
 
 		return *this;
 	}
-}
-
-template <typename T>
-at::Vector3<T> operator*(const at::Matrix4<T>& mat, const at::Vector3<T>& vec)
-{
-	at::Vector4<T> vec_tmp;
-	at::Vector3<T> tmp;
-
-	vec_tmp.x = vec.x;
-	vec_tmp.y = vec.y;
-	vec_tmp.z = vec.z;
-	vec_tmp.w = 1;
-
-	vec_tmp = mat * vec_tmp;
-
-	tmp.x = vec_tmp.x;
-	tmp.y = vec_tmp.y;
-	tmp.z = vec_tmp.z;
-
-	return (tmp);
 }
 
 #endif

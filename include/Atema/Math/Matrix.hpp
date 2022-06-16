@@ -146,6 +146,9 @@ namespace at
 		Matrix4& operator=(Matrix4&& other) noexcept;
 		Matrix4& operator=(Matrix<4, 4, T>&& other) noexcept;
 
+		Vector3<T> transformPosition(const Vector3<T>& position) const;
+		Vector3<T> transformVector(const Vector3<T>& vector) const;
+
 		static Matrix4<T> createTranslation(const Vector3<T>& offset);
 
 		static Matrix4<T> createRotation(const Vector3<T>& angles);
@@ -230,11 +233,6 @@ namespace at
 	using Matrix4x4d = Matrix4x4<double>;
 }
 
-template <typename T>
-at::Vector3<T> operator*(const at::Matrix4<T>& mat, const at::Vector3<T>& vec);
-
 #include <Atema/Math/Matrix.inl>
-
-
 
 #endif
