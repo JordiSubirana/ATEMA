@@ -482,7 +482,19 @@ void GlslShaderWriter::visit(AccessIndexExpression& expression)
 
 void GlslShaderWriter::visit(AccessIdentifierExpression& expression)
 {
-	expression.expression->accept(*this);
+	// Check if we need to protect the expression with parenthesis
+	if (expression.expression->getType() == Expression::Type::Binary)
+	{
+		m_ostream << "(";
+
+		expression.expression->accept(*this);
+
+		m_ostream << ")";
+	}
+	else
+	{
+		expression.expression->accept(*this);
+	}
 
 	m_ostream << "." << expression.identifier;
 }
