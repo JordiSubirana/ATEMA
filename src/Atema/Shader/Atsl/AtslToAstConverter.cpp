@@ -29,11 +29,21 @@
 #include <unordered_set>
 #include <functional>
 
+#define ATEMA_ATSL_TOKEN_ERROR(at_str) error(token, at_str)
 
 using namespace at;
 
 namespace
 {
+	void error(const AtslToken& token, const std::string& error)
+	{
+		std::string str = "ATSL error (line: " + std::to_string(token.line) + ", col: " + std::to_string(token.column) + ") - ";
+		str += error;
+		str += " (token : " + token.toString() + " )";
+
+		ATEMA_ERROR(str);
+	}
+
 	struct Variable
 	{
 		Type type;
@@ -45,7 +55,7 @@ namespace
 	{
 		if (!token.value.is<T>())
 		{
-			ATEMA_ERROR("Unexpected token type");
+			ATEMA_ATSL_TOKEN_ERROR("Unexpected token type");
 		}
 
 		return token.value.get<T>();
@@ -114,7 +124,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					}
 					default:
 					{
-						ATEMA_ERROR("Unexpected token");
+						ATEMA_ATSL_TOKEN_ERROR("Unexpected symbol");
 						return nullptr;
 					}
 				}
@@ -159,7 +169,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 					}
 					default:
 					{
-						ATEMA_ERROR("Unexpected token");
+						ATEMA_ATSL_TOKEN_ERROR("Unexpected keyword");
 						return nullptr;
 					}
 				}
@@ -177,7 +187,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			// All other tokens are invalid here
 			default :
 			{
-				ATEMA_ERROR("Unexpected token");
+				ATEMA_ATSL_TOKEN_ERROR("Unexpected token");
 
 				return nullptr;
 			}
@@ -214,7 +224,7 @@ void AtslToAstConverter::expect(const AtslToken& token, AtslSymbol symbol) const
 {
 	if (!token.is(symbol))
 	{
-		ATEMA_ERROR(std::string("Expected '") + atsl::getSymbol(symbol) + "'");
+		ATEMA_ATSL_TOKEN_ERROR(std::string("Expected '") + atsl::getSymbol(symbol) + "'");
 	}
 }
 
@@ -222,7 +232,7 @@ void AtslToAstConverter::expect(const AtslToken& token, AtslKeyword keyword) con
 {
 	if (!token.is(keyword))
 	{
-		ATEMA_ERROR(std::string("Expected '") + atsl::getKeyword(keyword) + "'");
+		ATEMA_ATSL_TOKEN_ERROR(std::string("Expected '") + atsl::getKeyword(keyword) + "'");
 	}
 }
 
@@ -333,7 +343,7 @@ void AtslToAstConverter::parseAttributes()
 			{
 				if (!expectAttribute)
 				{
-					ATEMA_ERROR("Expected attribute delimiter");
+					ATEMA_ATSL_TOKEN_ERROR("Expected attribute delimiter");
 				}
 
 				auto& attributeName = token.value.get<AtslIdentifier>();
@@ -342,7 +352,7 @@ void AtslToAstConverter::parseAttributes()
 
 				if (!remains())
 				{
-					ATEMA_ERROR("Expected attribute value");
+					ATEMA_ATSL_TOKEN_ERROR("Expected attribute value");
 				}
 
 				auto& attributeValue = iterate();
@@ -361,7 +371,7 @@ void AtslToAstConverter::parseAttributes()
 				}
 				else
 				{
-					ATEMA_ERROR("Expected attribute value");
+					ATEMA_ATSL_TOKEN_ERROR("Expected attribute value");
 				}
 
 				expect(iterate(), AtslSymbol::RightParenthesis);
@@ -374,7 +384,7 @@ void AtslToAstConverter::parseAttributes()
 			{
 				if (expectAttribute)
 				{
-					ATEMA_ERROR("Expected attribute identifier");
+					ATEMA_ATSL_TOKEN_ERROR("Expected attribute identifier");
 				}
 
 				switch (token.value.get<AtslSymbol>())
@@ -393,7 +403,7 @@ void AtslToAstConverter::parseAttributes()
 					}
 					default:
 					{
-						ATEMA_ERROR("Expected ',' or ']'");
+						ATEMA_ATSL_TOKEN_ERROR("Expected ',' or ']'");
 					}
 				}
 
@@ -401,7 +411,7 @@ void AtslToAstConverter::parseAttributes()
 			}
 			default:
 			{
-				ATEMA_ERROR("Unexpected token");
+				ATEMA_ATSL_TOKEN_ERROR("Unexpected token");
 			}
 		}
 	}
@@ -440,7 +450,7 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 				}
 				else
 				{
-					ATEMA_ERROR("Invalid value type");
+					ATEMA_ATSL_TOKEN_ERROR("Invalid value type");
 				}
 
 				// A value is a full primary expression, don't need to check anything else
@@ -454,7 +464,10 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 				auto& identifier = token.value.get<AtslIdentifier>();
 
 				// The identifier must be the first thing we get in this loop
-				ATEMA_ASSERT(!expression, "Unexpected identifier '" + identifier + "'");
+				if (expression)
+				{
+					ATEMA_ATSL_TOKEN_ERROR("Unexpected identifier '" + identifier + "'");
+				}
 
 				// Cast
 				if (atsl::isType(identifier))
@@ -552,7 +565,7 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 						}
 						default:
 						{
-							ATEMA_ERROR("Unexpected symbol");
+							ATEMA_ATSL_TOKEN_ERROR("Unexpected symbol");
 						}
 					}
 				}
@@ -561,34 +574,13 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 				{
 					switch (token.value.get<AtslSymbol>())
 					{
-						// AccessIdentifier
 						//TODO: Manage Swizzle
+						// AccessIdentifier
 						case AtslSymbol::Dot:
-						{
-							iterate();
-
-							auto tmp = std::make_unique<AccessIdentifierExpression>();
-
-							tmp->expression = std::move(expression);
-							tmp->identifier = expectType<AtslIdentifier>(iterate());
-
-							expression = std::move(tmp);
-
-							continue;
-						}
 						// AccessIndex
 						case AtslSymbol::LeftBracket:
 						{
-							iterate();
-
-							auto tmp = std::make_unique<AccessIndexExpression>();
-
-							tmp->expression = std::move(expression);
-							tmp->index = parseExpression();
-
-							expect(iterate(), AtslSymbol::RightBracket);
-
-							expression = std::move(tmp);
+							expression = parseAccess(std::move(expression));
 
 							continue;
 						}
@@ -604,7 +596,7 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 			}
 			default:
 			{
-				ATEMA_ERROR("Unexpected token");
+				ATEMA_ATSL_TOKEN_ERROR("Unexpected token");
 			}
 		}
 	}
@@ -616,7 +608,8 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 {
 	while (remains())
 	{
-		const auto& symbol = expectType<AtslSymbol>(get());
+		const auto& token = get();
+		const auto& symbol = expectType<AtslSymbol>(token);
 
 		// If we get a delimiter, just return the current operand
 		if (atsl::isExpressionDelimiter(symbol))
@@ -625,14 +618,14 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 		// Save index in case we need to reset it later
 		const auto currentIndex = m_currentIndex;
 
-		iterate();
-
 		// High precedence resolution (array or member access, ternary, assignment)
 		switch (symbol)
 		{
 			// Assignment
 			case AtslSymbol::Equal:
 			{
+				iterate();
+
 				// Check whether this is an assignment or an equals binary expression
 				if (get().is(AtslSymbol::Equal))
 					break;
@@ -647,6 +640,8 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 			// Ternary
 			case AtslSymbol::QuestionMark:
 			{
+				iterate();
+
 				auto expression = std::make_unique<TernaryExpression>();
 
 				expression->condition = std::move(lhs);
@@ -661,11 +656,23 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 
 				continue;
 			}
+			//TODO: Manage Swizzle
+			// AccessIdentifier
+			case AtslSymbol::Dot:
+			// AccessIndex
+			case AtslSymbol::LeftBracket:
+			{
+				lhs = parseAccess(std::move(lhs));
+
+				continue;
+			}
 			default:
 			{
 				break;
 			}
 		}
+
+		iterate();
 
 		// Operations
 		// Get next operation, compare its precedence with the current one
@@ -784,7 +791,7 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 			}
 			default:
 			{
-				ATEMA_ERROR("Unexpected symbol");
+				ATEMA_ATSL_TOKEN_ERROR("Unexpected symbol");
 			}
 		}
 
@@ -1136,7 +1143,9 @@ UPtr<SequenceStatement> AtslToAstConverter::parseBlockSequence()
 
 UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 {
-	switch (get().type)
+	const auto& token = get();
+
+	switch (token.type)
 	{
 		// Keyword
 		// - Const : const variable declaration / assignment
@@ -1145,7 +1154,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 		// - Break / Continue / Return : corresponding statement
 		case AtslTokenType::Keyword:
 		{
-			switch (get().value.get<AtslKeyword>())
+			switch (token.value.get<AtslKeyword>())
 			{
 				// - Const : const variable declaration / assignment
 				case AtslKeyword::Const:
@@ -1189,7 +1198,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 				}
 				default:
 				{
-					ATEMA_ERROR("Unexpected keyword in block sequence");
+					ATEMA_ATSL_TOKEN_ERROR("Unexpected keyword in block sequence");
 				}
 			}
 
@@ -1210,7 +1219,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
-			auto& identifier = get().value.get<AtslIdentifier>();
+			auto& identifier = token.value.get<AtslIdentifier>();
 
 			if (isTypeOrStruct(identifier))
 			{
@@ -1233,7 +1242,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 				}
 				else
 				{
-					ATEMA_ERROR("Unexpected token");
+					ATEMA_ATSL_TOKEN_ERROR("Unexpected token");
 				}
 			}
 			// Function call
@@ -1265,7 +1274,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 		}
 		default:
 		{
-			ATEMA_ERROR("Unexpected token type");
+			ATEMA_ATSL_TOKEN_ERROR("Unexpected token type");
 		}
 	}
 	
@@ -1587,6 +1596,45 @@ UPtr<CastExpression> AtslToAstConverter::parseCast()
 	cast->components = parseArguments();
 
 	return std::move(cast);
+}
+
+UPtr<Expression> AtslToAstConverter::parseAccess(UPtr<Expression>&& expression)
+{
+	const auto& token = iterate();
+	const auto& symbol = expectType<AtslSymbol>(token);
+
+	switch (symbol)
+	{
+		// AccessIdentifier
+		//TODO: Manage Swizzle
+		case AtslSymbol::Dot:
+		{
+			auto tmp = std::make_unique<AccessIdentifierExpression>();
+
+			tmp->expression = std::move(expression);
+			tmp->identifier = expectType<AtslIdentifier>(iterate());
+
+			return std::move(tmp);
+		}
+		// AccessIndex
+		case AtslSymbol::LeftBracket:
+		{
+			auto tmp = std::make_unique<AccessIndexExpression>();
+
+			tmp->expression = std::move(expression);
+			tmp->index = parseExpression();
+
+			expect(iterate(), AtslSymbol::RightBracket);
+
+			return std::move(tmp);
+		}
+		default:
+		{
+			ATEMA_ATSL_TOKEN_ERROR("Unexpected symbol");
+		}
+	}
+
+	return {};
 }
 
 void AtslToAstConverter::clearAttributes()

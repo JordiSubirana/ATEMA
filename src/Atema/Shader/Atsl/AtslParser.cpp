@@ -124,8 +124,8 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 	// Initialize variables
 	m_code = code;
 	
-	m_currentLine = 0;
-	m_currentColumn = 0;
+	m_currentLine = 1;
+	m_currentColumn = 1;
 
 	m_currentIndex = 0;
 
@@ -148,7 +148,7 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 		else if (isNewLine(c))
 		{
 			m_currentLine++;
-			m_currentColumn = -1; // Will be incremented by the next char
+			m_currentColumn = 0; // Will be incremented by the next char
 		}
 		// Symbols
 		else if (isSymbol(c))

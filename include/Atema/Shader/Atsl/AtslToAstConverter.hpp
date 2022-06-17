@@ -98,6 +98,7 @@ namespace at
 		UPtr<VariableExpression> parseVariable();
 		UPtr<Expression> parseFunctionCall(); // Classic function or Built-in function
 		UPtr<CastExpression> parseCast();
+		UPtr<Expression> parseAccess(UPtr<Expression>&& expression); // Identifier or index
 
 		void clearAttributes();
 		
