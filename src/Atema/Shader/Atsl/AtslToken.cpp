@@ -19,7 +19,9 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/Error.hpp>
 #include <Atema/Shader/Atsl/AtslToken.hpp>
+#include <Atema/Shader/Atsl/AtslUtils.hpp>
 
 using namespace at;
 
@@ -114,4 +116,40 @@ bool AtslToken::is(float basicValue) const noexcept
 	auto& val = value.get<AtslBasicValue>();
 
 	return val.is<float>() && val.get<float>() == basicValue;
+}
+
+std::string AtslToken::toString() const
+{
+	switch (type)
+	{
+		case AtslTokenType::Symbol:
+		{
+			return std::string(1, atsl::getSymbol(value.get<AtslSymbol>()));
+		}
+		case AtslTokenType::Keyword:
+		{
+			return atsl::getKeyword(value.get<AtslKeyword>());
+		}
+		case AtslTokenType::Identifier:
+		{
+			return value.get<AtslIdentifier>();
+		}
+		case AtslTokenType::Value:
+		{
+			auto& basicValue = value.get<AtslBasicValue>();
+
+			if (basicValue.is<bool>())
+				return basicValue.get<bool>() ? "true" : "false";
+			else if (basicValue.is<int32_t>())
+				return std::to_string(basicValue.get<int32_t>());
+			else if (basicValue.is<float>())
+				return std::to_string(basicValue.get<float>());
+		}
+		default:
+		{
+			ATEMA_ERROR("Invalid token type");
+		}
+	}
+
+	return "";
 }

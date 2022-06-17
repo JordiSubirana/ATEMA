@@ -121,6 +121,8 @@ namespace at
 		bool is(bool value) const noexcept;
 		bool is(int32_t value) const noexcept;
 		bool is(float value) const noexcept;
+
+		std::string toString() const;
 		
 		AtslTokenType type;
 		AtslTokenValue value;
