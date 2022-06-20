@@ -58,8 +58,16 @@ GlslShaderWriter::~GlslShaderWriter()
 
 void GlslShaderWriter::visit(ConditionalStatement& statement)
 {
-	for (auto& branch : statement.branches)
+	bool isFirst = true;
+
+	for (const auto& branch : statement.branches)
 	{
+		if (!isFirst)
+		{
+			newLine();
+			m_ostream << "else ";
+		}
+
 		m_ostream << "if (";
 
 		branch.condition->accept(*this);
@@ -69,6 +77,20 @@ void GlslShaderWriter::visit(ConditionalStatement& statement)
 		beginBlock();
 
 		branch.statement->accept(*this);
+
+		endBlock();
+
+		isFirst = false;
+	}
+
+	if (statement.elseStatement)
+	{
+		newLine();
+		m_ostream << "else";
+
+		beginBlock();
+
+		statement.elseStatement->accept(*this);
 
 		endBlock();
 	}
