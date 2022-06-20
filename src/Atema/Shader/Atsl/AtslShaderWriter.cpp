@@ -690,7 +690,10 @@ void AtslShaderWriter::visit(BinaryExpression& expression)
 	if (expression.right->getType() == Expression::Type::Binary)
 	{
 		const auto op = static_cast<BinaryExpression&>(*expression.right).op;
-		const auto precedence = getOperatorPrecedence(op);
+		auto precedence = getOperatorPrecedence(op);
+
+		if (expression.op == BinaryOperator::Subtract && precedence == currentPrecedence)
+			precedence--;
 
 		if (precedence < currentPrecedence)
 			m_ostream << "(";
