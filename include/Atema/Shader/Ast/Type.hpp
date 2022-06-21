@@ -75,9 +75,19 @@ namespace at
 		std::string name;
 	};
 
+	struct ArrayType
+	{
+		using ComponentType = Variant<PrimitiveType, VectorType, MatrixType, SamplerType, StructType>;
+		static constexpr size_t ImplicitSize = std::numeric_limits<size_t>::max();
+
+		ComponentType componentType;
+		size_t size = ImplicitSize;
+	};
+
 	using Type = Variant<
 		VoidType,
 		PrimitiveType,
+		ArrayType,
 		VectorType,
 		MatrixType,
 		SamplerType,
