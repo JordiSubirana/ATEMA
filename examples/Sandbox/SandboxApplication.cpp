@@ -137,9 +137,9 @@ void SandboxApplication::onEvent(at::Event& event)
 void SandboxApplication::update(at::TimeStep ms)
 {
 	{
-		ATEMA_BENCHMARK("Application update")
+		ATEMA_BENCHMARK("Application update");
 
-			m_frameDuration += ms.getSeconds();
+		m_frameDuration += ms.getSeconds();
 
 		if (m_window->shouldClose())
 		{
@@ -158,8 +158,6 @@ void SandboxApplication::update(at::TimeStep ms)
 
 			systemCount++;
 		}
-
-		//m_window->swapBuffers();
 
 		m_frameCount++;
 	}

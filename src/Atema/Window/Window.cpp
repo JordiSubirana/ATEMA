@@ -373,11 +373,6 @@ public:
 		glfwPollEvents();
 	}
 
-	void swapBuffers()
-	{
-		glfwSwapBuffers(m_window);
-	}
-
 	void framebufferResized(int width, int height)
 	{
 		m_resizedCallback(static_cast<unsigned>(width), static_cast<unsigned>(height));
@@ -522,11 +517,6 @@ bool Window::shouldClose() const noexcept
 void Window::processEvents()
 {
 	m_implementation->processEvents();
-}
-
-void Window::swapBuffers()
-{
-	m_implementation->swapBuffers();
 }
 
 Vector2u Window::getSize() const noexcept

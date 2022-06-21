@@ -70,8 +70,6 @@ namespace at
 
 		void processEvents();
 
-		void swapBuffers();
-
 		Vector2u getSize() const noexcept;
 
 		EventDispatcher& getEventDispatcher() noexcept;
