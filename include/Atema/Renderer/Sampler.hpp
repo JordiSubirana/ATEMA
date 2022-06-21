@@ -44,6 +44,14 @@ namespace at
 			SamplerAddressMode addressModeV = SamplerAddressMode::Repeat;
 			SamplerAddressMode addressModeW = SamplerAddressMode::Repeat;
 
+			// Used with SamplerAddressMode::ClampToBorder
+			SamplerBorderColor borderColor = SamplerBorderColor::BlackInt;
+
+			// Texels will be compared to a value when sampling in the shader
+			// Works only for shadow sampler types
+			bool enableCompare = false;
+			CompareOperation compareOperation = CompareOperation::Always;
+
 			bool anisotropyEnable = false;
 
 			SamplerFilter mipmapFilter = SamplerFilter::Nearest;

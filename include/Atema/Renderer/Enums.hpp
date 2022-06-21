@@ -453,6 +453,16 @@ namespace at
 		ClampToBorder
 	};
 
+	enum class SamplerBorderColor
+	{
+		TransparentInt,
+		TransparentFloat,
+		BlackInt,
+		BlackFloat,
+		WhiteInt,
+		WhiteFloat
+	};
+
 	enum class SwapChainResult
 	{
 		// Success
