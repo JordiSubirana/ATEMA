@@ -22,6 +22,7 @@
 #include <Atema/Shader/Ast/AstStageExtractor.hpp>
 #include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
 #include <Atema/Shader/Ast/AstUtils.hpp>
+#include <Atema/Shader/Glsl/GlslUtils.hpp>
 
 using namespace at;
 
@@ -961,160 +962,32 @@ void GlslShaderWriter::writeLayout(unsigned set, unsigned binding)
 
 void GlslShaderWriter::writeType(Type type)
 {
-	if (type.is<VoidType>())
-	{
-		m_ostream << "void";
-	}
-	else if (type.is<PrimitiveType>())
-	{
-		switch (type.get<PrimitiveType>())
-		{
-			case PrimitiveType::Bool:
-			{
-				m_ostream << "bool";
-				break;
-			}
-			case PrimitiveType::Int:
-			{
-				m_ostream << "int";
-				break;
-			}
-			case PrimitiveType::UInt:
-			{
-				m_ostream << "uint";
-				break;
-			}
-			case PrimitiveType::Float:
-			{
-				m_ostream << "float";
-				break;
-			}
-			default:
-			{
-				ATEMA_ERROR("Invalid primitive type");
-			}
-		}
-	}
-	else if (type.is<VectorType>())
-	{
-		const auto& data = type.get<VectorType>();
+	m_ostream << glsl::getTypeStr(type);
+}
 
-		switch (data.primitiveType)
-		{
-			case PrimitiveType::Bool:
-			{
-				m_ostream << "b";
-				break;
-			}
-			case PrimitiveType::Int:
-			{
-				m_ostream << "i";
-				break;
-			}
-			case PrimitiveType::UInt:
-			{
-				m_ostream << "u";
-				break;
-			}
-			case PrimitiveType::Float:
-			{
-				break;
-			}
-			default:
-			{
-				ATEMA_ERROR("Invalid vector primitive type");
-			}
-		}
-
-		m_ostream << "vec" << std::to_string(data.componentCount);
-	}
-	else if (type.is<MatrixType>())
-	{
-		const auto& data = type.get<MatrixType>();
-
-		ATEMA_ASSERT(data.primitiveType == PrimitiveType::Float, "GLSL only handles float matrices");
-
-		m_ostream << "mat" << std::to_string(data.rowCount);
-
-		if (data.rowCount != data.columnCount)
-			m_ostream << "x" + std::to_string(data.columnCount);
-	}
-	else if (type.is<SamplerType>())
-	{
-		const auto& data = type.get<SamplerType>();
-
-		switch (data.primitiveType)
-		{
-			case PrimitiveType::Bool:
-			{
-				ATEMA_ERROR("GLSL does not support boolean samplers");
-				break;
-			}
-			case PrimitiveType::Int:
-			{
-				m_ostream << "i";
-				break;
-			}
-			case PrimitiveType::UInt:
-			{
-				m_ostream << "u";
-				break;
-			}
-			case PrimitiveType::Float:
-			{
-				break;
-			}
-			default:
-			{
-				ATEMA_ERROR("Invalid primitive type");
-			}
-		}
-
-		m_ostream << "sampler";
-
-		switch (data.imageType)
-		{
-			case ImageType::Texture1D:
-			{
-				m_ostream << "1D";
-				break;
-			}
-			case ImageType::Texture2D:
-			{
-				m_ostream << "2D";
-				break;
-			}
-			case ImageType::Texture3D:
-			{
-				m_ostream << "3D";
-				break;
-			}
-			case ImageType::Cubemap:
-			{
-				m_ostream << "Cube";
-				break;
-			}
-			default:
-			{
-				ATEMA_ERROR("Invalid image type");
-			}
-		}
-	}
-	else if (type.is<StructType>())
-	{
-		m_ostream << type.get<StructType>().name;
-	}
-	else
-	{
-		ATEMA_ERROR("Invalid type");
-	}
+void GlslShaderWriter::writeType(ArrayType::ComponentType type)
+{
+	m_ostream << glsl::getTypeStr(type);
 }
 
 void GlslShaderWriter::writeVariableDeclaration(Type type, std::string name, Expression* value)
 {
-	writeType(type);
+	if (type.is<ArrayType>())
+		writeType(type.get<ArrayType>().componentType);
+	else
+		writeType(type);
 
 	m_ostream << " " << name;
+
+	if (type.is<ArrayType>())
+	{
+		const auto& arrayType = type.get<ArrayType>();
+
+		if (arrayType.size == ArrayType::ImplicitSize)
+			ATEMA_ERROR("Array size must be specified");
+
+		m_ostream << "[" << arrayType.size << "]";
+	}
 
 	if (value)
 	{

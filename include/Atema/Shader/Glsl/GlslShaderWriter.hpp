@@ -96,6 +96,7 @@ namespace at
 		void writeLayout(uint32_t location);
 		void writeLayout(uint32_t set, uint32_t binding);
 		void writeType(Type type);
+		void writeType(ArrayType::ComponentType type);
 		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);
 		void writeInterfaceBlock(const std::string& blockName, const std::string& instanceName, const std::string& suffix);
