@@ -61,7 +61,10 @@ namespace at
 		Texture1D,
 		Texture2D,
 		Texture3D,
-		Cubemap
+		Cubemap,
+		Shadow1D,
+		Shadow2D,
+		CubeShadow
 	};
 	
 	struct SamplerType

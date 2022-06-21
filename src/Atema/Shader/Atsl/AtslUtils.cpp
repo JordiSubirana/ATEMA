@@ -149,6 +149,15 @@ namespace
 		if (str == "Cube")
 			return ImageType::Cubemap;
 
+		if (str == "1DShadow")
+			return ImageType::Shadow1D;
+
+		if (str == "2DShadow")
+			return ImageType::Shadow2D;
+
+		if (str == "CubeShadow")
+			return ImageType::CubeShadow;
+
 		ATEMA_ERROR("Invalid sampler image type");
 
 		return ImageType::Texture1D;
@@ -232,6 +241,18 @@ namespace
 			{
 				typeStr += "Cube";
 				break;
+			}
+			case ImageType::Shadow1D:
+			{
+				return typeStr + "1DShadow";
+			}
+			case ImageType::Shadow2D:
+			{
+				return typeStr + "2DShadow";
+			}
+			case ImageType::CubeShadow:
+			{
+				return typeStr + "CubeShadow";
 			}
 			default:
 			{
@@ -430,8 +451,17 @@ Type atsl::getType(const std::string& typeStr)
 	{
 		SamplerType type;
 
-		type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 8));
-		type.primitiveType = getSamplerPrimitiveType(typeStr.back());
+		// Shadow sampler
+		if (typeStr.back() == 'w')
+		{
+			type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 7));
+			type.primitiveType = PrimitiveType::Float;
+		}
+		else
+		{
+			type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 8));
+			type.primitiveType = getSamplerPrimitiveType(typeStr.back());
+		}
 
 		return type;
 	}

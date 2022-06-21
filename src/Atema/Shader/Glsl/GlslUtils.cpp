@@ -107,6 +107,18 @@ namespace
 				typeStr += "Cube";
 				break;
 			}
+			case ImageType::Shadow1D:
+			{
+				return typeStr + "1DShadow";
+			}
+			case ImageType::Shadow2D:
+			{
+				return typeStr + "2DShadow";
+			}
+			case ImageType::CubeShadow:
+			{
+				return typeStr + "CubeShadow";
+			}
 			default:
 			{
 				ATEMA_ERROR("Invalid image type");
