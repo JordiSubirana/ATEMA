@@ -23,6 +23,7 @@
 #define ATEMA_SANDBOX_GRAPHICSCOMPONENT_HPP
 
 #include <Atema/Atema.hpp>
+#include <Atema/Math/AABB.hpp>
 
 struct GraphicsComponent
 {
@@ -38,6 +39,8 @@ struct GraphicsComponent
 	at::Ptr<at::Image> roughness;
 
 	at::Ptr<at::Sampler> sampler;
+	
+	at::AABBf aabb;
 };
 
 #endif

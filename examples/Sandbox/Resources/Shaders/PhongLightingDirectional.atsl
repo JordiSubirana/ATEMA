@@ -1,0 +1,155 @@
+struct PhongDirectionalData
+{
+	vec4f cameraPosition;
+	vec4f lightDirection;
+	vec4f lightColor;
+	float ambientStrength;
+}
+
+struct ShadowData
+{
+	mat4f shadowViewProj;
+}
+
+external
+{
+	[set(0), binding(0)] sampler2Df gbufferPosition;
+	[set(0), binding(1)] sampler2Df gbufferNormal;
+	[set(0), binding(2)] sampler2Df gbufferColor;
+	[set(0), binding(3)] sampler2Df gbufferAO;
+	[set(0), binding(4)] sampler2Df gbufferEmissive;
+	[set(0), binding(5)] sampler2Df gbufferMetalness;
+	[set(0), binding(6)] sampler2Df gbufferRoughness;
+	
+	[set(0), binding(7)] sampler2DShadow shadowMap;
+	
+	[set(1), binding(0)] ShadowData shadowData;
+	
+	[set(1), binding(1)] PhongDirectionalData phongData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoord;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec2f outTexCoord;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f position = vec4f(inPosition, 1.0);
+	
+	outTexCoord = inTexCoord;
+	
+	setVertexPosition(position);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec2f inTexCoord;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+vec2f poissonDisk[16] = vec2f[]( 
+   vec2f( -0.94201624, -0.39906216 ), 
+   vec2f( 0.94558609, -0.76890725 ), 
+   vec2f( -0.094184101, -0.92938870 ), 
+   vec2f( 0.34495938, 0.29387760 ), 
+   vec2f( -0.91588581, 0.45771432 ), 
+   vec2f( -0.81544232, -0.87912464 ), 
+   vec2f( -0.38277543, 0.27676845 ), 
+   vec2f( 0.97484398, 0.75648379 ), 
+   vec2f( 0.44323325, -0.97511554 ), 
+   vec2f( 0.53742981, -0.47373420 ), 
+   vec2f( -0.26496911, -0.41893023 ), 
+   vec2f( 0.79197514, 0.19090188 ), 
+   vec2f( -0.24188840, 0.99706507 ), 
+   vec2f( -0.81409955, 0.91437590 ), 
+   vec2f( 0.19984126, 0.78641367 ), 
+   vec2f( 0.14383161, -0.14100790 ) 
+);
+
+float random(vec3f seed, int i)
+{
+	vec4f seed4 = vec4f(seed,i);
+	
+	float dotProduct = dot(seed4, vec4f(12.9898,78.233,45.164,94.673));
+	
+	return fract(sin(dotProduct) * 43758.5453);
+}
+
+float getVisibility(float bias)
+{
+	vec3f pos = sample(gbufferPosition, inTexCoord).xyz;
+	
+	vec4f posLightSpace = (shadowData.shadowViewProj * vec4f(pos, 1.0));
+	posLightSpace.z = clamp(posLightSpace.z, -1.0, 1.0);
+	
+	vec2f shadowMapUV = posLightSpace.xy * 0.5 + 0.5;
+	
+	float visibility = 1.0;
+	
+	for (int i = 0; i < 8; i++)
+	{
+		int index = int(int(16.0 * random(floor(pos * 1000.0), i)) % 16);
+		
+		float shadowMapZ = sample(shadowMap, vec3f(shadowMapUV + poissonDisk[index] / 1500.0, (posLightSpace.z - bias) / posLightSpace.w));
+		
+		visibility = visibility - 0.1 * (1.0 - shadowMapZ);
+	}
+	
+	return visibility;
+}
+
+[entry(fragment)]
+void main()
+{
+	vec2f p = poissonDisk[0];
+	
+	vec3f pos = sample(gbufferPosition, inTexCoord).xyz;
+	vec3f normal = sample(gbufferNormal, inTexCoord).xyz;
+	vec4f color = sample(gbufferColor, inTexCoord);
+	float metalness = sample(gbufferMetalness, inTexCoord).r;
+	int roughness = int(sample(gbufferRoughness, inTexCoord).r * 255.0);
+	vec3f emissiveColor = sample(gbufferEmissive, inTexCoord).rgb;
+	
+	vec3f lightDir = normalize(phongData.lightDirection.xyz);
+	
+	vec3f ambientColor = phongData.ambientStrength * phongData.lightColor.rgb;
+	
+	float cosTheta = dot(normal, lightDir);
+	
+	float diffuseFactor = max(cosTheta, 0.0);
+	
+	vec3f diffuseColor = diffuseFactor * phongData.lightColor.rgb;
+	
+	vec3f viewDir = normalize(phongData.cameraPosition.xyz - pos);
+	
+	vec3f reflectDir = reflect(-lightDir, normal);
+	
+	float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), roughness);
+	
+	vec3f specularColor = specularFactor * metalness * phongData.lightColor.rgb;
+	
+	float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.01);
+	
+	float visibility = getVisibility(bias);
+	
+	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * color.rgb;
+	finalColor = finalColor + emissiveColor;
+	
+	outColor = vec4f(finalColor, 1.0);
+}

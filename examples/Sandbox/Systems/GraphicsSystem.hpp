@@ -22,6 +22,8 @@
 #ifndef ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
 #define ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
 
+#include <Atema/Math/AABB.hpp>
+
 #include "System.hpp"
 
 class GraphicsSystem : public System
@@ -40,6 +42,11 @@ private:
 		at::Ptr<at::Buffer> frameUniformBuffer;
 		at::Ptr<at::Buffer> objectsUniformBuffer;
 		at::Ptr<at::DescriptorSet> descriptorSet;
+
+		at::Ptr<at::Buffer> shadowBuffer;
+		at::Ptr<at::DescriptorSet> shadowSet;
+
+		at::Ptr<at::Buffer> phongBuffer;
 	};
 
 	void translateShaders();
@@ -67,26 +74,32 @@ private:
 
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;
+	at::Ptr<at::Buffer> m_ppDebugQuad;
 	at::Ptr<at::Sampler> m_ppSampler;
-	at::Ptr<at::DescriptorSetLayout> m_ppDescriptorSetLayout;
+	at::Ptr<at::DescriptorSetLayout> m_ppLayout;
 
 	// Object resources
-	at::Ptr<at::DescriptorSetLayout> m_materialDescriptorSetLayout;
-	at::Ptr<at::DescriptorSet> m_materialDescriptorSet;
+	at::Ptr<at::DescriptorSetLayout> m_materialLayout;
+	at::Ptr<at::DescriptorSet> m_materialSet;
 
 	// Frame resources
-	at::Ptr<at::DescriptorSetLayout> m_frameDescriptorSetLayout;
+	at::Ptr<at::DescriptorSetLayout> m_frameLayout;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
 
+	// Shadow mapping
+	at::Ptr<at::DescriptorSetLayout> m_shadowLayout;
+	at::Ptr<at::DescriptorSetLayout> m_gbufferShadowMapLayout;
+	at::Ptr<at::GraphicsPipeline> m_shadowPipeline;
+	at::Viewport m_shadowViewport;
+	at::Ptr<at::Sampler> m_shadowMapSampler;
+
 	// Phong lighting
-	at::Ptr<at::Buffer> m_phongBufferData;
-	at::Ptr<at::DescriptorSetLayout> m_phongDescriptorSetLayout;
-	at::Ptr<at::DescriptorSet> m_phongDescriptorSet;
+	at::Ptr<at::DescriptorSetLayout> m_phongLayout;
 	at::Ptr<at::GraphicsPipeline> m_phongPipeline;
 
 	// Screen
-	at::Ptr<at::DescriptorSetLayout> m_screenDescriptorSetLayout;
+	at::Ptr<at::DescriptorSetLayout> m_screenLayout;
 	at::Ptr<at::GraphicsPipeline> m_screenPipeline;
 };
 

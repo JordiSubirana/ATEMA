@@ -23,6 +23,7 @@
 #define ATEMA_SANDBOX_RESOURCES_HPP
 
 #include <Atema/Atema.hpp>
+#include <Atema/Math/AABB.hpp>
 
 constexpr uint32_t objectRow = 50;
 constexpr uint32_t objectCount = objectRow * objectRow;
@@ -34,7 +35,8 @@ const float cameraScale = 0.001f;
 // LampPost
 /*
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
-const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost_Color.png";
+const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
+const std::string modelTextureExtension = "png";
 const float modelScale = 25.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 400.0f;
@@ -130,6 +132,8 @@ struct ModelData
 	at::Ptr<at::Buffer> vertexBuffer;
 	at::Ptr<at::Buffer> indexBuffer;
 	uint32_t indexCount = 0;
+
+	at::AABBf aabb;
 };
 
 struct MaterialData

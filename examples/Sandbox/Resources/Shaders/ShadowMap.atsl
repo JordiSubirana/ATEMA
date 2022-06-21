@@ -1,0 +1,56 @@
+struct FrameData
+{
+	mat4f proj;
+	mat4f view;
+}
+
+struct PassData
+{
+	mat4f shadowViewProj;
+}
+
+struct ObjectData
+{
+	mat4f model;
+}
+
+external
+{
+	[set(0), binding(0)] FrameData frameData;
+	[set(0), binding(1)] ObjectData objectData;
+	
+	[set(1), binding(0)] PassData passData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec3f inNormal;
+	[location(2)] vec3f inTangent;
+	[location(3)] vec3f inBitangent;
+	[location(4)] vec2f inTexCoord;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f worldPos = objectData.model * vec4f(inPosition, 1.0);
+	
+	vec4f screenPosition = passData.shadowViewProj * worldPos;
+	
+	setVertexPosition(screenPosition);
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+[entry(fragment)]
+void main()
+{
+	outColor = vec4f(0.0, 0.0, 0.0, 1.0);
+}
+

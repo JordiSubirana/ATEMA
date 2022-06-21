@@ -36,20 +36,33 @@ using namespace at;
 
 namespace
 {
+	const Vector3f lightPosition = { -20.0f, 0.0f, 20.0f };
+	const Vector3f lightDirection = Vector3f(1.0f, 0.0f, -1.0f).normalize();
+
+	const uint32_t shadowMapSize = 2048;
+
+	//-----
+
 	const auto shaderPath = rscPath / "Shaders";
 
 	const auto gbufferVS = shaderPath / "GBufferVS.spv";
 	const auto gbufferFS = shaderPath / "GBufferFS.spv";
+	const auto shadowMapVS = shaderPath / "ShadowMapVS.spv";
+	const auto shadowMapFS = shaderPath / "ShadowMapFS.spv";
 	const auto postProcessVS = shaderPath / "PostProcessVS.spv";
-	const auto phongLightingFS = shaderPath / "PhongLightingFS.spv";
+	const auto phongLightingDirectionalVS = shaderPath / "PhongLightingDirectionalVS.spv";
+	const auto phongLightingDirectionalFS = shaderPath / "PhongLightingDirectionalFS.spv";
 	const auto screenFS = shaderPath / "ScreenFS.spv";
 
 	const std::vector<std::filesystem::path> shaderPaths =
 	{
 		gbufferVS,
 		gbufferFS,
+		shadowMapVS,
+		shadowMapFS,
 		postProcessVS,
-		phongLightingFS,
+		phongLightingDirectionalVS,
+		phongLightingDirectionalFS,
 		screenFS
 	};
 
@@ -74,7 +87,9 @@ namespace
 		// Roughness
 		ImageFormat::RGBA8_UNORM,
 	};
-	
+
+	const uint32_t shadowMapBindingIndex = static_cast<uint32_t>(gBuffer.size());
+
 	struct PPVertex
 	{
 		Vector3f position;
@@ -98,16 +113,29 @@ namespace
 		{{ +1.0f, +1.0f, 0.0f }, { 1.0f, 1.0f }}
 	};
 
-	Ptr<Buffer> createQuad(Ptr<CommandPool> commandPool)
+	Ptr<Buffer> createQuad(Ptr<CommandPool> commandPool, Vector2f center = { 0.0f, 0.0f }, Vector2f size = { 1.0f, 1.0f })
 	{
+		auto vertices = quadVertices;
+
+		for (auto& vertex : vertices)
+		{
+			auto& pos = vertex.position;
+
+			pos.x *= size.x;
+			pos.y *= size.y;
+
+			pos.x += center.x;
+			pos.y += center.y;
+		}
+
 		// Fill staging buffer
-		size_t bufferSize = sizeof(quadVertices[0]) * quadVertices.size();
+		size_t bufferSize = sizeof(vertices[0]) * vertices.size();
 
 		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
 
 		auto bufferData = stagingBuffer->map();
 
-		memcpy(bufferData, static_cast<void*>(quadVertices.data()), static_cast<size_t>(bufferSize));
+		memcpy(bufferData, static_cast<void*>(vertices.data()), static_cast<size_t>(bufferSize));
 
 		stagingBuffer->unmap();
 
@@ -141,9 +169,15 @@ namespace
 
 	struct UniformPhongLightingData
 	{
+		Vector4f cameraPosition;
 		Vector4f lightPosition;
 		Vector4f lightColor;
 		float ambientStrength;
+	};
+
+	struct UniformShadowMappingData
+	{
+		Matrix4f depthMVP;
 	};
 }
 
@@ -160,7 +194,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
 
-	m_depthFormat = renderWindow->getDepthFormat();
+	//m_depthFormat = renderWindow->getDepthFormat();
+	m_depthFormat = ImageFormat::D32F_S8U;
 
 	//----- SHADERS -----//
 	std::unordered_map<std::string, Ptr<Shader>> shaders;
@@ -176,22 +211,19 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		m_ppSampler = Sampler::create(samplerSettings);
 	}
 
-	// Create DescriptorSetLayout
+	// Create Layout
 	{
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-		descriptorSetLayoutSettings.bindings =
-		{
-			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 6, 1, ShaderStage::Fragment }
-		};
 		descriptorSetLayoutSettings.pageSize = 1;
+		
+		for (uint32_t bindingIndex = 0; bindingIndex < gBuffer.size(); bindingIndex++)
+			descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::CombinedImageSampler, bindingIndex, 1, ShaderStage::Fragment);
 
-		m_ppDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_ppLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+
+		descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::CombinedImageSampler, shadowMapBindingIndex, 1, ShaderStage::Fragment);
+
+		m_gbufferShadowMapLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	// Create screen descriptor set layout
@@ -203,7 +235,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		};
 		descriptorSetLayoutSettings.pageSize = 1;
 
-		m_screenDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_screenLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	// Create screen pipeline
@@ -211,9 +243,11 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.vertexShader = shaders[postProcessVS.string()];
 		pipelineSettings.fragmentShader = shaders[screenFS.string()];
-		pipelineSettings.descriptorSetLayouts = { m_screenDescriptorSetLayout };
+		pipelineSettings.descriptorSetLayouts = { m_screenLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.inputs = postProcessVertexInput;
+		pipelineSettings.depth.test = false;
+		pipelineSettings.depth.write = false;
 
 		m_screenPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
@@ -221,6 +255,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create quad
 	{
 		m_ppQuad = createQuad(renderer.getCommandPool(QueueType::Graphics));
+		m_ppDebugQuad = createQuad(renderer.getCommandPool(QueueType::Graphics), { -0.75f, 0.75f }, { 0.25f, 0.25f });
 	}
 
 	//----- OBJECT RESOURCES -----//
@@ -239,7 +274,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		};
 		descriptorSetLayoutSettings.pageSize = 1;
 
-		m_materialDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_materialLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	//----- FRAME RESOURCES -----//
@@ -254,7 +289,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		};
 		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
 
-		m_frameDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_frameLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	// Gbuffer pipeline
@@ -262,7 +297,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		GraphicsPipeline::Settings pipelineSettings;
 		pipelineSettings.vertexShader = shaders[gbufferVS.string()];
 		pipelineSettings.fragmentShader = shaders[gbufferFS.string()];
-		pipelineSettings.descriptorSetLayouts = { m_frameDescriptorSetLayout, m_materialDescriptorSetLayout };
+		pipelineSettings.descriptorSetLayouts = { m_frameLayout, m_materialLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
 			{ 0, 0, VertexFormat::RGB32_SFLOAT },
@@ -271,6 +306,11 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ 0, 3, VertexFormat::RGB32_SFLOAT },
 			{ 0, 4, VertexFormat::RG32_SFLOAT }
 		};
+		pipelineSettings.stencil = true;
+		pipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
+		pipelineSettings.stencilFront.writeMask = 1;
+		pipelineSettings.stencilFront.passOperation = StencilOperation::Replace;
+		pipelineSettings.stencilFront.reference = 1;
 
 		m_gbufferPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
@@ -303,32 +343,24 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(objectCount * m_dynamicObjectBufferOffset), true });
 
 		// Add descriptor set
-		frameData.descriptorSet = m_frameDescriptorSetLayout->createSet();
+		frameData.descriptorSet = m_frameLayout->createSet();
 		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
 		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
 	}
 
-	//----- PHONG LIGHTING -----//
+	//----- SHADOW MAPPING -----//
 
 	// Fill pass data buffer
-	{
-		UniformPhongLightingData passData;
-		passData.lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		passData.lightPosition = { 0.0f, 10.0f, 10.0f, 1.0f };
-		passData.ambientStrength = 0.1f;
+	m_shadowViewport.size = { shadowMapSize, shadowMapSize };
 
+	{
 		Buffer::Settings bufferSettings;
 		bufferSettings.usage = BufferUsage::Uniform;
-		bufferSettings.byteSize = sizeof(passData);
+		bufferSettings.byteSize = sizeof(UniformShadowMappingData);
 		bufferSettings.mappable = true;
 
-		m_phongBufferData = Buffer::create(bufferSettings);
-
-		void* data = m_phongBufferData->map();
-
-		memcpy(data, static_cast<void*>(&passData), sizeof(passData));
-
-		m_phongBufferData->unmap();
+		for (auto& frameData : m_frameDatas)
+			frameData.shadowBuffer = Buffer::create(bufferSettings);
 	}
 
 	{
@@ -336,22 +368,86 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		descriptorSetLayoutSettings.pageSize = 1;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
 		};
 
-		m_phongDescriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+		m_shadowLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 
-		m_phongDescriptorSet = m_phongDescriptorSetLayout->createSet();
+		for (auto& frameData : m_frameDatas)
+		{
+			frameData.shadowSet = m_shadowLayout->createSet();
 
-		m_phongDescriptorSet->update(0, m_phongBufferData);
+			frameData.shadowSet->update(0, frameData.shadowBuffer);
+		}
 	}
 
 	{
 		GraphicsPipeline::Settings graphicsPipelineSettings;
-		graphicsPipelineSettings.vertexShader = shaders[postProcessVS.string()];
-		graphicsPipelineSettings.fragmentShader = shaders[phongLightingFS.string()];
-		graphicsPipelineSettings.descriptorSetLayouts = { m_ppDescriptorSetLayout, m_phongDescriptorSetLayout };
+		graphicsPipelineSettings.vertexShader = shaders[shadowMapVS.string()];
+		graphicsPipelineSettings.fragmentShader = shaders[shadowMapFS.string()];
+		graphicsPipelineSettings.descriptorSetLayouts = { m_frameLayout, m_shadowLayout };
+		graphicsPipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0, VertexFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexFormat::RGB32_SFLOAT },
+			{ 0, 2, VertexFormat::RGB32_SFLOAT },
+			{ 0, 3, VertexFormat::RGB32_SFLOAT },
+			{ 0, 4, VertexFormat::RG32_SFLOAT }
+		};;
+
+		m_shadowPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
+	}
+
+	{
+		Sampler::Settings samplerSettings(SamplerFilter::Linear);
+		samplerSettings.addressModeU = SamplerAddressMode::ClampToBorder;
+		samplerSettings.addressModeV = SamplerAddressMode::ClampToBorder;
+		samplerSettings.addressModeW = SamplerAddressMode::ClampToBorder;
+		samplerSettings.borderColor = SamplerBorderColor::WhiteFloat;
+		samplerSettings.enableCompare = true;
+		samplerSettings.compareOperation = CompareOperation::Less;
+
+		m_shadowMapSampler = Sampler::create(samplerSettings);
+	}
+
+	//----- PHONG LIGHTING -----//
+
+	// Fill pass data buffer
+	{
+		Buffer::Settings bufferSettings;
+		bufferSettings.usage = BufferUsage::Uniform;
+		bufferSettings.byteSize = sizeof(UniformPhongLightingData);
+		bufferSettings.mappable = true;
+
+		for (auto& frameData : m_frameDatas)
+			frameData.phongBuffer = Buffer::create(bufferSettings);
+	}
+
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.pageSize = 1;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment },
+			{ DescriptorType::UniformBuffer, 1, 1, ShaderStage::Fragment }
+		};
+
+		m_phongLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	}
+
+	{
+		GraphicsPipeline::Settings graphicsPipelineSettings;
+		//graphicsPipelineSettings.vertexShader = shaders[postProcessVS.string()];
+		graphicsPipelineSettings.vertexShader = shaders[phongLightingDirectionalVS.string()];
+		graphicsPipelineSettings.fragmentShader = shaders[phongLightingDirectionalFS.string()];
+		graphicsPipelineSettings.descriptorSetLayouts = { m_gbufferShadowMapLayout, m_phongLayout };
 		graphicsPipelineSettings.vertexInput.inputs = postProcessVertexInput;
+		graphicsPipelineSettings.depth.test = false;
+		graphicsPipelineSettings.depth.write = false;
+		graphicsPipelineSettings.stencil = true;
+		graphicsPipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
+		graphicsPipelineSettings.stencilFront.compareMask = 1;
+		graphicsPipelineSettings.stencilFront.reference = 1;
 
 		m_phongPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
 	}
@@ -367,21 +463,28 @@ GraphicsSystem::~GraphicsSystem()
 	Renderer::instance().waitForIdle();
 
 	// Rendering resources
-	m_ppDescriptorSetLayout.reset();
+	m_ppLayout.reset();
 
 	m_ppSampler.reset();
 
-	m_screenDescriptorSetLayout.reset();
-
 	m_screenPipeline.reset();
+	m_screenLayout.reset();
+	
+	m_phongPipeline.reset();
+	m_phongLayout.reset();
+
+	m_shadowMapSampler.reset();
+	m_shadowPipeline.reset();
+	m_shadowLayout.reset();
+	m_gbufferShadowMapLayout.reset();
 
 	// Frame resources
-	m_frameDescriptorSetLayout.reset();
+	m_frameLayout.reset();
 	m_frameDatas.clear();
 
 	// Object resources
-	m_materialDescriptorSet.reset();
-	m_materialDescriptorSetLayout.reset();
+	m_materialSet.reset();
+	m_materialLayout.reset();
 
 	m_gbufferPipeline.reset();
 }
@@ -389,7 +492,7 @@ GraphicsSystem::~GraphicsSystem()
 void GraphicsSystem::update(TimeStep timeStep)
 {
 	// Ensure object descriptor frame exists
-	if (!m_materialDescriptorSet)
+	if (!m_materialSet)
 	{
 		auto sparseUnion = getEntityManager().getUnion<GraphicsComponent>();
 
@@ -397,13 +500,13 @@ void GraphicsSystem::update(TimeStep timeStep)
 		{
 			auto& graphics = sparseUnion.get<GraphicsComponent>(*sparseUnion.begin());
 
-			m_materialDescriptorSet = m_materialDescriptorSetLayout->createSet();
-			m_materialDescriptorSet->update(0, graphics.color, graphics.sampler);
-			m_materialDescriptorSet->update(1, graphics.normal, graphics.sampler);
-			m_materialDescriptorSet->update(2, graphics.ambientOcclusion, graphics.sampler);
-			m_materialDescriptorSet->update(3, graphics.emissive, graphics.sampler);
-			m_materialDescriptorSet->update(4, graphics.metalness, graphics.sampler);
-			m_materialDescriptorSet->update(5, graphics.roughness, graphics.sampler);
+			m_materialSet = m_materialLayout->createSet();
+			m_materialSet->update(0, graphics.color, graphics.sampler);
+			m_materialSet->update(1, graphics.normal, graphics.sampler);
+			m_materialSet->update(2, graphics.ambientOcclusion, graphics.sampler);
+			m_materialSet->update(3, graphics.emissive, graphics.sampler);
+			m_materialSet->update(4, graphics.metalness, graphics.sampler);
+			m_materialSet->update(5, graphics.roughness, graphics.sampler);
 		}
 	}
 	
@@ -536,6 +639,11 @@ void GraphicsSystem::createFrameGraph()
 	textureSettings.format = gBuffer[0];
 	auto phongOutputTexture = frameGraphBuilder.createTexture(textureSettings);
 
+	textureSettings.format = ImageFormat::D32F;
+	textureSettings.width = shadowMapSize;
+	textureSettings.height = shadowMapSize;
+	auto shadowMapTexture = frameGraphBuilder.createTexture(textureSettings);
+
 	//-----
 	// Pass setup
 
@@ -596,7 +704,95 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), m_windowSize);
 
-							commandBuffer->bindDescriptorSet(1, m_materialDescriptorSet);
+							commandBuffer->bindDescriptorSet(1, m_materialSet);
+
+							uint32_t i = static_cast<uint32_t>(firstIndex);
+							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+							{
+								auto& graphics = entities.get<GraphicsComponent>(*it);
+
+								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
+
+								commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
+
+								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
+
+								commandBuffer->drawIndexed(graphics.indexCount);
+
+								i++;
+							}
+
+							commandBuffer->end();
+
+							commandBuffers[taskIndex] = commandBuffer;
+						});
+
+					tasks.push_back(task);
+
+					firstIndex += size;
+				}
+
+				for (auto& task : tasks)
+					task->wait();
+
+				commandBuffer.executeSecondaryCommands(commandBuffers);
+			});
+	}
+
+	// Shadow Map
+	{
+		auto& pass = frameGraphBuilder.createPass("shadow map");
+
+		pass.setDepthTexture(shadowMapTexture, DepthStencil(1.0f, 0));
+
+		pass.enableSecondaryCommandBuffers(true);
+
+		pass.setExecutionCallback([this](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (shadow map)");
+
+				const auto frameIndex = context.getFrameIndex();
+				auto& frameData = m_frameDatas[frameIndex];
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				auto& entityManager = getEntityManager();
+
+				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
+
+				auto& taskManager = TaskManager::instance();
+
+				std::vector<Ptr<Task>> tasks;
+				tasks.reserve(threadCount);
+
+				std::vector<Ptr<CommandBuffer>> commandBuffers;
+				commandBuffers.resize(threadCount);
+
+				size_t firstIndex = 0;
+				const size_t size = entities.size() / threadCount;
+
+				for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+				{
+					auto lastIndex = firstIndex + size;
+
+					if (taskIndex == threadCount - 1)
+					{
+						const auto remainingSize = entities.size() - lastIndex;
+
+						lastIndex += remainingSize;
+					}
+
+					auto task = taskManager.createTask([this, &context, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
+						{
+							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
+
+							commandBuffer->bindPipeline(m_shadowPipeline);
+
+							commandBuffer->setViewport(m_shadowViewport);
+
+							commandBuffer->setScissor(Vector2i(), { shadowMapSize, shadowMapSize });
+
+							commandBuffer->bindDescriptorSet(1, frameData.shadowSet);
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
@@ -638,21 +834,33 @@ void GraphicsSystem::createFrameGraph()
 		for (const auto& texture : gbufferTextures)
 			pass.addSampledTexture(texture, ShaderStage::Fragment);
 
-		pass.addOutputTexture(phongOutputTexture, 0, Color::Black);
+		pass.addSampledTexture(shadowMapTexture, ShaderStage::Fragment);
 
-		pass.setExecutionCallback([this, gbufferTextures, phongOutputTexture](FrameGraphContext& context)
+		pass.addOutputTexture(phongOutputTexture, 0, Color::Blue);
+		pass.setDepthTexture(gbufferDepthTexture);
+
+		pass.setExecutionCallback([this, gbufferTextures, shadowMapTexture](FrameGraphContext& context)
 			{
 				ATEMA_BENCHMARK("CommandBuffer (phong lighting)");
 
-				auto ppDescriptorSet = m_ppDescriptorSetLayout->createSet();
+				const auto frameIndex = context.getFrameIndex();
+				const auto& frameData = m_frameDatas[frameIndex];
 
-				// Write descriptor set
+				auto gbufferSMSet = m_gbufferShadowMapLayout->createSet();
+				auto phongSet = m_phongLayout->createSet();
+
+				// Write descriptor sets
 				{
 					for (uint32_t i = 0; i < gbufferTextures.size(); i++)
 					{
 						auto gbufferImage = context.getTexture(gbufferTextures[i]);
-						ppDescriptorSet->update(i, gbufferImage, m_ppSampler);
+						gbufferSMSet->update(i, gbufferImage, m_ppSampler);
 					}
+
+					gbufferSMSet->update(shadowMapBindingIndex, context.getTexture(shadowMapTexture), m_shadowMapSampler);
+
+					phongSet->update(0, frameData.shadowBuffer);
+					phongSet->update(1, frameData.phongBuffer);
 				}
 
 				auto& commandBuffer = context.getCommandBuffer();
@@ -665,12 +873,13 @@ void GraphicsSystem::createFrameGraph()
 
 				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
 
-				commandBuffer.bindDescriptorSet(0, ppDescriptorSet);
-				commandBuffer.bindDescriptorSet(1, m_phongDescriptorSet);
+				commandBuffer.bindDescriptorSet(0, gbufferSMSet);
+				commandBuffer.bindDescriptorSet(1, phongSet);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
-				context.destroyAfterUse(std::move(ppDescriptorSet));
+				context.destroyAfterUse(std::move(gbufferSMSet));
+				context.destroyAfterUse(std::move(phongSet));
 			});
 	}
 
@@ -679,16 +888,19 @@ void GraphicsSystem::createFrameGraph()
 		auto& pass = frameGraphBuilder.createPass("screen");
 
 		pass.addSampledTexture(phongOutputTexture, ShaderStage::Fragment);
+		pass.addSampledTexture(shadowMapTexture, ShaderStage::Fragment);
 
 		pass.enableRenderFrameOutput(true);
 
-		pass.setExecutionCallback([this, phongOutputTexture](FrameGraphContext& context)
+		pass.setExecutionCallback([this, phongOutputTexture, shadowMapTexture](FrameGraphContext& context)
 			{
 				ATEMA_BENCHMARK("CommandBuffer (screen)");
 
-				auto descriptorSet = m_screenDescriptorSetLayout->createSet();
+				auto descriptorSet1 = m_screenLayout->createSet();
+				auto descriptorSet2 = m_screenLayout->createSet();
 
-				descriptorSet->update(0, context.getTexture(phongOutputTexture), m_ppSampler);
+				descriptorSet1->update(0, context.getTexture(phongOutputTexture), m_ppSampler);
+				descriptorSet2->update(0, context.getTexture(shadowMapTexture), m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -698,13 +910,20 @@ void GraphicsSystem::createFrameGraph()
 
 				commandBuffer.setScissor(Vector2i(), m_windowSize);
 
-				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+				commandBuffer.bindDescriptorSet(0, descriptorSet1);
 
-				commandBuffer.bindDescriptorSet(0, descriptorSet);
+				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
-				context.destroyAfterUse(std::move(descriptorSet));
+				//commandBuffer.bindDescriptorSet(0, descriptorSet2);
+
+				//commandBuffer.bindVertexBuffer(m_ppDebugQuad, 0);
+
+				//commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+
+				context.destroyAfterUse(std::move(descriptorSet1));
+				context.destroyAfterUse(std::move(descriptorSet2));
 			});
 	}
 
@@ -748,6 +967,9 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 {
 	ATEMA_BENCHMARK("GraphicsSystem::updateUniformBuffers");
 
+	Vector3f cameraPos;
+	Vector3f cameraTarget;
+
 	// Update global buffers
 	{
 		auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
@@ -760,15 +982,15 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 			{
 				auto& transform = selection.get<Transform>(entity);
 
-				const Vector3f cameraPos = transform.getTranslation();
+				cameraPos = transform.getTranslation();
 				const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
 				
-				Vector3f cameraTarget = camera.target;
+				cameraTarget = camera.target;
 
 				// If the camera doesn't use target, calculate target from transform rotation
 				if (!camera.useTarget)
 				{
-					cameraTarget = cameraPos + Matrix4f::createRotation(transform.getRotation()) * Vector3f(1.0f, 0.0f, 0.0f);
+					cameraTarget = cameraPos + Matrix4f::createRotation(transform.getRotation()).transformVector({ 1.0f, 0.0f, 0.0f });
 				}
 
 				UniformFrameElement frameTransforms;
@@ -788,12 +1010,10 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	}
 
 	// Update objects buffers
+	auto entities = getEntityManager().getUnion<Transform, GraphicsComponent>();
+
 	{
 		auto data = static_cast<uint8_t*>(frameData.objectsUniformBuffer->map());
-
-		auto& entityManager = getEntityManager();
-
-		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
 		auto& taskManager = TaskManager::instance();
 
@@ -841,5 +1061,59 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 			task->wait();
 
 		frameData.objectsUniformBuffer->unmap();
+	}
+
+	// Update scene AABB
+	{
+		AABBf sceneAABB;
+
+		for (const auto& entity : entities)
+		{
+			auto& graphics = entities.get<GraphicsComponent>(entity);
+			auto& transform = entities.get<Transform>(entity);
+
+			auto viewAABB = transform.getMatrix() * graphics.aabb;
+
+			sceneAABB.extend(viewAABB);
+		}
+
+		sceneAABB = AABBf();
+
+		float boxSize = 50.0f;
+
+		auto center = cameraPos;
+		center.x *= -1.0f;
+		center.z = 0.0f;
+
+		sceneAABB.extend(center + Vector3f(boxSize, boxSize, 5.0f));
+		sceneAABB.extend(center + Vector3f( -boxSize, -boxSize, -5.0f));
+
+		const auto view = Matrix4f::createLookAt({ 0.0f, 0.0f, 0.0f }, lightDirection, Vector3f(0, 0, 1));
+
+		const auto viewAABB = view * sceneAABB;
+
+		auto zNear = std::min(viewAABB.min.z, viewAABB.max.z);
+		auto zFar = std::max(viewAABB.min.z, viewAABB.max.z);
+
+		auto proj = Matrix4f::createOrtho(viewAABB.min.x, viewAABB.max.x, viewAABB.min.y, viewAABB.max.y, zNear, zFar);
+		proj[1][1] *= -1;
+
+		auto& data = *static_cast<UniformShadowMappingData*>(frameData.shadowBuffer->map());
+
+		data.depthMVP = proj * view;
+
+		frameData.shadowBuffer->unmap();
+	}
+
+	// Update phong buffer
+	{
+		auto& data = *static_cast<UniformPhongLightingData*>(frameData.phongBuffer->map());
+
+		data.cameraPosition = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
+		data.lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+		data.lightPosition = { lightPosition.x, lightPosition.y, lightPosition.z, 1.0f };
+		data.ambientStrength = 0.15f;
+
+		frameData.shadowBuffer->unmap();
 	}
 }

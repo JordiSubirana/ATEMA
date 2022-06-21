@@ -192,7 +192,7 @@ void SandboxApplication::createScene()
 	const Vector2f velocityReference(objectRow / 2, objectRow / 2);
 	//const auto maxDistance = Vector2f(objectRow, objectRow).getNorm();
 	const auto maxDistance = velocityReference.getNorm();
-	
+
 	for (size_t i = 0; i < objectRow; i++)
 	{
 		for (size_t j = 0; j < objectRow; j++)
@@ -221,6 +221,7 @@ void SandboxApplication::createScene()
 			graphics.metalness = m_materialData->metalness;
 			graphics.roughness = m_materialData->roughness;
 			graphics.sampler = m_materialData->sampler;
+			graphics.aabb = m_modelData->aabb;
 
 			// Velocity component
 			auto& velocity = m_entityManager.createComponent<VelocityComponent>(entity);

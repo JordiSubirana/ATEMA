@@ -87,11 +87,16 @@ ModelData::ModelData(const std::filesystem::path& path)
 			
 			modelIndices.push_back(static_cast<uint32_t>(modelVertices.size()));
 			modelVertices.push_back(vertex);
+
+			aabb.extend(vertex.position);
 		}
 	}
 
 	// Compute tangents / bitangents
 	{
+		std::vector<BasicVertex> newVertices;
+		std::vector<uint32_t> newIndices;
+
 		const auto triangleCount = modelIndices.size() / 3;
 
 		for (size_t triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
@@ -108,6 +113,14 @@ ModelData::ModelData(const std::filesystem::path& path)
 			auto deltaUV1 = v2.texCoord - v1.texCoord;
 			auto deltaUV2 = v3.texCoord - v1.texCoord;
 
+			auto det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+
+			if (false && det < Math::Epsilon<float>)
+			{
+				deltaUV1 = { 1.0f, 0.0f };
+				deltaUV2 = { 0.0f, 1.0f };
+			}
+
 			Matrix3x2f edgeMatrix;
 			edgeMatrix[0] = { edge1.x, edge2.x };
 			edgeMatrix[1] = { edge1.y, edge2.y };
@@ -122,6 +135,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 			Vector3f tangent = { tbMatrix[0].x, tbMatrix[1].x, tbMatrix[2].x };
 			Vector3f bitangent = { tbMatrix[0].y, tbMatrix[1].y, tbMatrix[2].y };
 
+			/*
 			float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
 
 			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
@@ -134,9 +148,28 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 			tangent = (edge1 * deltaUV2.y - edge2 * deltaUV1.y) * f;
 			bitangent = (edge2 * deltaUV1.x - edge1 * deltaUV2.x) * f;
+			//*/
 
 			tangent.normalize();
 			bitangent.normalize();
+
+			auto n = tangent.getNorm();
+
+			if (tangent.getNorm() < 0.1f || bitangent.getNorm() < 0.1f)
+			{
+				continue;
+				int i = 3;
+				//std::cout << f << "( 1.0 / " << (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y) << " )" << std::endl;
+				std::cout << "triangle : " << triangleIndex << std::endl;
+				std::cout << v1.position.x << " ; " << v1.position.y << " ; " << v1.position.z << std::endl;
+				std::cout << v2.position.x << " ; " << v2.position.y << " ; " << v2.position.z << std::endl;
+				std::cout << v3.position.x << " ; " << v3.position.y << " ; " << v3.position.z << std::endl;
+				std::cout << edge1.x << " ; " << edge1.y << " ; " << edge1.z << std::endl;
+				std::cout << edge2.x << " ; " << edge2.y << " ; " << edge2.z << std::endl;
+				std::cout << deltaUV1.x << " ; " << deltaUV1.y << std::endl;
+				std::cout << deltaUV2.x << " ; " << deltaUV2.y << std::endl;
+				std::cout << "---" << std::endl;
+			}
 
 			v1.tangent = tangent;
 			v1.bitangent = bitangent;
@@ -151,10 +184,21 @@ ModelData::ModelData(const std::filesystem::path& path)
 			v1.texCoord.y = 1.0f - v1.texCoord.y;
 			v2.texCoord.y = 1.0f - v2.texCoord.y;
 			v3.texCoord.y = 1.0f - v3.texCoord.y;
+
+			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
+			newVertices.emplace_back(v1);
+			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
+			newVertices.emplace_back(v2);
+			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
+			newVertices.emplace_back(v3);
 		}
+
+		std::swap(modelVertices, newVertices);
+		std::swap(modelIndices, newIndices);
 	}
 
 	// Build final vertex / index buffers
+	if (false)
 	{
 		std::vector<BasicVertex> vertices;
 		std::vector<uint32_t> indices;
