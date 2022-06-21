@@ -796,9 +796,6 @@ void FrameGraphBuilder::createPhysicalTextures()
 
 				if (newUsage == TextureUsage::None || passIndex == currentPassIndex)
 				{
-					currentPassIndex = passIndex;
-					currentUsage = newUsage;
-					currentPass = newPass;
 					continue;
 				}
 
@@ -1016,20 +1013,19 @@ void FrameGraphBuilder::createPhysicalPasses()
 			if (textureData.imported || (usedLater && nextUse != nextClear))
 			{
 				attachmentDescription.storing = AttachmentStoring::Store;
-				attachmentDescription.finalLayout = ImageLayout::ShaderRead;
 			}
 			// The attachment won't be used or will be cleared : we just change layout depending on next use
 			else
 			{
 				attachmentDescription.storing = AttachmentStoring::Undefined;
-
-				// Next use will be reading
-				if (usedLater && nextUse == textureData.nextRead(passIndex))
-					attachmentDescription.finalLayout = ImageLayout::ShaderRead;
-				// Not used later or next use will be writing
-				else
-					attachmentDescription.finalLayout = ImageLayout::Attachment;
 			}
+
+			// Next use will be reading
+			if (usedLater && nextUse == textureData.nextRead(passIndex))
+				attachmentDescription.finalLayout = ImageLayout::ShaderRead;
+			// Not used later or next use will be writing
+			else
+				attachmentDescription.finalLayout = ImageLayout::Attachment;
 
 			attachmentRefs[attachmentLocation] = attachmentIndex;
 
