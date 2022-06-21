@@ -103,8 +103,10 @@ void GlslShaderWriter::visit(ForLoopStatement& statement)
 
 	if (statement.initialization)
 		statement.initialization->accept(*this);
+	else
+		m_ostream << ";";
 
-	m_ostream << "; ";
+	m_ostream << " ";
 
 	if (statement.condition)
 		statement.condition->accept(*this);
@@ -113,6 +115,8 @@ void GlslShaderWriter::visit(ForLoopStatement& statement)
 
 	if (statement.increase)
 		statement.increase->accept(*this);
+
+	m_ostream << ")";
 
 	beginBlock();
 
