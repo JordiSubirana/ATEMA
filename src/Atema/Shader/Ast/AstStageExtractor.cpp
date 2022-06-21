@@ -49,6 +49,10 @@ UPtr<SequenceStatement> AstStageExtractor::getAst(AstShaderStage stage)
 
 	resolveDependencies(entry.dependencies);
 
+	m_addedStructs.clear();
+	m_addedVariables.clear();
+	m_addedFunctions.clear();
+
 	// Add options
 	//TODO: Remove useless ones
 	for (auto& option : m_options)
@@ -56,11 +60,7 @@ UPtr<SequenceStatement> AstStageExtractor::getAst(AstShaderStage stage)
 
 	// Add structs
 	for (auto& structName : m_astDependencies.structNames)
-		m_ast->statements.push_back(m_cloner.clone(m_structs[structName].statement));
-
-	// Add global variables
-	for (auto& variableName : m_astDependencies.variableNames)
-		m_ast->statements.push_back(m_cloner.clone(m_variables[variableName].statement));
+		addStruct(structName);
 
 	// Add external variables
 	{
@@ -72,6 +72,10 @@ UPtr<SequenceStatement> AstStageExtractor::getAst(AstShaderStage stage)
 		m_ast->statements.push_back(std::move(externalStatement));
 	}
 
+	// Add global variables
+	for (auto& variableName : m_astDependencies.variableNames)
+		addVariable(variableName);
+
 	// Add input
 	for (auto& input : entry.inputs)
 		m_ast->statements.push_back(m_cloner.clone(input));
@@ -82,7 +86,7 @@ UPtr<SequenceStatement> AstStageExtractor::getAst(AstShaderStage stage)
 
 	// Add functions
 	for (auto& functionName : m_astDependencies.functionNames)
-		m_ast->statements.push_back(m_cloner.clone(m_functions[functionName].statement));
+		addFunction(functionName);
 
 	// Add entry function
 	m_ast->statements.push_back(m_cloner.clone(entry.statement));
@@ -393,6 +397,60 @@ void AstStageExtractor::resolveDependencies(const DependencyData& dependencies)
 			}
 		}
 	}
+}
+
+void AstStageExtractor::addDependencies(const DependencyData& data)
+{
+	for (auto& name : data.structNames)
+		addStruct(name);
+
+	for (auto& name : data.variableNames)
+		addVariable(name);
+
+	for (auto& name : data.functionNames)
+		addFunction(name);
+}
+
+void AstStageExtractor::addStruct(const std::string& name)
+{
+	if (m_addedStructs.count(name) > 0 || m_astDependencies.structNames.count(name) == 0)
+		return;
+
+	m_addedStructs.emplace(name);
+
+	const auto& data = m_structs[name];
+
+	addDependencies(data.dependencies);
+
+	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
+}
+
+void AstStageExtractor::addVariable(const std::string& name)
+{
+	if (m_addedVariables.count(name) > 0 || m_astDependencies.variableNames.count(name) == 0)
+		return;
+
+	m_addedVariables.emplace(name);
+
+	const auto& data = m_variables[name];
+
+	addDependencies(data.dependencies);
+
+	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
+}
+
+void AstStageExtractor::addFunction(const std::string& name)
+{
+	if (m_addedFunctions.count(name) > 0 || m_astDependencies.functionNames.count(name) == 0)
+		return;
+
+	m_addedFunctions.emplace(name);
+
+	const auto& data = m_functions[name];
+
+	addDependencies(data.dependencies);
+
+	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
 }
 
 void AstStageExtractor::clear()

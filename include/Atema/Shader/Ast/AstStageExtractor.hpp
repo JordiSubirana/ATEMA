@@ -99,6 +99,11 @@ namespace at
 
 		void resolveDependencies(const DependencyData& dependencies);
 
+		void addDependencies(const DependencyData& data);
+		void addStruct(const std::string& name);
+		void addVariable(const std::string& name);
+		void addFunction(const std::string& name);
+
 		AstCloner m_cloner;
 
 		std::unordered_map<AstShaderStage, EntryData> m_entries;
@@ -113,6 +118,10 @@ namespace at
 		UPtr<SequenceStatement> m_ast;
 
 		DependencyData m_astDependencies;
+
+		std::unordered_set<std::string> m_addedStructs;
+		std::unordered_set<std::string> m_addedVariables;
+		std::unordered_set<std::string> m_addedFunctions;
 	};
 }
 
