@@ -140,6 +140,8 @@ namespace at
 
 		static VkSamplerMipmapMode getSamplerMipmapMode(SamplerFilter value);
 
+		static VkBorderColor getSamplerBorderColor(SamplerBorderColor value);
+
 		static SwapChainResult getSwapChainResult(VkResult value);
 
 		static bool isQueueFamilyCompatible(QueueType queueType, VkQueueFlags vkFlags);

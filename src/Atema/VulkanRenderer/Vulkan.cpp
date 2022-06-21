@@ -922,6 +922,25 @@ VkSamplerMipmapMode Vulkan::getSamplerMipmapMode(SamplerFilter value)
 	return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
 
+VkBorderColor Vulkan::getSamplerBorderColor(SamplerBorderColor value)
+{
+	switch (value)
+	{
+		case SamplerBorderColor::TransparentInt: return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+		case SamplerBorderColor::TransparentFloat: return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		case SamplerBorderColor::BlackInt: return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		case SamplerBorderColor::BlackFloat: return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+		case SamplerBorderColor::WhiteInt: return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+		case SamplerBorderColor::WhiteFloat: return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		default:
+		{
+			ATEMA_ERROR("Invalid sampler border color");
+		}
+	}
+
+	return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+}
+
 SwapChainResult Vulkan::getSwapChainResult(VkResult value)
 {
 	switch (value)

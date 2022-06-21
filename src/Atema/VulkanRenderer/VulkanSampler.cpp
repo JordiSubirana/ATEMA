@@ -43,7 +43,7 @@ VulkanSampler::VulkanSampler(const VulkanDevice& device, const Sampler::Settings
 	samplerInfo.addressModeU = Vulkan::getSamplerAddressMode(settings.addressModeU);
 	samplerInfo.addressModeV = Vulkan::getSamplerAddressMode(settings.addressModeV);
 	samplerInfo.addressModeW = Vulkan::getSamplerAddressMode(settings.addressModeW);
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK; // Used with CLAMP_TO_BORDER
+	samplerInfo.borderColor = Vulkan::getSamplerBorderColor(settings.borderColor); // Used with CLAMP_TO_BORDER
 
 	// Avoid artifacts when sampling high frequency patterns (undersampling : more texels than fragments)
 	// REQUIRES PHYSICAL DEVICE FEATURE (see createDevice())
@@ -56,8 +56,8 @@ VulkanSampler::VulkanSampler(const VulkanDevice& device, const Sampler::Settings
 
 	// If enabled, texels will first be compared to a value, and the result of that comparison is used in filtering operations
 	// Can be used for percentage-closer filtering on shadow maps for example
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.compareEnable = settings.enableCompare ? VK_TRUE : VK_FALSE;
+	samplerInfo.compareOp = Vulkan::getCompareOperation(settings.compareOperation);
 
 	// Mipmaps management
 	samplerInfo.mipmapMode = Vulkan::getSamplerMipmapMode(settings.mipmapFilter);
