@@ -79,7 +79,7 @@ namespace at
 
 		UPtr<Statement> initialization;
 		UPtr<Expression> condition;
-		UPtr<Statement> increase;
+		UPtr<Expression> increase;
 		UPtr<Statement> statement;
 	};
 
