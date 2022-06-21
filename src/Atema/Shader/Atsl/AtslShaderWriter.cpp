@@ -841,6 +841,11 @@ void AtslShaderWriter::writeType(Type type)
 	m_ostream << atsl::getTypeStr(type);
 }
 
+void AtslShaderWriter::writeType(ArrayType::ComponentType type)
+{
+	m_ostream << atsl::getTypeStr(type);
+}
+
 void AtslShaderWriter::writeAttributes(const std::vector<Attribute>& attributes)
 {
 	if (attributes.empty())
@@ -877,9 +882,22 @@ void AtslShaderWriter::writeAttributes(const std::vector<Attribute>& attributes)
 
 void AtslShaderWriter::writeVariableDeclaration(Type type, std::string name, Expression* value)
 {
-	writeType(type);
+	if (type.is<ArrayType>())
+		writeType(type.get<ArrayType>().componentType);
+	else
+		writeType(type);
 
 	m_ostream << " " << name;
+
+	if (type.is<ArrayType>())
+	{
+		const auto& arrayType = type.get<ArrayType>();
+
+		if (arrayType.size == ArrayType::ImplicitSize)
+			ATEMA_ERROR("Array size must be specified");
+
+		m_ostream << "[" << arrayType.size << "]";
+	}
 
 	if (value)
 	{

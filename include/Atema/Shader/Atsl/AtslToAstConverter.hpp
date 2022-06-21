@@ -95,6 +95,7 @@ namespace at
 		UPtr<ReturnStatement> parseReturn();
 
 		// Expressions : delimiter is not known, so no parsing
+		Type parseType();
 		UPtr<VariableExpression> parseVariable();
 		UPtr<Expression> parseFunctionCall(); // Classic function or Built-in function
 		UPtr<CastExpression> parseCast();

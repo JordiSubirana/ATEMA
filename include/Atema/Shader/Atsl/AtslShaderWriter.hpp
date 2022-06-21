@@ -87,6 +87,7 @@ namespace at
 		void addDelimiter();
 
 		void writeType(Type type);
+		void writeType(ArrayType::ComponentType type);
 		void writeAttributes(const std::vector<Attribute>& attributes);
 		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);

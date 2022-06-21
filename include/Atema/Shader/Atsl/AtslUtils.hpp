@@ -42,6 +42,7 @@ namespace at::atsl
 	ATEMA_SHADER_API bool isType(const std::string& typeStr);
 	ATEMA_SHADER_API Type getType(const std::string& typeStr);
 	ATEMA_SHADER_API std::string getTypeStr(const Type& type);
+	ATEMA_SHADER_API std::string getTypeStr(const ArrayType::ComponentType& type);
 
 	ATEMA_SHADER_API bool isBuiltInFunction(const std::string& str);
 	ATEMA_SHADER_API BuiltInFunction getBuiltInFunction(const std::string& str);

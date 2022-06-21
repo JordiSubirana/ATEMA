@@ -180,7 +180,11 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			// - function definition
 			case AtslTokenType::Identifier:
 			{
-				m_currentSequence->statements.push_back(parseFunctionDeclaration());
+				// typeIdentifier functionName(...) => function declaration
+				if (get(2).is(AtslSymbol::LeftParenthesis))
+					m_currentSequence->statements.push_back(parseFunctionDeclaration());
+				else
+					m_currentSequence->statements.push_back(parseVariableDeclaration());
 				
 				break;
 			}
@@ -919,16 +923,40 @@ AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationDat
 	}
 
 	// Get type
-	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
-
-	auto& typeIdentifier = iterate().value.get<AtslIdentifier>();
-
-	variable.type = atsl::getType(typeIdentifier);
+	variable.type = parseType();
 
 	// Get name
 	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable name");
 
 	variable.name = iterate().value.get<AtslIdentifier>();
+
+	// Array
+	if (get().is(AtslSymbol::LeftBracket))
+	{
+		iterate();
+
+		const auto& type = variable.type;
+
+		ArrayType arrayType;
+		arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+
+		if (type.is<PrimitiveType>())
+			arrayType.componentType = type.get<PrimitiveType>();
+		else if (type.is<VectorType>())
+			arrayType.componentType = type.get<VectorType>();
+		else if (type.is<MatrixType>())
+			arrayType.componentType = type.get<MatrixType>();
+		else if (type.is<SamplerType>())
+			arrayType.componentType = type.get<SamplerType>();
+		else if (type.is<StructType>())
+			arrayType.componentType = type.get<StructType>();
+		else
+			ATEMA_ERROR("Invalid array type");
+
+		expect(iterate(), AtslSymbol::RightBracket);
+
+		variable.type = arrayType;
+	}
 
 	// Optional expression for initial value
 	if (get().is(AtslSymbol::Equal))
@@ -1469,7 +1497,7 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 	//TODO: Handle qualifiers if needed
 	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected function return type identifier");
 
-	statement->returnType = atsl::getType(iterate().value.get<AtslIdentifier>());
+	statement->returnType = parseType();
 
 	ATEMA_ASSERT(isReturnType(statement->returnType), "Invalid function return type");
 
@@ -1496,7 +1524,7 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 
 		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument type identifier");
 
-		argument.type = atsl::getType(iterate().value.get<AtslIdentifier>());
+		argument.type = parseType();
 
 		ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected argument name");
 
@@ -1555,6 +1583,44 @@ UPtr<ReturnStatement> AtslToAstConverter::parseReturn()
 	return std::move(statement);
 }
 
+Type AtslToAstConverter::parseType()
+{
+	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
+
+	const auto type = atsl::getType(expectType<AtslIdentifier>(iterate()));
+
+	// Array type
+	if (get().is(AtslSymbol::LeftBracket))
+	{
+		iterate();
+
+		ArrayType arrayType;
+		arrayType.size = ArrayType::ImplicitSize;
+
+		if (get().value.is<AtslBasicValue>())
+			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+
+		if (type.is<PrimitiveType>())
+			arrayType.componentType = type.get<PrimitiveType>();
+		else if (type.is<VectorType>())
+			arrayType.componentType = type.get<VectorType>();
+		else if (type.is<MatrixType>())
+			arrayType.componentType = type.get<MatrixType>();
+		else if (type.is<SamplerType>())
+			arrayType.componentType = type.get<SamplerType>();
+		else if (type.is<StructType>())
+			arrayType.componentType = type.get<StructType>();
+		else
+			ATEMA_ERROR("Invalid array type");
+
+		expect(iterate(), AtslSymbol::RightBracket);
+
+		return arrayType;
+	}
+
+	return type;
+}
+
 UPtr<VariableExpression> AtslToAstConverter::parseVariable()
 {
 	auto expression = std::make_unique<VariableExpression>();
@@ -1592,7 +1658,7 @@ UPtr<CastExpression> AtslToAstConverter::parseCast()
 {
 	auto cast = std::make_unique<CastExpression>();
 
-	cast->type = atsl::getType(iterate().value.get<AtslIdentifier>());
+	cast->type = parseType();
 	cast->components = parseArguments();
 
 	return std::move(cast);
