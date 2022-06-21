@@ -1367,17 +1367,17 @@ UPtr<ForLoopStatement> AtslToAstConverter::parseForLoop()
 	if (!get().is(AtslSymbol::Semicolon))
 		statement->initialization = parseBlockStatement();
 	else
-		iterate(); // Get the semicolon
+		expect(iterate(), AtslSymbol::Semicolon);
 
 	// Check if there is a condition
 	if (!get().is(AtslSymbol::Semicolon))
 		statement->condition = parseExpression();
-	else
-		iterate(); // Get the semicolon
+	
+	expect(iterate(), AtslSymbol::Semicolon);
 
 	// Check if there is an iteration
 	if (!get().is(AtslSymbol::RightParenthesis))
-		statement->increase = parseBlockStatement();
+		statement->increase = parseExpression();
 
 	expect(iterate(), AtslSymbol::RightParenthesis);
 
