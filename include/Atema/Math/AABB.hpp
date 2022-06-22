@@ -50,6 +50,7 @@ namespace at
 		bool contains(const AABB<T>& aabb) const noexcept;
 
 		Vector3<T> getCenter() const noexcept;
+		Vector3<T> getSize() const noexcept;
 
 		AABB& operator=(const AABB& other);
 		AABB& operator=(AABB&& other) noexcept;

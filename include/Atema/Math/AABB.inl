@@ -118,6 +118,12 @@ namespace at
 	}
 
 	template <typename T>
+	Vector3<T> AABB<T>::getSize() const noexcept
+	{
+		return max - min;
+	}
+
+	template <typename T>
 	AABB<T>& AABB<T>::operator=(const AABB& other)
 	{
 		min = other.min;
