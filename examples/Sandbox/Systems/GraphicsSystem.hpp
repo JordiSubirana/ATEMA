@@ -55,6 +55,7 @@ private:
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
 
+	void updateMaterialSets();
 	void updateUniformBuffers(FrameData& frameData);
 
 	at::WPtr<at::RenderWindow> m_renderWindow;
@@ -80,7 +81,7 @@ private:
 
 	// Object resources
 	at::Ptr<at::DescriptorSetLayout> m_materialLayout;
-	at::Ptr<at::DescriptorSet> m_materialSet;
+	std::unordered_map<uint32_t, at::Ptr<at::DescriptorSet>> m_materialSets;
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameLayout;

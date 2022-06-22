@@ -24,8 +24,6 @@
 
 #include <Atema/Atema.hpp>
 
-struct MaterialData;
-struct ModelData;
 class System;
 
 class SandboxApplication : public at::Application
@@ -52,10 +50,6 @@ private:
 	
 	int m_frameCount;
 	float m_frameDuration;
-	
-	// Global resources
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
 };
 
 #endif

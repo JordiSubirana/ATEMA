@@ -37,7 +37,7 @@ using namespace at;
 namespace
 {
 	const Vector3f lightPosition = { -20.0f, 0.0f, 20.0f };
-	const Vector3f lightDirection = Vector3f(1.0f, 0.0f, -1.0f).normalize();
+	const Vector3f lightDirection = Vector3f(1.0f, 1.0f, -1.0f).normalize();
 
 	const uint32_t shadowMapSize = 2048;
 
@@ -483,7 +483,7 @@ GraphicsSystem::~GraphicsSystem()
 	m_frameDatas.clear();
 
 	// Object resources
-	m_materialSet.reset();
+	m_materialSets.clear();
 	m_materialLayout.reset();
 
 	m_gbufferPipeline.reset();
@@ -491,25 +491,6 @@ GraphicsSystem::~GraphicsSystem()
 
 void GraphicsSystem::update(TimeStep timeStep)
 {
-	// Ensure object descriptor frame exists
-	if (!m_materialSet)
-	{
-		auto sparseUnion = getEntityManager().getUnion<GraphicsComponent>();
-
-		if (sparseUnion.size() > 0)
-		{
-			auto& graphics = sparseUnion.get<GraphicsComponent>(*sparseUnion.begin());
-
-			m_materialSet = m_materialLayout->createSet();
-			m_materialSet->update(0, graphics.color, graphics.sampler);
-			m_materialSet->update(1, graphics.normal, graphics.sampler);
-			m_materialSet->update(2, graphics.ambientOcclusion, graphics.sampler);
-			m_materialSet->update(3, graphics.emissive, graphics.sampler);
-			m_materialSet->update(4, graphics.metalness, graphics.sampler);
-			m_materialSet->update(5, graphics.roughness, graphics.sampler);
-		}
-	}
-	
 	// Start frame
 	updateFrame();
 
@@ -704,12 +685,12 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), m_windowSize);
 
-							commandBuffer->bindDescriptorSet(1, m_materialSet);
-
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
+
+								commandBuffer->bindDescriptorSet(1, m_materialSets[graphics.materialID]);
 
 								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
 
@@ -955,12 +936,38 @@ void GraphicsSystem::updateFrame()
 
 	auto& frameData = m_frameDatas[frameIndex];
 
+	// Update material descriptor sets
+	updateMaterialSets();
+
 	// Update scene data
 	updateUniformBuffers(frameData);
 
 	benchmark.start("FrameGraph::execute");
 
 	m_frameGraph->execute(renderFrame);
+}
+
+void GraphicsSystem::updateMaterialSets()
+{
+	auto entities = getEntityManager().getUnion<GraphicsComponent>();
+
+	for (const auto& entity : entities)
+	{
+		auto& graphics = entities.get<GraphicsComponent>(entity);
+
+		if (m_materialSets.count(graphics.materialID) > 0)
+			continue;
+
+		auto materialSet = m_materialLayout->createSet();
+		materialSet->update(0, graphics.color, graphics.sampler);
+		materialSet->update(1, graphics.normal, graphics.sampler);
+		materialSet->update(2, graphics.ambientOcclusion, graphics.sampler);
+		materialSet->update(3, graphics.emissive, graphics.sampler);
+		materialSet->update(4, graphics.metalness, graphics.sampler);
+		materialSet->update(5, graphics.roughness, graphics.sampler);
+
+		m_materialSets[graphics.materialID] = materialSet;
+	}
 }
 
 void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
@@ -1065,35 +1072,27 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 	// Update scene AABB
 	{
-		AABBf sceneAABB;
-
-		for (const auto& entity : entities)
-		{
-			auto& graphics = entities.get<GraphicsComponent>(entity);
-			auto& transform = entities.get<Transform>(entity);
-
-			auto viewAABB = transform.getMatrix() * graphics.aabb;
-
-			sceneAABB.extend(viewAABB);
-		}
-
-		sceneAABB = AABBf();
-
 		float boxSize = 50.0f;
 
 		auto center = cameraPos;
-		center.x *= -1.0f;
 		center.z = 0.0f;
 
+		AABBf sceneAABB;
 		sceneAABB.extend(center + Vector3f(boxSize, boxSize, 5.0f));
 		sceneAABB.extend(center + Vector3f( -boxSize, -boxSize, -5.0f));
 
-		const auto view = Matrix4f::createLookAt({ 0.0f, 0.0f, 0.0f }, lightDirection, Vector3f(0, 0, 1));
+		auto zFar = 200.0f;
+		
+		const auto view = Matrix4f::createLookAt(center - lightDirection * zFar, center, Vector3f(0, 0, 1));
+
+		auto sizeS = sceneAABB.getSize();
 
 		const auto viewAABB = view * sceneAABB;
 
-		auto zNear = std::min(viewAABB.min.z, viewAABB.max.z);
-		auto zFar = std::max(viewAABB.min.z, viewAABB.max.z);
+		auto sizeB = viewAABB.getSize();
+
+		auto zNear = -viewAABB.max.z;
+		zFar = -viewAABB.min.z;
 
 		auto proj = Matrix4f::createOrtho(viewAABB.min.x, viewAABB.max.x, viewAABB.min.y, viewAABB.max.y, zNear, zFar);
 		proj[1][1] *= -1;

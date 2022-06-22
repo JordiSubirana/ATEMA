@@ -94,11 +94,6 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 
 void FirstPersonCameraSystem::onEvent(Event& event)
 {
-	//const Vector3f frontVector(0.0f, 1.0f, 0.0f);
-	//const Vector3f rightVector(1.0f, 0.0f, 0.0f);
-	const Vector3f frontVector(1.0f, 0.0f, 0.0f);
-	const Vector3f rightVector(0.0f, -1.0f, 0.0f);
-
 	CameraComponent* camera = nullptr;
 	Transform* transform = nullptr;
 

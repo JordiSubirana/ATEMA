@@ -48,6 +48,97 @@ namespace
 		"FirstPersonCameraSystem",
 		"GraphicsSystem"
 	};
+
+	std::vector<BasicVertex> planeVertices =
+	{
+		{{ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 0.0f, 0.0f }},
+		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 0.0f, 1.0f }},
+		{{ +1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 1.0f, 0.0f }},
+		{{ +1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 1.0f, 1.0f }}
+	};
+
+	std::vector<uint32_t> planeIndices =
+	{
+		0, 2, 1,
+		1, 2, 3
+	};
+
+	Ptr<Buffer> createPlaneVertices(Ptr<CommandPool> commandPool, const Vector3f& center, const Vector2f& size)
+	{
+		auto vertices = planeVertices;
+
+		for (auto& vertex : vertices)
+		{
+			auto& pos = vertex.position;
+
+			pos.x *= size.x / 2.0f;
+			pos.y *= size.y / 2.0f;
+
+			pos += center;
+
+			vertex.texCoord.x *= size.x;
+			vertex.texCoord.y *= size.y;
+		}
+
+		// Fill staging buffer
+		size_t bufferSize = sizeof(vertices[0]) * vertices.size();
+
+		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+
+		auto bufferData = stagingBuffer->map();
+
+		memcpy(bufferData, static_cast<void*>(vertices.data()), static_cast<size_t>(bufferSize));
+
+		stagingBuffer->unmap();
+
+		// Create vertex buffer
+		auto vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
+
+		// Copy staging buffer to vertex buffer
+		auto commandBuffer = commandPool->createBuffer({ true });
+
+		commandBuffer->begin();
+
+		commandBuffer->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+		commandBuffer->end();
+
+		Renderer::instance().submitAndWait({ commandBuffer });
+
+		return vertexBuffer;
+	}
+
+	Ptr<Buffer> createPlaneIndices(Ptr<CommandPool> commandPool)
+	{
+		const auto& indices = planeIndices;
+
+		// Fill staging buffer
+		size_t bufferSize = sizeof(indices[0]) * indices.size();
+
+		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+
+		auto bufferData = stagingBuffer->map();
+
+		memcpy(bufferData, indices.data(), bufferSize);
+
+		stagingBuffer->unmap();
+
+		// Create vertex buffer
+		auto indexBuffer = Buffer::create({ BufferUsage::Index, bufferSize });
+
+		// Copy staging buffer to vertex buffer
+		auto commandBuffer = commandPool->createBuffer({ true });
+
+		commandBuffer->begin();
+
+		commandBuffer->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+		commandBuffer->end();
+
+		Renderer::instance().submitAndWait({ commandBuffer });
+
+		return indexBuffer;
+	}
 }
 
 SandboxApplication::SandboxApplication():
@@ -101,11 +192,9 @@ SandboxApplication::SandboxApplication():
 
 SandboxApplication::~SandboxApplication()
 {
-	m_entityManager.clear();
 	m_systems.clear();
 
-	m_modelData.reset();
-	m_materialData.reset();
+	m_entityManager.clear();
 	
 	m_window.reset();
 
@@ -179,58 +268,104 @@ void SandboxApplication::update(at::TimeStep ms)
 
 void SandboxApplication::createScene()
 {
-	// Resources
-	m_modelData = std::make_shared<ModelData>(modelMeshPath);
+	AABBf sceneAABB;
 
-	m_materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
-
-	// Create objects
-	const auto origin = -modelScale * (objectRow / 2.0f);
-
-	const Vector2f velocityReference(objectRow / 2, objectRow / 2);
-	//const auto maxDistance = Vector2f(objectRow, objectRow).getNorm();
-	const auto maxDistance = velocityReference.getNorm();
-
-	for (size_t i = 0; i < objectRow; i++)
 	{
-		for (size_t j = 0; j < objectRow; j++)
+		// Resources
+		auto modelData = std::make_shared<ModelData>(modelMeshPath);
+
+		auto materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
+
+		// Create objects
+		const auto origin = -modelScale * (objectRow / 2.0f);
+
+		const Vector2f velocityReference(objectRow / 2, objectRow / 2);
+		//const auto maxDistance = Vector2f(objectRow, objectRow).getNorm();
+		const auto maxDistance = velocityReference.getNorm();
+
+		for (size_t i = 0; i < objectRow; i++)
 		{
-			auto entity = m_entityManager.createEntity();
+			for (size_t j = 0; j < objectRow; j++)
+			{
+				auto entity = m_entityManager.createEntity();
 
-			// Transform component
-			auto& transform = m_entityManager.createComponent<Transform>(entity);
+				// Transform component
+				auto& transform = m_entityManager.createComponent<Transform>(entity);
 
-			Vector3f position;
-			position.x = modelScale * static_cast<float>(i) + origin;
-			position.y = modelScale * static_cast<float>(j) + origin;
+				Vector3f position;
+				position.x = modelScale * static_cast<float>(i) + origin;
+				position.y = modelScale * static_cast<float>(j) + origin;
 
-			transform.setTranslation(position);
-			
-			// Graphics component
-			auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+				transform.setTranslation(position);
 
-			graphics.vertexBuffer = m_modelData->vertexBuffer;
-			graphics.indexBuffer = m_modelData->indexBuffer;
-			graphics.indexCount = m_modelData->indexCount;
-			graphics.color = m_materialData->color;
-			graphics.normal = m_materialData->normal;
-			graphics.ambientOcclusion = m_materialData->ambientOcclusion;
-			graphics.emissive = m_materialData->emissive;
-			graphics.metalness = m_materialData->metalness;
-			graphics.roughness = m_materialData->roughness;
-			graphics.sampler = m_materialData->sampler;
-			graphics.aabb = m_modelData->aabb;
+				// Graphics component
+				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-			// Velocity component
-			auto& velocity = m_entityManager.createComponent<VelocityComponent>(entity);
+				graphics.vertexBuffer = modelData->vertexBuffer;
+				graphics.indexBuffer = modelData->indexBuffer;
+				graphics.indexCount = modelData->indexCount;
+				graphics.materialID = 0;
+				graphics.color = materialData->color;
+				graphics.normal = materialData->normal;
+				graphics.ambientOcclusion = materialData->ambientOcclusion;
+				graphics.emissive = materialData->emissive;
+				graphics.metalness = materialData->metalness;
+				graphics.roughness = materialData->roughness;
+				graphics.sampler = materialData->sampler;
+				graphics.aabb = modelData->aabb;
 
-			//const auto distance = Vector2f(i, j).getNorm();
-			const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
-			
-			const auto percent = distance / maxDistance;
-			
-			velocity.speed = percent * 3.14159f * 2.0f;
+				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
+
+				// Velocity component
+				auto& velocity = m_entityManager.createComponent<VelocityComponent>(entity);
+
+				//const auto distance = Vector2f(i, j).getNorm();
+				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
+
+				const auto percent = distance / maxDistance;
+
+				velocity.speed = percent * 3.14159f * 2.0f;
+			}
 		}
+	}
+
+	// Create ground
+	{
+		// Resources
+		auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
+
+		auto materialData = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
+
+		Vector2f planeSize = { sceneAABB.max.x - sceneAABB.min.x, sceneAABB.max.y - sceneAABB.min.y };
+		planeSize += Vector2f(5.0f, 5.0f);
+
+		auto vertexBuffer = createPlaneVertices(commandPool, sceneAABB.getCenter(), planeSize);
+
+		auto indexBuffer = createPlaneIndices(commandPool);
+
+		// Entity
+		auto entity = m_entityManager.createEntity();
+
+		// Transform component
+		auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+		transform.translate({ 0.0f, 0.0f, -2.0f });
+
+		// Graphics component
+		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+		graphics.vertexBuffer = vertexBuffer;
+		graphics.indexBuffer = indexBuffer;
+		graphics.indexCount = static_cast<uint32_t>(planeIndices.size());
+		graphics.materialID = 1;
+		graphics.color = materialData->color;
+		graphics.normal = materialData->normal;
+		graphics.ambientOcclusion = materialData->ambientOcclusion;
+		graphics.emissive = materialData->emissive;
+		graphics.metalness = materialData->metalness;
+		graphics.roughness = materialData->roughness;
+		graphics.sampler = materialData->sampler;
+		graphics.aabb = sceneAABB;
 	}
 }
 
@@ -255,6 +390,7 @@ void SandboxApplication::createPlayer()
 
 	// Create default transform
 	auto& transform = m_entityManager.createComponent<Transform>(entity);
+	transform.translate({ 0.0f, 0.0f, 1.0f });
 
 	// Create camera
 	auto& camera = m_entityManager.createComponent<CameraComponent>(entity);

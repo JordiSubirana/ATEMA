@@ -26,7 +26,7 @@
 #include <Atema/Math/AABB.hpp>
 
 constexpr uint32_t objectRow = 50;
-constexpr uint32_t objectCount = objectRow * objectRow;
+constexpr uint32_t objectCount = objectRow * objectRow + 1;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
 
@@ -53,6 +53,10 @@ const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 100.0f;
 const auto zoomOffset = 5.0f;
 //*/
+
+// Ground
+const std::filesystem::path groundTexturePath = rscPath / "Textures/Rocks";
+const std::string groundTextureExtension = "png";
 
 inline at::Vector2f toPolar(const at::Vector2f& cartesian)
 {

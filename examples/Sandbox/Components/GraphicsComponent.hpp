@@ -31,6 +31,7 @@ struct GraphicsComponent
 	at::Ptr<at::Buffer> indexBuffer;
 	uint32_t indexCount = 0;
 
+	uint32_t materialID = 0;
 	at::Ptr<at::Image> color;
 	at::Ptr<at::Image> normal;
 	at::Ptr<at::Image> ambientOcclusion;
