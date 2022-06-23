@@ -560,6 +560,9 @@ VkCullModeFlags Vulkan::getCullMode(Flags<CullMode> value)
 {
 	VkCullModeFlags flags = 0;
 
+	if (value & CullMode::None)
+		flags |= VK_CULL_MODE_NONE;
+
 	if (value & CullMode::Front)
 		flags |= VK_CULL_MODE_FRONT_BIT;
 
