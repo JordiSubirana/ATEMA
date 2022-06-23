@@ -6,7 +6,7 @@ external
 [stage(fragment)]
 input
 {
-	[location(0)] vec2f inTexCoord;
+	[location(0)] vec2f inTexCoords;
 }
 
 [stage(fragment)]
@@ -18,5 +18,5 @@ output
 [entry(fragment)]
 void main()
 {
-	outColor = sample(colorTexture, inTexCoord);
+	outColor = sample(colorTexture, inTexCoords);
 }

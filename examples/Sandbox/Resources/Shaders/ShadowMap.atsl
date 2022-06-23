@@ -29,7 +29,7 @@ input
 	[location(1)] vec3f inNormal;
 	[location(2)] vec3f inTangent;
 	[location(3)] vec3f inBitangent;
-	[location(4)] vec2f inTexCoord;
+	[location(4)] vec2f inTexCoords;
 }
 
 [entry(vertex)]

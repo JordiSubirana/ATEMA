@@ -63,7 +63,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 				attrib.vertices[3 * index.vertex_index + 2]
 			};
 
-			vertex.texCoord =
+			vertex.texCoords =
 			{
 				attrib.texcoords[2 * index.texcoord_index + 0],
 				attrib.texcoords[2 * index.texcoord_index + 1]
@@ -110,8 +110,8 @@ ModelData::ModelData(const std::filesystem::path& path)
 			auto edge1 = v2.position - v1.position;
 			auto edge2 = v3.position - v1.position;
 
-			auto deltaUV1 = v2.texCoord - v1.texCoord;
-			auto deltaUV2 = v3.texCoord - v1.texCoord;
+			auto deltaUV1 = v2.texCoords - v1.texCoords;
+			auto deltaUV2 = v3.texCoords - v1.texCoords;
 
 			auto det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
 
@@ -181,9 +181,9 @@ ModelData::ModelData(const std::filesystem::path& path)
 			v3.bitangent = bitangent;
 
 			// Flip vertical component of texcoord
-			v1.texCoord.y = 1.0f - v1.texCoord.y;
-			v2.texCoord.y = 1.0f - v2.texCoord.y;
-			v3.texCoord.y = 1.0f - v3.texCoord.y;
+			v1.texCoords.y = 1.0f - v1.texCoords.y;
+			v2.texCoords.y = 1.0f - v2.texCoords.y;
+			v3.texCoords.y = 1.0f - v3.texCoords.y;
 
 			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
 			newVertices.emplace_back(v1);
@@ -295,6 +295,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		{ "color", &color },
 		{ "normal", &normal },
 		{ "ao", &ambientOcclusion },
+		{ "height", &height },
 		{ "emissive", &emissive },
 		{ "metalness", &metalness },
 		{ "roughness", &roughness }

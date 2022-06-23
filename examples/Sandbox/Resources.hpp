@@ -25,7 +25,7 @@
 #include <Atema/Atema.hpp>
 #include <Atema/Math/AABB.hpp>
 
-constexpr uint32_t objectRow = 50;
+constexpr uint32_t objectRow = 30;
 constexpr uint32_t objectCount = objectRow * objectRow + 1;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
@@ -37,7 +37,6 @@ const float cameraScale = 0.001f;
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
 const std::string modelTextureExtension = "png";
-const float modelScale = 25.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 400.0f;
 const auto zoomOffset = 40.0f;
@@ -48,7 +47,6 @@ const auto zoomOffset = 40.0f;
 const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis";
 const std::string modelTextureExtension = "png";
-const float modelScale = 4.0f;
 const auto zoomSpeed = 3.14159f / 10.0f;
 const auto zoomRadius = 100.0f;
 const auto zoomOffset = 5.0f;
@@ -88,11 +86,11 @@ struct BasicVertex
 	at::Vector3f normal;
 	at::Vector3f tangent;
 	at::Vector3f bitangent;
-	at::Vector2f texCoord;
+	at::Vector2f texCoords;
 
 	bool operator==(const BasicVertex& other) const
 	{
-		return position == other.position && normal == other.normal && tangent == other.tangent && bitangent == other.bitangent && texCoord == other.texCoord;
+		return position == other.position && normal == other.normal && tangent == other.tangent && bitangent == other.bitangent && texCoords == other.texCoords;
 	}
 };
 
@@ -123,7 +121,7 @@ namespace std
 		{
 			return ((hash<at::Vector3f>()(vertex.position) ^
 				(hash<at::Vector3f>()(vertex.normal) << 1)) >> 1) ^
-				(hash<at::Vector2f>()(vertex.texCoord) << 1);
+				(hash<at::Vector2f>()(vertex.texCoords) << 1);
 		}
 	};
 }
@@ -148,6 +146,7 @@ struct MaterialData
 	at::Ptr<at::Image> color;
 	at::Ptr<at::Image> normal;
 	at::Ptr<at::Image> ambientOcclusion;
+	at::Ptr<at::Image> height;
 	at::Ptr<at::Image> emissive;
 	at::Ptr<at::Image> metalness;
 	at::Ptr<at::Image> roughness;

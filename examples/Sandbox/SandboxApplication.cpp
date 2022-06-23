@@ -76,8 +76,8 @@ namespace
 
 			pos += center;
 
-			vertex.texCoord.x *= size.x;
-			vertex.texCoord.y *= size.y;
+			vertex.texCoords.x *= size.x;
+			vertex.texCoords.y *= size.y;
 		}
 
 		// Fill staging buffer
@@ -277,10 +277,12 @@ void SandboxApplication::createScene()
 		auto materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
 
 		// Create objects
-		const auto origin = -modelScale * (objectRow / 2.0f);
+		auto aabbSize = modelData->aabb.getSize();
+		aabbSize.z = 0.0f;
+		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
+		const auto origin = -radius * (objectRow / 2.0f);
 
 		const Vector2f velocityReference(objectRow / 2, objectRow / 2);
-		//const auto maxDistance = Vector2f(objectRow, objectRow).getNorm();
 		const auto maxDistance = velocityReference.getNorm();
 
 		for (size_t i = 0; i < objectRow; i++)
@@ -293,8 +295,8 @@ void SandboxApplication::createScene()
 				auto& transform = m_entityManager.createComponent<Transform>(entity);
 
 				Vector3f position;
-				position.x = modelScale * static_cast<float>(i) + origin;
-				position.y = modelScale * static_cast<float>(j) + origin;
+				position.x = origin + radius * static_cast<float>(i);
+				position.y = origin + radius * static_cast<float>(j);
 
 				transform.setTranslation(position);
 
@@ -308,6 +310,7 @@ void SandboxApplication::createScene()
 				graphics.color = materialData->color;
 				graphics.normal = materialData->normal;
 				graphics.ambientOcclusion = materialData->ambientOcclusion;
+				graphics.height = materialData->height;
 				graphics.emissive = materialData->emissive;
 				graphics.metalness = materialData->metalness;
 				graphics.roughness = materialData->roughness;
@@ -337,7 +340,7 @@ void SandboxApplication::createScene()
 		auto materialData = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
 
 		Vector2f planeSize = { sceneAABB.max.x - sceneAABB.min.x, sceneAABB.max.y - sceneAABB.min.y };
-		planeSize += Vector2f(5.0f, 5.0f);
+		planeSize += Vector2f(1000.0f, 1000.0f);
 
 		auto vertexBuffer = createPlaneVertices(commandPool, sceneAABB.getCenter(), planeSize);
 
@@ -349,7 +352,7 @@ void SandboxApplication::createScene()
 		// Transform component
 		auto& transform = m_entityManager.createComponent<Transform>(entity);
 
-		transform.translate({ 0.0f, 0.0f, -2.0f });
+		transform.setTranslation({ 0.0f, 0.0f, -2.0f });
 
 		// Graphics component
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
@@ -361,6 +364,7 @@ void SandboxApplication::createScene()
 		graphics.color = materialData->color;
 		graphics.normal = materialData->normal;
 		graphics.ambientOcclusion = materialData->ambientOcclusion;
+		graphics.height = materialData->height;
 		graphics.emissive = materialData->emissive;
 		graphics.metalness = materialData->metalness;
 		graphics.roughness = materialData->roughness;
@@ -390,7 +394,7 @@ void SandboxApplication::createPlayer()
 
 	// Create default transform
 	auto& transform = m_entityManager.createComponent<Transform>(entity);
-	transform.translate({ 0.0f, 0.0f, 1.0f });
+	transform.translate({ 1.0f, 0.0f, 1.0f });
 
 	// Create camera
 	auto& camera = m_entityManager.createComponent<CameraComponent>(entity);

@@ -32,13 +32,13 @@ external
 input
 {
 	[location(0)] vec3f inPosition;
-	[location(1)] vec2f inTexCoord;
+	[location(1)] vec2f inTexCoords;
 }
 
 [stage(vertex)]
 output
 {
-	[location(0)] vec2f outTexCoord;
+	[location(0)] vec2f outTexCoords;
 }
 
 [entry(vertex)]
@@ -46,7 +46,7 @@ void main()
 {
 	vec4f position = vec4f(inPosition, 1.0);
 	
-	outTexCoord = inTexCoord;
+	outTexCoords = inTexCoords;
 	
 	setVertexPosition(position);
 }
@@ -54,7 +54,7 @@ void main()
 [stage(fragment)]
 input
 {
-	[location(0)] vec2f inTexCoord;
+	[location(0)] vec2f inTexCoords;
 }
 
 [stage(fragment)]
@@ -93,7 +93,7 @@ float random(vec3f seed, int i)
 
 float getVisibility(float bias)
 {
-	vec3f pos = sample(gbufferPosition, inTexCoord).xyz;
+	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
 	
 	vec4f posLightSpace = (shadowData.shadowViewProj * vec4f(pos, 1.0));
 	posLightSpace.z = clamp(posLightSpace.z, -1.0, 1.0);
@@ -119,18 +119,19 @@ void main()
 {
 	vec2f p = poissonDisk[0];
 	
-	vec3f pos = sample(gbufferPosition, inTexCoord).xyz;
-	vec3f normal = sample(gbufferNormal, inTexCoord).xyz;
-	vec4f color = sample(gbufferColor, inTexCoord);
-	float metalness = sample(gbufferMetalness, inTexCoord).r;
-	int roughness = int(sample(gbufferRoughness, inTexCoord).r * 255.0);
-	vec3f emissiveColor = sample(gbufferEmissive, inTexCoord).rgb;
+	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
+	vec3f normal = sample(gbufferNormal, inTexCoords).xyz;
+	vec4f color = sample(gbufferColor, inTexCoords);
+	float ao = sample(gbufferAO, inTexCoords).r;
+	float metalness = sample(gbufferMetalness, inTexCoords).r;
+	int roughness = int(sample(gbufferRoughness, inTexCoords).r * 255.0);
+	vec3f emissiveColor = sample(gbufferEmissive, inTexCoords).rgb;
 	
-	vec3f lightDir = normalize(phongData.lightDirection.xyz);
+	vec3f inverseLightDir = -normalize(phongData.lightDirection.xyz);
 	
-	vec3f ambientColor = phongData.ambientStrength * phongData.lightColor.rgb;
+	vec3f ambientColor = phongData.ambientStrength * phongData.lightColor.rgb * ao;
 	
-	float cosTheta = dot(normal, lightDir);
+	float cosTheta = dot(normal, inverseLightDir);
 	
 	float diffuseFactor = max(cosTheta, 0.0);
 	
@@ -138,7 +139,7 @@ void main()
 	
 	vec3f viewDir = normalize(phongData.cameraPosition.xyz - pos);
 	
-	vec3f reflectDir = reflect(-lightDir, normal);
+	vec3f reflectDir = reflect(-inverseLightDir, normal);
 	
 	float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), roughness);
 	

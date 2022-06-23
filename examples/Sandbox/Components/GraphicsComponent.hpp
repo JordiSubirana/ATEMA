@@ -35,6 +35,7 @@ struct GraphicsComponent
 	at::Ptr<at::Image> color;
 	at::Ptr<at::Image> normal;
 	at::Ptr<at::Image> ambientOcclusion;
+	at::Ptr<at::Image> height;
 	at::Ptr<at::Image> emissive;
 	at::Ptr<at::Image> metalness;
 	at::Ptr<at::Image> roughness;

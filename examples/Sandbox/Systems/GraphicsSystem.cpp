@@ -36,7 +36,6 @@ using namespace at;
 
 namespace
 {
-	const Vector3f lightPosition = { -20.0f, 0.0f, 20.0f };
 	const Vector3f lightDirection = Vector3f(1.0f, 1.0f, -1.0f).normalize();
 
 	const uint32_t shadowMapSize = 2048;
@@ -160,6 +159,7 @@ namespace
 	{
 		Matrix4f proj;
 		Matrix4f view;
+		Vector4f cameraPosition;
 	};
 	
 	struct UniformObjectElement
@@ -170,7 +170,7 @@ namespace
 	struct UniformPhongLightingData
 	{
 		Vector4f cameraPosition;
-		Vector4f lightPosition;
+		Vector4f lightDirection;
 		Vector4f lightColor;
 		float ambientStrength;
 	};
@@ -270,7 +270,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
 			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
 			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment }
+			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 6, 1, ShaderStage::Fragment }
 		};
 		descriptorSetLayoutSettings.pageSize = 1;
 
@@ -311,6 +312,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		pipelineSettings.stencilFront.writeMask = 1;
 		pipelineSettings.stencilFront.passOperation = StencilOperation::Replace;
 		pipelineSettings.stencilFront.reference = 1;
+		pipelineSettings.rasterization.cullMode = CullMode::None;
 
 		m_gbufferPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
@@ -962,9 +964,10 @@ void GraphicsSystem::updateMaterialSets()
 		materialSet->update(0, graphics.color, graphics.sampler);
 		materialSet->update(1, graphics.normal, graphics.sampler);
 		materialSet->update(2, graphics.ambientOcclusion, graphics.sampler);
-		materialSet->update(3, graphics.emissive, graphics.sampler);
-		materialSet->update(4, graphics.metalness, graphics.sampler);
-		materialSet->update(5, graphics.roughness, graphics.sampler);
+		materialSet->update(3, graphics.height, graphics.sampler);
+		materialSet->update(4, graphics.emissive, graphics.sampler);
+		materialSet->update(5, graphics.metalness, graphics.sampler);
+		materialSet->update(6, graphics.roughness, graphics.sampler);
 
 		m_materialSets[graphics.materialID] = materialSet;
 	}
@@ -1000,14 +1003,15 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 					cameraTarget = cameraPos + Matrix4f::createRotation(transform.getRotation()).transformVector({ 1.0f, 0.0f, 0.0f });
 				}
 
-				UniformFrameElement frameTransforms;
-				frameTransforms.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
-				frameTransforms.proj = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
-				frameTransforms.proj[1][1] *= -1;
+				UniformFrameElement frameUniformData;
+				frameUniformData.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
+				frameUniformData.proj = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
+				frameUniformData.proj[1][1] *= -1;
+				frameUniformData.cameraPosition = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
 
 				void* data = frameData.frameUniformBuffer->map();
 
-				memcpy(data, static_cast<void*>(&frameTransforms), sizeof(UniformFrameElement));
+				memcpy(data, static_cast<void*>(&frameUniformData), sizeof(UniformFrameElement));
 
 				frameData.frameUniformBuffer->unmap();
 
@@ -1110,8 +1114,8 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 		data.cameraPosition = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
 		data.lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		data.lightPosition = { lightPosition.x, lightPosition.y, lightPosition.z, 1.0f };
-		data.ambientStrength = 0.15f;
+		data.lightDirection = { lightDirection.x, lightDirection.y, lightDirection.z, 0.0f };
+		data.ambientStrength = 0.3f;
 
 		frameData.shadowBuffer->unmap();
 	}

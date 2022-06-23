@@ -2,7 +2,7 @@
 input
 {
 	[location(0)] vec3f inPosition;
-	[location(1)] vec2f inTexCoord;
+	[location(1)] vec2f inTexCoords;
 }
 
 [stage(vertex)]
@@ -16,7 +16,7 @@ void main()
 {
 	vec4f position = vec4f(inPosition, 1.0);
 	
-	outTexCoord = inTexCoord;
+	outTexCoord = inTexCoords;
 	
 	setVertexPosition(position);
 }

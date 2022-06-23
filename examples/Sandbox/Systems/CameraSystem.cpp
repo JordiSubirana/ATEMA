@@ -24,6 +24,7 @@
 #include <Atema/Window/WindowResizeEvent.hpp>
 
 #include "../Components/CameraComponent.hpp"
+#include "../Components/GraphicsComponent.hpp"
 #include "../Resources.hpp"
 
 using namespace at;
@@ -42,6 +43,20 @@ CameraSystem::~CameraSystem()
 
 void CameraSystem::update(TimeStep timeStep)
 {
+	AABBf sceneAABB;
+	{
+		auto& entityManager = getEntityManager();
+		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
+
+		for (auto& entity : entities)
+		{
+			auto& transform = entityManager.getComponent<Transform>(entity);
+			auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
+
+			sceneAABB.extend(transform.getMatrix() * graphics.aabb);
+		}
+	}
+
 	// Update automatic cameras
 	auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
 
@@ -63,7 +78,9 @@ void CameraSystem::update(TimeStep timeStep)
 			const auto sign = (sin + 1.0f) / 2.0f;
 			const auto signSlow = (sinSlow + 1.0f) / 2.0f;
 
-			auto radius = modelScale * objectRow;
+			auto sceneSize = sceneAABB.getSize();
+			sceneSize.z = 0.0f;
+			auto radius = sceneSize.getNorm() / 2.0f;
 			radius = sign * radius + (1.0f - sign) * zoomOffset;
 
 			const auto pos = toCartesian({ radius, angle / 3.0f });
