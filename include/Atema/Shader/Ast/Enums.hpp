@@ -89,6 +89,13 @@ namespace at
 	};
 
 	ATEMA_DECLARE_FLAGS(AstShaderStage);
+
+	enum class StructLayout
+	{
+		Std140,
+
+		Default = Std140
+	};
 }
 
 #endif

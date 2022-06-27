@@ -185,3 +185,17 @@ std::string glsl::getTypeStr(const ArrayType::ComponentType& type)
 
 	return "";
 }
+
+std::string glsl::getStructLayoutStr(StructLayout structLayout)
+{
+	switch (structLayout)
+	{
+		case StructLayout::Std140: return "std140";
+		default:
+		{
+			ATEMA_ERROR("Invalid struct layout");
+		}
+	}
+
+	return "";
+}

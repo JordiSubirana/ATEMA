@@ -51,6 +51,9 @@ namespace at::atsl
 	ATEMA_SHADER_API AstShaderStage getShaderStage(const std::string& stage);
 	ATEMA_SHADER_API std::string getShaderStageStr(AstShaderStage stage);
 
+	ATEMA_SHADER_API StructLayout getStructLayout(const std::string& str);
+	ATEMA_SHADER_API std::string getStructLayoutStr(StructLayout structLayout);
+
 	ATEMA_SHADER_API bool isExpressionDelimiter(AtslSymbol symbol);
 }
 

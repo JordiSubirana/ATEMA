@@ -179,6 +179,7 @@ namespace at
 			at::Type type;
 			uint32_t setIndex;
 			uint32_t bindingIndex;
+			StructLayout structLayout;
 		};
 		
 		std::vector<Variable> variables;

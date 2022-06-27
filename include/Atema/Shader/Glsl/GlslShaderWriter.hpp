@@ -40,10 +40,6 @@ namespace at
 			unsigned versionMajor = 3;
 			// OpenGL version minor
 			unsigned versionMinor = 3;
-
-			// true: allow uniform structs (legacy)
-			// false: convert uniform struct (legacy) to uniform blocks (modern)
-			bool allowLegacyUniformStructs = false;
 		};
 
 		GlslShaderWriter() = delete;
@@ -95,6 +91,7 @@ namespace at
 		void writeHeader();
 		void writeLayout(uint32_t location);
 		void writeLayout(uint32_t set, uint32_t binding);
+		void writeLayout(uint32_t set, uint32_t binding, StructLayout structLayout);
 		void writeType(Type type);
 		void writeType(ArrayType::ComponentType type);
 		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);

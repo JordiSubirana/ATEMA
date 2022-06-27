@@ -565,6 +565,30 @@ std::string atsl::getShaderStageStr(AstShaderStage stage)
 	return "";
 }
 
+StructLayout atsl::getStructLayout(const std::string& str)
+{
+	if (str == "std140")
+		return StructLayout::Std140;
+
+	ATEMA_ERROR("Invalid struct layout '" + str + "'");
+
+	return StructLayout::Default;
+}
+
+std::string atsl::getStructLayoutStr(StructLayout structLayout)
+{
+	switch (structLayout)
+	{
+		case StructLayout::Std140: return "std140";
+		default:
+		{
+			ATEMA_ERROR("Invalid struct layout");
+		}
+	}
+
+	return "";
+}
+
 bool atsl::isExpressionDelimiter(AtslSymbol symbol)
 {
 	switch (symbol)
