@@ -187,7 +187,6 @@ void GlslShaderWriter::visit(StructDeclarationStatement& statement)
 	addDelimiter();
 
 	// Save struct declaration for uniform interface block declaration
-	if (!m_settings.allowLegacyUniformStructs)
 	{
 		AstCloner cloner;
 		m_structDeclarations[statement.name] = cloner.clone(statement);
@@ -202,7 +201,7 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 		
 		m_ostream << " in ";
 
-		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		if (variable.type.is<StructType>())
 		{
 			const auto suffix = "I" + getInterfaceBlockSuffix(statement.stage);
 
@@ -231,7 +230,7 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 
 		m_ostream << " out ";
 
-		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		if (variable.type.is<StructType>())
 		{
 			const auto suffix = "O" + getInterfaceBlockSuffix(statement.stage);
 
@@ -256,12 +255,12 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
-		writeLayout(variable.setIndex, variable.bindingIndex);
-
-		m_ostream << " uniform ";
-
-		if (variable.type.is<StructType>() && !m_settings.allowLegacyUniformStructs)
+		if (variable.type.is<StructType>())
 		{
+			writeLayout(variable.setIndex, variable.bindingIndex, variable.structLayout);
+
+			m_ostream << " uniform ";
+
 			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, "U");
 
 			// Add line except for last element
@@ -270,6 +269,10 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 		}
 		else
 		{
+			writeLayout(variable.setIndex, variable.bindingIndex);
+
+			m_ostream << " uniform ";
+
 			writeVariableDeclaration(variable.type, variable.name);
 		}
 
@@ -962,6 +965,11 @@ void GlslShaderWriter::writeLayout(unsigned location)
 void GlslShaderWriter::writeLayout(unsigned set, unsigned binding)
 {
 	m_ostream << "layout(set = " << set << ", binding = " << binding << ")";
+}
+
+void GlslShaderWriter::writeLayout(uint32_t set, uint32_t binding, StructLayout structLayout)
+{
+	m_ostream << "layout(set = " << set << ", binding = " << binding << ", " << glsl::getStructLayoutStr(structLayout) << ")";
 }
 
 void GlslShaderWriter::writeType(Type type)

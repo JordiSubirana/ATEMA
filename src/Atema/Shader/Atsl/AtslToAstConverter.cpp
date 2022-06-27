@@ -1048,6 +1048,10 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				variable.type = variableData.type;
 				variable.setIndex = expectAttributeInt("set");
 				variable.bindingIndex = expectAttributeInt("binding");
+				variable.structLayout = StructLayout::Default;
+
+				if (hasAttribute("layout"))
+					variable.structLayout = atsl::getStructLayout(expectAttributeIdentifier("layout"));
 
 				statementPtr->variables.push_back(variable);
 			};

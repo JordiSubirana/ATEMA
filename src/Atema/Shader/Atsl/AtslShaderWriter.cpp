@@ -264,16 +264,22 @@ void AtslShaderWriter::visit(ExternalDeclarationStatement& statement)
 		m_ostream << " ";
 
 	// Write variables
-	std::vector<Attribute> variableAttributes =
-	{
-		{"set", AtslBasicValue(0)},
-		{"binding", AtslBasicValue(0)}
-	};
-
 	for (auto& variable : statement.variables)
 	{
-		variableAttributes[0].value = static_cast<int32_t>(variable.setIndex);
-		variableAttributes[1].value = static_cast<int32_t>(variable.bindingIndex);
+		std::vector<Attribute> variableAttributes =
+		{
+			{ "set", static_cast<int32_t>(variable.setIndex) },
+			{ "binding", static_cast<int32_t>(variable.bindingIndex) }
+		};
+
+		if (variable.type.is<StructType>())
+		{
+			Attribute layoutAttribute;
+			layoutAttribute.name = "layout";
+			layoutAttribute.value = atsl::getStructLayoutStr(variable.structLayout);
+
+			variableAttributes.emplace_back(std::move(layoutAttribute));
+		}
 
 		writeAttributes(variableAttributes);
 
