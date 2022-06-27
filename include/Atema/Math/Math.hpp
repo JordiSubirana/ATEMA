@@ -53,6 +53,9 @@ namespace at
 
 		template <typename T>
 		bool isStrictlyInside(T value, T min, T max) noexcept;
+
+		template <typename T>
+		T getNextMultiple(T value, T multiple);
 	}
 }
 

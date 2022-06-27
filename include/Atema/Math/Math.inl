@@ -62,6 +62,16 @@ namespace at
 		{
 			return min < value && value < max;
 		}
+
+		template <typename T>
+		T getNextMultiple(T value, T multiple)
+		{
+			static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "getNextMultiple is only valid for positive integral types");
+			ATEMA_ASSERT(multiple != static_cast<T>(0), "Can't find next multiple of zero");
+
+			//https://stackoverflow.com/questions/44110606/rounding-off-a-positive-number-to-the-next-nearest-multiple-of-5
+			return (value + multiple - 1) / multiple * multiple;
+		}
 	}
 }
 
