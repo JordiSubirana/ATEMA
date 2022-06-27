@@ -2,7 +2,7 @@ struct FrameData
 {
 	mat4f proj;
 	mat4f view;
-	vec4f cameraPosition;
+	vec3f cameraPosition;
 }
 
 struct ObjectData
@@ -58,9 +58,9 @@ void main()
 	
 	outTexCoords = inTexCoords;
 	
-	outTanViewDir = outTBN * (frameData.cameraPosition.xyz - worldPos.xyz);
+	outTanViewDir = outTBN * (frameData.cameraPosition - worldPos.xyz);
 	
-	outCameraPosition = frameData.cameraPosition.xyz;
+	outCameraPosition = frameData.cameraPosition;
 	
 	vec4f screenPosition = frameData.proj * frameData.view * worldPos;
 	

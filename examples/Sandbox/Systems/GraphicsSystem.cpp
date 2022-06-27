@@ -22,9 +22,11 @@
 #include "GraphicsSystem.hpp"
 
 #include <fstream>
+#include <Atema/Core/Utils.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Renderer/Buffer.hpp>
+#include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
 
@@ -154,31 +156,6 @@ namespace
 
 		return vertexBuffer;
 	}
-
-	struct UniformFrameElement
-	{
-		Matrix4f proj;
-		Matrix4f view;
-		Vector4f cameraPosition;
-	};
-	
-	struct UniformObjectElement
-	{
-		Matrix4f model;
-	};
-
-	struct UniformPhongLightingData
-	{
-		Vector4f cameraPosition;
-		Vector4f lightDirection;
-		Vector4f lightColor;
-		float ambientStrength;
-	};
-
-	struct UniformShadowMappingData
-	{
-		Matrix4f depthMVP;
-	};
 }
 
 GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
@@ -318,28 +295,34 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	}
 
 	// Uniform buffers & descriptor sets
-	const uint32_t elementByteSize = sizeof(UniformObjectElement);
-	const uint32_t minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
-
-	if (minOffset >= elementByteSize)
+	/*struct UniformFrameElement
 	{
-		m_dynamicObjectBufferOffset = minOffset;
-	}
-	else
-	{
-		m_dynamicObjectBufferOffset = minOffset;
+		mat4f proj;
+		mat4f view;
+		vec3f cameraPosition;
+	}*/
+	BufferLayout frameLayout(StructLayout::Default);
+	frameLayout.addMatrix(BufferElementType::Float, 4, 4);
+	frameLayout.addMatrix(BufferElementType::Float, 4, 4);
+	frameLayout.add(BufferElementType::Float3);
 
-		while (m_dynamicObjectBufferOffset < elementByteSize)
-		{
-			m_dynamicObjectBufferOffset += minOffset;
-		}
-	}
+	/*struct UniformObjectElement
+	{
+		Matrix4f model;
+	}*/
+	BufferLayout objectLayout(StructLayout::Default);
+	objectLayout.addMatrix(BufferElementType::Float, 4, 4);
+
+	const auto elementByteSize = static_cast<uint32_t>(objectLayout.getSize());
+	const auto minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
+
+	m_dynamicObjectBufferOffset = Math::getNextMultiple(elementByteSize, minOffset);
 
 	m_frameDatas.resize(maxFramesInFlight);
 	for (auto& frameData : m_frameDatas)
 	{
 		// Frame uniform buffers
-		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, sizeof(UniformFrameElement), true });
+		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, frameLayout.getSize(), true });
 
 		// Frame object uniform buffers
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(objectCount * m_dynamicObjectBufferOffset), true });
@@ -347,7 +330,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		// Add descriptor set
 		frameData.descriptorSet = m_frameLayout->createSet();
 		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
-		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, sizeof(UniformObjectElement));
+		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, elementByteSize);
 	}
 
 	//----- SHADOW MAPPING -----//
@@ -356,9 +339,16 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_shadowViewport.size = { shadowMapSize, shadowMapSize };
 
 	{
+		/*struct UniformShadowMappingData
+		{
+			Matrix4f depthMVP;
+		}*/
+		BufferLayout shadowLayout(StructLayout::Default);
+		shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
+
 		Buffer::Settings bufferSettings;
 		bufferSettings.usage = BufferUsage::Uniform;
-		bufferSettings.byteSize = sizeof(UniformShadowMappingData);
+		bufferSettings.byteSize = shadowLayout.getSize();
 		bufferSettings.mappable = true;
 
 		for (auto& frameData : m_frameDatas)
@@ -416,9 +406,23 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	// Fill pass data buffer
 	{
+		/*struct UniformPhongLightingData
+		{
+			vec3f cameraPosition;
+			vec3f lightDirection;
+			vec3f lightColor;
+			float ambientStrength;
+		}*/
+
+		BufferLayout phongLayout(StructLayout::Default);
+		phongLayout.add(BufferElementType::Float3);
+		phongLayout.add(BufferElementType::Float3);
+		phongLayout.add(BufferElementType::Float3);
+		phongLayout.add(BufferElementType::Float);
+
 		Buffer::Settings bufferSettings;
 		bufferSettings.usage = BufferUsage::Uniform;
-		bufferSettings.byteSize = sizeof(UniformPhongLightingData);
+		bufferSettings.byteSize = phongLayout.getSize();
 		bufferSettings.mappable = true;
 
 		for (auto& frameData : m_frameDatas)
@@ -1003,15 +1007,23 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 					cameraTarget = cameraPos + Matrix4f::createRotation(transform.getRotation()).transformVector({ 1.0f, 0.0f, 0.0f });
 				}
 
-				UniformFrameElement frameUniformData;
-				frameUniformData.view = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
-				frameUniformData.proj = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
-				frameUniformData.proj[1][1] *= -1;
-				frameUniformData.cameraPosition = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
+				/*struct UniformFrameElement
+				{
+					mat4f proj;
+					mat4f view;
+					vec3f cameraPosition;
+				}*/
+				BufferLayout frameLayout(StructLayout::Default);
+				const auto projOffset = frameLayout.addMatrix(BufferElementType::Float, 4, 4);
+				const auto viewOffset = frameLayout.addMatrix(BufferElementType::Float, 4, 4);
+				const auto cameraPositionOffset = frameLayout.add(BufferElementType::Float3);
 
 				void* data = frameData.frameUniformBuffer->map();
 
-				memcpy(data, static_cast<void*>(&frameUniformData), sizeof(UniformFrameElement));
+				mapMemory<Matrix4f>(data, viewOffset) = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
+				mapMemory<Matrix4f>(data, projOffset) = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
+				mapMemory<Matrix4f>(data, projOffset)[1][1] *= -1;
+				mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
 
 				frameData.frameUniformBuffer->unmap();
 
@@ -1024,6 +1036,13 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	auto entities = getEntityManager().getUnion<Transform, GraphicsComponent>();
 
 	{
+		/*struct UniformObjectElement
+		{
+			Matrix4f model;
+		}*/
+		BufferLayout objectLayout(StructLayout::Default);
+		const auto modelOffset = objectLayout.addMatrix(BufferElementType::Float, 4, 4);
+
 		auto data = static_cast<uint8_t*>(frameData.objectsUniformBuffer->map());
 
 		auto& taskManager = TaskManager::instance();
@@ -1046,7 +1065,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 				lastIndex += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, data, firstIndex, lastIndex, &entities]()
+			auto task = taskManager.createTask([this, data, firstIndex, lastIndex, &entities, modelOffset]()
 				{
 					auto it = entities.begin() + firstIndex;
 
@@ -1054,10 +1073,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 					{
 						auto& transform = entities.get<Transform>(*it);
 
-						UniformObjectElement objectTransforms;
-						objectTransforms.model = transform.getMatrix();
-
-						memcpy(static_cast<void*>(&data[j * m_dynamicObjectBufferOffset]), static_cast<void*>(&objectTransforms), sizeof(UniformObjectElement));
+						mapMemory<Matrix4f>(data, j * m_dynamicObjectBufferOffset + modelOffset) = transform.getMatrix();
 
 						it++;
 					}
@@ -1101,21 +1117,42 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		auto proj = Matrix4f::createOrtho(viewAABB.min.x, viewAABB.max.x, viewAABB.min.y, viewAABB.max.y, zNear, zFar);
 		proj[1][1] *= -1;
 
-		auto& data = *static_cast<UniformShadowMappingData*>(frameData.shadowBuffer->map());
+		/*struct UniformShadowMappingData
+		{
+			Matrix4f depthMVP;
+		}*/
+		BufferLayout shadowLayout(StructLayout::Default);
+		const auto mvpOffset = shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
 
-		data.depthMVP = proj * view;
+		auto data = frameData.shadowBuffer->map();
+
+		mapMemory<Matrix4f>(data, mvpOffset) = proj * view;
 
 		frameData.shadowBuffer->unmap();
 	}
 
 	// Update phong buffer
 	{
-		auto& data = *static_cast<UniformPhongLightingData*>(frameData.phongBuffer->map());
+		/*struct UniformPhongLightingData
+		{
+			vec3f cameraPosition;
+			vec3f lightDirection;
+			vec3f lightColor;
+			float ambientStrength;
+		}*/
 
-		data.cameraPosition = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
-		data.lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		data.lightDirection = { lightDirection.x, lightDirection.y, lightDirection.z, 0.0f };
-		data.ambientStrength = 0.3f;
+		BufferLayout phongLayout(StructLayout::Default);
+		const auto cameraPositionOffset = phongLayout.add(BufferElementType::Float3);
+		const auto lightDirectionOffset = phongLayout.add(BufferElementType::Float3);
+		const auto lightColorOffset = phongLayout.add(BufferElementType::Float3);
+		const auto ambientStrengthOffset = phongLayout.add(BufferElementType::Float);
+
+		auto data = frameData.phongBuffer->map();
+
+		mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z };
+		mapMemory<Vector3f>(data, lightDirectionOffset) = { lightDirection.x, lightDirection.y, lightDirection.z };
+		mapMemory<Vector4f>(data, lightColorOffset) = { 1.0f, 1.0f, 1.0f };
+		mapMemory<float>(data, ambientStrengthOffset) = 0.3f;
 
 		frameData.shadowBuffer->unmap();
 	}

@@ -1,8 +1,8 @@
 struct PhongDirectionalData
 {
-	vec4f cameraPosition;
-	vec4f lightDirection;
-	vec4f lightColor;
+	vec3f cameraPosition;
+	vec3f lightDirection;
+	vec3f lightColor;
 	float ambientStrength;
 }
 
@@ -127,23 +127,23 @@ void main()
 	int roughness = int(sample(gbufferRoughness, inTexCoords).r * 255.0);
 	vec3f emissiveColor = sample(gbufferEmissive, inTexCoords).rgb;
 	
-	vec3f inverseLightDir = -normalize(phongData.lightDirection.xyz);
+	vec3f inverseLightDir = -normalize(phongData.lightDirection);
 	
-	vec3f ambientColor = phongData.ambientStrength * phongData.lightColor.rgb * ao;
+	vec3f ambientColor = phongData.ambientStrength * phongData.lightColor * ao;
 	
 	float cosTheta = dot(normal, inverseLightDir);
 	
 	float diffuseFactor = max(cosTheta, 0.0);
 	
-	vec3f diffuseColor = diffuseFactor * phongData.lightColor.rgb;
+	vec3f diffuseColor = diffuseFactor * phongData.lightColor;
 	
-	vec3f viewDir = normalize(phongData.cameraPosition.xyz - pos);
+	vec3f viewDir = normalize(phongData.cameraPosition - pos);
 	
 	vec3f reflectDir = reflect(-inverseLightDir, normal);
 	
 	float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), roughness);
 	
-	vec3f specularColor = specularFactor * metalness * phongData.lightColor.rgb;
+	vec3f specularColor = specularFactor * metalness * phongData.lightColor;
 	
 	float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.01);
 	

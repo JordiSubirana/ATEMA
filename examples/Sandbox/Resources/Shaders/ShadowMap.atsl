@@ -2,6 +2,7 @@ struct FrameData
 {
 	mat4f proj;
 	mat4f view;
+	vec3f cameraPosition;
 }
 
 struct PassData
