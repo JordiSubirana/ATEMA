@@ -19,30 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_UTILS_INL
+#define ATEMA_CORE_UTILS_INL
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/Benchmark.hpp>
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/EventDispatcher.hpp>
-#include <Atema/Core/Flags.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/Signal.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/TaskManager.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
 #include <Atema/Core/Utils.hpp>
-#include <Atema/Core/Variant.hpp>
+
+namespace at
+{
+	template <typename T>
+	T& mapMemory(void* ptr, size_t byteOffset)
+	{
+		return *reinterpret_cast<T*>(static_cast<uint8_t*>(ptr) + byteOffset);
+	}
+}
 
 #endif
