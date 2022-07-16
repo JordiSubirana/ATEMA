@@ -38,12 +38,17 @@ namespace at
 		void visit(WhileLoopStatement& statement) override;
 		void visit(DoWhileLoopStatement& statement) override;
 		void visit(VariableDeclarationStatement& statement) override;
+		void visit(StructDeclarationStatement& statement) override;
+		void visit(InputDeclarationStatement& statement) override;
+		void visit(OutputDeclarationStatement& statement) override;
+		void visit(ExternalDeclarationStatement& statement) override;
 		void visit(OptionDeclarationStatement& statement) override;
 		void visit(FunctionDeclarationStatement& statement) override;
 		void visit(EntryFunctionDeclarationStatement& statement) override;
 		void visit(ExpressionStatement& statement) override;
 		void visit(ReturnStatement& statement) override;
 		void visit(SequenceStatement& statement) override;
+		void visit(OptionalStatement& statement) override;
 
 		void visit(AccessIndexExpression& expression) override;
 		void visit(AccessIdentifierExpression& expression) override;
@@ -55,6 +60,7 @@ namespace at
 		void visit(CastExpression& expression) override;
 		void visit(SwizzleExpression& expression) override;
 		void visit(TernaryExpression& expression) override;
+		
 	};
 }
 
