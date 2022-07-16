@@ -97,10 +97,19 @@ namespace at
 		Vector<N, T>& operator *=(T arg);
 		Vector<N, T>& operator /=(T arg);
 
+		Vector<N, T>& operator ++();
+		Vector<N, T> operator ++(int);
+		Vector<N, T>& operator --();
+		Vector<N, T> operator --(int);
+
+		Vector<N, T> operator+() const;
+		Vector<N, T> operator-() const;
+
 		Vector& operator=(const Vector& other);
 		Vector& operator=(Vector&& other) noexcept;
 
 		bool operator==(const Vector<N, T>& other) const;
+		bool operator!=(const Vector<N, T>& other) const;
 
 		T& operator[](size_t index);
 		const T& operator[](size_t index) const;

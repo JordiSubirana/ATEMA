@@ -267,6 +267,58 @@ namespace at
 	}
 
 	template <size_t N, typename T>
+	Vector<N, T>& Vector<N, T>::operator++()
+	{
+		for (auto& component : this->data)
+			component++;
+
+		return *this;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::operator++(int)
+	{
+		Vector<N, T> value = *this;
+
+		for (auto& component : this->data)
+			component++;
+
+		return value;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T>& Vector<N, T>::operator--()
+	{
+		for (auto& component : this->data)
+			component--;
+
+		return *this;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::operator--(int)
+	{
+		Vector<N, T> value = *this;
+
+		for (auto& component : this->data)
+			component--;
+
+		return value;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::operator+() const
+	{
+		return *this;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::operator-() const
+	{
+		return Vector<N, T>(0) - *this;
+	}
+
+	template <size_t N, typename T>
 	Vector<N, T>& Vector<N, T>::operator=(const Vector& other)
 	{
 		this->data = other.data;
@@ -292,6 +344,12 @@ namespace at
 		}
 
 		return true;
+	}
+
+	template <size_t N, typename T>
+	bool Vector<N, T>::operator!=(const Vector<N, T>& other) const
+	{
+		return !operator==(other);
 	}
 
 	template <size_t N, typename T>
