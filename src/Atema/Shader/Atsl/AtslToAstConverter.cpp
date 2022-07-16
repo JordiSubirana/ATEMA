@@ -28,6 +28,7 @@
 
 #include <unordered_set>
 #include <functional>
+#include <stack>
 
 #define ATEMA_ATSL_TOKEN_ERROR(at_str) error(token, at_str)
 
@@ -69,8 +70,6 @@ namespace
 }
 
 AtslToAstConverter::AtslToAstConverter():
-	m_currentSequence(nullptr),
-	m_parentSequence(nullptr),
 	m_tokens(nullptr),
 	m_currentIndex(0)
 {
@@ -85,8 +84,25 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 	// Initialize variables
 	m_root = std::make_unique<SequenceStatement>();
 
-	m_currentSequence = m_root.get();
-	m_parentSequence = nullptr;
+	bool waitConditionalRightBrace = false;
+
+	using AddStatementFunction = std::function<void(UPtr<Statement>&&)>;
+
+	std::stack<AddStatementFunction> addStatementFunctions;
+
+	{
+		AddStatementFunction defaultAddStatement = [&](UPtr<Statement>&& statement)
+		{
+			m_root->statements.emplace_back(std::move(statement));
+		};
+
+		addStatementFunctions.emplace(std::move(defaultAddStatement));
+	}
+
+	const AddStatementFunction addStatement = [&](UPtr<Statement>&& statement)
+	{
+		addStatementFunctions.top()(std::move(statement));
+	};
 
 	m_attributes.clear();
 
@@ -122,6 +138,17 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 						parseAttributes();
 						break;
 					}
+					case AtslSymbol::RightBrace:
+					{
+						if (waitConditionalRightBrace)
+						{
+							waitConditionalRightBrace = false;
+
+							addStatementFunctions.pop();
+
+							break;
+						}
+					}
 					default:
 					{
 						ATEMA_ATSL_TOKEN_ERROR("Unexpected symbol");
@@ -141,29 +168,79 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 
 				switch (keyword)
 				{
+					case AtslKeyword::Optional:
+					{
+						expect(iterate(), AtslKeyword::Optional);
+
+						auto conditional = std::make_unique<OptionalStatement>();
+
+						conditional->condition = parseParenthesisExpression();
+
+						AddStatementFunction callback;
+
+						// Wait for a full sequence
+						if (get().is(AtslSymbol::LeftBrace))
+						{
+							iterate();
+
+							waitConditionalRightBrace = true;
+
+							conditional->statement = std::make_unique<SequenceStatement>();
+
+							auto sequence = static_cast<SequenceStatement*>(conditional->statement.get());
+
+							// Wait for one or more statements and pop when we'll find the corresponding right brace
+							callback = [sequence](UPtr<Statement>&& statement)
+							{
+								sequence->statements.emplace_back(std::move(statement));
+							};
+						}
+						// Only wait for the next statement
+						else
+						{
+							auto conditionalPtr = conditional.get();
+
+							// Wait for one statement and pop the add function
+							callback = [&addStatementFunctions, conditionalPtr](UPtr<Statement>&& statement)
+							{
+								conditionalPtr->statement = std::move(statement);
+
+								// We got the statement we needed, for now we'll add statements as before
+								addStatementFunctions.pop();
+							};
+						}
+
+						// Append current optional statement
+						addStatement(std::move(conditional));
+
+						// Append the next statement(s) to the optional statement
+						addStatementFunctions.emplace(std::move(callback));
+
+						break;
+					}
 					case AtslKeyword::Input:
 					case AtslKeyword::Output:
 					case AtslKeyword::External:
 					{
-						m_currentSequence->statements.push_back(parseVariableBlock());
+						addStatement(parseVariableBlock());
 
 						break;
 					}
 					case AtslKeyword::Option:
 					{
-						m_currentSequence->statements.push_back(parseOptionDeclaration());
+						addStatement(parseOptionDeclaration());
 
 						break;
 					}
 					case AtslKeyword::Const:
 					{
-						m_currentSequence->statements.push_back(parseVariableDeclaration());
+						addStatement(parseVariableDeclaration());
 
 						break;
 					}
 					case AtslKeyword::Struct:
 					{
-						m_currentSequence->statements.push_back(parseStructDeclaration());
+						addStatement(parseStructDeclaration());
 
 						break;
 					}
@@ -182,9 +259,9 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			{
 				// typeIdentifier functionName(...) => function declaration
 				if (get(2).is(AtslSymbol::LeftParenthesis))
-					m_currentSequence->statements.push_back(parseFunctionDeclaration());
+					addStatement(parseFunctionDeclaration());
 				else
-					m_currentSequence->statements.push_back(parseVariableDeclaration());
+					addStatement(parseVariableDeclaration());
 				
 				break;
 			}
@@ -261,63 +338,12 @@ const AtslIdentifier& AtslToAstConverter::expectAttributeIdentifier(const AtslId
 
 	const auto& attribute = getAttribute(name);
 
-	if (!attribute.is<AtslIdentifier>())
+	if (attribute->getType() != Expression::Type::Variable)
 	{
 		ATEMA_ERROR("Invalid '" + name + "' attribute : expected identifier");
 	}
 
-	return attribute.get<AtslIdentifier>();
-}
-
-bool AtslToAstConverter::expectAttributeBool(const AtslIdentifier& name) const
-{
-	if (!hasAttribute(name))
-	{
-		ATEMA_ERROR("Expected '" + name + "' attribute");
-	}
-
-	const auto& attribute = getAttribute(name);
-
-	if (!attribute.is<AtslBasicValue>() || !attribute.get<AtslBasicValue>().is<bool>())
-	{
-		ATEMA_ERROR("Invalid '" + name + "' attribute : expected boolean");
-	}
-
-	return attribute.get<AtslBasicValue>().get<bool>();
-}
-
-int32_t AtslToAstConverter::expectAttributeInt(const AtslIdentifier& name) const
-{
-	if (!hasAttribute(name))
-	{
-		ATEMA_ERROR("Expected '" + name + "' attribute");
-	}
-
-	const auto& attribute = getAttribute(name);
-
-	if (!attribute.is<AtslBasicValue>() || !attribute.get<AtslBasicValue>().is<int32_t>())
-	{
-		ATEMA_ERROR("Invalid '" + name + "' attribute : expected integer");
-	}
-
-	return attribute.get<AtslBasicValue>().get<int32_t>();
-}
-
-float AtslToAstConverter::expectAttributeFloat(const AtslIdentifier& name) const
-{
-	if (!hasAttribute(name))
-	{
-		ATEMA_ERROR("Expected '" + name + "' attribute");
-	}
-
-	const auto& attribute = getAttribute(name);
-
-	if (!attribute.is<AtslBasicValue>() || !attribute.get<AtslBasicValue>().is<float>())
-	{
-		ATEMA_ERROR("Invalid '" + name + "' attribute : expected float");
-	}
-
-	return attribute.get<AtslBasicValue>().get<float>();
+	return static_cast<VariableExpression&>(*attribute).identifier;
 }
 
 void AtslToAstConverter::parseAttributes()
@@ -343,6 +369,24 @@ void AtslToAstConverter::parseAttributes()
 
 		switch (token.type)
 		{
+			case AtslTokenType::Keyword:
+			{
+				if (!expectAttribute)
+				{
+					ATEMA_ATSL_TOKEN_ERROR("Expected attribute delimiter");
+				}
+
+				// Only optional keyword is valid here
+				expect(token, AtslKeyword::Optional);
+
+				auto expression = parseParenthesisExpression();
+
+				m_attributes["optional"] = std::move(expression);
+
+				expectAttribute = false;
+
+				break;
+			}
 			case AtslTokenType::Identifier:
 			{
 				if (!expectAttribute)
@@ -352,33 +396,9 @@ void AtslToAstConverter::parseAttributes()
 
 				auto& attributeName = token.value.get<AtslIdentifier>();
 
-				expect(iterate(), AtslSymbol::LeftParenthesis);
+				auto expression = parseParenthesisExpression();
 
-				if (!remains())
-				{
-					ATEMA_ATSL_TOKEN_ERROR("Expected attribute value");
-				}
-
-				auto& attributeValue = iterate();
-
-				if (attributeValue.type == AtslTokenType::Identifier)
-				{
-					const auto value = attributeValue.value.get<AtslIdentifier>();
-
-					m_attributes[attributeName] = value;
-				}
-				else if (attributeValue.type == AtslTokenType::Value)
-				{
-					const auto value = attributeValue.value.get<AtslBasicValue>();
-
-					m_attributes[attributeName] = value;
-				}
-				else
-				{
-					ATEMA_ATSL_TOKEN_ERROR("Expected attribute value");
-				}
-
-				expect(iterate(), AtslSymbol::RightParenthesis);
+				m_attributes[attributeName] = std::move(expression);
 
 				expectAttribute = false;
 
@@ -402,6 +422,16 @@ void AtslToAstConverter::parseAttributes()
 					}
 					case AtslSymbol::RightBracket:
 					{
+						// Another batch of attributes !
+						if (get().is(AtslSymbol::LeftBracket))
+						{
+							iterate();
+
+							expectAttribute = true;
+
+							continue;
+						}
+
 						// We got all attributes
 						return;
 					}
@@ -995,12 +1025,15 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				InputDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
 				variable.type = variableData.type;
-				variable.location = expectAttributeInt("location");
+				variable.location = getAttribute("location");
 
 				if (!variable.type.isOneOf<PrimitiveType, VectorType, MatrixType>())
 				{
 					ATEMA_ERROR("Input must be a primitive, a vector or a matrix");
 				}
+
+				if (hasAttribute("optional"))
+					variable.condition = getAttribute("optional");
 				
 				statementPtr->variables.push_back(variable);
 			};
@@ -1021,7 +1054,10 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				OutputDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
 				variable.type = variableData.type;
-				variable.location = expectAttributeInt("location");
+				variable.location = getAttribute("location");
+
+				if (hasAttribute("optional"))
+					variable.condition = getAttribute("optional");
 
 				if (!variable.type.isOneOf<PrimitiveType, VectorType, MatrixType>())
 				{
@@ -1046,9 +1082,12 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				ExternalDeclarationStatement::Variable variable;
 				variable.name = variableData.name;
 				variable.type = variableData.type;
-				variable.setIndex = expectAttributeInt("set");
-				variable.bindingIndex = expectAttributeInt("binding");
+				variable.setIndex = getAttribute("set");
+				variable.bindingIndex = getAttribute("binding");
 				variable.structLayout = StructLayout::Default;
+
+				if (hasAttribute("optional"))
+					variable.condition = getAttribute("optional");
 
 				if (hasAttribute("layout"))
 					variable.structLayout = atsl::getStructLayout(expectAttributeIdentifier("layout"));
@@ -1197,6 +1236,11 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 				case AtslKeyword::If:
 				{
 					return parseConditionalBranch();
+				}
+				// - If : conditional branch
+				case AtslKeyword::Optional:
+				{
+					return parseOptionalBranch();
 				}
 				// - For : loop statement
 				case AtslKeyword::For:
@@ -1359,6 +1403,22 @@ UPtr<ConditionalStatement> AtslToAstConverter::parseConditionalBranch()
 	return std::move(statement);
 }
 
+UPtr<OptionalStatement> AtslToAstConverter::parseOptionalBranch()
+{
+	expect(iterate(), AtslKeyword::Optional);
+
+	auto statement = std::make_unique<OptionalStatement>();
+
+	statement->condition = parseParenthesisExpression();
+
+	if (get().is(AtslSymbol::LeftBrace))
+		statement->statement = parseBlockSequence();
+	else
+		statement->statement = parseBlockStatement();
+
+	return std::move(statement);
+}
+
 UPtr<ForLoopStatement> AtslToAstConverter::parseForLoop()
 {
 	expect(iterate(), AtslKeyword::For);
@@ -1463,14 +1523,25 @@ UPtr<StructDeclarationStatement> AtslToAstConverter::parseStructDeclaration()
 
 	expect(iterate(), AtslSymbol::LeftBrace);
 
+	clearAttributes();
+
 	while (remains())
 	{
 		if (get().is(AtslSymbol::RightBrace))
 			break;
 
+		// Get attributes if any
+		if (get().is(AtslSymbol::LeftBracket))
+			parseAttributes();
+
 		const auto variableData = parseVariableDeclarationData();
 
 		statement->members.push_back({ variableData.name, variableData.type });
+
+		if (hasAttribute("optional"))
+			statement->members.back().condition = getAttribute("optional");
+
+		clearAttributes();
 	}
 
 	expect(iterate(), AtslSymbol::RightBrace);

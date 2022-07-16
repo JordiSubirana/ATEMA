@@ -126,6 +126,7 @@ namespace at
 		{
 			std::string name;
 			at::Type type;
+			Ptr<Expression> condition;
 		};
 
 		std::string name;
@@ -143,7 +144,8 @@ namespace at
 		{
 			std::string name;
 			at::Type type;
-			uint32_t location;
+			Ptr<Expression> location;
+			Ptr<Expression> condition;
 		};
 
 		AstShaderStage stage;
@@ -160,7 +162,8 @@ namespace at
 		{
 			std::string name;
 			at::Type type;
-			uint32_t location;
+			Ptr<Expression> location;
+			Ptr<Expression> condition;
 		};
 
 		AstShaderStage stage;
@@ -177,9 +180,10 @@ namespace at
 		{
 			std::string name;
 			at::Type type;
-			uint32_t setIndex;
-			uint32_t bindingIndex;
+			Ptr<Expression> setIndex;
+			Ptr<Expression> bindingIndex;
 			StructLayout structLayout;
+			Ptr<Expression> condition;
 		};
 		
 		std::vector<Variable> variables;
@@ -269,6 +273,16 @@ namespace at
 		void accept(AstVisitor& visitor) override;
 
 		std::vector<UPtr<Statement>> statements;
+	};
+
+	struct ATEMA_SHADER_API OptionalStatement : public Statement
+	{
+		Statement::Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
+
+		UPtr<Expression> condition;
+		UPtr<Statement> statement;
 	};
 }
 

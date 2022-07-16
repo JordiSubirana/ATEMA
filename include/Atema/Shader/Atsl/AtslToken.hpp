@@ -75,6 +75,7 @@ namespace at
 		Output,
 		External,
 		Option,
+		Optional,
 
 		Const,
 

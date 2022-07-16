@@ -44,7 +44,7 @@ namespace at
 		UPtr<SequenceStatement> createAst(const std::vector<AtslToken>& tokens);
 
 	private:
-		using Attribute = Variant<AtslBasicValue, AtslIdentifier>;
+		using Attribute = Ptr<Expression>;
 		using AttributeMap = std::unordered_map<AtslIdentifier, Attribute>;
 		struct VariableData
 		{
@@ -84,6 +84,7 @@ namespace at
 		
 		// Statements : at the end, semicolon is parsed
 		UPtr<ConditionalStatement> parseConditionalBranch();
+		UPtr<OptionalStatement> parseOptionalBranch();
 		UPtr<ForLoopStatement> parseForLoop();
 		UPtr<WhileLoopStatement> parseWhileLoop();
 		UPtr<DoWhileLoopStatement> parseDoWhileLoop();
@@ -104,9 +105,6 @@ namespace at
 		void clearAttributes();
 		
 		UPtr<SequenceStatement> m_root;
-
-		SequenceStatement *m_currentSequence;
-		SequenceStatement *m_parentSequence;
 
 		std::unordered_map<AtslIdentifier, Attribute> m_attributes;
 		

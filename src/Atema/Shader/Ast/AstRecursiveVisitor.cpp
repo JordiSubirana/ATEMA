@@ -76,6 +76,49 @@ void AstRecursiveVisitor::visit(VariableDeclarationStatement& statement)
 		statement.value->accept(*this);
 }
 
+void AstRecursiveVisitor::visit(StructDeclarationStatement& statement)
+{
+	for (auto& member : statement.members)
+	{
+		if (member.condition)
+			member.condition->accept(*this);
+	}
+}
+
+void AstRecursiveVisitor::visit(InputDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.location->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
+void AstRecursiveVisitor::visit(OutputDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.location->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
+void AstRecursiveVisitor::visit(ExternalDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.setIndex->accept(*this);
+		variable.bindingIndex->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
 void AstRecursiveVisitor::visit(OptionDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
@@ -109,6 +152,12 @@ void AstRecursiveVisitor::visit(SequenceStatement& statement)
 {
 	for (auto& subStatement : statement.statements)
 		subStatement->accept(*this);
+}
+
+void AstRecursiveVisitor::visit(OptionalStatement& statement)
+{
+	statement.condition->accept(*this);
+	statement.statement->accept(*this);
 }
 
 void AstRecursiveVisitor::visit(AccessIndexExpression& expression)

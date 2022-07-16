@@ -202,3 +202,13 @@ void SequenceStatement::accept(AstVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+
+Statement::Type OptionalStatement::getType() const noexcept
+{
+	return Type::Optional;
+}
+
+void OptionalStatement::accept(AstVisitor& visitor)
+{
+	visitor.visit(*this);
+}

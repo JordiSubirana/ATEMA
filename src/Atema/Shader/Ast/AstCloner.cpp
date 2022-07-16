@@ -275,6 +275,16 @@ UPtr<SequenceStatement> AstCloner::clone(const SequenceStatement& statement)
 	return std::move(cloneStatement);
 }
 
+UPtr<OptionalStatement> AstCloner::clone(const OptionalStatement& statement)
+{
+	auto cloneStatement = std::make_unique<OptionalStatement>();
+
+	cloneStatement->condition = clone(statement.condition);
+	cloneStatement->statement = clone(statement.statement);
+
+	return std::move(cloneStatement);
+}
+
 UPtr<ConstantExpression> AstCloner::clone(const ConstantExpression& expression)
 {
 	auto cloneExpression = std::make_unique<ConstantExpression>();
