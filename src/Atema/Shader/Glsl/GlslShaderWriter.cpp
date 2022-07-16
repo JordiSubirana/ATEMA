@@ -175,7 +175,21 @@ void GlslShaderWriter::visit(StructDeclarationStatement& statement)
 
 	for (auto& member : statement.members)
 	{
+		if (member.condition)
+		{
+			preprocessorIf(*member.condition);
+
+			newLine();
+		}
+
 		writeVariableDeclaration(member.type, member.name);
+
+		if (member.condition)
+		{
+			newLine();
+
+			preprocessorEndif();
+		}
 
 		// Add line except for last element
 		if (&member != &statement.members.back())
@@ -197,6 +211,13 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
+		if (variable.condition)
+		{
+			preprocessorIf(*variable.condition);
+
+			newLine();
+		}
+
 		writeLayout(variable.location);
 		
 		m_ostream << " in ";
@@ -216,6 +237,13 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 			writeVariableDeclaration(variable.type, variable.name);
 		}
 
+		if (variable.condition)
+		{
+			newLine();
+
+			preprocessorEndif();
+		}
+
 		// Add line except for last element
 		if (&variable != &statement.variables.back())
 			newLine();
@@ -226,6 +254,13 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
+		if (variable.condition)
+		{
+			preprocessorIf(*variable.condition);
+
+			newLine();
+		}
+
 		writeLayout(variable.location);
 
 		m_ostream << " out ";
@@ -245,6 +280,13 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 			writeVariableDeclaration(variable.type, variable.name);
 		}
 
+		if (variable.condition)
+		{
+			newLine();
+
+			preprocessorEndif();
+		}
+
 		// Add line except for last element
 		if (&variable != &statement.variables.back())
 			newLine();
@@ -255,6 +297,13 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
+		if (variable.condition)
+		{
+			preprocessorIf(*variable.condition);
+
+			newLine();
+		}
+
 		if (variable.type.is<StructType>())
 		{
 			writeLayout(variable.setIndex, variable.bindingIndex, variable.structLayout);
@@ -274,6 +323,13 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 			m_ostream << " uniform ";
 
 			writeVariableDeclaration(variable.type, variable.name);
+		}
+
+		if (variable.condition)
+		{
+			newLine();
+
+			preprocessorEndif();
 		}
 
 		// Add line except for last element
@@ -412,6 +468,19 @@ void GlslShaderWriter::visit(SequenceStatement& statement)
 			}
 		}
 	}
+}
+
+void GlslShaderWriter::visit(OptionalStatement& statement)
+{
+	preprocessorIf(*statement.condition);
+
+	newLine();
+
+	statement.statement->accept(*this);
+
+	newLine();
+
+	preprocessorEndif();
 }
 
 void GlslShaderWriter::visit(ConstantExpression& expression)
@@ -957,19 +1026,39 @@ void GlslShaderWriter::writeHeader()
 	newLine();
 }
 
-void GlslShaderWriter::writeLayout(unsigned location)
+void GlslShaderWriter::writeLayout(const Ptr<Expression>& location)
 {
-	m_ostream << "layout(location = " << location << ")";
+	m_ostream << "layout(location = ";
+	
+	location->accept(*this);
+
+	m_ostream << ")";
 }
 
-void GlslShaderWriter::writeLayout(unsigned set, unsigned binding)
+void GlslShaderWriter::writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding)
 {
-	m_ostream << "layout(set = " << set << ", binding = " << binding << ")";
+	m_ostream << "layout(set = ";
+	
+	set->accept(*this);
+
+	m_ostream << ", binding = ";
+	
+	binding->accept(*this);
+
+	m_ostream << ")";
 }
 
-void GlslShaderWriter::writeLayout(uint32_t set, uint32_t binding, StructLayout structLayout)
+void GlslShaderWriter::writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding, StructLayout structLayout)
 {
-	m_ostream << "layout(set = " << set << ", binding = " << binding << ", " << glsl::getStructLayoutStr(structLayout) << ")";
+	m_ostream << "layout(set = ";
+
+	set->accept(*this);
+
+	m_ostream << ", binding = ";
+
+	binding->accept(*this);
+
+	m_ostream << ", " << glsl::getStructLayoutStr(structLayout) << ")";
 }
 
 void GlslShaderWriter::writeType(Type type)
@@ -1048,7 +1137,21 @@ void GlslShaderWriter::writeInterfaceBlock(const std::string& blockName, const s
 
 	for (auto& member : statement.members)
 	{
+		if (member.condition)
+		{
+			preprocessorIf(*member.condition);
+
+			newLine();
+		}
+
 		writeVariableDeclaration(member.type, member.name);
+
+		if (member.condition)
+		{
+			newLine();
+
+			preprocessorEndif();
+		}
 
 		// Add line except for last element
 		if (&member != &statement.members.back())
@@ -1060,4 +1163,18 @@ void GlslShaderWriter::writeInterfaceBlock(const std::string& blockName, const s
 	m_ostream << " " << instanceName;
 
 	addDelimiter();
+}
+
+void GlslShaderWriter::preprocessorIf(Expression& expression)
+{
+	m_ostream << "#if (";
+	
+	expression.accept(*this);
+
+	m_ostream << ")";
+}
+
+void GlslShaderWriter::preprocessorEndif()
+{
+	m_ostream << "#endif";
 }

@@ -149,8 +149,20 @@ void AtslShaderWriter::visit(StructDeclarationStatement& statement)
 
 	beginBlock();
 
+	std::vector<Attribute> attributes =
+	{
+		{"conditional", AtslBasicValue(0)}
+	};
+
 	for (auto& member : statement.members)
 	{
+		if (member.condition)
+		{
+			attributes[0].value = member.condition;
+
+			writeAttributes(attributes);
+		}
+
 		writeVariableDeclaration(member.type, member.name);
 
 		// Add line except for last element
@@ -182,14 +194,21 @@ void AtslShaderWriter::visit(InputDeclarationStatement& statement)
 		m_ostream << " ";
 
 	// Write variables
-	std::vector<Attribute> variableAttributes =
-	{
-		{"location", AtslBasicValue(0)}
-	};
-
 	for (auto& variable : statement.variables)
 	{
-		variableAttributes[0].value = static_cast<int32_t>(variable.location);
+		std::vector<Attribute> variableAttributes =
+		{
+			{ "location", variable.location }
+		};
+
+		if (variable.condition)
+		{
+			Attribute layoutAttribute;
+			layoutAttribute.name = "conditional";
+			layoutAttribute.value = variable.condition;
+
+			variableAttributes.emplace_back(std::move(layoutAttribute));
+		}
 
 		writeAttributes(variableAttributes);
 
@@ -228,14 +247,21 @@ void AtslShaderWriter::visit(OutputDeclarationStatement& statement)
 		m_ostream << " ";
 
 	// Write variables
-	std::vector<Attribute> variableAttributes =
-	{
-		{"location", AtslBasicValue(0)}
-	};
-
 	for (auto& variable : statement.variables)
 	{
-		variableAttributes[0].value = static_cast<int32_t>(variable.location);
+		std::vector<Attribute> variableAttributes =
+		{
+			{ "location", variable.location }
+		};
+
+		if (variable.condition)
+		{
+			Attribute layoutAttribute;
+			layoutAttribute.name = "conditional";
+			layoutAttribute.value = variable.condition;
+
+			variableAttributes.emplace_back(std::move(layoutAttribute));
+		}
 
 		writeAttributes(variableAttributes);
 
@@ -268,8 +294,8 @@ void AtslShaderWriter::visit(ExternalDeclarationStatement& statement)
 	{
 		std::vector<Attribute> variableAttributes =
 		{
-			{ "set", static_cast<int32_t>(variable.setIndex) },
-			{ "binding", static_cast<int32_t>(variable.bindingIndex) }
+			{ "set", variable.setIndex },
+			{ "binding", variable.bindingIndex }
 		};
 
 		if (variable.type.is<StructType>())
@@ -277,6 +303,15 @@ void AtslShaderWriter::visit(ExternalDeclarationStatement& statement)
 			Attribute layoutAttribute;
 			layoutAttribute.name = "layout";
 			layoutAttribute.value = atsl::getStructLayoutStr(variable.structLayout);
+
+			variableAttributes.emplace_back(std::move(layoutAttribute));
+		}
+
+		if (variable.condition)
+		{
+			Attribute layoutAttribute;
+			layoutAttribute.name = "conditional";
+			layoutAttribute.value = variable.condition;
 
 			variableAttributes.emplace_back(std::move(layoutAttribute));
 		}
@@ -407,6 +442,34 @@ void AtslShaderWriter::visit(SequenceStatement& statement)
 			newLine();
 			newLine(); // Add 2 lines to make code better to read
 		}
+	}
+}
+
+void AtslShaderWriter::visit(OptionalStatement& statement)
+{
+	m_ostream << "optional (";
+
+	statement.condition->accept(*this);
+
+	m_ostream << ")";
+
+	if (statement.statement->getType() == Statement::Type::Sequence)
+	{
+		beginBlock();
+
+		statement.statement->accept(*this);
+
+		endBlock();
+	}
+	else
+	{
+		indent();
+
+		newLine();
+
+		statement.statement->accept(*this);
+
+		unindent();
 	}
 }
 
@@ -874,6 +937,10 @@ void AtslShaderWriter::writeAttributes(const std::vector<Attribute>& attributes)
 		else if (attribute.value.is<AtslIdentifier>())
 		{
 			m_ostream << attribute.value.get<AtslIdentifier>();
+		}
+		else if (attribute.value.is<Ptr<Expression>>())
+		{
+			attribute.value.get<Ptr<Expression>>()->accept(*this);
 		}
 		else
 		{

@@ -55,6 +55,7 @@ namespace at
 		void visit(ContinueStatement& statement) override;
 		void visit(ReturnStatement& statement) override;
 		void visit(SequenceStatement& statement) override;
+		void visit(OptionalStatement& statement) override;
 
 		void visit(ConstantExpression& expression) override;
 		void visit(VariableExpression& expression) override;
@@ -73,7 +74,7 @@ namespace at
 		struct Attribute
 		{
 			std::string name;
-			Variant<AtslBasicValue, AtslIdentifier> value;
+			Variant<AtslBasicValue, AtslIdentifier, Ptr<Expression>> value;
 		};
 
 		void newLine();

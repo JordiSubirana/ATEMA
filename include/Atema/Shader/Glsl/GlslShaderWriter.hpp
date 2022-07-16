@@ -63,6 +63,7 @@ namespace at
 		void visit(ContinueStatement& statement) override;
 		void visit(ReturnStatement& statement) override;
 		void visit(SequenceStatement& statement) override;
+		void visit(OptionalStatement& statement) override;
 
 		void visit(ConstantExpression& expression) override;
 		void visit(VariableExpression& expression) override;
@@ -89,14 +90,17 @@ namespace at
 		void addDelimiter();
 
 		void writeHeader();
-		void writeLayout(uint32_t location);
-		void writeLayout(uint32_t set, uint32_t binding);
-		void writeLayout(uint32_t set, uint32_t binding, StructLayout structLayout);
+		void writeLayout(const Ptr<Expression>& location);
+		void writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding);
+		void writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding, StructLayout structLayout);
 		void writeType(Type type);
 		void writeType(ArrayType::ComponentType type);
 		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);
 		void writeInterfaceBlock(const std::string& blockName, const std::string& instanceName, const std::string& suffix);
+
+		void preprocessorIf(Expression& expression);
+		void preprocessorEndif();
 
 		bool m_isSequenceProcessed;
 		AstShaderStage m_stage;
