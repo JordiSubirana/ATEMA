@@ -38,6 +38,7 @@ void AstVisitor::visit(Statement& statement)
 #define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) case Statement::Type::at_statement: \
 	{ \
 		visit(static_cast<at_statement ## Statement&>(statement)); \
+		break; \
 	}
 #include <Atema/Shader/Ast/StatementMacroList.hpp>
 		default:
@@ -54,6 +55,7 @@ void AstVisitor::visit(Expression& expression)
 #define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) case Expression::Type::at_expression: \
 	{ \
 		visit(static_cast<at_expression ## Expression&>(expression)); \
+		break; \
 	}
 #include <Atema/Shader/Ast/ExpressionMacroList.hpp>
 		default:
