@@ -658,11 +658,11 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 			// Assignment
 			case AtslSymbol::Equal:
 			{
-				iterate();
-
 				// Check whether this is an assignment or an equals binary expression
-				if (get().is(AtslSymbol::Equal))
+				if (get(1).is(AtslSymbol::Equal))
 					break;
+
+				iterate();
 
 				auto expression = std::make_unique<AssignmentExpression>();
 
@@ -820,6 +820,14 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 				expect(iterate(), AtslSymbol::Equal);
 
 				operation = BinaryOperator::NotEqual;
+
+				break;
+			}
+			case AtslSymbol::Equal:
+			{
+				expect(iterate(), AtslSymbol::Equal);
+
+				operation = BinaryOperator::Equal;
 
 				break;
 			}
