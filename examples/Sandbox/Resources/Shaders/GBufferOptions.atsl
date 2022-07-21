@@ -269,9 +269,7 @@ void main()
 	outPosition = vec4f(inPosition, 1.0);
 	
 	vec3f normal = (matNormal * 2.0) - 1.0;
-	
-	if (MaterialRoughnessBinding < 0)
-		normal = normalize(inTBN * normal);
+	normal = normalize(inTBN * normal);
 	
 	outNormal = vec4f(normal, 0.0);
 	
