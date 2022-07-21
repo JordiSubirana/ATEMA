@@ -25,8 +25,7 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Config.hpp>
-
-#include <filesystem>
+#include <Atema/Renderer/Enums.hpp>
 
 namespace at
 {
@@ -35,7 +34,9 @@ namespace at
 	public:
 		struct Settings
 		{
-			std::filesystem::path path;
+			ShaderLanguage shaderLanguage = ShaderLanguage::Atsl;
+			void* shaderData = nullptr;
+			size_t shaderDataSize = 0;
 		};
 
 		virtual ~Shader();

@@ -327,6 +327,14 @@ namespace at
 
 	ATEMA_DECLARE_FLAGS(ShaderStage);
 
+	enum class ShaderLanguage
+	{
+		Ast,
+		Atsl,
+		SpirV,
+		Glsl
+	};
+
 	enum class PipelineStage
 	{
 		TopOfPipe = 0x0001,

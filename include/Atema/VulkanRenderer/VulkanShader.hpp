@@ -38,6 +38,8 @@ namespace at
 		VkShaderModule getHandle() const noexcept;
 
 	private:
+		void create(const uint32_t* code, size_t codeSize);
+
 		const VulkanDevice& m_device;
 		VkShaderModule m_shaderModule;
 	};

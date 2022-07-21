@@ -21,49 +21,69 @@
 
 #include <Atema/VulkanRenderer/VulkanShader.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
-
-#include <fstream>
+#include <Atema/Shader/Atsl/AtslParser.hpp>
+#include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
+#include <Atema/Shader/Spirv/SpirvShaderWriter.hpp>
 
 using namespace at;
-
-namespace
-{
-	std::vector<char> readFile(const std::filesystem::path& filename)
-	{
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open())
-		{
-			ATEMA_ERROR("Failed to open file : " + filename.string());
-		}
-
-		size_t fileSize = static_cast<size_t>(file.tellg());
-
-		std::vector<char> buffer(fileSize);
-
-		file.seekg(0);
-
-		file.read(buffer.data(), fileSize);
-
-		file.close();
-
-		return buffer;
-	}
-}
 
 VulkanShader::VulkanShader(const VulkanDevice& device, const Shader::Settings& settings) :
 	Shader(),
 	m_device(device),
 	m_shaderModule(VK_NULL_HANDLE)
 {
-	auto shaderCode = readFile(settings.path);
+	if (!settings.shaderData || settings.shaderDataSize == 0)
+		ATEMA_ERROR("Invalid shader source");
 
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = shaderCode.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
+	switch (settings.shaderLanguage)
+	{
+		case ShaderLanguage::Ast:
+		{
+			auto ast = static_cast<Statement*>(settings.shaderData);
 
-	ATEMA_VK_CHECK(m_device.vkCreateShaderModule(m_device, &createInfo, nullptr, &m_shaderModule));
+			SpirvShaderWriter spvWriter;
+
+			ast->accept(spvWriter);
+
+			std::vector<uint32_t> code;
+
+			spvWriter.compile(code);
+
+			create(code.data(), code.size());
+
+			break;
+		}
+		case ShaderLanguage::Atsl:
+		{
+			AtslParser atslParser;
+
+			const auto atslTokens = atslParser.createTokens(std::string(static_cast<const char*>(settings.shaderData), settings.shaderDataSize));
+
+			AtslToAstConverter converter;
+
+			auto ast = converter.createAst(atslTokens);
+
+			SpirvShaderWriter spvWriter;
+
+			ast->accept(spvWriter);
+
+			std::vector<uint32_t> code;
+
+			spvWriter.compile(code);
+
+			create(code.data(), code.size());
+
+			break;
+		}
+		case ShaderLanguage::SpirV:
+		{
+			create(static_cast<uint32_t*>(settings.shaderData), settings.shaderDataSize);
+
+			break;
+		}
+		default:
+			ATEMA_ERROR("Unsupported shader language");
+	}
 }
 
 VulkanShader::~VulkanShader()
@@ -74,4 +94,17 @@ VulkanShader::~VulkanShader()
 VkShaderModule VulkanShader::getHandle() const noexcept
 {
 	return m_shaderModule;
+}
+
+void VulkanShader::create(const uint32_t* code, size_t codeSize)
+{
+	if (!code || codeSize == 0)
+		ATEMA_ERROR("Invalid shader source");
+
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = codeSize * sizeof(uint32_t);
+	createInfo.pCode = code;
+
+	ATEMA_VK_CHECK(m_device.vkCreateShaderModule(m_device, &createInfo, nullptr, &m_shaderModule));
 }
