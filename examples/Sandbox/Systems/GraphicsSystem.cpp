@@ -28,6 +28,8 @@
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Renderer/Shader.hpp>
+#include <Atema/Shader/Ast/AstPreprocessor.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
 
 #include "../Resources.hpp"
@@ -44,27 +46,25 @@ namespace
 
 	//-----
 
-	const auto shaderPath = rscPath / "Shaders";
+	const auto gbufferShaderPath = shaderPath / "GBuffer.atsl";
+	const auto shadowMapShaderPath = shaderPath / "ShadowMap.atsl";
+	const auto postProcessShaderPath = shaderPath / "PostProcess.atsl";
+	const auto phongLightingDirectionalShaderPath = shaderPath / "PhongLightingDirectional.atsl";
+	const auto screenShaderPath = shaderPath / "Screen.atsl";
 
-	const auto gbufferVS = shaderPath / "GBufferVS.spv";
-	const auto gbufferFS = shaderPath / "GBufferFS.spv";
-	const auto shadowMapVS = shaderPath / "ShadowMapVS.spv";
-	const auto shadowMapFS = shaderPath / "ShadowMapFS.spv";
-	const auto postProcessVS = shaderPath / "PostProcessVS.spv";
-	const auto phongLightingDirectionalVS = shaderPath / "PhongLightingDirectionalVS.spv";
-	const auto phongLightingDirectionalFS = shaderPath / "PhongLightingDirectionalFS.spv";
-	const auto screenFS = shaderPath / "ScreenFS.spv";
-
-	const std::vector<std::filesystem::path> shaderPaths =
+	struct ShaderData
 	{
-		gbufferVS,
-		gbufferFS,
-		shadowMapVS,
-		shadowMapFS,
-		postProcessVS,
-		phongLightingDirectionalVS,
-		phongLightingDirectionalFS,
-		screenFS
+		std::filesystem::path path;
+		Flags<AstShaderStage> shaderStages;
+	};
+
+	const std::vector<ShaderData> shaderDatas =
+	{
+		{ gbufferShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
+		{ shadowMapShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
+		{ postProcessShaderPath, AstShaderStage::Vertex },
+		{ phongLightingDirectionalShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
+		{ screenShaderPath, AstShaderStage::Fragment }
 	};
 
 	constexpr size_t targetThreadCount = 8;
@@ -175,10 +175,58 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_depthFormat = ImageFormat::D32F_S8U;
 
 	//----- SHADERS -----//
-	std::unordered_map<std::string, Ptr<Shader>> shaders;
+	std::unordered_map<std::string, Ptr<Shader>> vertexShaders;
+	std::unordered_map<std::string, Ptr<Shader>> fragmentShaders;
 
-	for (auto& path : shaderPaths)
-		shaders[path.string()] = Shader::create({ path });
+	for (const auto& shaderData : shaderDatas)
+	{
+		std::stringstream code;
+
+		{
+			std::ifstream file(shaderData.path);
+
+			if (!file.is_open())
+			{
+				ATEMA_ERROR("Failed to open file '" + shaderData.path.string() + "'");
+			}
+
+			code << file.rdbuf();
+		}
+
+		AtslParser atslParser;
+
+		const auto atslTokens = atslParser.createTokens(code.str());
+
+		AtslToAstConverter converter;
+
+		auto ast = converter.createAst(atslTokens);
+
+		AstStageExtractor stageExtractor;
+
+		ast->accept(stageExtractor);
+
+		Shader::Settings shaderSettings;
+		shaderSettings.shaderLanguage = ShaderLanguage::Ast;
+		shaderSettings.shaderDataSize = 1; // First AST element
+
+		if (shaderData.shaderStages & AstShaderStage::Vertex)
+		{
+			auto stageAst = stageExtractor.getAst(AstShaderStage::Vertex);
+
+			shaderSettings.shaderData = stageAst.get();
+
+			vertexShaders[shaderData.path.string()] = Shader::create(shaderSettings);
+		}
+
+		if (shaderData.shaderStages & AstShaderStage::Fragment)
+		{
+			auto stageAst = stageExtractor.getAst(AstShaderStage::Fragment);
+
+			shaderSettings.shaderData = stageAst.get();
+
+			fragmentShaders[shaderData.path.string()] = Shader::create(shaderSettings);
+		}
+	}
 
 	//----- DEFERRED RESOURCES -----//
 	// Create Sampler
@@ -218,8 +266,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create screen pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = shaders[postProcessVS.string()];
-		pipelineSettings.fragmentShader = shaders[screenFS.string()];
+		pipelineSettings.vertexShader = vertexShaders[postProcessShaderPath.string()];
+		pipelineSettings.fragmentShader = fragmentShaders[screenShaderPath.string()];
 		pipelineSettings.descriptorSetLayouts = { m_screenLayout };
 		// Position / TexCoords
 		pipelineSettings.vertexInput.inputs = postProcessVertexInput;
@@ -273,8 +321,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Gbuffer pipeline
 	{
 		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = shaders[gbufferVS.string()];
-		pipelineSettings.fragmentShader = shaders[gbufferFS.string()];
+		pipelineSettings.vertexShader = vertexShaders[gbufferShaderPath.string()];
+		pipelineSettings.fragmentShader = fragmentShaders[gbufferShaderPath.string()];
 		pipelineSettings.descriptorSetLayouts = { m_frameLayout, m_materialLayout };
 		pipelineSettings.vertexInput.inputs =
 		{
@@ -375,8 +423,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	{
 		GraphicsPipeline::Settings graphicsPipelineSettings;
-		graphicsPipelineSettings.vertexShader = shaders[shadowMapVS.string()];
-		graphicsPipelineSettings.fragmentShader = shaders[shadowMapFS.string()];
+		graphicsPipelineSettings.vertexShader = vertexShaders[shadowMapShaderPath.string()];
+		graphicsPipelineSettings.fragmentShader = fragmentShaders[shadowMapShaderPath.string()];
 		graphicsPipelineSettings.descriptorSetLayouts = { m_frameLayout, m_shadowLayout };
 		graphicsPipelineSettings.vertexInput.inputs =
 		{
@@ -443,9 +491,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	{
 		GraphicsPipeline::Settings graphicsPipelineSettings;
-		//graphicsPipelineSettings.vertexShader = shaders[postProcessVS.string()];
-		graphicsPipelineSettings.vertexShader = shaders[phongLightingDirectionalVS.string()];
-		graphicsPipelineSettings.fragmentShader = shaders[phongLightingDirectionalFS.string()];
+		graphicsPipelineSettings.vertexShader = vertexShaders[phongLightingDirectionalShaderPath.string()];
+		graphicsPipelineSettings.fragmentShader = fragmentShaders[phongLightingDirectionalShaderPath.string()];
 		graphicsPipelineSettings.descriptorSetLayouts = { m_gbufferShadowMapLayout, m_phongLayout };
 		graphicsPipelineSettings.vertexInput.inputs = postProcessVertexInput;
 		graphicsPipelineSettings.depth.test = false;
@@ -549,6 +596,13 @@ void GraphicsSystem::translateShaders()
 
 			auto ast = converter.createAst(atslTokens);
 
+			AstPreprocessor astPreprocessor;
+			astPreprocessor.setOption("MaterialColorBinding", 0);
+			astPreprocessor.setOption("MaterialHeightBinding", 1);
+
+			ast->accept(astPreprocessor);
+			auto preprocessedAst = astPreprocessor.process(*ast);
+
 			std::vector<AstShaderStage> shaderStages = { AstShaderStage::Vertex, AstShaderStage::Fragment };
 			std::vector<std::string> glslSuffixes = { ".vert", ".frag" };
 			std::vector<std::string> spirvSuffixes = { "VS.spv", "FS.spv" };
@@ -561,7 +615,7 @@ void GraphicsSystem::translateShaders()
 
 				AstStageExtractor stageExtractor;
 
-				ast->accept(stageExtractor);
+				preprocessedAst->accept(stageExtractor);
 
 				try
 				{
@@ -570,7 +624,10 @@ void GraphicsSystem::translateShaders()
 					{
 						std::ofstream file(shaderPath / (path.stem().string() + glslSuffix));
 
-						GlslShaderWriter glslWriter(shaderStage, file);
+						GlslShaderWriter::Settings settings;
+						settings.stage = shaderStage;
+
+						GlslShaderWriter glslWriter(file, settings);
 
 						stageAst->accept(glslWriter);
 					}
@@ -578,7 +635,10 @@ void GraphicsSystem::translateShaders()
 					{
 						std::ofstream file(shaderPath / (path.stem().string() + spirvSuffix), std::ios::binary);
 
-						SpirvShaderWriter spvWriter(shaderStage);
+						SpirvShaderWriter::Settings settings;
+						settings.stage = shaderStage;
+
+						SpirvShaderWriter spvWriter(settings);
 
 						stageAst->accept(spvWriter);
 
