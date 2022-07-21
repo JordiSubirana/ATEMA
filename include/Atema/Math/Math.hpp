@@ -49,6 +49,12 @@ namespace at
 		constexpr T toDegrees(T radians);
 
 		template <typename T>
+		constexpr T pow(T base, T exponent);
+
+		template <typename T>
+		constexpr T mod(T num, T den);
+
+		template <typename T>
 		bool isInside(T value, T min, T max) noexcept;
 
 		template <typename T>

@@ -25,6 +25,7 @@
 #include <Atema/Math/Math.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace at
 {
@@ -49,6 +50,41 @@ namespace at
 		constexpr T toDegrees(T radians)
 		{
 			return radians * static_cast<T>(180) / Pi<T>;
+		}
+
+		template <typename T>
+		constexpr T pow(T base, T exponent)
+		{
+			static_assert(std::is_floating_point_v<T> || std::is_integral_v<T>, "Math::pow only takes integral and floating points");
+
+			if constexpr (std::is_floating_point_v<T>)
+			{
+				return std::pow(base, exponent);
+			}
+			else
+			{
+				T result = static_cast<T>(1);
+
+				for (T i = static_cast<T>(0); i < exponent; i++)
+					result *= base;
+
+				return result;
+			}
+		}
+
+		template <typename T>
+		constexpr T mod(T num, T den)
+		{
+			static_assert(std::is_floating_point_v<T> || std::is_integral_v<T>, "Math::mod only takes integral and floating points");
+
+			if constexpr (std::is_floating_point_v<T>)
+			{
+				return std::fmod(num, den);
+			}
+			else
+			{
+				return num % den;
+			}
 		}
 
 		template <typename T>
