@@ -33,7 +33,7 @@ local modules =
 	},
 	Renderer =
 	{
-		dependencies = {"AtemaCore", "AtemaMath", "AtemaWindow"}
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaShader", "AtemaWindow"}
 	},
 	Shader =
 	{
@@ -42,7 +42,7 @@ local modules =
 	},
 	VulkanRenderer =
 	{
-		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaWindow"}
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaShader", "AtemaWindow"}
 	},
 	Window =
 	{
