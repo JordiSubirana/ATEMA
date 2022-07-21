@@ -38,7 +38,7 @@ namespace at
 		AbstractSignal();
 		virtual ~AbstractSignal();
 
-		virtual void disconnect(Connection& connection) = 0;
+		virtual void disconnect(const Connection& connection) = 0;
 	};
 
 	template <typename ... Args>
@@ -52,7 +52,7 @@ namespace at
 		Signal(Signal&& signal) noexcept;
 		virtual ~Signal();
 
-		void operator()(Args ... args) const;
+		void operator()(Args ... args);
 
 		Connection connect(const Callback& callback);
 		template <typename O>
@@ -60,12 +60,14 @@ namespace at
 		template <typename O>
 		Connection connect(const O& object, void(O::* method)(Args...) const);
 
-		void disconnect(Connection& connection) override;
+		void disconnect(const Connection& connection) override;
 
 		Signal& operator=(const Signal& signal);
 		Signal& operator=(Signal&& signal) noexcept;
 		
 	private:
+		void deletePendingConnections();
+
 		struct SlotData
 		{
 			Ptr<AbstractSignal*> signal;
@@ -74,6 +76,8 @@ namespace at
 		};
 
 		std::vector<Ptr<SlotData>> m_slotDatas;
+		std::vector<Connection> m_pendingConnections;
+		bool m_deleteLater;
 	};
 
 	class ATEMA_CORE_API Connection final

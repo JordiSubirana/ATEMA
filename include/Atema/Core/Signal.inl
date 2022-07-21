@@ -29,13 +29,15 @@ namespace at
 	// Signal
 	template <typename ... Args>
 	Signal<Args...>::Signal() :
-		AbstractSignal()
+		AbstractSignal(),
+		m_deleteLater(false)
 	{
 	}
 
 	template <typename ... Args>
 	Signal<Args...>::Signal(const Signal& signal) :
-		AbstractSignal()
+		AbstractSignal(),
+		m_deleteLater(false)
 	{
 	}
 
@@ -51,10 +53,16 @@ namespace at
 	}
 
 	template <typename ... Args>
-	void Signal<Args...>::operator()(Args... args) const
+	void Signal<Args...>::operator()(Args... args)
 	{
+		m_deleteLater = true;
+
 		for (auto& slotData : m_slotDatas)
 			slotData->callback(std::forward<Args>(args)...);
+
+		m_deleteLater = false;
+
+		deletePendingConnections();
 	}
 
 	template <typename ... Args>
@@ -91,9 +99,16 @@ namespace at
 	}
 
 	template <typename ... Args>
-	void Signal<Args...>::disconnect(Connection& connection)
+	void Signal<Args...>::disconnect(const Connection& connection)
 	{
-		if (connection.isConnected())
+		if (!connection.isConnected())
+			return;
+
+		if (m_deleteLater)
+		{
+			m_pendingConnections.emplace_back(connection);
+		}
+		else
 		{
 			size_t index = *connection.m_index.lock();
 
@@ -131,7 +146,23 @@ namespace at
 		for (auto& slotData : m_slotDatas)
 			*(slotData->signal) = this;
 
+		m_pendingConnections = std::move(signal.m_pendingConnections);
+
+		m_deleteLater = m_deleteLater;
+
 		return *this;
+	}
+
+	template <typename ... Args>
+	void Signal<Args...>::deletePendingConnections()
+	{
+		if (m_deleteLater)
+			return;
+
+		for (auto& connection : m_pendingConnections)
+			disconnect(connection);
+
+		m_pendingConnections.clear();
 	}
 
 	// ConnectionGuard
