@@ -306,15 +306,7 @@ void SandboxApplication::createScene()
 				graphics.vertexBuffer = modelData->vertexBuffer;
 				graphics.indexBuffer = modelData->indexBuffer;
 				graphics.indexCount = modelData->indexCount;
-				graphics.materialID = 0;
-				graphics.color = materialData->color;
-				graphics.normal = materialData->normal;
-				graphics.ambientOcclusion = materialData->ambientOcclusion;
-				graphics.height = materialData->height;
-				graphics.emissive = materialData->emissive;
-				graphics.metalness = materialData->metalness;
-				graphics.roughness = materialData->roughness;
-				graphics.sampler = materialData->sampler;
+				graphics.material = materialData;
 				graphics.aabb = modelData->aabb;
 
 				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
@@ -360,15 +352,7 @@ void SandboxApplication::createScene()
 		graphics.vertexBuffer = vertexBuffer;
 		graphics.indexBuffer = indexBuffer;
 		graphics.indexCount = static_cast<uint32_t>(planeIndices.size());
-		graphics.materialID = 1;
-		graphics.color = materialData->color;
-		graphics.normal = materialData->normal;
-		graphics.ambientOcclusion = materialData->ambientOcclusion;
-		graphics.height = materialData->height;
-		graphics.emissive = materialData->emissive;
-		graphics.metalness = materialData->metalness;
-		graphics.roughness = materialData->roughness;
-		graphics.sampler = materialData->sampler;
+		graphics.material = materialData;
 		graphics.aabb = sceneAABB;
 	}
 }

@@ -25,10 +25,13 @@
 #include <Atema/Atema.hpp>
 #include <Atema/Math/AABB.hpp>
 
+#include <filesystem>
+
 constexpr uint32_t objectRow = 30;
 constexpr uint32_t objectCount = objectRow * objectRow + 1;
 
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
+const auto shaderPath = rscPath / "Shaders";
 
 const float cameraScale = 0.001f;
 
@@ -152,6 +155,14 @@ struct MaterialData
 	at::Ptr<at::Image> roughness;
 
 	at::Ptr<at::Sampler> sampler;
+
+	at::Ptr<at::Buffer> uniformBuffer;
+
+	at::Ptr<at::Shader> vertexShader;
+	at::Ptr<at::Shader> fragmentShader;
+
+	at::Ptr<at::DescriptorSetLayout> descriptorSetLayout;
+	at::Ptr<at::DescriptorSet> descriptorSet;
 };
 
 #endif

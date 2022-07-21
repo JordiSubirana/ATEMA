@@ -1,0 +1,284 @@
+option
+{
+	int MaterialColorBinding = -1;
+	int MaterialNormalBinding = -1;
+	int MaterialAOBinding = -1;
+	int MaterialHeightBinding = -1;
+	int MaterialEmissiveBinding = -1;
+	int MaterialMetalnessBinding = -1;
+	int MaterialRoughnessBinding = -1;
+}
+
+struct FrameData
+{
+	mat4f proj;
+	mat4f view;
+	vec3f cameraPosition;
+}
+
+struct ObjectData
+{
+	mat4f model;
+}
+
+struct MaterialData
+{
+	[optional (MaterialColorBinding < 0)]
+	vec4f color;
+	
+	[optional (MaterialNormalBinding < 0)]
+	vec3f normal;
+	
+	[optional (MaterialAOBinding < 0)]
+	float ao;
+	
+	[optional (MaterialHeightBinding < 0)]
+	float height;
+	
+	[optional (MaterialEmissiveBinding < 0)]
+	vec3f emissive;
+	
+	[optional (MaterialMetalnessBinding < 0)]
+	float metalness;
+	
+	[optional (MaterialRoughnessBinding < 0)]
+	float roughness;
+}
+
+external
+{
+	[set(0), binding(0)] FrameData frameData;
+	[set(0), binding(1)] ObjectData objectData;
+	
+	[optional (MaterialColorBinding < 0 ||
+		MaterialNormalBinding < 0 ||
+		MaterialAOBinding < 0 ||
+		MaterialHeightBinding < 0 ||
+		MaterialEmissiveBinding < 0 ||
+		MaterialMetalnessBinding < 0 ||
+		MaterialRoughnessBinding < 0)]
+	[set(1), binding(0)] MaterialData materialData;
+	
+	[optional (MaterialColorBinding >= 0)]
+	[set(1), binding(MaterialColorBinding)] sampler2Df materialColor;
+	
+	[optional (MaterialNormalBinding >= 0)]
+	[set(1), binding(MaterialNormalBinding)] sampler2Df materialNormal;
+	
+	[optional (MaterialAOBinding >= 0)]
+	[set(1), binding(MaterialAOBinding)] sampler2Df materialAO;
+	
+	[optional (MaterialHeightBinding >= 0)]
+	[set(1), binding(MaterialHeightBinding)] sampler2Df materialHeight;
+	
+	[optional (MaterialEmissiveBinding >= 0)]
+	[set(1), binding(MaterialEmissiveBinding)] sampler2Df materialEmissive;
+	
+	[optional (MaterialMetalnessBinding >= 0)]
+	[set(1), binding(MaterialMetalnessBinding)] sampler2Df materialMetalness;
+	
+	[optional (MaterialRoughnessBinding >= 0)]
+	[set(1), binding(MaterialRoughnessBinding)] sampler2Df materialRoughness;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec3f inNormal;
+	[location(2)] vec3f inTangent;
+	[location(3)] vec3f inBitangent;
+	[location(4)] vec2f inTexCoords;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec3f outPosition;
+	[location(1)] vec2f outTexCoords;
+	[location(2)] mat3f outTBN;
+	[location(5)] vec3f outTanViewDir;
+	[location(6)] vec3f outCameraPosition;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f worldPos = objectData.model * vec4f(inPosition, 1.0);
+	vec3f worldNormal = normalize(objectData.model * vec4f(inNormal, 0.0)).xyz;
+	vec3f worldTangent = normalize(objectData.model * vec4f(inTangent, 0.0)).xyz;
+	vec3f worldBitangent = normalize(objectData.model * vec4f(inBitangent, 0.0)).xyz;
+	
+	outPosition = worldPos.xyz;
+	
+	outTBN = mat3f(worldTangent, worldBitangent, worldNormal);
+	
+	outTexCoords = inTexCoords;
+	
+	outTanViewDir = outTBN * (frameData.cameraPosition - worldPos.xyz);
+	
+	outCameraPosition = frameData.cameraPosition;
+	
+	vec4f screenPosition = frameData.proj * frameData.view * worldPos;
+	
+	setVertexPosition(screenPosition);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoords;
+	[location(2)] mat3f inTBN;
+	[location(5)] vec3f inTanViewDir;
+	[location(6)] vec3f inCameraPosition;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outPosition;
+	[location(1)] vec4f outNormal;
+	[location(2)] vec4f outColor;
+	[location(3)] vec4f outAO;
+	[location(4)] vec4f outEmissive;
+	[location(5)] vec4f outMetalness;
+	[location(6)] vec4f outRoughness;
+}
+
+vec2f getTexCoords()
+{ 
+	optional (MaterialHeightBinding < 0)
+		return inTexCoords;
+	
+	optional (MaterialHeightBinding >= 0)
+	{
+		float heightScale = 0.1;
+		float minLayers = 8.0;
+		float maxLayers = 64.0;
+		float minDistance = 40.0;
+		float maxDistance = 80.0;
+		
+		vec3f viewDir = normalize(inTanViewDir);
+		
+		float distanceFactor = clamp(distance(inCameraPosition, inPosition), minDistance, maxDistance + minDistance) - minDistance;
+		distanceFactor = 1.0 - distanceFactor / maxDistance;
+		
+		minLayers = mix(1.0, minLayers, distanceFactor);
+		maxLayers = mix(1.0, maxLayers, distanceFactor);
+		float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+		float layerDepth = 1.0 / numLayers;
+		float currentLayerDepth = 0.0;
+		
+		vec2f S = viewDir.xy / viewDir.z * heightScale; 
+		vec2f deltaUVs = S / numLayers;
+		
+		vec2f UVs = inTexCoords;
+		float currentDepthMapValue = 1.0 - sample(materialHeight, UVs).r;
+		
+		while (currentLayerDepth < currentDepthMapValue)
+		{
+			UVs = UVs - deltaUVs;
+			currentDepthMapValue = 1.0 - sample(materialHeight, UVs).r;
+			currentLayerDepth = currentLayerDepth + layerDepth;
+		}
+
+		vec2f prevTexCoords = UVs + deltaUVs;
+		float currentDepth  = currentDepthMapValue - currentLayerDepth;
+		float prevDepth = 1.0 - sample(materialHeight, prevTexCoords).r - currentLayerDepth + layerDepth;
+		float weight = currentDepth / (currentDepth - prevDepth);
+		UVs = mix(UVs, prevTexCoords, weight);
+		
+		return UVs;
+	}
+}
+
+vec4f getMaterialColor()
+{
+	optional (MaterialColorBinding < 0)
+		return materialData.color;
+	
+	optional (MaterialColorBinding >= 0)
+		return sample(materialColor, getTexCoords());
+}
+
+vec3f getMaterialNormal()
+{
+	optional (MaterialNormalBinding < 0)
+		return materialData.normal;
+	
+	optional (MaterialNormalBinding >= 0)
+		return sample(materialNormal, getTexCoords()).xyz;
+}
+
+float getMaterialAO()
+{
+	optional (MaterialAOBinding < 0)
+		return materialData.ao;
+	
+	optional (MaterialAOBinding >= 0)
+		return sample(materialAO, getTexCoords()).r;
+}
+
+float getMaterialHeight()
+{
+	optional (MaterialHeightBinding < 0)
+		return materialData.height;
+	
+	optional (MaterialHeightBinding >= 0)
+		return sample(materialHeight, getTexCoords()).r;
+}
+
+vec3f getMaterialEmissive()
+{
+	optional (MaterialEmissiveBinding < 0)
+		return materialData.emissive;
+	
+	optional (MaterialEmissiveBinding >= 0)
+		return sample(materialEmissive, getTexCoords()).rgb;
+}
+
+float getMaterialMetalness()
+{
+	optional (MaterialMetalnessBinding < 0)
+		return materialData.metalness;
+	
+	optional (MaterialMetalnessBinding >= 0)
+		return sample(materialMetalness, getTexCoords()).r;
+}
+
+float getMaterialRoughness()
+{
+	optional (MaterialRoughnessBinding < 0)
+		return materialData.roughness;
+	
+	optional (MaterialRoughnessBinding >= 0)
+		return sample(materialRoughness, getTexCoords()).r;
+}
+
+[entry(fragment)]
+void main()
+{
+	vec4f matColor = getMaterialColor();
+	vec3f matNormal = getMaterialNormal();
+	float matAO = getMaterialAO();
+	vec3f matEmissive = getMaterialEmissive();
+	float matMetalness = getMaterialMetalness();
+	float matRoughness = getMaterialRoughness();
+	
+	outPosition = vec4f(inPosition, 1.0);
+	
+	vec3f normal = (matNormal * 2.0) - 1.0;
+	
+	if (MaterialRoughnessBinding < 0)
+		normal = normalize(inTBN * normal);
+	
+	outNormal = vec4f(normal, 0.0);
+	
+    outColor = matColor;
+    outAO = vec4f(matAO, matAO, matAO, 1.0);
+    outEmissive = vec4f(matEmissive, 1.0);
+    outMetalness = vec4f(matMetalness, matMetalness, matMetalness, 1.0);
+    outRoughness = vec4f(matRoughness, matRoughness, matRoughness, 1.0);
+}
+

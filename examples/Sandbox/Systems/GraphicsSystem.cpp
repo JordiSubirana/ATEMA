@@ -285,24 +285,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	//----- OBJECT RESOURCES -----//
 
-	// Descriptor set layout
-	{
-		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-		descriptorSetLayoutSettings.bindings =
-		{
-			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 5, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 6, 1, ShaderStage::Fragment }
-		};
-		descriptorSetLayoutSettings.pageSize = 1;
-
-		m_materialLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
-
 	//----- FRAME RESOURCES -----//
 
 	// Descriptor set layout
@@ -316,30 +298,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
 
 		m_frameLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
-
-	// Gbuffer pipeline
-	{
-		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = vertexShaders[gbufferShaderPath.string()];
-		pipelineSettings.fragmentShader = fragmentShaders[gbufferShaderPath.string()];
-		pipelineSettings.descriptorSetLayouts = { m_frameLayout, m_materialLayout };
-		pipelineSettings.vertexInput.inputs =
-		{
-			{ 0, 0, VertexFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexFormat::RGB32_SFLOAT },
-			{ 0, 2, VertexFormat::RGB32_SFLOAT },
-			{ 0, 3, VertexFormat::RGB32_SFLOAT },
-			{ 0, 4, VertexFormat::RG32_SFLOAT }
-		};
-		pipelineSettings.stencil = true;
-		pipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
-		pipelineSettings.stencilFront.writeMask = 1;
-		pipelineSettings.stencilFront.passOperation = StencilOperation::Replace;
-		pipelineSettings.stencilFront.reference = 1;
-		pipelineSettings.rasterization.cullMode = CullMode::None;
-
-		m_gbufferPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
 
 	// Uniform buffers & descriptor sets
@@ -536,10 +494,7 @@ GraphicsSystem::~GraphicsSystem()
 	m_frameDatas.clear();
 
 	// Object resources
-	m_materialSets.clear();
-	m_materialLayout.reset();
-
-	m_gbufferPipeline.reset();
+	m_materials.clear();
 }
 
 void GraphicsSystem::update(TimeStep timeStep)
@@ -745,18 +700,28 @@ void GraphicsSystem::createFrameGraph()
 						{
 							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-							commandBuffer->bindPipeline(m_gbufferPipeline);
-
 							commandBuffer->setViewport(m_viewport);
 
 							commandBuffer->setScissor(Vector2i(), m_windowSize);
+
+							MaterialData* currentMaterialID = nullptr;
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
 
-								commandBuffer->bindDescriptorSet(1, m_materialSets[graphics.materialID]);
+								auto materialID = graphics.material.get();
+
+								if (materialID != currentMaterialID)
+								{
+									auto& material = m_materials[materialID];
+
+									commandBuffer->bindPipeline(material.pipeline);
+									commandBuffer->bindDescriptorSet(1, material.descriptorSet);
+
+									currentMaterialID = materialID;
+								}
 
 								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
 
@@ -1003,7 +968,7 @@ void GraphicsSystem::updateFrame()
 	auto& frameData = m_frameDatas[frameIndex];
 
 	// Update material descriptor sets
-	updateMaterialSets();
+	updateMaterialResources();
 
 	// Update scene data
 	updateUniformBuffers(frameData);
@@ -1013,7 +978,7 @@ void GraphicsSystem::updateFrame()
 	m_frameGraph->execute(renderFrame);
 }
 
-void GraphicsSystem::updateMaterialSets()
+void GraphicsSystem::updateMaterialResources()
 {
 	auto entities = getEntityManager().getUnion<GraphicsComponent>();
 
@@ -1021,19 +986,38 @@ void GraphicsSystem::updateMaterialSets()
 	{
 		auto& graphics = entities.get<GraphicsComponent>(entity);
 
-		if (m_materialSets.count(graphics.materialID) > 0)
+		auto& materialData = *graphics.material;
+
+		auto materialID = graphics.material.get();
+
+		if (m_materials.count(materialID) > 0)
 			continue;
 
-		auto materialSet = m_materialLayout->createSet();
-		materialSet->update(0, graphics.color, graphics.sampler);
-		materialSet->update(1, graphics.normal, graphics.sampler);
-		materialSet->update(2, graphics.ambientOcclusion, graphics.sampler);
-		materialSet->update(3, graphics.height, graphics.sampler);
-		materialSet->update(4, graphics.emissive, graphics.sampler);
-		materialSet->update(5, graphics.metalness, graphics.sampler);
-		materialSet->update(6, graphics.roughness, graphics.sampler);
+		Material material;
 
-		m_materialSets[graphics.materialID] = materialSet;
+		GraphicsPipeline::Settings pipelineSettings;
+		pipelineSettings.vertexShader = materialData.vertexShader;
+		pipelineSettings.fragmentShader = materialData.fragmentShader;
+		pipelineSettings.descriptorSetLayouts = { m_frameLayout, materialData.descriptorSetLayout };
+		pipelineSettings.vertexInput.inputs =
+		{
+			{ 0, 0, VertexFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexFormat::RGB32_SFLOAT },
+			{ 0, 2, VertexFormat::RGB32_SFLOAT },
+			{ 0, 3, VertexFormat::RGB32_SFLOAT },
+			{ 0, 4, VertexFormat::RG32_SFLOAT }
+		};
+		pipelineSettings.stencil = true;
+		pipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
+		pipelineSettings.stencilFront.writeMask = 1;
+		pipelineSettings.stencilFront.passOperation = StencilOperation::Replace;
+		pipelineSettings.stencilFront.reference = 1;
+		pipelineSettings.rasterization.cullMode = CullMode::None;
+
+		material.pipeline = GraphicsPipeline::create(pipelineSettings);
+		material.descriptorSet = materialData.descriptorSet;
+
+		m_materials[materialID] = material;
 	}
 }
 

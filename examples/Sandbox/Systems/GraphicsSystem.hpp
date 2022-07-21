@@ -26,6 +26,8 @@
 
 #include "System.hpp"
 
+struct MaterialData;
+
 class GraphicsSystem : public System
 {
 public:
@@ -49,13 +51,19 @@ private:
 		at::Ptr<at::Buffer> phongBuffer;
 	};
 
+	struct Material
+	{
+		at::Ptr<at::GraphicsPipeline> pipeline;
+		at::Ptr<at::DescriptorSet> descriptorSet;
+	};
+
 	void translateShaders();
 
 	void createFrameGraph();
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
 
-	void updateMaterialSets();
+	void updateMaterialResources();
 	void updateUniformBuffers(FrameData& frameData);
 
 	at::WPtr<at::RenderWindow> m_renderWindow;
@@ -70,9 +78,6 @@ private:
 	// FrameGraph
 	at::Ptr<at::FrameGraph> m_frameGraph;
 
-	// Rendering resources (deferred)
-	at::Ptr<at::GraphicsPipeline> m_gbufferPipeline;
-
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;
 	at::Ptr<at::Buffer> m_ppDebugQuad;
@@ -80,8 +85,7 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_ppLayout;
 
 	// Object resources
-	at::Ptr<at::DescriptorSetLayout> m_materialLayout;
-	std::unordered_map<uint32_t, at::Ptr<at::DescriptorSet>> m_materialSets;
+	std::unordered_map<MaterialData*, Material> m_materials;
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameLayout;
