@@ -156,9 +156,16 @@ namespace
 	const TBuiltInResource defaultBuiltInResource = getDefaultResources();
 }
 
-SpirvShaderWriter::SpirvShaderWriter(AstShaderStage stage) :
-	m_stage(stage),
-	m_glslWriter(stage, m_glslStream)
+SpirvShaderWriter::SpirvShaderWriter() :
+	SpirvShaderWriter(Settings())
+{
+}
+
+SpirvShaderWriter::SpirvShaderWriter(const Settings& settings) :
+	GlslShaderWriter(m_glslStream, { settings.stage }),
+	m_requestedStage(settings.stage),
+	m_entryFound(false),
+	m_stage(AstShaderStage::Vertex)
 {
 }
 
@@ -184,153 +191,40 @@ void SpirvShaderWriter::compile(std::ostream& ostream)
 		ostream << codeData[i];
 }
 
-void SpirvShaderWriter::visit(ConditionalStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(ForLoopStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(WhileLoopStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(DoWhileLoopStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(VariableDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(StructDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(InputDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(OutputDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(ExternalDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(OptionDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(FunctionDeclarationStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
 void SpirvShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
 {
-	m_glslWriter.visit(statement);
-}
+	if (m_requestedStage.has_value())
+	{
+		if (statement.stage == m_requestedStage.value())
+		{
+			if (m_entryFound)
+				ATEMA_ERROR("Only one shader entry must be defined");
 
-void SpirvShaderWriter::visit(ExpressionStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
+			m_stage = statement.stage;
+			m_entryFound = true;
+		}
+	}
+	else
+	{
+		if (!m_entryFound)
+		{
+			m_stage = statement.stage;
+			m_entryFound = true;
+		}
+		else
+		{
+			ATEMA_ERROR("Only one shader entry must be defined");
+		}
+	}
 
-void SpirvShaderWriter::visit(BreakStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(ContinueStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(ReturnStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(SequenceStatement& statement)
-{
-	m_glslWriter.visit(statement);
-}
-
-void SpirvShaderWriter::visit(ConstantExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(VariableExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(AccessIndexExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(AccessIdentifierExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(AssignmentExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(UnaryExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(BinaryExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(FunctionCallExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(BuiltInFunctionCallExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(CastExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(SwizzleExpression& expression)
-{
-	m_glslWriter.visit(expression);
-}
-
-void SpirvShaderWriter::visit(TernaryExpression& expression)
-{
-	m_glslWriter.visit(expression);
+	GlslShaderWriter::visit(statement);
 }
 
 void SpirvShaderWriter::compileSpirv(std::vector<uint32_t>& spirv)
 {
+	if (!m_entryFound)
+		ATEMA_ERROR("A shader entry must be defined");
+
 	glslang::InitializeProcess();
 
 	const auto eShLanguage = getEShLanguage(m_stage);

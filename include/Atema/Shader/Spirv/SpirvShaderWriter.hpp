@@ -30,52 +30,29 @@
 
 namespace at
 {
-	class ATEMA_SHADER_API SpirvShaderWriter : public ShaderWriter
+	class ATEMA_SHADER_API SpirvShaderWriter : public GlslShaderWriter
 	{
 	public:
-		SpirvShaderWriter() = delete;
-		SpirvShaderWriter(AstShaderStage stage);
+		struct Settings
+		{
+			std::optional<AstShaderStage> stage;
+		};
+
+		SpirvShaderWriter();
+		SpirvShaderWriter(const Settings& settings);
 		~SpirvShaderWriter();
 
 		void compile(std::vector<uint32_t>& spirv);
 		void compile(std::ostream& ostream);
 
-		void visit(ConditionalStatement& statement) override;
-		void visit(ForLoopStatement& statement) override;
-		void visit(WhileLoopStatement& statement) override;
-		void visit(DoWhileLoopStatement& statement) override;
-		void visit(VariableDeclarationStatement& statement) override;
-		void visit(StructDeclarationStatement& statement) override;
-		void visit(InputDeclarationStatement& statement) override;
-		void visit(OutputDeclarationStatement& statement) override;
-		void visit(ExternalDeclarationStatement& statement) override;
-		void visit(OptionDeclarationStatement& statement) override;
-		void visit(FunctionDeclarationStatement& statement) override;
 		void visit(EntryFunctionDeclarationStatement& statement) override;
-		void visit(ExpressionStatement& statement) override;
-		void visit(BreakStatement& statement) override;
-		void visit(ContinueStatement& statement) override;
-		void visit(ReturnStatement& statement) override;
-		void visit(SequenceStatement& statement) override;
-
-		void visit(ConstantExpression& expression) override;
-		void visit(VariableExpression& expression) override;
-		void visit(AccessIndexExpression& expression) override;
-		void visit(AccessIdentifierExpression& expression) override;
-		void visit(AssignmentExpression& expression) override;
-		void visit(UnaryExpression& expression) override;
-		void visit(BinaryExpression& expression) override;
-		void visit(FunctionCallExpression& expression) override;
-		void visit(BuiltInFunctionCallExpression& expression) override;
-		void visit(CastExpression& expression) override;
-		void visit(SwizzleExpression& expression) override;
-		void visit(TernaryExpression& expression) override;
 		
 	private:
 		void compileSpirv(std::vector<uint32_t>& spirv);
 
+		std::optional<AstShaderStage> m_requestedStage;
+		bool m_entryFound;
 		AstShaderStage m_stage;
-		GlslShaderWriter m_glslWriter;
 		std::stringstream m_glslStream;
 	};
 }
