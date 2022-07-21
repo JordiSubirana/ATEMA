@@ -27,6 +27,7 @@
 
 #include <ostream>
 #include <unordered_map>
+#include <optional>
 
 namespace at
 {
@@ -36,6 +37,8 @@ namespace at
 	public:
 		struct Settings
 		{
+			std::optional<AstShaderStage> stage;
+
 			// OpenGL version major
 			unsigned versionMajor = 3;
 			// OpenGL version minor
@@ -43,7 +46,7 @@ namespace at
 		};
 
 		GlslShaderWriter() = delete;
-		GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, Settings settings = Settings());
+		GlslShaderWriter(std::ostream& ostream, Settings settings = Settings());
 		~GlslShaderWriter();
 
 		void visit(ConditionalStatement& statement) override;
@@ -103,7 +106,7 @@ namespace at
 		void preprocessorEndif();
 
 		bool m_isSequenceProcessed;
-		AstShaderStage m_stage;
+		std::optional<AstShaderStage> m_stage;
 		std::ostream& m_ostream;
 		Settings m_settings;
 		int m_indent;

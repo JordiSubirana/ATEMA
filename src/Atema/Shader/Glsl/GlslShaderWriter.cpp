@@ -44,9 +44,9 @@ namespace
 	}
 }
 
-GlslShaderWriter::GlslShaderWriter(AstShaderStage stage, std::ostream& ostream, Settings settings) :
+GlslShaderWriter::GlslShaderWriter(std::ostream& ostream, Settings settings) :
 	m_isSequenceProcessed(false),
-	m_stage(stage),
+	m_stage(settings.stage),
 	m_ostream(ostream),
 	m_settings(settings),
 	m_indent(0)
@@ -435,13 +435,6 @@ void GlslShaderWriter::visit(SequenceStatement& statement)
 {
 	if (!m_isSequenceProcessed)
 	{
-		// Extract desired stage from current sequence (when first calling this method)
-		AstStageExtractor stageExtractor;
-
-		statement.accept(stageExtractor);
-
-		const auto processedStage = stageExtractor.getAst(m_stage);
-
 		// Write header
 		writeHeader();
 
@@ -450,7 +443,21 @@ void GlslShaderWriter::visit(SequenceStatement& statement)
 		// Then write the desired shader stage
 		m_isSequenceProcessed = true;
 
-		processedStage->accept(*this);
+		if (m_stage.has_value())
+		{
+			// Extract desired stage from current sequence (when first calling this method)
+			AstStageExtractor stageExtractor;
+
+			statement.accept(stageExtractor);
+
+			const auto processedStage = stageExtractor.getAst(m_stage.value());
+
+			processedStage->accept(*this);
+		}
+		else
+		{
+			statement.accept(*this);
+		}
 
 		m_isSequenceProcessed = false;
 	}
