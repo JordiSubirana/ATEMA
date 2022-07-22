@@ -145,7 +145,7 @@ void main()
 	
 	vec3f specularColor = specularFactor * metalness * phongData.lightColor;
 	
-	float bias = clamp(0.005 * tan(acos(cosTheta)), 0.0, 0.01);
+	float bias = clamp(0.002 * tan(acos(cosTheta)), 0.0, 0.01);
 	
 	float visibility = getVisibility(bias);
 	

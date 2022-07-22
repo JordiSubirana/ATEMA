@@ -1136,22 +1136,80 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 	// Update scene AABB
 	{
-		float boxSize = 50.0f;
+		AABBf sceneAABB;
+
+		for (auto& entity : entities)
+		{
+			auto& graphics = entities.get<GraphicsComponent>(entity);
+
+			// Don't consider the ground
+			if (graphics.aabb.getSize().z > 0.1f)
+				sceneAABB.extend(graphics.aabb);
+		}
+
+		auto aabbSize = sceneAABB.getSize();
+		aabbSize.z = 0.0f;
+
+		auto aabbDiameter = aabbSize.getNorm();
+
+		auto cameraDir = cameraTarget - cameraPos;
+		cameraDir.normalize();
+
+		float cameraDirZ = std::abs(cameraDir.z);
+
+		cameraDir.z = 0.0f;
+		cameraDir.normalize();
+
+		float minDirZ = 0.2f;
+		float maxDirZ = 0.6f;
+
+		if (cameraDirZ < minDirZ)
+			cameraDirZ = minDirZ;
+
+		if (cameraDirZ > maxDirZ)
+			cameraDirZ = maxDirZ;
+
+		auto camDirZPercent = (cameraDirZ - minDirZ) / (maxDirZ - minDirZ);
+
+		float altitude = cameraPos.z;
+
+		float minAlt = 2.0f;
+		float maxAlt = 30.0f;
+
+		if (altitude < minAlt)
+			altitude = minAlt;
+
+		if (altitude > maxAlt)
+			altitude = maxAlt;
+
+		// 0% : minAlt / 100% : maxAlt
+		auto altitudePercent = (altitude - minAlt) / (maxAlt - minAlt);
+
+		float minBoxSize = 10.0f;
+		float maxBoxSize = 60.0f;
+
+		float boxSize = maxBoxSize * altitudePercent + minBoxSize * (1.0f - altitudePercent);
+		boxSize = std::max(boxSize, minBoxSize * camDirZPercent + maxBoxSize * (1.0f - camDirZPercent));
 
 		auto center = cameraPos;
 		center.z = 0.0f;
 
-		AABBf sceneAABB;
-		sceneAABB.extend(center + Vector3f(boxSize, boxSize, 5.0f));
-		sceneAABB.extend(center + Vector3f( -boxSize, -boxSize, -5.0f));
+		center += cameraDir * boxSize * 0.9f;
+
+		center.x = std::clamp(center.x, sceneAABB.min.x, sceneAABB.max.x);
+		center.y = std::clamp(center.y, sceneAABB.min.y, sceneAABB.max.y);
+
+		AABBf shadowMapAABB;
+		shadowMapAABB.extend(center + Vector3f(boxSize, boxSize, 5.0f));
+		shadowMapAABB.extend(center + Vector3f( -boxSize, -boxSize, -5.0f));
 
 		auto zFar = 200.0f;
 		
 		const auto view = Matrix4f::createLookAt(center - lightDirection * zFar, center, Vector3f(0, 0, 1));
 
-		auto sizeS = sceneAABB.getSize();
+		auto sizeS = shadowMapAABB.getSize();
 
-		const auto viewAABB = view * sceneAABB;
+		const auto viewAABB = view * shadowMapAABB;
 
 		auto sizeB = viewAABB.getSize();
 
