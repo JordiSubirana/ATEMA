@@ -53,7 +53,9 @@ void CameraSystem::update(TimeStep timeStep)
 			auto& transform = entityManager.getComponent<Transform>(entity);
 			auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
 
-			sceneAABB.extend(transform.getMatrix() * graphics.aabb);
+			// Don't consider the ground
+			if (graphics.aabb.getSize().z > 0.1f)
+				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
 		}
 	}
 

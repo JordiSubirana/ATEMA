@@ -317,7 +317,7 @@ void SandboxApplication::createScene()
 				//const auto distance = Vector2f(i, j).getNorm();
 				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
 
-				const auto percent = distance / maxDistance;
+				const auto percent = (objectRow == 1) ? 0.2f : distance / maxDistance;
 
 				velocity.speed = percent * 3.14159f * 2.0f;
 			}
