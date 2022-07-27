@@ -55,6 +55,9 @@ namespace at
 		constexpr T mod(T num, T den);
 
 		template <typename T>
+		constexpr T lerp(T a, T b, T coeff);
+
+		template <typename T>
 		bool isInside(T value, T min, T max) noexcept;
 
 		template <typename T>

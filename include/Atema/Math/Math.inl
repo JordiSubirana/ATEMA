@@ -88,6 +88,12 @@ namespace at
 		}
 
 		template <typename T>
+		constexpr T lerp(T a, T b, T coeff)
+		{
+			return a * (static_cast<T>(1) - coeff) + b * coeff;
+		}
+
+		template <typename T>
 		bool isInside(T value, T min, T max) noexcept
 		{
 			return min <= value && value <= max;
