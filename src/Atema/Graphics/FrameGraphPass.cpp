@@ -60,7 +60,7 @@ void FrameGraphPass::setExecutionCallback(const ExecutionCallback& callback)
 
 void FrameGraphPass::addSampledTexture(FrameGraphTextureHandle textureHandle, Flags<ShaderStage> shaderStages)
 {
-	registerTexture(textureHandle);
+	registerTexture(textureHandle, TextureUsage::Sampled);
 
 	m_sampledTextures.emplace_back(textureHandle);
 
@@ -74,7 +74,7 @@ void FrameGraphPass::addInputTexture(FrameGraphTextureHandle textureHandle, uint
 		ATEMA_ERROR("All input textures must have the same size");
 	}
 
-	registerTexture(textureHandle);
+	registerTexture(textureHandle, TextureUsage::Input);
 
 	m_inputTextures.emplace_back(textureHandle);
 
@@ -88,7 +88,7 @@ void FrameGraphPass::addOutputTexture(FrameGraphTextureHandle textureHandle, uin
 		ATEMA_ERROR("All output / depth textures must have the same size");
 	}
 
-	registerTexture(textureHandle);
+	registerTexture(textureHandle, TextureUsage::Output);
 
 	m_outputTextures.emplace_back(textureHandle);
 
@@ -98,6 +98,8 @@ void FrameGraphPass::addOutputTexture(FrameGraphTextureHandle textureHandle, uin
 void FrameGraphPass::addOutputTexture(FrameGraphTextureHandle textureHandle, uint32_t index, const Color& clearColor)
 {
 	addOutputTexture(textureHandle, index);
+
+	registerTexture(textureHandle, TextureUsage::Clear);
 
 	m_clearedTextures.emplace_back(textureHandle);
 
@@ -111,7 +113,7 @@ void FrameGraphPass::setDepthTexture(FrameGraphTextureHandle textureHandle)
 		ATEMA_ERROR("All output / depth textures must have the same size");
 	}
 
-	registerTexture(textureHandle);
+	registerTexture(textureHandle, TextureUsage::Depth);
 
 	m_depthTexture = textureHandle;
 }
@@ -119,6 +121,8 @@ void FrameGraphPass::setDepthTexture(FrameGraphTextureHandle textureHandle)
 void FrameGraphPass::setDepthTexture(FrameGraphTextureHandle textureHandle, const DepthStencil& depthStencil)
 {
 	setDepthTexture(textureHandle);
+
+	registerTexture(textureHandle, TextureUsage::Clear);
 
 	m_clearedTextures.emplace_back(textureHandle);
 
@@ -200,14 +204,27 @@ const Vector2u& FrameGraphPass::getOutputSize() const noexcept
 	return m_outputSize;
 }
 
-void FrameGraphPass::registerTexture(FrameGraphTextureHandle textureHandle)
+void FrameGraphPass::checkFlagsCompatibility(Flags<TextureUsage> usages1, Flags<TextureUsage> usages2)
 {
-	if (m_textures.count(textureHandle) != 0)
-	{
-		ATEMA_ERROR("The texture can't be processed multiple times by the same pass");
-	}
+	if ((usages1 & TextureUsage::Read && usages2 & TextureUsage::Write) ||
+		(usages1 & TextureUsage::Write && usages2 & TextureUsage::Read))
+		ATEMA_ERROR("A pass can't execute read and write operations on the same texture");
 
-	m_textures.emplace(textureHandle);
+	if ((usages1 & TextureUsage::Input && usages2 & TextureUsage::Sampled) ||
+		(usages1 & TextureUsage::Sampled && usages2 & TextureUsage::Input))
+		ATEMA_ERROR("A pass can't execute input and sample operations on the same texture");
+
+	if ((usages1 & TextureUsage::Output && usages2 & TextureUsage::Depth) ||
+		(usages1 & TextureUsage::Depth && usages2 & TextureUsage::Output))
+		ATEMA_ERROR("A pass can't execute output and depth operations on the same texture");
+}
+
+void FrameGraphPass::registerTexture(FrameGraphTextureHandle textureHandle, Flags<TextureUsage> usages)
+{
+	if (m_textureUsages.count(textureHandle) != 0)
+		checkFlagsCompatibility(m_textureUsages[textureHandle], usages);
+
+	m_textureUsages[textureHandle] |= usages;
 }
 
 bool FrameGraphPass::validateSize(FrameGraphTextureHandle textureHandle, Vector2u& size)

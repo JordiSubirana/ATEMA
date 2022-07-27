@@ -26,6 +26,7 @@
 #include <Atema/Graphics/FrameGraphTexture.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
+#include <Atema/Graphics/Enums.hpp>
 
 #include <string>
 #include <vector>
@@ -96,7 +97,8 @@ namespace at
 	private:
 		FrameGraphPass(const FrameGraphBuilder& frameGraphBuilder, const std::string& name);
 
-		void registerTexture(FrameGraphTextureHandle textureHandle);
+		static void checkFlagsCompatibility(Flags<TextureUsage> usages1, Flags<TextureUsage> usages2);
+		void registerTexture(FrameGraphTextureHandle textureHandle, Flags<TextureUsage> usages);
 		bool validateSize(FrameGraphTextureHandle textureHandle, Vector2u& size);
 
 		const FrameGraphBuilder& m_frameGraphBuilder;
@@ -109,7 +111,7 @@ namespace at
 
 		ExecutionCallback m_executionCallback;
 
-		std::unordered_set<FrameGraphTextureHandle> m_textures;
+		std::unordered_map<FrameGraphTextureHandle, Flags<TextureUsage>> m_textureUsages;
 
 		Vector2u m_inputSize;
 		Vector2u m_outputSize;

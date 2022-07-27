@@ -27,11 +27,12 @@
 #include <Atema/Graphics/FrameGraphPass.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Graphics/Enums.hpp>
+#include <Atema/Renderer/Image.hpp>
 
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <Atema/Renderer/Image.hpp>
 
 namespace at
 {
@@ -55,19 +56,6 @@ namespace at
 		
 	private:
 		static constexpr size_t InvalidPassIndex = std::numeric_limits<size_t>::max();
-
-		enum class TextureUsage
-		{
-			None = 0,
-			Sampled = 1 << 0,
-			Input = 1 << 1,
-			Output = 1 << 3,
-			Depth = 1 << 4,
-			Clear = 1 << 5,
-
-			Read = Sampled | Input,
-			Write = Output | Depth | Clear,
-		};
 
 		struct PhysicalTexture;
 

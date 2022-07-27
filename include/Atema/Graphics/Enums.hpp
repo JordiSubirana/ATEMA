@@ -19,15 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_ENUMS_HPP
+#define ATEMA_GRAPHICS_ENUMS_HPP
 
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
+#include <Atema/Core/Flags.hpp>
+
+namespace at
+{
+	enum class TextureUsage
+	{
+		None = 0,
+		Sampled = 1 << 0,
+		Input = 1 << 1,
+		Output = 1 << 3,
+		Depth = 1 << 4,
+		Clear = 1 << 5,
+
+		Read = Sampled | Input,
+		Write = Output | Depth | Clear,
+	};
+
+	ATEMA_DECLARE_FLAGS(TextureUsage);
+}
 
 #endif
