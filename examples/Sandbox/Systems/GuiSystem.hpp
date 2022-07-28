@@ -19,50 +19,47 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_GUISYSTEM_HPP
+#define ATEMA_SANDBOX_GUISYSTEM_HPP
 
-#include <Atema/Atema.hpp>
+#include "System.hpp"
 
-class System;
-struct MaterialData;
-struct ModelData;
+#include <Atema/UI/ImGui.hpp>
 
-class SandboxApplication : public at::Application
+class GuiSystem : public System
 {
 public:
-	SandboxApplication();
-	~SandboxApplication();
+	GuiSystem() = delete;
+	GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow);
+	virtual ~GuiSystem();
 
+	void update(at::TimeStep timeStep) override;
 	void onEvent(at::Event& event) override;
 
-	void update(at::TimeStep ms) override;
-
 private:
-	void checkSettings();
+	struct WidgetState
+	{
+		float value = 0.0f;
 
-	void createScene();
-	void createCamera();
-	void createPlayer();
+		bool active = false;
+		bool hovered = false;
+	};
 
-	void updateScene();
-	
-	at::Ptr<at::RenderWindow> m_window;
+	void updateUI();
 
-	at::EntityManager m_entityManager;
+	ImGuiID getWidgetID(const char* label) const;
+	WidgetState& getWidgetState(const char* label);
 
-	std::vector<at::Ptr<System>> m_systems;
+	ImVec4& getColor(ImGuiCol_ color);
 
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
+	bool button(const char* label, const ImVec2& size = ImVec2(0, 0));
 
-	std::vector<at::EntityHandle> m_objects;
+	void pushState(WidgetState& state);
+	void popState(WidgetState& state);
 
-	int m_frameCount;
-	float m_frameDuration;
+	at::TimeStep m_timeStep;
 
-	// Settings
-	uint32_t m_objectRows;
+	std::unordered_map<ImGuiID, WidgetState> m_widgetStates;
 };
 
 #endif

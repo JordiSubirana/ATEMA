@@ -33,6 +33,7 @@
 #include "Systems/GraphicsSystem.hpp"
 #include "Systems/CameraSystem.hpp"
 #include "Systems/FirstPersonCameraSystem.hpp"
+#include "Systems/GuiSystem.hpp"
 #include "Resources.hpp"
 
 #include <fstream>
@@ -46,6 +47,7 @@ namespace
 		"SceneUpdateSystem",
 		"CameraSystem",
 		"FirstPersonCameraSystem",
+		"GuiSystem",
 		"GraphicsSystem"
 	};
 
@@ -139,12 +141,49 @@ namespace
 
 		return indexBuffer;
 	}
+
+	constexpr size_t getObjectRadius(size_t row, size_t col)
+	{
+		return std::max(row, col);
+	}
+
+	constexpr size_t getRadiusBegin(size_t radius)
+	{
+		return radius * radius;
+	}
+
+	constexpr size_t getRadiusCount(size_t radius)
+	{
+		return radius * 2 + 1;
+	}
+
+	constexpr size_t getObjectIndex(size_t row, size_t col)
+	{
+		const auto radius = getObjectRadius(row, col);
+		const auto begin = getRadiusBegin(radius);
+
+		return begin + col + (radius - row);
+	}
+
+	Vector2u getObjectPosition(size_t radius, size_t offset)
+	{
+		auto row = static_cast<uint32_t>(radius);
+		if (offset > radius)
+		{
+			const auto count = getRadiusCount(radius);
+
+			row = static_cast<uint32_t>(count - offset - 1);
+		}
+
+		return { row, offset - (radius - row) };
+	}
 }
 
 SandboxApplication::SandboxApplication():
 	Application(),
 	m_frameCount(0),
-	m_frameDuration(0.0f)
+	m_frameDuration(0.0f),
+	m_objectRows(0)
 {
 	// Let default settings for now
 	Renderer::Settings settings;
@@ -177,10 +216,20 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(firstPersonCameraSystem);
 
+	auto guiSystem = std::make_shared<GuiSystem>(m_window);
+	guiSystem->setEntityManager(m_entityManager);
+
+	m_systems.push_back(guiSystem);
+
 	auto graphicsSystem = std::make_shared<GraphicsSystem>(m_window);
 	graphicsSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(graphicsSystem);
+
+	// Resources
+	m_modelData = std::make_shared<ModelData>(modelMeshPath);
+
+	m_materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
 
 	// Create entities
 	createScene();
@@ -195,6 +244,9 @@ SandboxApplication::~SandboxApplication()
 	m_systems.clear();
 
 	m_entityManager.clear();
+
+	m_modelData.reset();
+	m_materialData.reset();
 	
 	m_window.reset();
 
@@ -225,6 +277,10 @@ void SandboxApplication::onEvent(at::Event& event)
 
 void SandboxApplication::update(at::TimeStep ms)
 {
+	{
+		checkSettings();
+	}
+
 	{
 		ATEMA_BENCHMARK("Application update");
 
@@ -266,63 +322,19 @@ void SandboxApplication::update(at::TimeStep ms)
 	}
 }
 
+void SandboxApplication::checkSettings()
+{
+	const auto& settings = Settings::instance();
+
+	if (m_objectRows != settings.objectRows)
+	{
+		updateScene();
+	}
+}
+
 void SandboxApplication::createScene()
 {
-	AABBf sceneAABB;
-
-	{
-		// Resources
-		auto modelData = std::make_shared<ModelData>(modelMeshPath);
-
-		auto materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
-
-		// Create objects
-		auto aabbSize = modelData->aabb.getSize();
-		aabbSize.z = 0.0f;
-		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
-		const auto origin = -radius * (objectRow / 2.0f);
-
-		const Vector2f velocityReference(objectRow / 2, objectRow / 2);
-		const auto maxDistance = velocityReference.getNorm();
-
-		for (size_t i = 0; i < objectRow; i++)
-		{
-			for (size_t j = 0; j < objectRow; j++)
-			{
-				auto entity = m_entityManager.createEntity();
-
-				// Transform component
-				auto& transform = m_entityManager.createComponent<Transform>(entity);
-
-				Vector3f position;
-				position.x = origin + radius * static_cast<float>(i);
-				position.y = origin + radius * static_cast<float>(j);
-
-				transform.setTranslation(position);
-
-				// Graphics component
-				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
-
-				graphics.vertexBuffer = modelData->vertexBuffer;
-				graphics.indexBuffer = modelData->indexBuffer;
-				graphics.indexCount = modelData->indexCount;
-				graphics.material = materialData;
-				graphics.aabb = modelData->aabb;
-
-				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
-
-				// Velocity component
-				auto& velocity = m_entityManager.createComponent<VelocityComponent>(entity);
-
-				//const auto distance = Vector2f(i, j).getNorm();
-				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
-
-				const auto percent = (objectRow == 1) ? 0.2f : distance / maxDistance;
-
-				velocity.speed = percent * 3.14159f * 2.0f;
-			}
-		}
-	}
+	updateScene();
 
 	// Create ground
 	{
@@ -331,10 +343,9 @@ void SandboxApplication::createScene()
 
 		auto materialData = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
 
-		Vector2f planeSize = { sceneAABB.max.x - sceneAABB.min.x, sceneAABB.max.y - sceneAABB.min.y };
-		planeSize += Vector2f(1000.0f, 1000.0f);
+		const Vector2f planeSize(1000.0f, 1000.0f);
 
-		auto vertexBuffer = createPlaneVertices(commandPool, sceneAABB.getCenter(), planeSize);
+		auto vertexBuffer = createPlaneVertices(commandPool, Vector3f(), planeSize);
 
 		auto indexBuffer = createPlaneIndices(commandPool);
 
@@ -353,7 +364,8 @@ void SandboxApplication::createScene()
 		graphics.indexBuffer = indexBuffer;
 		graphics.indexCount = static_cast<uint32_t>(planeIndices.size());
 		graphics.material = materialData;
-		graphics.aabb = sceneAABB;
+		graphics.aabb.min = { -planeSize.x / 2.0f, -planeSize.y / 2.0f, 0.0f };
+		graphics.aabb.max = { +planeSize.x / 2.0f, +planeSize.y / 2.0f, 0.0f };
 	}
 }
 
@@ -369,7 +381,6 @@ void SandboxApplication::createCamera()
 	camera.display = true;
 	camera.isAuto = true;
 	camera.useTarget = true;
-	camera.target = Vector3f(0.0f, 0.0f, zoomOffset / 2.0f);
 }
 
 void SandboxApplication::createPlayer()
@@ -385,4 +396,102 @@ void SandboxApplication::createPlayer()
 	camera.display = false;
 	camera.isAuto = false;
 	camera.useTarget = false;
+}
+
+void SandboxApplication::updateScene()
+{
+	const auto newObjectRows = Settings::instance().objectRows;
+
+	if (m_objectRows == newObjectRows)
+		return;
+
+	const auto newSize = static_cast<size_t>(newObjectRows) * static_cast<size_t>(newObjectRows);
+
+	// We want to remove existing objects
+	if (m_objectRows > newObjectRows)
+	{
+		auto firstIndex = getRadiusBegin(newObjectRows);
+
+		for (size_t i = firstIndex; i < m_objects.size(); i++)
+			m_entityManager.removeEntity(m_objects[i]);
+
+		m_objects.resize(newSize);
+	}
+	// We want to add new objects
+	else
+	{
+		m_objects.resize(newSize);
+
+		const auto firstRow = m_objectRows;
+
+		for (size_t r = firstRow; r < newObjectRows; r++)
+		{
+			const auto count = getRadiusCount(r);
+
+			for (size_t i = 0; i < count; i++)
+			{
+				const auto pos = getObjectPosition(r, i);
+
+				const auto entity = m_entityManager.createEntity();
+
+				m_objects[getObjectIndex(pos.x, pos.y)] = entity;
+
+				// Graphics component
+				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+				graphics.vertexBuffer = m_modelData->vertexBuffer;
+				graphics.indexBuffer = m_modelData->indexBuffer;
+				graphics.indexCount = m_modelData->indexCount;
+				graphics.material = m_materialData;
+				graphics.aabb = m_modelData->aabb;
+
+				// Transform component
+				m_entityManager.createComponent<Transform>(entity);
+
+				// Velocity component
+				m_entityManager.createComponent<VelocityComponent>(entity);
+			}
+		}
+	}
+
+	// Update components
+	{
+		auto aabbSize = m_modelData->aabb.getSize();
+		aabbSize.z = 0.0f;
+		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
+		const auto origin = -radius * (static_cast<float>(newObjectRows) / 2.0f);
+
+		const Vector2f velocityReference(newObjectRows / 2, newObjectRows / 2);
+		const auto maxDistance = velocityReference.getNorm();
+
+		for (size_t i = 0; i < newObjectRows; i++)
+		{
+			for (size_t j = 0; j < newObjectRows; j++)
+			{
+				const auto entity = m_objects[getObjectIndex(i, j)];
+
+				// Transform component
+				auto& transform = m_entityManager.getComponent<Transform>(entity);
+
+				Vector3f position;
+				position.x = origin + radius * static_cast<float>(i);
+				position.y = origin + radius * static_cast<float>(j);
+
+				transform.setTranslation(position);
+
+				// Velocity component
+				auto& velocity = m_entityManager.getComponent<VelocityComponent>(entity);
+
+				//const auto distance = Vector2f(i, j).getNorm();
+				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
+
+				const auto percent = (newObjectRows == 1) ? 0.2f : distance / maxDistance;
+
+				velocity.speed = percent * 3.14159f * 2.0f;
+			}
+		}
+	}
+
+	// Update parameters
+	m_objectRows = newObjectRows;
 }

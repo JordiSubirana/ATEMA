@@ -44,6 +44,7 @@ CameraSystem::~CameraSystem()
 void CameraSystem::update(TimeStep timeStep)
 {
 	AABBf sceneAABB;
+	AABBf objectAABB;
 	{
 		auto& entityManager = getEntityManager();
 		auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
@@ -55,9 +56,22 @@ void CameraSystem::update(TimeStep timeStep)
 
 			// Don't consider the ground
 			if (graphics.aabb.getSize().z > 0.1f)
-				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
+			{
+				sceneAABB.extend(Matrix4f::createTranslation(transform.getTranslation()) * graphics.aabb);
+				objectAABB = graphics.aabb;
+			}
 		}
 	}
+
+	auto sceneSize = sceneAABB.getSize();
+	sceneSize.z = 0.0f;
+	auto objectSize = objectAABB.getSize();
+	objectSize.z = 0.0f;
+
+	const auto sceneRadius = sceneSize.getNorm() / 2.0f;
+	const auto objectRadius = objectSize.getNorm() / 2.0f;
+
+	const auto radiusMargin = objectRadius;
 
 	// Update automatic cameras
 	auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
@@ -70,26 +84,34 @@ void CameraSystem::update(TimeStep timeStep)
 
 		if (camera.isAuto)
 		{
+			camera.target = sceneAABB.getCenter();
+			camera.target.z = sceneAABB.max.z * 0.5f;
+
 			auto& transform = selection.get<Transform>(entity);
-			
-			const auto angle = m_totalTime * zoomSpeed;
+
+			const auto metersPerSec = objectRadius * 2.0f * Math::Pi<float>;
+			auto perimeter = sceneRadius * 2.0f * Math::Pi<float>;
+			perimeter = std::sqrt(perimeter * 2.0f);
+			const auto loopsPerSec = metersPerSec / perimeter * 0.5f;
+			const auto angle = m_totalTime * loopsPerSec * Math::Pi<float>;
 
 			const auto sin = std::sin(angle);
-			const auto sinSlow = std::sin(angle / 2.0f + 3.14159f);
+			const auto sinSlow = std::sin(angle / 2.0f);
 
-			const auto sign = (sin + 1.0f) / 2.0f;
-			const auto signSlow = (sinSlow + 1.0f) / 2.0f;
+			const auto percent = (sin + 1.0f) / 2.0f;
+			const auto percentSlow = (sinSlow + 1.0f) / 2.0f;
 
-			auto sceneSize = sceneAABB.getSize();
-			sceneSize.z = 0.0f;
-			auto radius = sceneSize.getNorm() / 2.0f;
-			radius = sign * radius + (1.0f - sign) * zoomOffset;
+			const auto radius = percent * sceneRadius * 2.0f + (1.0f - percent) * objectRadius;
 
-			const auto pos = toCartesian({ radius, angle / 3.0f });
+			const auto radiusPercent = (radius - objectRadius) / (sceneRadius * 2.0f - objectRadius);
 
-			const auto z = signSlow * radius + (1.0f - signSlow) * zoomOffset;
+			const auto pos = toCartesian({ radius + radiusMargin, angle });
 
-			transform.setTranslation({ pos.x, pos.y, z });
+			auto z = percentSlow * objectAABB.max.z * 2.0f + (1.0f - percentSlow) * sceneRadius;
+
+			z = Math::lerp(objectAABB.max.z * 1.0f, z, radiusPercent);
+
+			transform.setTranslation({ pos.x + camera.target.x, pos.y + camera.target.y, z });
 		}
 	}
 

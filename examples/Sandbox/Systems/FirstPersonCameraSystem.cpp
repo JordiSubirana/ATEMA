@@ -68,7 +68,7 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 		return;
 
 	// Update components
-	const float metersPerSec = zoomOffset * 5.0f;
+	const float metersPerSec = 20.0f;
 	const auto rotationMatrix = Matrix4f::createRotation(transform->getRotation());
 
 	Vector3f frontOffset;

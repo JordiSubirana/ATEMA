@@ -21,7 +21,6 @@
 
 #include "GraphicsSystem.hpp"
 
-#include <fstream>
 #include <Atema/Core/Utils.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
@@ -31,18 +30,20 @@
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Shader/Ast/AstPreprocessor.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
+#include <Atema/UI/UiContext.hpp>
 
 #include "../Resources.hpp"
+#include "../Settings.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Components/CameraComponent.hpp"
+
+#include <fstream>
 
 using namespace at;
 
 namespace
 {
 	const Vector3f lightDirection = Vector3f(1.0f, 1.0f, -1.0f).normalize();
-
-	const uint32_t shadowMapSize = 2048;
 
 	//-----
 
@@ -161,7 +162,10 @@ namespace
 GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	System(),
 	m_renderWindow(renderWindow),
-	m_totalTime(0.0f)
+	m_totalTime(0.0f),
+	m_updateFrameGraph(true),
+	m_shadowMapSize(0),
+	m_debugViewMode(Settings::DebugViewMode::Disabled)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
@@ -280,7 +284,6 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	// Create quad
 	{
 		m_ppQuad = createQuad(renderer.getCommandPool(QueueType::Graphics));
-		m_ppDebugQuad = createQuad(renderer.getCommandPool(QueueType::Graphics), { -0.75f, 0.75f }, { 0.25f, 0.25f });
 	}
 
 	//----- OBJECT RESOURCES -----//
@@ -319,10 +322,10 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	BufferLayout objectLayout(StructLayout::Default);
 	objectLayout.addMatrix(BufferElementType::Float, 4, 4);
 
-	const auto elementByteSize = static_cast<uint32_t>(objectLayout.getSize());
+	m_elementByteSize = static_cast<uint32_t>(objectLayout.getSize());
 	const auto minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 
-	m_dynamicObjectBufferOffset = Math::getNextMultiple(elementByteSize, minOffset);
+	m_dynamicObjectBufferOffset = Math::getNextMultiple(m_elementByteSize, minOffset);
 
 	m_frameDatas.resize(maxFramesInFlight);
 	for (auto& frameData : m_frameDatas)
@@ -331,19 +334,18 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, frameLayout.getSize(), true });
 
 		// Frame object uniform buffers
-		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(objectCount * m_dynamicObjectBufferOffset), true });
+		frameData.objectCount = 1;
+		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(1 * m_dynamicObjectBufferOffset), true });
 
 		// Add descriptor set
 		frameData.descriptorSet = m_frameLayout->createSet();
 		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
-		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, elementByteSize);
+		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, m_elementByteSize);
 	}
 
 	//----- SHADOW MAPPING -----//
 
 	// Fill pass data buffer
-	m_shadowViewport.size = { shadowMapSize, shadowMapSize };
-
 	{
 		/*struct UniformShadowMappingData
 		{
@@ -499,6 +501,14 @@ GraphicsSystem::~GraphicsSystem()
 
 void GraphicsSystem::update(TimeStep timeStep)
 {
+	Renderer::instance().waitForIdle();
+
+	// Ensure the settings did not change
+	checkSettings();
+
+	if (m_updateFrameGraph)
+		createFrameGraph();
+
 	// Start frame
 	updateFrame();
 
@@ -613,8 +623,38 @@ void GraphicsSystem::translateShaders()
 	}
 }
 
+void GraphicsSystem::checkSettings()
+{
+	const auto& settings = Settings::instance();
+
+	if (m_shadowMapSize != settings.shadowMapSize)
+	{
+		m_shadowMapSize = settings.shadowMapSize;
+
+		m_shadowViewport.size = { m_shadowMapSize, m_shadowMapSize };
+
+		m_updateFrameGraph = true;
+	}
+
+	if (m_debugViewMode != settings.debugViewMode)
+	{
+		m_debugViewMode = settings.debugViewMode;
+
+		m_updateFrameGraph = true;
+	}
+
+	if (m_debugViews != settings.debugViews)
+	{
+		m_debugViews = settings.debugViews;
+
+		m_updateFrameGraph = true;
+	}
+}
+
 void GraphicsSystem::createFrameGraph()
 {
+	Renderer::instance().waitForIdle();
+
 	FrameGraphTextureSettings textureSettings;
 	textureSettings.width = m_windowSize.x;
 	textureSettings.height = m_windowSize.y;
@@ -640,11 +680,30 @@ void GraphicsSystem::createFrameGraph()
 
 	textureSettings.format = gBuffer[0];
 	auto phongOutputTexture = frameGraphBuilder.createTexture(textureSettings);
+	auto debugOutputTexture = frameGraphBuilder.createTexture(textureSettings);
 
 	textureSettings.format = ImageFormat::D32F;
-	textureSettings.width = shadowMapSize;
-	textureSettings.height = shadowMapSize;
+	textureSettings.width = m_shadowMapSize;
+	textureSettings.height = m_shadowMapSize;
 	auto shadowMapTexture = frameGraphBuilder.createTexture(textureSettings);
+
+	auto getDebugTexture = [&](Settings::DebugView debugView) -> FrameGraphTextureHandle
+	{
+		switch (debugView)
+		{
+			case Settings::DebugView::GBufferPosition: return gbufferTextures[0];
+			case Settings::DebugView::GBufferNormal: return gbufferTextures[1];
+			case Settings::DebugView::GBufferColor: return gbufferTextures[2];
+			case Settings::DebugView::GBufferAO: return gbufferTextures[3];
+			case Settings::DebugView::GBufferEmissive: return gbufferTextures[4];
+			case Settings::DebugView::GBufferMetalness: return gbufferTextures[5];
+			case Settings::DebugView::GBufferRoughness: return gbufferTextures[6];
+			case Settings::DebugView::ShadowMap: return shadowMapTexture;
+			default: break;
+		}
+
+		return phongOutputTexture;
+	};
 
 	//-----
 	// Pass setup
@@ -802,7 +861,7 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setViewport(m_shadowViewport);
 
-							commandBuffer->setScissor(Vector2i(), { shadowMapSize, shadowMapSize });
+							commandBuffer->setScissor(Vector2i(), { m_shadowMapSize, m_shadowMapSize });
 
 							commandBuffer->bindDescriptorSet(1, frameData.shadowSet);
 
@@ -895,6 +954,105 @@ void GraphicsSystem::createFrameGraph()
 			});
 	}
 
+	// Debug (corner)
+	if (m_debugViewMode == Settings::DebugViewMode::Corner)
+	{
+		auto& pass = frameGraphBuilder.createPass("debug corner");
+
+		pass.addOutputTexture(phongOutputTexture, 0);
+
+		const auto debugTexture = getDebugTexture(m_debugViews[0]);
+
+		pass.addSampledTexture(debugTexture, ShaderStage::Fragment);
+
+		pass.setExecutionCallback([this, debugTexture](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (debug corner)");
+
+				auto descriptorSet = m_screenLayout->createSet();
+
+				descriptorSet->update(0, context.getTexture(debugTexture), m_ppSampler);
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				commandBuffer.bindPipeline(m_screenPipeline);
+
+				commandBuffer.setScissor(Vector2i(), m_windowSize);
+
+				Viewport viewport;
+				viewport.position.x = 10.0f;
+				viewport.position.y = static_cast<float>(2 * m_windowSize.y / 3) - 10.0f;
+				viewport.size = { m_windowSize.x / 3, m_windowSize.y / 3 };
+
+				commandBuffer.setViewport(viewport);
+
+				commandBuffer.bindDescriptorSet(0, descriptorSet);
+
+				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+
+				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+
+				context.destroyAfterUse(std::move(descriptorSet));
+			});
+	}
+
+	// Debug (full)
+	if (m_debugViewMode == Settings::DebugViewMode::Full)
+	{
+		auto& pass = frameGraphBuilder.createPass("debug full");
+
+		pass.addOutputTexture(phongOutputTexture, 0);
+
+		const std::vector<FrameGraphTextureHandle> debugTextures =
+		{
+			getDebugTexture(m_debugViews[0]),
+			getDebugTexture(m_debugViews[1]),
+			getDebugTexture(m_debugViews[2]),
+			getDebugTexture(m_debugViews[3]),
+		};
+
+		for (const auto& debugTexture : debugTextures)
+			pass.addSampledTexture(debugTexture, ShaderStage::Fragment);
+
+		pass.setExecutionCallback([this, debugTextures](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (debug full)");
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				commandBuffer.bindPipeline(m_screenPipeline);
+
+				commandBuffer.setScissor(Vector2i(), m_windowSize);
+
+				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+
+				for (size_t x = 0; x < 2; x++)
+				{
+					for (size_t y = 0; y < 2; y++)
+					{
+						const auto i = x + 2 * y;
+
+						Viewport viewport;
+						viewport.position.x = static_cast<float>(x * m_windowSize.x / 2);
+						viewport.position.y = static_cast<float>(y * m_windowSize.y / 2);
+						viewport.size = { m_windowSize.x / 2, m_windowSize.y / 2 };
+
+						commandBuffer.setViewport(viewport);
+
+						auto descriptorSet = m_screenLayout->createSet();
+
+						descriptorSet->update(0, context.getTexture(debugTextures[i]), m_ppSampler);
+
+						commandBuffer.bindDescriptorSet(0, descriptorSet);
+
+						commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+
+						context.destroyAfterUse(std::move(descriptorSet));
+					}
+				}
+			});
+	}
+
 	// Screen
 	{
 		auto& pass = frameGraphBuilder.createPass("screen");
@@ -928,11 +1086,12 @@ void GraphicsSystem::createFrameGraph()
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
-				//commandBuffer.bindDescriptorSet(0, descriptorSet2);
+				// UI
+				{
+					ATEMA_BENCHMARK("ImGui");
 
-				//commandBuffer.bindVertexBuffer(m_ppDebugQuad, 0);
-
-				//commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
+					UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
+				}
 
 				context.destroyAfterUse(std::move(descriptorSet1));
 				context.destroyAfterUse(std::move(descriptorSet2));
@@ -942,17 +1101,16 @@ void GraphicsSystem::createFrameGraph()
 	//-----
 	// Build frame graph
 	m_frameGraph = frameGraphBuilder.build();
+	m_updateFrameGraph = false;
 }
 
 void GraphicsSystem::onResize(const Vector2u& size)
 {
-	Renderer::instance().waitForIdle();
-
 	m_viewport.size.x = static_cast<float>(size.x);
 	m_viewport.size.y = static_cast<float>(size.y);
 	m_windowSize = size;
 
-	createFrameGraph();
+	m_updateFrameGraph = true;
 }
 
 void GraphicsSystem::updateFrame()
@@ -1079,6 +1237,16 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	// Update objects buffers
 	auto entities = getEntityManager().getUnion<Transform, GraphicsComponent>();
 
+	if (entities.size() != frameData.objectCount)
+	{
+		// Frame object uniform buffers
+		frameData.objectCount = entities.size();
+		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset), true });
+
+		// Update descriptor set
+		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, m_elementByteSize);
+	}
+
 	{
 		/*struct UniformObjectElement
 		{
@@ -1140,17 +1308,16 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 		for (auto& entity : entities)
 		{
+			auto& transform = entities.get<Transform>(entity);
 			auto& graphics = entities.get<GraphicsComponent>(entity);
 
 			// Don't consider the ground
 			if (graphics.aabb.getSize().z > 0.1f)
-				sceneAABB.extend(graphics.aabb);
+				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
 		}
 
 		auto aabbSize = sceneAABB.getSize();
 		aabbSize.z = 0.0f;
-
-		auto aabbDiameter = aabbSize.getNorm();
 
 		auto cameraDir = cameraTarget - cameraPos;
 		cameraDir.normalize();
@@ -1185,8 +1352,8 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		// 0% : minAlt / 100% : maxAlt
 		auto altitudePercent = (altitude - minAlt) / (maxAlt - minAlt);
 
-		float minBoxSize = 10.0f;
-		float maxBoxSize = 60.0f;
+		float minBoxSize = Settings::instance().shadowBoxMinSize / 2.0f;
+		float maxBoxSize = Settings::instance().shadowBoxMaxSize / 2.0f;
 
 		float boxSize = maxBoxSize * altitudePercent + minBoxSize * (1.0f - altitudePercent);
 		boxSize = std::max(boxSize, minBoxSize * camDirZPercent + maxBoxSize * (1.0f - camDirZPercent));

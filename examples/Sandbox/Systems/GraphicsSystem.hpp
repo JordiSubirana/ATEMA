@@ -25,6 +25,7 @@
 #include <Atema/Math/AABB.hpp>
 
 #include "System.hpp"
+#include "../Settings.hpp"
 
 struct MaterialData;
 
@@ -41,8 +42,10 @@ public:
 private:
 	struct FrameData
 	{
-		at::Ptr<at::Buffer> frameUniformBuffer;
+		size_t objectCount;
 		at::Ptr<at::Buffer> objectsUniformBuffer;
+
+		at::Ptr<at::Buffer> frameUniformBuffer;
 		at::Ptr<at::DescriptorSet> descriptorSet;
 
 		at::Ptr<at::Buffer> shadowBuffer;
@@ -58,6 +61,8 @@ private:
 	};
 
 	void translateShaders();
+
+	void checkSettings();
 
 	void createFrameGraph();
 	void onResize(const at::Vector2u& size);
@@ -76,11 +81,11 @@ private:
 	at::Vector2u m_windowSize;
 
 	// FrameGraph
+	bool m_updateFrameGraph;
 	at::Ptr<at::FrameGraph> m_frameGraph;
 
 	// Rendering resources (post process)
 	at::Ptr<at::Buffer> m_ppQuad;
-	at::Ptr<at::Buffer> m_ppDebugQuad;
 	at::Ptr<at::Sampler> m_ppSampler;
 	at::Ptr<at::DescriptorSetLayout> m_ppLayout;
 
@@ -89,6 +94,7 @@ private:
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameLayout;
+	uint32_t m_elementByteSize;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;
 
@@ -96,6 +102,7 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_shadowLayout;
 	at::Ptr<at::DescriptorSetLayout> m_gbufferShadowMapLayout;
 	at::Ptr<at::GraphicsPipeline> m_shadowPipeline;
+	uint32_t m_shadowMapSize;
 	at::Viewport m_shadowViewport;
 	at::Ptr<at::Sampler> m_shadowMapSampler;
 
@@ -106,6 +113,10 @@ private:
 	// Screen
 	at::Ptr<at::DescriptorSetLayout> m_screenLayout;
 	at::Ptr<at::GraphicsPipeline> m_screenPipeline;
+
+	// Settings
+	Settings::DebugViewMode m_debugViewMode;
+	std::vector<Settings::DebugView> m_debugViews;
 };
 
 #endif

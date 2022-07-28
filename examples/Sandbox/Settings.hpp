@@ -19,50 +19,49 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_SETTINGS_HPP
+#define ATEMA_SANDBOX_SETTINGS_HPP
 
-#include <Atema/Atema.hpp>
+#include <cstdint>
+#include <vector>
 
-class System;
-struct MaterialData;
-struct ModelData;
-
-class SandboxApplication : public at::Application
+class Settings
 {
 public:
-	SandboxApplication();
-	~SandboxApplication();
+	enum class DebugViewMode
+	{
+		Disabled,
+		Corner,
+		Full
+	};
 
-	void onEvent(at::Event& event) override;
+	enum class DebugView
+	{
+		GBufferPosition,
+		GBufferNormal,
+		GBufferColor,
+		GBufferAO,
+		GBufferEmissive,
+		GBufferMetalness,
+		GBufferRoughness,
+		ShadowMap,
+	};
 
-	void update(at::TimeStep ms) override;
+	Settings();
+	~Settings();
+
+	static Settings& instance();
+
+	uint32_t objectRows;
+
+	uint32_t shadowMapSize;
+	float shadowBoxMinSize;
+	float shadowBoxMaxSize;
+
+	DebugViewMode debugViewMode;
+	std::vector<DebugView> debugViews;
 
 private:
-	void checkSettings();
-
-	void createScene();
-	void createCamera();
-	void createPlayer();
-
-	void updateScene();
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
-
-	std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	uint32_t m_objectRows;
 };
 
 #endif

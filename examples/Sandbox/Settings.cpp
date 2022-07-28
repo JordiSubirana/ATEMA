@@ -19,50 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#include "Settings.hpp"
 
-#include <Atema/Atema.hpp>
-
-class System;
-struct MaterialData;
-struct ModelData;
-
-class SandboxApplication : public at::Application
+Settings::Settings() :
+	objectRows(3),
+	shadowMapSize(2048),
+	shadowBoxMinSize(20.0f),
+	shadowBoxMaxSize(100.0f),
+	debugViewMode(DebugViewMode::Disabled),
+	debugViews(4)
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
+}
 
-	void onEvent(at::Event& event) override;
+Settings::~Settings()
+{
+}
 
-	void update(at::TimeStep ms) override;
+Settings& Settings::instance()
+{
+	static Settings s_settings;
 
-private:
-	void checkSettings();
-
-	void createScene();
-	void createCamera();
-	void createPlayer();
-
-	void updateScene();
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::Ptr<ModelData> m_modelData;
-	at::Ptr<MaterialData> m_materialData;
-
-	std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	uint32_t m_objectRows;
-};
-
-#endif
+	return s_settings;
+}

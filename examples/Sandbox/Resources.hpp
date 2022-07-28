@@ -27,11 +27,9 @@
 
 #include <filesystem>
 
-constexpr uint32_t objectRow = 30;
-constexpr uint32_t objectCount = objectRow * objectRow + 1;
-
 const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
 const auto shaderPath = rscPath / "Shaders";
+const auto fontPath = rscPath / "Fonts";
 
 const float cameraScale = 0.001f;
 
@@ -40,9 +38,6 @@ const float cameraScale = 0.001f;
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
 const std::string modelTextureExtension = "png";
-const auto zoomSpeed = 3.14159f / 10.0f;
-const auto zoomRadius = 400.0f;
-const auto zoomOffset = 40.0f;
 //*/
 
 // Tardis
@@ -50,9 +45,6 @@ const auto zoomOffset = 40.0f;
 const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis";
 const std::string modelTextureExtension = "png";
-const auto zoomSpeed = 3.14159f / 10.0f;
-const auto zoomRadius = 100.0f;
-const auto zoomOffset = 5.0f;
 //*/
 
 // Ground
