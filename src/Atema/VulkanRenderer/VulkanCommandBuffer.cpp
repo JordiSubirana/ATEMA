@@ -376,20 +376,7 @@ void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-	if (barrier.newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-	{
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-		if (Renderer::isStencilImageFormat(format))
-		{
-			barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-		}
-	}
-	else
-	{
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
+	barrier.subresourceRange.aspectMask = Vulkan::getAspect(format);
 
 	// Pipeline barrier
 	m_device.vkCmdPipelineBarrier(
