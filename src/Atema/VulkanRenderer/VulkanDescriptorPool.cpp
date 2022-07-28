@@ -81,6 +81,11 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 	return std::static_pointer_cast<DescriptorSet>(descriptorSet);
 }
 
+VkDescriptorPool VulkanDescriptorPool::Pool::getHandle() const
+{
+	return m_pool;
+}
+
 // Descriptor pool
 
 VulkanDescriptorPool::VulkanDescriptorPool(const VulkanDevice& device, const VulkanDescriptorSetLayout& descriptorSetLayout, uint32_t pageSize) :
@@ -137,6 +142,11 @@ Ptr<DescriptorSet> VulkanDescriptorPool::createSet()
 	addPool();
 	
 	return m_pools.back()->createSet();
+}
+
+VkDescriptorPool VulkanDescriptorPool::getHandle() const
+{
+	return m_pools[0]->getHandle();
 }
 
 void VulkanDescriptorPool::addPool()

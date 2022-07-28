@@ -344,6 +344,11 @@ public:
 		return nullptr;
 	}
 
+	void* getGLFWHandle() const
+	{
+		return m_window;
+	}
+
 	void setTitle(const std::string& title)
 	{
 		glfwSetWindowTitle(m_window, title.c_str());
@@ -521,6 +526,16 @@ void Window::processEvents()
 
 Vector2u Window::getSize() const noexcept
 {
+	int w, h;
+
+	void* handle = getGLFWHandle();
+
+	glfwGetWindowSize(static_cast<GLFWwindow*>(handle), &w, &h);
+
+	Vector2u size(w, h);
+
+	return size;
+
 	return m_size;
 }
 
@@ -537,6 +552,11 @@ const EventDispatcher& Window::getEventDispatcher() const noexcept
 void* Window::getHandle() const
 {
 	return m_implementation->getHandle();
+}
+
+void* Window::getGLFWHandle() const
+{
+	return m_implementation->getGLFWHandle();
 }
 
 void Window::onResize(const Vector2u& newSize)

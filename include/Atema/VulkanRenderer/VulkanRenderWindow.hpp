@@ -58,6 +58,8 @@ namespace at
 		Ptr<RenderPass> getRenderPass() const noexcept override;
 		Ptr<Framebuffer> getFramebuffer(size_t imageIndex) const noexcept;
 
+		const VulkanSwapChain& getSwapChain() const;
+
 		void present(const VulkanRenderFrame& renderFrame);
 
 	private:

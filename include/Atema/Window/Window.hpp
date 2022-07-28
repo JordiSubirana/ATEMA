@@ -78,6 +78,8 @@ namespace at
 		// Platform specific
 		void* getHandle() const;
 
+		void* getGLFWHandle() const;
+
 	protected:
 		Window(const Settings& settings);
 

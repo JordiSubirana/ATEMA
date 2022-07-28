@@ -78,3 +78,8 @@ Ptr<DescriptorSet> VulkanDescriptorSetLayout::createSet()
 {
 	return m_descriptorPool->createSet();
 }
+
+const VulkanDescriptorPool& VulkanDescriptorSetLayout::getDescriptorPool() const
+{
+	return *m_descriptorPool;
+}

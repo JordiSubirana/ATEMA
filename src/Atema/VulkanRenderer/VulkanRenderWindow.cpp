@@ -149,6 +149,11 @@ Ptr<Framebuffer> VulkanRenderWindow::getFramebuffer(size_t imageIndex) const noe
 	return m_framebuffers[imageIndex];
 }
 
+const VulkanSwapChain& VulkanRenderWindow::getSwapChain() const
+{
+	return *m_swapChain;
+}
+
 void VulkanRenderWindow::present(const VulkanRenderFrame& renderFrame)
 {
 	auto vkSemaphore = std::static_pointer_cast<VulkanSemaphore>(renderFrame.getRenderFinishedSemaphore())->getHandle();

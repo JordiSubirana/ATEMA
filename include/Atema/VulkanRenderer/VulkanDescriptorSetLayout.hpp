@@ -44,6 +44,8 @@ namespace at
 
 		Ptr<DescriptorSet> createSet() override;
 
+		const VulkanDescriptorPool& getDescriptorPool() const;
+
 	private:
 		const VulkanDevice& m_device;
 		VkDescriptorSetLayout m_descriptorSetLayout;

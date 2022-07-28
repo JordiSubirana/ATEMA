@@ -42,6 +42,8 @@ namespace at
 
 		Ptr<DescriptorSet> createSet();
 
+		VkDescriptorPool getHandle() const;
+
 	private:
 		class Pool
 		{
@@ -53,6 +55,8 @@ namespace at
 			bool isFull() const noexcept;
 
 			Ptr<DescriptorSet> createSet();
+
+			VkDescriptorPool getHandle() const;
 
 		private:
 			const VulkanDevice& m_device;

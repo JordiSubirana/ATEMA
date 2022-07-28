@@ -100,8 +100,8 @@ VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Setting
 	SupportDetails swapChainSupport = getSupportDetails(m_device.getPhysicalDevice(), surface);
 
 	auto format = Vulkan::getFormat(settings.imageFormat);
-	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(format, swapChainSupport.formats);
-	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+	m_surfaceFormat = chooseSwapSurfaceFormat(format, swapChainSupport.formats);
+	m_presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 	m_extent = chooseSwapExtent(m_extent, swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount;
@@ -111,7 +111,7 @@ VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Setting
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
-	m_format = surfaceFormat.format;
+	m_format = m_surfaceFormat.format;
 
 	// Create swap chain
 	{
@@ -119,8 +119,8 @@ VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Setting
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		createInfo.surface = surface;
 		createInfo.minImageCount = imageCount;
-		createInfo.imageFormat = surfaceFormat.format;
-		createInfo.imageColorSpace = surfaceFormat.colorSpace;
+		createInfo.imageFormat = m_surfaceFormat.format;
+		createInfo.imageColorSpace = m_surfaceFormat.colorSpace;
 		createInfo.imageExtent = m_extent;
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // To render directly to it
@@ -149,7 +149,7 @@ VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Setting
 
 		createInfo.preTransform = swapChainSupport.capabilities.currentTransform; // Can be used for rotations or flips
 		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Can be used to blend with other windows. Here we'll ignore it
-		createInfo.presentMode = presentMode;
+		createInfo.presentMode = m_presentMode;
 		createInfo.clipped = VK_TRUE; // Best performance but we won't be able to get pixels if another window is in front of this one
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
@@ -231,6 +231,16 @@ SwapChainResult VulkanSwapChain::acquireNextImage(uint32_t& imageIndex, VkSemaph
 	const auto result = m_device.vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, semaphore, fence, &imageIndex);
 
 	return Vulkan::getSwapChainResult(result);
+}
+
+VkSurfaceFormatKHR VulkanSwapChain::getSurfaceFormat() const
+{
+	return m_surfaceFormat;
+}
+
+VkPresentModeKHR VulkanSwapChain::getPresentMode() const
+{
+	return m_presentMode;
 }
 
 ImageFormat VulkanSwapChain::getFormat() const

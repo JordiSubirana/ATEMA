@@ -63,6 +63,8 @@ namespace at
 		
 		SwapChainResult acquireNextImage(uint32_t& imageIndex, VkSemaphore semaphore, VkFence fence);
 
+		VkSurfaceFormatKHR getSurfaceFormat() const;
+		VkPresentModeKHR getPresentMode() const;
 		ImageFormat getFormat() const;
 		
 	private:
@@ -71,6 +73,8 @@ namespace at
 		const VulkanRenderWindow& m_renderWindow;
 		VkSwapchainKHR m_swapChain;
 		std::vector<Ptr<Image>> m_images;
+		VkSurfaceFormatKHR m_surfaceFormat;
+		VkPresentModeKHR m_presentMode;
 		VkExtent2D m_extent;
 		VkFormat m_format;
 	};
