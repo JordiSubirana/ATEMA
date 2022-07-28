@@ -173,6 +173,8 @@ namespace at
 
 		static bool isStencilImageFormat(ImageFormat format);
 
+		const HashType getID() const noexcept;
+
 		virtual void initialize() = 0;
 
 		const Settings& getSettings() const noexcept;
@@ -216,6 +218,7 @@ namespace at
 	private:
 		static Ptr<Renderer> s_renderer;
 		Settings m_settings;
+		HashType m_hashType;
 	};
 
 	template <typename T>
@@ -235,6 +238,7 @@ namespace at
 		s_renderer = std::static_pointer_cast<Renderer>(renderer);
 
 		s_renderer->initialize();
+		s_renderer->m_hashType = TypeInfo<T>::id;
 
 		return *s_renderer;
 	}

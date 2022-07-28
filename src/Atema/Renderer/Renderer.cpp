@@ -26,7 +26,9 @@ using namespace at;
 
 Ptr<Renderer> Renderer::s_renderer = nullptr;
 
-Renderer::Renderer(const Settings& settings) : m_settings(settings)
+Renderer::Renderer(const Settings& settings) :
+	m_settings(settings),
+	m_hashType(0)
 {
 }
 
@@ -84,6 +86,11 @@ bool Renderer::isStencilImageFormat(ImageFormat format)
 	}
 
 	return false;
+}
+
+const HashType Renderer::getID() const noexcept
+{
+	return m_hashType;
 }
 
 const Renderer::Settings& Renderer::getSettings() const noexcept
