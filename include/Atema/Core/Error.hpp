@@ -29,13 +29,15 @@
 #define ATEMA_ERROR(desc) throw std::runtime_error(desc)
 
 #ifdef ATEMA_DISABLE_ASSERT
-#define ATEMA_ASSERT(condition, desc)
+#define ATEMA_ASSERT_1(condition) (void)(condition)
+#define ATEMA_ASSERT_2(condition, desc) (void)(condition)
 #else
-#define ATEMA_ASSERT(condition, desc) \
-	if (!(condition)) \
-	{ \
-		ATEMA_ERROR(desc); \
-	}
+#define ATEMA_ASSERT_1(condition) ATEMA_ASSERT_2(condition, "Assertion failed")
+#define ATEMA_ASSERT_2(condition, desc) do { if (!(condition)) { ATEMA_ERROR(desc); } } while (false)
 #endif
+
+#define ATEMA_ASSERT_MACRO(_1,_2,NAME,...) NAME
+#define ATEMA_ASSERT(...) ATEMA_ASSERT_MACRO(__VA_ARGS__, ATEMA_ASSERT_2, ATEMA_ASSERT_1)(__VA_ARGS__)
+
 
 #endif
