@@ -503,7 +503,7 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
 		subpassDependency.dstAccessMask = Vulkan::getMemoryAccesses(barrier.dstMemoryAccesses);
 	}
 
-	for (auto& barrier : settings.inputBarriers)
+	for (auto& barrier : settings.outputBarriers)
 	{
 		auto& subpassDependency = subpassDependencies.emplace_back();
 
