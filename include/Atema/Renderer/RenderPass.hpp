@@ -35,7 +35,7 @@ namespace at
 	{
 		AttachmentDescription() = default;
 
-		ImageFormat format = ImageFormat::RGBA8_SRGB;
+		ImageFormat format = ImageFormat::RGBA8_UNORM;
 		ImageSamples samples = ImageSamples::S1;
 		AttachmentLoading loading = AttachmentLoading::Clear;
 		AttachmentStoring storing = AttachmentStoring::Store;

@@ -39,7 +39,7 @@ namespace at
 			uint32_t height = 8;
 			uint32_t mipLevels = 1;
 
-			ImageFormat format = ImageFormat::RGBA8_SRGB;
+			ImageFormat format = ImageFormat::RGBA8_UNORM;
 			ImageSamples samples = ImageSamples::S1;
 			ImageTiling tiling = ImageTiling::Optimal;
 			Flags<ImageUsage> usages = ImageUsage::All;

@@ -293,7 +293,7 @@ ImageFormat Vulkan::getFormat(VkFormat format)
 		}
 	}
 
-	return ImageFormat::RGBA8_SRGB;
+	return ImageFormat::RGBA8_UNORM;
 }
 
 VkFormat Vulkan::getFormat(VertexFormat format)

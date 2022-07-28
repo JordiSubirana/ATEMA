@@ -24,7 +24,7 @@
 using namespace at;
 
 FrameGraphTextureSettings::FrameGraphTextureSettings() :
-	FrameGraphTextureSettings(1024, 1024, ImageFormat::RGBA8_SRGB)
+	FrameGraphTextureSettings(1024, 1024, ImageFormat::RGBA8_UNORM)
 {
 }
 
