@@ -19,17 +19,60 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_UI_UICONTEXT_HPP
+#define ATEMA_UI_UICONTEXT_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/UI.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/UI/Config.hpp>
+#include <Atema/UI/ImGui.hpp>
+
+#include <filesystem>
+
+namespace at
+{
+	namespace detail
+	{
+		class UiContextImplementation
+		{
+		public:
+			UiContextImplementation();
+			virtual ~UiContextImplementation();
+
+			virtual void newFrame() = 0;
+			virtual void renderDrawData(ImDrawData* drawData, CommandBuffer& commandBuffer) = 0;
+		};
+	}
+
+	class RenderWindow;
+
+	class ATEMA_UI_API UiContext
+	{
+	public:
+		struct Settings
+		{
+			std::filesystem::path defaultFont;
+			float defaultFontSize = 13.0f;
+			Ptr<RenderWindow> renderWindow;
+		};
+
+		~UiContext();
+
+		static UiContext& instance();
+
+		void initialize(const Settings& settings);
+		void shutdown();
+
+		ImGuiContext* getImGuiContext() const;
+
+		void newFrame();
+		void renderFrame();
+		void renderDrawData(ImDrawData* drawData, CommandBuffer& commandBuffer);
+
+	private:
+		UiContext();
+
+		Ptr<detail::UiContextImplementation> m_implementation;
+		ImGuiContext* m_context;
+	};
+}
 
 #endif

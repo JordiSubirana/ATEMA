@@ -40,6 +40,12 @@ local modules =
 		dependencies = {"AtemaCore", "AtemaMath"},
 		packages = {"glslang"}
 	},
+	UI =
+	{
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaVulkanRenderer", "AtemaWindow"},
+		packages = {"glfw"},
+		windowsDependencies = {"gdi32"}
+	},
 	VulkanRenderer =
 	{
 		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaShader", "AtemaWindow"}
@@ -59,7 +65,8 @@ set_xmakever("2.6.5")
 
 set_project("Atema")
 
-add_requires("glfw", "glslang")
+add_requires("glfw", {configs = {shared = true}})
+add_requires("glslang")
 
 add_includedirs(includeDir)
 add_sysincludedirs(thirdPartyIncludeDir)

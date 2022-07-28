@@ -19,17 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_ATEMA_HPP
-#define ATEMA_GLOBAL_ATEMA_HPP
+#ifndef ATEMA_UI_IMGUI_HPP
+#define ATEMA_UI_IMGUI_HPP
 
-#include <Atema/Config.hpp>
-#include <Atema/Core.hpp>
-#include <Atema/Graphics.hpp>
-#include <Atema/Math.hpp>
-#include <Atema/Renderer.hpp>
-#include <Atema/Shader.hpp>
-#include <Atema/UI.hpp>
-#include <Atema/VulkanRenderer.hpp>
-#include <Atema/Window.hpp>
+#include <Atema/UI/Config.hpp>
+#include <Atema/Core/Error.hpp>
+#include <Atema/Math/Vector.hpp>
+
+#define IM_ASSERT(at_expr)  ATEMA_ASSERT(at_expr)
+
+#define IMGUI_API ATEMA_UI_API
+
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#define IMGUI_DISABLE_OBSOLETE_KEYIO
+
+#define IM_VEC2_CLASS_EXTRA \
+	constexpr ImVec2(const at::Vector2f& f) : x(f.x), y(f.y) {} \
+	operator at::Vector2f() const { return at::Vector2f(x, y); }
+
+#define IM_VEC4_CLASS_EXTRA                                                     \
+        constexpr ImVec4(const at::Vector4f& f) : x(f.x), y(f.y), z(f.z), w(f.w) {}   \
+        operator at::Vector4f() const { return at::Vector4f(x, y, z, w); }
+
+#include <imgui/imgui.h>
 
 #endif
