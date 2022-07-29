@@ -501,8 +501,6 @@ GraphicsSystem::~GraphicsSystem()
 
 void GraphicsSystem::update(TimeStep timeStep)
 {
-	Renderer::instance().waitForIdle();
-
 	// Ensure the settings did not change
 	checkSettings();
 
