@@ -97,7 +97,6 @@ void BenchmarkManager::reset()
 	m_currentIndent = 0;
 	m_data.clear();
 	m_roots.clear();
-	m_tmp.clear();
 }
 
 TimeStep BenchmarkManager::getTimeStep(const std::string& label)
@@ -105,27 +104,31 @@ TimeStep BenchmarkManager::getTimeStep(const std::string& label)
 	return getData(label)->timeStep;
 }
 
+const std::vector<Ptr<BenchmarkData>>& BenchmarkManager::getRootBenchmarks() const
+{
+	return m_roots;
+}
+
 void BenchmarkManager::print(uint32_t factor)
 {
 	const float clampFactor = factor ? static_cast<float>(factor) : 1.0f;
 
 	for (auto& data : m_roots)
-		print(data, clampFactor, data->timeStep.getMilliSeconds());
+		print(*data, clampFactor, data->timeStep.getMilliSeconds());
 }
 
-void BenchmarkManager::print(BenchmarkData* data, float factor, float rootTime)
+void BenchmarkManager::print(BenchmarkData& data, float factor, float rootTime)
 {
-	if (data->indent > 0)
-		std::cout << std::string(data->indent * 4, ' ');
+	if (data.indent > 0)
+		std::cout << std::string(data.indent * 4, ' ');
 
-	const auto normalizedTime = data->timeStep.getMilliSeconds() / factor;
-	const auto percent = static_cast<unsigned>((data->timeStep.getMilliSeconds() * 100.0f) / rootTime);
+	const auto normalizedTime = data.timeStep.getMilliSeconds() / factor;
+	const auto percent = static_cast<unsigned>((data.timeStep.getMilliSeconds() * 100.0f) / rootTime);
 	
-	//std::cout << data->label << " : " << normalizedTime << "ms [" << percent << "%]\n";
-	std::cout << "[" << percent << "%] " << data->label << " : " << normalizedTime << "ms\n";
+	std::cout << "[" << percent << "%] " << data.label << " : " << normalizedTime << "ms\n";
 
-	for (auto& child : data->children)
-		print(child, factor, rootTime);
+	for (auto& child : data.children)
+		print(*child, factor, rootTime);
 }
 
 Ptr<BenchmarkData> BenchmarkManager::getData(const std::string& label)
@@ -137,7 +140,7 @@ Ptr<BenchmarkData> BenchmarkManager::getData(const std::string& label)
 
 	if (it != m_data.end())
 	{
-		data = it->second;
+		data = it->second.lock();
 	}
 	// Otherwise create it and increment indent/data
 	else
@@ -150,9 +153,9 @@ Ptr<BenchmarkData> BenchmarkManager::getData(const std::string& label)
 		m_data[label] = data;
 
 		if (data->parent)
-			data->parent->children.push_back(data.get());
+			data->parent->children.push_back(data);
 		else
-			m_roots.push_back(data.get());
+			m_roots.push_back(data);
 	}
 
 	// Increment indent/data

@@ -51,7 +51,7 @@ namespace at
 		uint32_t indent;
 		std::string label;
 		TimeStep timeStep;
-		std::vector<BenchmarkData*> children;
+		std::vector<Ptr<BenchmarkData>> children;
 	};
 
 	class ATEMA_CORE_API Benchmark
@@ -82,21 +82,22 @@ namespace at
 		
 		TimeStep getTimeStep(const std::string& label);
 
+		const std::vector<Ptr<BenchmarkData>>& getRootBenchmarks() const;
+
 		void print(uint32_t factor = 1);
 		
 	private:
 		BenchmarkManager();
 
-		void print(BenchmarkData* data, float factor, float rootTime);
+		void print(BenchmarkData& data, float factor, float rootTime);
 		
 		Ptr<BenchmarkData> getData(const std::string& label);
 
 		void decrement();
 
-		std::unordered_map<std::string, Ptr<BenchmarkData>> m_data;
-		std::unordered_map<std::string, WPtr<Benchmark>> m_tmp;
+		std::unordered_map<std::string, WPtr<BenchmarkData>> m_data;
 
-		std::vector<BenchmarkData*> m_roots;
+		std::vector<Ptr<BenchmarkData>> m_roots;
 		BenchmarkData* m_currentData;
 		uint32_t m_currentIndent;
 	};
