@@ -26,6 +26,7 @@
 #include "../Components/CameraComponent.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Resources.hpp"
+#include "../Scene.hpp"
 
 using namespace at;
 
@@ -43,7 +44,7 @@ CameraSystem::~CameraSystem()
 
 void CameraSystem::update(TimeStep timeStep)
 {
-	AABBf sceneAABB;
+	AABBf sceneAABB = Scene::instance().getAABB();
 	AABBf objectAABB;
 	{
 		auto& entityManager = getEntityManager();
@@ -51,14 +52,13 @@ void CameraSystem::update(TimeStep timeStep)
 
 		for (auto& entity : entities)
 		{
-			auto& transform = entityManager.getComponent<Transform>(entity);
 			auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
 
 			// Don't consider the ground
 			if (graphics.aabb.getSize().z > 0.1f)
 			{
-				sceneAABB.extend(Matrix4f::createTranslation(transform.getTranslation()) * graphics.aabb);
 				objectAABB = graphics.aabb;
+				break;
 			}
 		}
 	}

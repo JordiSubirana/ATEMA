@@ -33,6 +33,7 @@
 #include <Atema/UI/UiContext.hpp>
 
 #include "../Resources.hpp"
+#include "../Scene.hpp"
 #include "../Settings.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Components/CameraComponent.hpp"
@@ -1302,17 +1303,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 	// Update scene AABB
 	{
-		AABBf sceneAABB;
-
-		for (auto& entity : entities)
-		{
-			auto& transform = entities.get<Transform>(entity);
-			auto& graphics = entities.get<GraphicsComponent>(entity);
-
-			// Don't consider the ground
-			if (graphics.aabb.getSize().z > 0.1f)
-				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
-		}
+		AABBf sceneAABB = Scene::instance().getAABB();
 
 		auto aabbSize = sceneAABB.getSize();
 		aabbSize.z = 0.0f;

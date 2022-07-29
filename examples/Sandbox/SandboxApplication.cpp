@@ -35,6 +35,7 @@
 #include "Systems/FirstPersonCameraSystem.hpp"
 #include "Systems/GuiSystem.hpp"
 #include "Resources.hpp"
+#include "Scene.hpp"
 
 #include <fstream>
 
@@ -456,6 +457,9 @@ void SandboxApplication::updateScene()
 
 	// Update components
 	{
+		auto& sceneAABB = Scene::instance().getAABB();
+		sceneAABB = AABBf();
+
 		auto aabbSize = m_modelData->aabb.getSize();
 		aabbSize.z = 0.0f;
 		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
@@ -470,6 +474,9 @@ void SandboxApplication::updateScene()
 			{
 				const auto entity = m_objects[getObjectIndex(i, j)];
 
+				// Graphics component
+				auto& graphics = m_entityManager.getComponent<GraphicsComponent>(entity);
+
 				// Transform component
 				auto& transform = m_entityManager.getComponent<Transform>(entity);
 
@@ -478,6 +485,9 @@ void SandboxApplication::updateScene()
 				position.y = origin + radius * static_cast<float>(j);
 
 				transform.setTranslation(position);
+
+				// Update Scene aabb
+				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
 
 				// Velocity component
 				auto& velocity = m_entityManager.getComponent<VelocityComponent>(entity);
