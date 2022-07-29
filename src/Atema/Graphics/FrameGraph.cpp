@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Graphics/FrameGraph.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Renderer/RenderFrame.hpp>
@@ -74,16 +75,24 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 	}
 
 	commandBuffer->end();
-
+	
 	renderFrame.getFence()->reset();
 
-	renderFrame.submit(
-		{ commandBuffer },
-		{ renderFrame.getImageAvailableWaitCondition() },
-		{ renderFrame.getRenderFinishedSemaphore() },
-		renderFrame.getFence());
+	{
+		ATEMA_BENCHMARK("RenderFrame::submit");
 
-	renderFrame.present();
+		renderFrame.submit(
+			{ commandBuffer },
+			{ renderFrame.getImageAvailableWaitCondition() },
+			{ renderFrame.getRenderFinishedSemaphore() },
+			renderFrame.getFence());
+	}
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::present");
+
+		renderFrame.present();
+	}
 
 	renderFrame.destroyAfterUse(std::move(commandBuffer));
 }
