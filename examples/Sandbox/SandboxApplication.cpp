@@ -193,6 +193,7 @@ SandboxApplication::SandboxApplication():
 
 	// Window / SwapChain
 	RenderWindow::Settings renderWindowSettings;
+	renderWindowSettings.title = "Atema - Sandbox";
 	renderWindowSettings.colorFormat = ImageFormat::RGBA8_UNORM;
 
 	m_window = Renderer::instance().createRenderWindow(renderWindowSettings);
@@ -308,14 +309,12 @@ void SandboxApplication::update(at::TimeStep ms)
 		m_frameCount++;
 	}
 
-	if (m_frameDuration >= 0.5f)
+	if (m_frameDuration >= Settings::instance().metricsUpdateTime)
 	{
-		const auto frameTime = m_frameDuration / static_cast<float>(m_frameCount);
-		const auto fps = static_cast<unsigned>(1.0f / frameTime);
+		auto& guiSystem = static_cast<GuiSystem&>(*m_systems[3]);
 
-		m_window->setTitle("Atema (" + std::to_string(fps) + " fps / " + std::to_string(frameTime * 1000.0f) + " ms)");
+		guiSystem.updateBenchmarks(m_frameCount);
 
-		BenchmarkManager::instance().print(m_frameCount);
 		BenchmarkManager::instance().reset();
 
 		m_frameCount = 0;

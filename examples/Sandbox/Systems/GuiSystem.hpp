@@ -36,6 +36,8 @@ public:
 	void update(at::TimeStep timeStep) override;
 	void onEvent(at::Event& event) override;
 
+	void updateBenchmarks(int elapsedFrames);
+
 private:
 	struct WidgetState
 	{
@@ -46,6 +48,9 @@ private:
 	};
 
 	void updateUI();
+	void showSettings();
+	void showOverlay();
+	void showBenchmark(const at::BenchmarkData& benchmark);
 
 	ImGuiID getWidgetID(const char* label) const;
 	WidgetState& getWidgetState(const char* label);
@@ -60,6 +65,10 @@ private:
 	at::TimeStep m_timeStep;
 
 	std::unordered_map<ImGuiID, WidgetState> m_widgetStates;
+
+	std::vector<at::Ptr<at::BenchmarkData>> m_benchmarks;
+	int m_elapsedFrames;
+	float m_elapsedTime;
 };
 
 #endif

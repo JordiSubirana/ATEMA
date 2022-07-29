@@ -52,14 +52,21 @@ public:
 
 	static Settings& instance();
 
+	//Scene
 	uint32_t objectRows;
 
+	// ShadowMap
 	uint32_t shadowMapSize;
 	float shadowBoxMinSize;
 	float shadowBoxMaxSize;
 
+	// Debug views
 	DebugViewMode debugViewMode;
 	std::vector<DebugView> debugViews;
+
+	// Metrics
+	float metricsUpdateTime;
+	bool enableBenchmarks;
 
 private:
 };

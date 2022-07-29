@@ -27,7 +27,9 @@ Settings::Settings() :
 	shadowBoxMinSize(20.0f),
 	shadowBoxMaxSize(100.0f),
 	debugViewMode(DebugViewMode::Disabled),
-	debugViews(4)
+	debugViews(4),
+	metricsUpdateTime(0.2f),
+	enableBenchmarks(true)
 {
 }
 

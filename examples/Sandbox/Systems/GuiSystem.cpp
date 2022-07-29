@@ -90,11 +90,25 @@ namespace
 			ImGui::End();
 		}
 	}
+
+	ImVec4 getBenchmarkColor(unsigned percent)
+	{
+		if (percent >= 30)
+			return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+		else if (percent >= 20)
+			return ImVec4(1.0f, 0.5f, 0.0f, 1.0f);
+		else if (percent >= 10)
+			return ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
+
+		return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+	}
 }
 
 GuiSystem::GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 	System(),
-	m_timeStep(0.0f)
+	m_timeStep(0.0f),
+	m_elapsedFrames(0),
+	m_elapsedTime(0.0f)
 {
 	UiContext::Settings uiSettings;
 	uiSettings.renderWindow = renderWindow;
@@ -123,8 +137,6 @@ void GuiSystem::update(at::TimeStep timeStep)
 
 	updateUI();
 
-	showDemo();
-
 	UiContext::instance().renderFrame();
 }
 
@@ -133,7 +145,27 @@ void GuiSystem::onEvent(at::Event& event)
 	System::onEvent(event);
 }
 
+void GuiSystem::updateBenchmarks(int elapsedFrames)
+{
+	m_benchmarks = BenchmarkManager::instance().getRootBenchmarks();
+
+	m_elapsedFrames = elapsedFrames;
+
+	m_elapsedTime = 0.0f;
+	for (const auto& benchmark : m_benchmarks)
+		m_elapsedTime += benchmark->timeStep.getSeconds();
+}
+
 void GuiSystem::updateUI()
+{
+	showSettings();
+
+	showOverlay();
+
+	//showDemo();
+}
+
+void GuiSystem::showSettings()
 {
 	auto& settings = Settings::instance();
 
@@ -331,7 +363,122 @@ void GuiSystem::updateUI()
 		ImGui::EndTable();
 	}
 
+	// Metrics
+	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+	if (ImGui::CollapsingHeader("Metrics"))
+	{
+		ImGui::BeginTable("Properties", 2);
+
+		// Enable benchmarks
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Update time");
+
+			ImGui::TableNextColumn();
+
+			ImGui::SetNextItemWidth(-FLT_MIN);
+
+			ImGui::InputFloat("##Update time", &settings.metricsUpdateTime, 0.5f, 0.5f, "%.3fs");
+			settings.metricsUpdateTime = std::clamp(settings.metricsUpdateTime, 0.001f, 1000.0f);
+		}
+
+		// Enable benchmarks
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Enable benchmarks");
+
+			ImGui::TableNextColumn();
+
+			ImGui::SetNextItemWidth(-FLT_MIN);
+
+			ImGui::Checkbox("##Enable benchmarks", &settings.enableBenchmarks);
+		}
+
+		ImGui::EndTable();
+	}
+
 	ImGui::End();
+}
+
+void GuiSystem::showOverlay()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNav |
+		ImGuiWindowFlags_NoMove;
+
+	const float PAD = 10.0f;
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+	ImVec2 work_size = viewport->WorkSize;
+	ImVec2 window_pos, window_pos_pivot;
+	window_pos.x = work_pos.x + work_size.x - PAD;
+	window_pos.y = work_pos.y + PAD;
+	window_pos_pivot.x = 1.0f;
+	window_pos_pivot.y = 0.0f;
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+
+	if (ImGui::Begin("Overlay", nullptr, window_flags))
+	{
+		const auto frameTime = m_elapsedTime / static_cast<float>(m_elapsedFrames);
+		const auto fps = static_cast<unsigned>(1.0f / frameTime);
+
+		ImGui::Text("%u fps", fps);
+		ImGui::Text("%.03f ms", frameTime * 1000.0f);
+
+		if (Settings::instance().enableBenchmarks)
+		{
+			ImGui::Separator();
+
+			ImGui::Text("Benchmark");
+
+			for (auto& benchmark : m_benchmarks)
+			{
+				showBenchmark(*benchmark);
+			}
+		}
+	}
+
+	ImGui::End();
+}
+
+void GuiSystem::showBenchmark(const BenchmarkData& benchmark)
+{
+	ImGui::PushID(benchmark.label.c_str());
+
+	ImGui::Indent();
+
+	const auto percent = static_cast<unsigned>((benchmark.timeStep.getSeconds() * 100.0f) / m_elapsedTime);
+
+	ImGui::TextColored(getBenchmarkColor(percent), "[%u%%]", percent);
+
+	ImGui::SameLine();
+
+	ImGui::Text(benchmark.label.c_str());
+
+	ImGui::SameLine();
+
+	ImGui::Text("%.03fms", benchmark.timeStep.getMilliSeconds() / static_cast<float>(m_elapsedFrames));
+
+	for (auto& child : benchmark.children)
+		showBenchmark(*child);
+
+	ImGui::Unindent();
+
+	ImGui::PopID();
 }
 
 ImGuiID GuiSystem::getWidgetID(const char* label) const

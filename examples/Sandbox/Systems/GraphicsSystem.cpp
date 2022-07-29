@@ -1063,7 +1063,7 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, phongOutputTexture, shadowMapTexture](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (screen)");
+				ATEMA_BENCHMARK("CommandBuffer (screen + UI)");
 
 				auto descriptorSet1 = m_screenLayout->createSet();
 				auto descriptorSet2 = m_screenLayout->createSet();
@@ -1086,11 +1086,7 @@ void GraphicsSystem::createFrameGraph()
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
 				// UI
-				{
-					ATEMA_BENCHMARK("ImGui");
-
-					UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
-				}
+				UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 				context.destroyAfterUse(std::move(descriptorSet1));
 				context.destroyAfterUse(std::move(descriptorSet2));
