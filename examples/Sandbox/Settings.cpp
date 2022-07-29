@@ -29,7 +29,7 @@ Settings::Settings() :
 	debugViewMode(DebugViewMode::Disabled),
 	debugViews(4),
 	metricsUpdateTime(0.2f),
-	enableBenchmarks(true)
+	enableBenchmarks(false)
 {
 }
 

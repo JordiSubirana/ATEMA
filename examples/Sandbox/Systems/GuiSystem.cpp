@@ -169,239 +169,283 @@ void GuiSystem::showSettings()
 {
 	auto& settings = Settings::instance();
 
+	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking |
+		//ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		//ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove;
+
+	const float PAD = 10.0f;
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+	ImVec2 window_pos, window_pos_pivot;
+	window_pos.x = work_pos.x + PAD;
+	window_pos.y = work_pos.y + PAD;
+	window_pos_pivot.x = 0.0f;
+	window_pos_pivot.y = 0.0f;
+
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
 	ImGui::SetNextItemOpen(false, ImGuiCond_FirstUseEver);
 
-	ImGui::SetNextWindowPos({ 10, 10 }, ImGuiCond_FirstUseEver);
-
-	ImGui::Begin("Settings");
-
-	// Scene
-	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-	if (ImGui::CollapsingHeader("Scene"))
+	if (ImGui::Begin("Settings", nullptr, windowFlags))
 	{
-		ImGui::BeginTable("Properties", 2);
+		// Application
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
-		// Object rows
+		if (ImGui::CollapsingHeader("Scene"))
 		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
+			ImGui::BeginTable("Properties", 2);
 
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Object rows");
-
-			ImGui::TableNextColumn();
-
-			ImGui::SetNextItemWidth(-FLT_MIN);
-
-			static uint32_t step = 1;
-			ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step);
-			settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
-		}
-
-		ImGui::EndTable();
-	}
-
-	// ShadowMap
-	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-	if (ImGui::CollapsingHeader("ShadowMap"))
-	{
-		ImGui::BeginTable("Properties", 2);
-
-		// ShadowMap size
-		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Size");
-
-			ImGui::TableNextColumn();
-
-			ImGui::SetNextItemWidth(-FLT_MIN);
-
-			static const std::vector<const char*> shadowMapSizeItems =
+			// Object rows
 			{
-				"512",
-				"1024",
-				"2048",
-				"4096",
-				"8192",
-				"16384",
-				"32768"
-			};
-			static int shadowMapCurrentItem = 2;
-			ImGui::Combo("##Size", &shadowMapCurrentItem, shadowMapSizeItems.data(), static_cast<int>(shadowMapSizeItems.size()));
-
-			settings.shadowMapSize = std::stoul(shadowMapSizeItems[shadowMapCurrentItem]);
-		}
-
-		// ShadowMap box size
-		{
-			static float step = 1.0f;
-			static float fastStep = 10.0f;
-
-			// Min
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Min box size");
-
-			ImGui::TableNextColumn();
-
-			ImGui::SetNextItemWidth(-FLT_MIN);
-
-			ImGui::InputFloat("##Min box size", &settings.shadowBoxMinSize, step, fastStep);
-			settings.shadowBoxMinSize = std::clamp(settings.shadowBoxMinSize, 1.0f, settings.shadowBoxMaxSize);
-
-			// Max
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Max box size");
-
-			ImGui::TableNextColumn();
-
-			ImGui::SetNextItemWidth(-FLT_MIN);
-
-			ImGui::InputFloat("##Max box size", &settings.shadowBoxMaxSize, step, fastStep);
-			settings.shadowBoxMaxSize = std::clamp(settings.shadowBoxMaxSize, settings.shadowBoxMinSize, 10000.0f);
-		}
-
-		ImGui::EndTable();
-	}
-
-	// Debug views
-	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-	if (ImGui::CollapsingHeader("Debug Views"))
-	{
-		ImGui::BeginTable("Properties", 2);
-
-		static int debugViewMode = 0;
-
-		static int views[] =
-		{
-			static_cast<int>(Settings::DebugView::ShadowMap),
-			static_cast<int>(Settings::DebugView::GBufferNormal),
-			static_cast<int>(Settings::DebugView::GBufferColor),
-			static_cast<int>(Settings::DebugView::GBufferAO)
-		};
-
-		static const std::vector<const char*> viewItems =
-		{
-			"GBuffer position",
-			"GBuffer normal",
-			"GBuffer color",
-			"GBuffer AO",
-			"GBuffer emissive",
-			"GBuffer metalness",
-			"GBuffer roughness",
-			"ShadowMap"
-		};
-
-		// Mode
-		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Mode");
-
-			ImGui::TableNextColumn();
-
-			ImGui::SetNextItemWidth(-FLT_MIN);
-
-			static const std::vector<const char*> items =
-			{
-				"Disabled",
-				"Corner",
-				"Full"
-			};
-			ImGui::Combo("##Mode", &debugViewMode, items.data(), static_cast<int>(items.size()));
-
-			settings.debugViewMode = static_cast<Settings::DebugViewMode>(debugViewMode);
-		}
-
-		// Debug views
-		{
-			int disableRef = 1;
-
-			for (int i = 0; i < 4; i++)
-			{
-				ImGui::PushID(i);
-
-				if (debugViewMode < disableRef)
-					ImGui::BeginDisabled();
-
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text(std::string("View #" + std::to_string(i)).c_str());
+				ImGui::Text("Object rows");
 
 				ImGui::TableNextColumn();
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
-				ImGui::Combo("##View", &views[i], viewItems.data(), static_cast<int>(viewItems.size()));
-
-				settings.debugViews[i] = static_cast<Settings::DebugView>(views[i]);
-
-				if (debugViewMode < disableRef)
-					ImGui::EndDisabled();
-
-				ImGui::PopID();
-
-				disableRef = 2;
+				static uint32_t step = 1;
+				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step);
+				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
 			}
+
+			ImGui::EndTable();
 		}
 
-		ImGui::EndTable();
-	}
+		// Scene
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
-	// Metrics
-	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-	if (ImGui::CollapsingHeader("Metrics"))
-	{
-		ImGui::BeginTable("Properties", 2);
-
-		// Enable benchmarks
+		if (ImGui::CollapsingHeader("Scene"))
 		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
+			ImGui::BeginTable("Properties", 2);
 
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Update time");
+			// Object rows
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
 
-			ImGui::TableNextColumn();
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Object rows");
 
-			ImGui::SetNextItemWidth(-FLT_MIN);
+				ImGui::TableNextColumn();
 
-			ImGui::InputFloat("##Update time", &settings.metricsUpdateTime, 0.5f, 0.5f, "%.3fs");
-			settings.metricsUpdateTime = std::clamp(settings.metricsUpdateTime, 0.001f, 1000.0f);
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static uint32_t step = 1;
+				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step);
+				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
+			}
+
+			ImGui::EndTable();
 		}
 
-		// Enable benchmarks
+		// ShadowMap
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("ShadowMap"))
 		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
+			ImGui::BeginTable("Properties", 2);
 
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Enable benchmarks");
+			// ShadowMap size
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
 
-			ImGui::TableNextColumn();
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Size");
 
-			ImGui::SetNextItemWidth(-FLT_MIN);
+				ImGui::TableNextColumn();
 
-			ImGui::Checkbox("##Enable benchmarks", &settings.enableBenchmarks);
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static const std::vector<const char*> shadowMapSizeItems =
+				{
+					"512",
+					"1024",
+					"2048",
+					"4096",
+					"8192",
+					"16384",
+					"32768"
+				};
+				static int shadowMapCurrentItem = 2;
+				ImGui::Combo("##Size", &shadowMapCurrentItem, shadowMapSizeItems.data(), static_cast<int>(shadowMapSizeItems.size()));
+
+				settings.shadowMapSize = std::stoul(shadowMapSizeItems[shadowMapCurrentItem]);
+			}
+
+			// ShadowMap box size
+			{
+				static float step = 1.0f;
+				static float fastStep = 10.0f;
+
+				// Min
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Min box size");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Min box size", &settings.shadowBoxMinSize, step, fastStep);
+				settings.shadowBoxMinSize = std::clamp(settings.shadowBoxMinSize, 1.0f, settings.shadowBoxMaxSize);
+
+				// Max
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Max box size");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Max box size", &settings.shadowBoxMaxSize, step, fastStep);
+				settings.shadowBoxMaxSize = std::clamp(settings.shadowBoxMaxSize, settings.shadowBoxMinSize, 10000.0f);
+			}
+
+			ImGui::EndTable();
 		}
 
-		ImGui::EndTable();
+		// Debug views
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Debug Views"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			static int debugViewMode = 0;
+
+			static int views[] =
+			{
+				static_cast<int>(Settings::DebugView::ShadowMap),
+				static_cast<int>(Settings::DebugView::GBufferNormal),
+				static_cast<int>(Settings::DebugView::GBufferColor),
+				static_cast<int>(Settings::DebugView::GBufferAO)
+			};
+
+			static const std::vector<const char*> viewItems =
+			{
+				"GBuffer position",
+				"GBuffer normal",
+				"GBuffer color",
+				"GBuffer AO",
+				"GBuffer emissive",
+				"GBuffer metalness",
+				"GBuffer roughness",
+				"ShadowMap"
+			};
+
+			// Mode
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Mode");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static const std::vector<const char*> items =
+				{
+					"Disabled",
+					"Corner",
+					"Full"
+				};
+				ImGui::Combo("##Mode", &debugViewMode, items.data(), static_cast<int>(items.size()));
+
+				settings.debugViewMode = static_cast<Settings::DebugViewMode>(debugViewMode);
+			}
+
+			// Debug views
+			{
+				int disableRef = 1;
+
+				for (int i = 0; i < 4; i++)
+				{
+					ImGui::PushID(i);
+
+					if (debugViewMode < disableRef)
+						ImGui::BeginDisabled();
+
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text(std::string("View #" + std::to_string(i)).c_str());
+
+					ImGui::TableNextColumn();
+
+					ImGui::SetNextItemWidth(-FLT_MIN);
+
+					ImGui::Combo("##View", &views[i], viewItems.data(), static_cast<int>(viewItems.size()));
+
+					settings.debugViews[i] = static_cast<Settings::DebugView>(views[i]);
+
+					if (debugViewMode < disableRef)
+						ImGui::EndDisabled();
+
+					ImGui::PopID();
+
+					disableRef = 2;
+				}
+			}
+
+			ImGui::EndTable();
+		}
+
+		// Metrics
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Metrics"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			// Enable benchmarks
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Update time");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Update time", &settings.metricsUpdateTime, 0.5f, 0.5f, "%.3fs");
+				settings.metricsUpdateTime = std::clamp(settings.metricsUpdateTime, 0.001f, 1000.0f);
+			}
+
+			// Enable benchmarks
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Enable benchmarks");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Enable benchmarks", &settings.enableBenchmarks);
+			}
+
+			ImGui::EndTable();
+		}
 	}
 
 	ImGui::End();
@@ -409,8 +453,7 @@ void GuiSystem::showSettings()
 
 void GuiSystem::showOverlay()
 {
-	ImGuiIO& io = ImGui::GetIO();
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
+	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDecoration |
 		ImGuiWindowFlags_NoDocking |
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoSavedSettings |
@@ -431,7 +474,7 @@ void GuiSystem::showOverlay()
 	ImGui::SetNextWindowViewport(viewport->ID);
 	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 
-	if (ImGui::Begin("Overlay", nullptr, window_flags))
+	if (ImGui::Begin("Overlay", nullptr, windowFlags))
 	{
 		const auto frameTime = m_elapsedTime / static_cast<float>(m_elapsedFrames);
 		const auto fps = static_cast<unsigned>(1.0f / frameTime);
