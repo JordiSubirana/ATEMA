@@ -330,6 +330,11 @@ void SandboxApplication::checkSettings()
 	{
 		updateScene();
 	}
+
+	if (settings.enableFpsLimit)
+		setFpsLimit(settings.fpsLimit);
+	else
+		setFpsLimit(0);
 }
 
 void SandboxApplication::createScene()

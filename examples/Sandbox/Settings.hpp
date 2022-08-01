@@ -52,6 +52,10 @@ public:
 
 	static Settings& instance();
 
+	// Application
+	bool enableFpsLimit;
+	uint32_t fpsLimit;
+
 	//Scene
 	uint32_t objectRows;
 

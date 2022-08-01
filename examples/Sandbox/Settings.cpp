@@ -22,6 +22,8 @@
 #include "Settings.hpp"
 
 Settings::Settings() :
+	enableFpsLimit(false),
+	fpsLimit(60),
 	objectRows(3),
 	shadowMapSize(2048),
 	shadowBoxMinSize(20.0f),

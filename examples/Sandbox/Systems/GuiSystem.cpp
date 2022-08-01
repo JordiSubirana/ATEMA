@@ -106,7 +106,6 @@ namespace
 
 GuiSystem::GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 	System(),
-	m_timeStep(0.0f),
 	m_elapsedFrames(0),
 	m_elapsedTime(0.0f)
 {
@@ -194,25 +193,44 @@ void GuiSystem::showSettings()
 		// Application
 		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
-		if (ImGui::CollapsingHeader("Scene"))
+		if (ImGui::CollapsingHeader("Application"))
 		{
 			ImGui::BeginTable("Properties", 2);
 
-			// Object rows
+			// Enable FPS limit
 			{
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Object rows");
+				ImGui::Text("Enable FPS limit");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Enable FPS limit", &settings.enableFpsLimit);
+			}
+
+			// FPS limit
+			{
+				ImGui::BeginDisabled(!settings.enableFpsLimit);
+
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("FPS limit");
 
 				ImGui::TableNextColumn();
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
 				static uint32_t step = 1;
-				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step);
-				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
+				ImGui::InputScalar("##FPS limit", ImGuiDataType_U32, &settings.fpsLimit, &step);
+				settings.fpsLimit = std::clamp(settings.fpsLimit, 1u, 100000u);
+
+				ImGui::EndDisabled();
 			}
 
 			ImGui::EndTable();
