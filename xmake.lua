@@ -21,7 +21,7 @@ local modules =
 {
 	Core =
 	{
-		
+		windowsDependencies = {"winmm"}
 	},
 	Graphics =
 	{

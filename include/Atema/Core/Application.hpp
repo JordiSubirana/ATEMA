@@ -48,6 +48,9 @@ namespace at
 		// Push an event that will be executed on the next loop
 		void pushEvent(Event& event);
 
+		// 0 : no limit
+		void setFpsLimit(uint32_t fpsLimit);
+
 	protected:
 		Application();
 		
@@ -60,6 +63,8 @@ namespace at
 		bool m_close;
 		std::queue<Event> m_currentEvents;
 		std::queue<Event> m_nextEvents;
+
+		uint32_t m_fpsLimit;
 	};
 }
 
