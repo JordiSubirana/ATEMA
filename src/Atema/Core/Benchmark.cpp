@@ -29,8 +29,7 @@ using namespace at;
 BenchmarkData::BenchmarkData() :
 	parent(nullptr),
 	indent(0),
-	label(""),
-	timeStep(0.0f)
+	label("")
 {
 }
 
@@ -61,7 +60,7 @@ TimeStep Benchmark::stop()
 	const auto timeStep = m_timer.getStep();
 
 	if (!m_data)
-		return 0;
+		return {};
 
 	m_data->timeStep += timeStep;
 	m_data.reset();

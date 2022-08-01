@@ -30,11 +30,11 @@ Timer::Timer()
 
 TimeStep Timer::getStep() noexcept
 {
-	auto end = std::chrono::high_resolution_clock::now();
+	const auto end = std::chrono::high_resolution_clock::now();
 
-	auto step = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start).count();
+	const auto step = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start);
 
 	m_start = end;
 
-	return TimeStep(static_cast<float>(step) * 0.001f);
+	return TimeStep(step);
 }

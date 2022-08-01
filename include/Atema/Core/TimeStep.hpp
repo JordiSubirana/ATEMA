@@ -24,22 +24,29 @@
 
 #include <Atema/Core/Config.hpp>
 
+#include <chrono>
+
 namespace at
 {
 	class ATEMA_CORE_API TimeStep
 	{
 	public:
-		TimeStep() = delete;
-		TimeStep(float ms);
+		TimeStep();
+		TimeStep(const std::chrono::microseconds& us);
 
 		float getSeconds() const noexcept;
 		float getMilliSeconds() const noexcept;
+		float getMicroSeconds() const noexcept;
+
+		std::chrono::seconds getStdSeconds() const noexcept;
+		std::chrono::milliseconds getStdMilliSeconds() const noexcept;
+		std::chrono::microseconds getStdMicroSeconds() const noexcept;
 
 		TimeStep operator+(const TimeStep& other) const noexcept;
 		TimeStep& operator+=(const TimeStep& other) noexcept;
 
 	private:
-		float m_time;
+		std::chrono::microseconds m_time;
 	};
 }
 

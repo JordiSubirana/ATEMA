@@ -22,17 +22,44 @@
 #include <Atema/Core/TimeStep.hpp>
 
 using namespace at;
+using namespace std::chrono_literals;
 
-TimeStep::TimeStep(float ms) : m_time(ms)
+TimeStep::TimeStep() :
+	m_time(0us)
+{
+}
+
+TimeStep::TimeStep(const std::chrono::microseconds& us) :
+	m_time(us)
 {
 }
 
 float TimeStep::getSeconds() const noexcept
 {
-	return m_time / 1000.0f;
+	return static_cast<float>(m_time.count()) * 0.000001f;
 }
 
 float TimeStep::getMilliSeconds() const noexcept
+{
+	return static_cast<float>(m_time.count()) * 0.001f;
+}
+
+float TimeStep::getMicroSeconds() const noexcept
+{
+	return static_cast<float>(m_time.count());
+}
+
+std::chrono::seconds TimeStep::getStdSeconds() const noexcept
+{
+	return std::chrono::duration_cast<std::chrono::seconds>(m_time);
+}
+
+std::chrono::milliseconds TimeStep::getStdMilliSeconds() const noexcept
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(m_time);
+}
+
+std::chrono::microseconds TimeStep::getStdMicroSeconds() const noexcept
 {
 	return m_time;
 }
