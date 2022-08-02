@@ -30,12 +30,12 @@ namespace at
 	template <typename T>
 	struct TypeInfo
 	{
-		static constexpr HashType getID()
+		static constexpr Hash getID()
 		{
-			return stringHash(ATEMA_FUNCTION);
+			return DefaultHasher::hash(ATEMA_FUNCTION);
 		}
 		
-		static constexpr HashType id = getID();
+		static constexpr Hash id = getID();
 		static constexpr size_t size = sizeof(T);
 	};
 }

@@ -34,7 +34,7 @@ namespace at
 		Event() = delete;
 		virtual ~Event();
 
-		HashType getType() const noexcept;
+		Hash getType() const noexcept;
 
 		template <typename T>
 		bool is() const noexcept
@@ -46,10 +46,10 @@ namespace at
 		bool isHandled() const noexcept;
 		
 	protected:
-		Event(HashType typeHash);
+		Event(Hash typeHash);
 		
 	private:
-		HashType m_typeHash;
+		Hash m_typeHash;
 		bool m_isHandled;
 	};
 }

@@ -24,7 +24,7 @@
 using namespace at;
 
 
-Event::Event(HashType typeHash) :
+Event::Event(Hash typeHash) :
 	m_typeHash(typeHash),
 	m_isHandled(false)
 {
@@ -34,7 +34,7 @@ Event::~Event()
 {
 }
 
-HashType Event::getType() const noexcept
+Hash Event::getType() const noexcept
 {
 	return m_typeHash;
 }

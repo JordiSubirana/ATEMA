@@ -88,7 +88,7 @@ bool Renderer::isStencilImageFormat(ImageFormat format)
 	return false;
 }
 
-const HashType Renderer::getID() const noexcept
+const Hash Renderer::getID() const noexcept
 {
 	return m_hashType;
 }

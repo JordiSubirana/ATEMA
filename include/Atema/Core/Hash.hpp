@@ -24,80 +24,95 @@
 
 #include <Atema/Core/Config.hpp>
 
-#include <cstdint>
-#include <cstddef>
+#include <utility>
 
 #ifndef ATEMA_HASH_SIZE
 #define ATEMA_HASH_SIZE 32
 #endif
 
+// Use Hasher::hash to generate the hash
+#define ATEMA_DECLARE_STD_HASH(type) \
+	namespace std \
+	{ \
+		template<> \
+		struct hash<type> \
+		{ \
+			std::size_t operator()(const type& object) const \
+			{ \
+				return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object); \
+			} \
+		}; \
+	}
+
+// Use hashCombine to generate the hash
+// This macro can be used like this : ATEMA_DECLARE_STD_HASH_COMBINE(MyType, object.myVar1, object.myVar2, ...)
+#define ATEMA_DECLARE_STD_HASH_COMBINE(type, ...) \
+	namespace std \
+	{ \
+		template<> \
+		struct hash<type> \
+		{ \
+			std::size_t operator()(const type& object) const \
+			{ \
+				return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(__VA_ARGS__); \
+			} \
+		}; \
+	}
+
 namespace at
 {
+	using Hash32 = uint32_t;
+	using Hash64 = uint64_t;
+
 #if ATEMA_HASH_SIZE == 32
-	using HashType = std::uint32_t;
+	using Hash = Hash32;
 #elif ATEMA_HASH_SIZE == 64
-	using HashType = std::uint64_t;
+	using Hash = Hash64;
+#else
+#error Hash size must be 32 or 64
 #endif
 
-	// FNV-1A
-	namespace detail
+	template <typename HashType>
+	struct FNV1a
 	{
-		// Constants (depending on ID size)
-		template <typename T>
-		struct fnv1a_data;
+		static constexpr HashType hash(const char* c);
 
-		template <>
-		struct fnv1a_data<std::uint32_t>
-		{
-			using type = std::uint32_t;
-			static constexpr type prime = 16777619ul;
-			static constexpr type offset_basis = 2166136261ul;
-		};
+		static constexpr HashType hash(const uint8_t* data, size_t byteSize);
+	};
 
-		template <>
-		struct fnv1a_data<std::uint64_t>
-		{
-			using type = std::uint64_t;
-			static constexpr type prime = 1099511628211ull;
-			static constexpr type offset_basis = 14695981039346656037ull;
-		};
-
-		// Algorithm
-		template <typename T>
-		struct fnv1a
-		{
-			using data = fnv1a_data<T>;
-
-			static constexpr T hash(const char* c)
-			{
-				auto value = data::offset_basis;
-
-				while (*c != 0)
-				{
-					value = (value ^ static_cast<T>(*(c++))) * data::prime;
-				}
-
-				return value;
-			}
-		};
-	}
-
-	using fnv1a = detail::fnv1a<HashType>;
-
-	// String hash
-	//TODO: Make this custom
-	using StringHasher = fnv1a;
-
-	constexpr HashType stringHash(const char* str)
+	template <typename HashFunction>
+	struct Hasher
 	{
-		return StringHasher::hash(str);
-	}
+		using HashType = decltype(std::declval<HashFunction>().hash(nullptr));
+
+		static constexpr HashType hashBytes(const void* data, size_t byteSize);
+
+		static constexpr HashType hash(const char* c);
+
+		template <typename T>
+		static constexpr HashType hash(const T& object);
+
+		static constexpr void hashCombine(HashType& seed);
+
+		template <typename T, typename... Rest>
+		static constexpr void hashCombine(HashType& seed, const T& value, Rest... rest);
+
+		template <typename... Args>
+		static constexpr HashType hash(Args... args);
+	};
+
+	template <typename T>
+	using DefaultHashFunction = FNV1a<T>;
+
+	using DefaultHasher = Hasher<DefaultHashFunction<Hash>>;
 
 	// Hash literal operator for convenience
-	constexpr HashType operator"" _hash(const char* str, std::size_t)
+	constexpr Hash operator""_hash(const char* str, size_t)
 	{
-		return stringHash(str);
+		return DefaultHasher::hash(str);
 	}
 }
+
+#include <Atema/Core/Hash.inl>
 
 #endif
