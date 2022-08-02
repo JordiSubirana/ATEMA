@@ -19,31 +19,45 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_SHADER_HPP
-#define ATEMA_GLOBAL_SHADER_HPP
+#ifndef ATEMA_SHADER_UBERSHADER_HPP
+#define ATEMA_SHADER_UBERSHADER_HPP
 
 #include <Atema/Shader/Config.hpp>
-#include <Atema/Shader/ShaderWriter.hpp>
-#include <Atema/Shader/UberShader.hpp>
-#include <Atema/Shader/Ast/AstCloner.hpp>
-#include <Atema/Shader/Ast/AstEvaluator.hpp>
-#include <Atema/Shader/Ast/AstPreprocessor.hpp>
-#include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
-#include <Atema/Shader/Ast/AstStageExtractor.hpp>
-#include <Atema/Shader/Ast/AstUtils.hpp>
-#include <Atema/Shader/Ast/AstVisitor.hpp>
-#include <Atema/Shader/Ast/Constant.hpp>
-#include <Atema/Shader/Ast/Enums.hpp>
-#include <Atema/Shader/Ast/Expression.hpp>
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
-#include <Atema/Shader/Ast/Type.hpp>
-#include <Atema/Shader/Atsl/AtslParser.hpp>
-#include <Atema/Shader/Atsl/AtslShaderWriter.hpp>
-#include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
-#include <Atema/Shader/Atsl/AtslToken.hpp>
-#include <Atema/Shader/Atsl/AtslUtils.hpp>
-#include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
-#include <Atema/Shader/Glsl/GlslUtils.hpp>
-#include <Atema/Shader/Spirv/SpirvShaderWriter.hpp>
+#include <Atema/Shader/Ast/Constant.hpp>
+#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+
+namespace at
+{
+	class ATEMA_SHADER_API UberShader
+	{
+	public:
+		struct Option
+		{
+			Option(const std::string& name, const ConstantValue& value) : name(name), value(value) {}
+
+			std::string name;
+			ConstantValue value;
+		};
+
+		UberShader() = delete;
+		UberShader(const Ptr<SequenceStatement>& ast);
+		UberShader(UPtr<SequenceStatement>&& ast);
+		~UberShader();
+
+		Ptr<UberShader> createInstance(const std::vector<Option>& options) const;
+		Ptr<UberShader> extractStage(AstShaderStage stage);
+
+		const Ptr<SequenceStatement>& getAst() const;
+
+	private:
+		void initializeExtractor();
+
+		Ptr<SequenceStatement> m_ast;
+		AstStageExtractor m_stageExtractor;
+		bool m_extractorReady;
+	};
+}
 
 #endif

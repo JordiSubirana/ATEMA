@@ -59,8 +59,6 @@ namespace at
 		UPtr<Expression> createConstantIfPossible(UPtr<Expression>&& value);
 		UPtr<ConstantExpression> createConstantExpression(const ConstantValue& value);
 
-		//std::optional<ConstantValue> getUserOption(const std::string& optionName);
-
 		std::unordered_map<std::string, ConstantValue> m_options;
 		std::unordered_map<std::string, ConstantValue> m_defaultOptions;
 

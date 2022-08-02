@@ -25,7 +25,7 @@ local modules =
 	},
 	Graphics =
 	{
-		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaWindow"}
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaShader"}
 	},
 	Math =
 	{
