@@ -22,6 +22,8 @@
 #ifndef ATEMA_MATH_VECTOR_HPP
 #define ATEMA_MATH_VECTOR_HPP
 
+#include <Atema/Core/Hash.hpp>
+
 #include <array>
 
 namespace at
@@ -161,6 +163,21 @@ namespace at
 		return (tmp);
 	}
 }
+
+ATEMA_DECLARE_STD_HASH(at::Vector2i)
+ATEMA_DECLARE_STD_HASH(at::Vector2u)
+ATEMA_DECLARE_STD_HASH(at::Vector2f)
+ATEMA_DECLARE_STD_HASH(at::Vector2d)
+
+ATEMA_DECLARE_STD_HASH(at::Vector3i)
+ATEMA_DECLARE_STD_HASH(at::Vector3u)
+ATEMA_DECLARE_STD_HASH(at::Vector3f)
+ATEMA_DECLARE_STD_HASH(at::Vector3d)
+
+ATEMA_DECLARE_STD_HASH(at::Vector4i)
+ATEMA_DECLARE_STD_HASH(at::Vector4u)
+ATEMA_DECLARE_STD_HASH(at::Vector4f)
+ATEMA_DECLARE_STD_HASH(at::Vector4d)
 
 #include <Atema/Math/Vector.inl>
 
