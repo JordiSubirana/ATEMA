@@ -60,11 +60,11 @@ namespace
 		return converter.createAst(atslTokens);
 	}
 
-	Statement& getMaterialAst()
+	UberShader& getMaterialUberShader()
 	{
-		static auto ast = initializeMaterialAst();
+		static UberShader s_uberShader(initializeMaterialAst());
 
-		return *ast;
+		return s_uberShader;
 	}
 
 	struct MaterialParameter
@@ -525,12 +525,8 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	}
 
 	// Initialize AST
-	auto& materialAst = getMaterialAst();
-
-	AstPreprocessor astPreprocessor;
-
-	// Initialize preprocessor state
-	materialAst.accept(astPreprocessor);
+	std::vector<UberShader::Option> shaderOptions;
+	auto& material = getMaterialUberShader();
 
 	size_t bufferElementIndex = 0;
 
@@ -540,7 +536,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 
 		if (texture)
 		{
-			astPreprocessor.setOption("Material" + materialParameter.name + "Binding", bindingIndex);
+			shaderOptions.emplace_back("Material" + materialParameter.name + "Binding", bindingIndex);
 
 			descriptorSet->update(bindingIndex++, texture, sampler);
 		}
@@ -553,25 +549,17 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	if (uniformBuffer)
 		uniformBuffer->unmap();
 
-	// Initialize shaders
-	auto processedAst = astPreprocessor.process(materialAst);
-
-	if (!processedAst)
-		ATEMA_ERROR("An error occurred when compiling the shader");
-
-	AstStageExtractor stageExtractor;
-
-	processedAst->accept(stageExtractor);
+	auto materialInstance = material.createInstance(shaderOptions);
 
 	Shader::Settings shaderSettings;
 	shaderSettings.shaderLanguage = ShaderLanguage::Ast;
 	shaderSettings.shaderDataSize = 1;
 
-	auto vertexShaderAst = stageExtractor.getAst(AstShaderStage::Vertex);
+	auto vertexShaderAst = materialInstance->extractStage(AstShaderStage::Vertex)->getAst();
 	shaderSettings.shaderData = vertexShaderAst.get();
 	vertexShader = Shader::create(shaderSettings);
 
-	auto fragmentShaderAst = stageExtractor.getAst(AstShaderStage::Fragment);
+	auto fragmentShaderAst = materialInstance->extractStage(AstShaderStage::Fragment)->getAst();
 	shaderSettings.shaderData = fragmentShaderAst.get();
 	fragmentShader = Shader::create(shaderSettings);
 }
