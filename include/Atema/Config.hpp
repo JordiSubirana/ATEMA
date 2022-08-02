@@ -36,7 +36,7 @@
 	#define ATEMA_COMPILER_CLANG
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
-	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__GNUC__)
@@ -44,7 +44,7 @@
 	#define ATEMA_COMPILER_GCC
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
-	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__MINGW32__)
@@ -53,7 +53,7 @@
 	#define ATEMA_COMPILER_MINGW
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
-	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __PRETTY_FUNCTION__
 	
 #elif defined(__INTEL_COMPILER) || defined(__ICL)
@@ -61,7 +61,7 @@
 	#define ATEMA_COMPILER_INTEL
 	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201103L)
 	#define ATEMA_COMPILER_SUPPORTS_CPP14 (defined(__cplusplus) && __cplusplus >= 201402L)
-	#define ATEMA_COMPILER_SUPPORTS_CPP11 (defined(__cplusplus) && __cplusplus >= 201703L)
+	#define ATEMA_COMPILER_SUPPORTS_CPP17 (defined(__cplusplus) && __cplusplus >= 201703L)
 	#define ATEMA_FUNCTION __FUNCTION__
 	
 #elif defined(_MSC_VER)
@@ -154,9 +154,11 @@
 
 #endif
 
-// Architecture
-#include <cstdint>
+// Common std headers
+#include <cstddef> // size_t
+#include <cstdint> // Fixed width integer types
 
+// Architecture
 #if INTPTR_MAX == INT64_MAX
 
 #define ATEMA_SYSTEM_64
