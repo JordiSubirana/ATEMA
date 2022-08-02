@@ -48,7 +48,6 @@ namespace
 
 	//-----
 
-	const auto gbufferShaderPath = shaderPath / "GBuffer.atsl";
 	const auto shadowMapShaderPath = shaderPath / "ShadowMap.atsl";
 	const auto postProcessShaderPath = shaderPath / "PostProcess.atsl";
 	const auto phongLightingDirectionalShaderPath = shaderPath / "PhongLightingDirectional.atsl";
@@ -62,7 +61,6 @@ namespace
 
 	const std::vector<ShaderData> shaderDatas =
 	{
-		{ gbufferShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
 		{ shadowMapShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
 		{ postProcessShaderPath, AstShaderStage::Vertex },
 		{ phongLightingDirectionalShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
@@ -679,7 +677,6 @@ void GraphicsSystem::createFrameGraph()
 
 	textureSettings.format = gBuffer[0];
 	auto phongOutputTexture = frameGraphBuilder.createTexture(textureSettings);
-	auto debugOutputTexture = frameGraphBuilder.createTexture(textureSettings);
 
 	textureSettings.format = ImageFormat::D32F;
 	textureSettings.width = m_shadowMapSize;

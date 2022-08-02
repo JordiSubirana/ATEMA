@@ -194,6 +194,8 @@ SandboxApplication::SandboxApplication():
 	// Window / SwapChain
 	RenderWindow::Settings renderWindowSettings;
 	renderWindowSettings.title = "Atema - Sandbox";
+	renderWindowSettings.width = 1280;
+	renderWindowSettings.height = 720;
 	renderWindowSettings.colorFormat = ImageFormat::RGBA8_UNORM;
 
 	m_window = Renderer::instance().createRenderWindow(renderWindowSettings);

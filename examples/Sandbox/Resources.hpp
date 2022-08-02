@@ -89,37 +89,7 @@ struct BasicVertex
 	}
 };
 
-namespace std
-{
-	template<> struct hash<at::Vector3f>
-	{
-		size_t operator()(at::Vector3f const& vertex) const noexcept
-		{
-			size_t h1 = std::hash<float>()(vertex.x);
-			size_t h2 = std::hash<float>()(vertex.y);
-			size_t h3 = std::hash<float>()(vertex.z);
-			return (h1 ^ (h2 << 1)) ^ h3;
-		}
-	};
-
-	template<> struct hash<at::Vector2f>
-	{
-		size_t operator()(at::Vector2f const& vertex) const noexcept
-		{
-			return std::hash<at::Vector3f>()({ vertex.x, vertex.y, 0.0f });
-		}
-	};
-
-	template<> struct hash<BasicVertex>
-	{
-		size_t operator()(BasicVertex const& vertex) const noexcept
-		{
-			return ((hash<at::Vector3f>()(vertex.position) ^
-				(hash<at::Vector3f>()(vertex.normal) << 1)) >> 1) ^
-				(hash<at::Vector2f>()(vertex.texCoords) << 1);
-		}
-	};
-}
+ATEMA_DECLARE_STD_HASH(BasicVertex);
 
 struct ModelData
 {

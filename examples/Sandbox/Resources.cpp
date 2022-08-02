@@ -163,8 +163,6 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 	Matrix4f rotation = Matrix4f::createRotation({Math::HalfPi<float>, 0.0f, 0.0f});
 
-	std::unordered_map<BasicVertex, uint32_t> uniqueVertices{};
-
 	for (const auto& shape : shapes)
 	{
 		for (const auto& index : shape.mesh.indices)
@@ -199,7 +197,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 			tmp = rotation * tmp;
 			vertex.normal = { tmp.x, tmp.y, tmp.z };
 			vertex.normal.normalize();
-			
+
 			modelIndices.push_back(static_cast<uint32_t>(modelVertices.size()));
 			modelVertices.push_back(vertex);
 
@@ -250,41 +248,11 @@ ModelData::ModelData(const std::filesystem::path& path)
 			Vector3f tangent = { tbMatrix[0].x, tbMatrix[1].x, tbMatrix[2].x };
 			Vector3f bitangent = { tbMatrix[0].y, tbMatrix[1].y, tbMatrix[2].y };
 
-			/*
-			float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-			tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-			tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-
-			bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-			bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-			bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-
-			tangent = (edge1 * deltaUV2.y - edge2 * deltaUV1.y) * f;
-			bitangent = (edge2 * deltaUV1.x - edge1 * deltaUV2.x) * f;
-			//*/
-
 			tangent.normalize();
 			bitangent.normalize();
 
-			auto n = tangent.getNorm();
-
 			if (tangent.getNorm() < 0.1f || bitangent.getNorm() < 0.1f)
-			{
 				continue;
-				int i = 3;
-				//std::cout << f << "( 1.0 / " << (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y) << " )" << std::endl;
-				std::cout << "triangle : " << triangleIndex << std::endl;
-				std::cout << v1.position.x << " ; " << v1.position.y << " ; " << v1.position.z << std::endl;
-				std::cout << v2.position.x << " ; " << v2.position.y << " ; " << v2.position.z << std::endl;
-				std::cout << v3.position.x << " ; " << v3.position.y << " ; " << v3.position.z << std::endl;
-				std::cout << edge1.x << " ; " << edge1.y << " ; " << edge1.z << std::endl;
-				std::cout << edge2.x << " ; " << edge2.y << " ; " << edge2.z << std::endl;
-				std::cout << deltaUV1.x << " ; " << deltaUV1.y << std::endl;
-				std::cout << deltaUV2.x << " ; " << deltaUV2.y << std::endl;
-				std::cout << "---" << std::endl;
-			}
 
 			v1.tangent = tangent;
 			v1.bitangent = bitangent;
@@ -312,31 +280,27 @@ ModelData::ModelData(const std::filesystem::path& path)
 		std::swap(modelIndices, newIndices);
 	}
 
-	// Build final vertex / index buffers
-	if (false)
+	// Remove duplicates
 	{
+		std::unordered_map<BasicVertex, uint32_t> uniqueVertices{};
+
 		std::vector<BasicVertex> vertices;
 		std::vector<uint32_t> indices;
 
-		for (auto& modelVertex : modelVertices)
+		for (auto& vertex : modelVertices)
 		{
-			bool found = false;
-			uint32_t vertexIndex = 0;
-			for (auto& vertex : vertices)
+			if (uniqueVertices.count(vertex) == 0)
 			{
-				if (vertex == modelVertex)
-				{
-					indices.emplace_back(vertexIndex);
-					found = true;
-					break;
-				}
-				vertexIndex++;
-			}
+				const auto vertexIndex = static_cast<uint32_t>(vertices.size());
 
-			if (!found)
+				indices.push_back(vertexIndex);
+				vertices.push_back(vertex);
+
+				uniqueVertices[vertex] = vertexIndex;
+			}
+			else
 			{
-				indices.emplace_back(static_cast<uint32_t>(vertices.size()));
-				vertices.emplace_back(modelVertex);
+				indices.push_back(uniqueVertices[vertex]);
 			}
 		}
 
