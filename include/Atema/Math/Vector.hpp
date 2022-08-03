@@ -164,20 +164,17 @@ namespace at
 	}
 }
 
-ATEMA_DECLARE_STD_HASH(at::Vector2i)
-ATEMA_DECLARE_STD_HASH(at::Vector2u)
-ATEMA_DECLARE_STD_HASH(at::Vector2f)
-ATEMA_DECLARE_STD_HASH(at::Vector2d)
-
-ATEMA_DECLARE_STD_HASH(at::Vector3i)
-ATEMA_DECLARE_STD_HASH(at::Vector3u)
-ATEMA_DECLARE_STD_HASH(at::Vector3f)
-ATEMA_DECLARE_STD_HASH(at::Vector3d)
-
-ATEMA_DECLARE_STD_HASH(at::Vector4i)
-ATEMA_DECLARE_STD_HASH(at::Vector4u)
-ATEMA_DECLARE_STD_HASH(at::Vector4f)
-ATEMA_DECLARE_STD_HASH(at::Vector4d)
+namespace std
+{
+	template <size_t N, typename T>
+	struct hash<at::Vector<N, T>>
+	{
+		std::size_t operator()(const at::Vector<N, T>& object) const
+		{
+			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object);
+		}
+	};
+}
 
 #include <Atema/Math/Vector.inl>
 
