@@ -22,6 +22,8 @@
 #ifndef ATEMA_CORE_VARIANT_HPP
 #define ATEMA_CORE_VARIANT_HPP
 
+#include <Atema/Core/Hash.hpp>
+
 #include <variant>
 
 namespace at
@@ -65,6 +67,18 @@ namespace at
 
 	private:
 		std::variant<Args...> m_value;
+	};
+}
+
+namespace std
+{
+	template <typename ... Args>
+	struct hash<at::Variant<Args...>>
+	{
+		std::size_t operator()(const at::Variant<Args...>& object) const
+		{
+			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object);
+		}
 	};
 }
 
