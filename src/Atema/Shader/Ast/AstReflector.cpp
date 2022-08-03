@@ -19,82 +19,161 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Shader/Ast/AstStageExtractor.hpp>
-#include <Atema/Shader/Ast/AstCloner.hpp>
+#include <Atema/Shader/Ast/AstEvaluator.hpp>
+#include <Atema/Shader/Ast/AstReflector.hpp>
 
 using namespace at;
 
-AstStageExtractor::AstStageExtractor() : m_currentDependencies(nullptr)
+namespace
+{
+	uint32_t getUintValue(const std::optional<ConstantValue>& optionalValue)
+	{
+		if (!optionalValue.has_value() || !optionalValue.value().isOneOf<int32_t, uint32_t>())
+			ATEMA_ERROR("Required value is not evaluable");
+
+		if (optionalValue.value().is<int32_t>())
+			return static_cast<uint32_t>(optionalValue.value().get<int32_t>());
+		
+		return optionalValue.value().get<uint32_t>();
+	}
+}
+
+AstReflector::AstReflector() :
+	m_currentAst(nullptr),
+	m_currentDependencies(nullptr)
 {
 }
 
-AstStageExtractor::~AstStageExtractor()
+AstReflector::~AstReflector()
 {
 }
 
-UPtr<SequenceStatement> AstStageExtractor::getAst(AstShaderStage stage)
+AstReflection AstReflector::getReflection(AstShaderStage stage)
 {
-	// Create AST based on previously collected data
-	m_ast = std::make_unique<SequenceStatement>();
+	AstReflection reflection;
 
-	auto& entry = m_entries[stage];
+	AstEvaluator evaluator;
+
+	const auto& entry = m_entries[stage];
 
 	if (!entry.statement)
-	{
 		ATEMA_ERROR("Missing entry function declaration");
+
+	const auto& stageDependencies = getStageDependencies(stage);
+
+	// Inputs
+	for (const auto& statement : entry.inputs)
+	{
+		for (const auto& variable : statement->variables)
+		{
+			const auto location = evaluator.evaluate(*variable.location);
+
+			reflection.addInput({ variable.name, variable.type, getUintValue(location) });
+		}
 	}
 
-	// Resolve dependencies
-	m_astDependencies = DependencyData();
+	// Outputs
+	for (const auto& statement : entry.outputs)
+	{
+		for (const auto& variable : statement->variables)
+		{
+			const auto location = evaluator.evaluate(*variable.location);
 
-	resolveDependencies(entry.dependencies);
+			reflection.addOutput({ variable.name, variable.type, getUintValue(location) });
+		}
+	}
 
-	m_addedStructs.clear();
-	m_addedVariables.clear();
-	m_addedFunctions.clear();
+	// Externals
+	for (const auto& externalName : stageDependencies.externalNames)
+	{
+		const auto& variable = m_externals[externalName].variable;
+
+		const auto set = evaluator.evaluate(*variable.setIndex);
+		const auto binding = evaluator.evaluate(*variable.bindingIndex);
+
+		reflection.addExternal({ variable.name, variable.type, getUintValue(set), getUintValue(binding) });
+	}
+
+	// Structs
+	for (const auto& structName : stageDependencies.structNames)
+	{
+		const auto& structData = m_structs[structName];
+
+		std::vector<AstVariable> variables;
+		for (const auto& variable : structData.statement->members)
+			variables.emplace_back(variable.name, variable.type);
+
+		reflection.addStruct({ structName, variables });
+	}
+
+	return reflection;
+}
+
+UPtr<SequenceStatement> AstReflector::getAst(AstShaderStage stage)
+{
+	// Create AST based on previously collected data
+	auto ast = std::make_unique<SequenceStatement>();
+
+	const auto& entry = m_entries[stage];
+
+	if (!entry.statement)
+		ATEMA_ERROR("Missing entry function declaration");
+
+	auto& stageDependencies = getStageDependencies(stage);
+
+	// Initialize current state
+	m_currentAst = ast.get();
+	m_currentDependencies = &stageDependencies;
 
 	// Add options
-	//TODO: Remove useless ones
-	for (auto& option : m_options)
-		m_ast->statements.push_back(m_cloner.clone(option));
+	for (const auto& option : m_options)
+		ast->statements.push_back(m_cloner.clone(option));
 
 	// Add structs
-	for (auto& structName : m_astDependencies.structNames)
+	for (const auto& structName : stageDependencies.structNames)
 		addStruct(structName);
 
 	// Add external variables
 	{
 		auto externalStatement = std::make_unique<ExternalDeclarationStatement>();
 
-		for (auto& externalName : m_astDependencies.externalNames)
+		for (const auto& externalName : stageDependencies.externalNames)
 			externalStatement->variables.push_back(m_externals[externalName].variable);
 
-		m_ast->statements.push_back(std::move(externalStatement));
+		ast->statements.push_back(std::move(externalStatement));
 	}
 
 	// Add global variables
-	for (auto& variableName : m_astDependencies.variableNames)
+	for (const auto& variableName : stageDependencies.variableNames)
 		addVariable(variableName);
 
 	// Add input
-	for (auto& input : entry.inputs)
-		m_ast->statements.push_back(m_cloner.clone(input));
+	for (const auto& input : entry.inputs)
+		ast->statements.push_back(m_cloner.clone(input));
 
 	// Add output
-	for (auto& output : entry.outputs)
-		m_ast->statements.push_back(m_cloner.clone(output));
+	for (const auto& output : entry.outputs)
+		ast->statements.push_back(m_cloner.clone(output));
 
 	// Add functions
-	for (auto& functionName : m_astDependencies.functionNames)
+	for (const auto& functionName : stageDependencies.functionNames)
 		addFunction(functionName);
 
 	// Add entry function
-	m_ast->statements.push_back(m_cloner.clone(entry.statement));
+	ast->statements.push_back(m_cloner.clone(entry.statement));
 
-	return std::move(m_ast);
+	// Don't forget to clear history !
+	m_currentAst = nullptr;
+	m_currentDependencies = nullptr;
+
+	m_addedStructs.clear();
+	m_addedVariables.clear();
+	m_addedFunctions.clear();
+
+	return ast;
 }
 
-void AstStageExtractor::visit(EntryFunctionDeclarationStatement& statement)
+void AstReflector::visit(EntryFunctionDeclarationStatement& statement)
 {
 	if (m_entries[statement.stage].statement)
 	{
@@ -126,7 +205,7 @@ void AstStageExtractor::visit(EntryFunctionDeclarationStatement& statement)
 	m_currentDependencies = nullptr;
 }
 
-void AstStageExtractor::visit(InputDeclarationStatement& statement)
+void AstReflector::visit(InputDeclarationStatement& statement)
 {
 	auto& entry = m_entries[statement.stage];
 
@@ -142,7 +221,7 @@ void AstStageExtractor::visit(InputDeclarationStatement& statement)
 	}
 }
 
-void AstStageExtractor::visit(OutputDeclarationStatement& statement)
+void AstReflector::visit(OutputDeclarationStatement& statement)
 {
 	auto& entry = m_entries[statement.stage];
 
@@ -158,7 +237,7 @@ void AstStageExtractor::visit(OutputDeclarationStatement& statement)
 	}
 }
 
-void AstStageExtractor::visit(ExternalDeclarationStatement& statement)
+void AstReflector::visit(ExternalDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -166,7 +245,7 @@ void AstStageExtractor::visit(ExternalDeclarationStatement& statement)
 		{
 			ATEMA_ERROR("External '" + variable.name + "' already defined");
 		}
-		
+
 		auto& externalData = m_externals[variable.name];
 
 		externalData.variable = variable;
@@ -179,14 +258,14 @@ void AstStageExtractor::visit(ExternalDeclarationStatement& statement)
 	}
 }
 
-void AstStageExtractor::visit(OptionDeclarationStatement& statement)
+void AstReflector::visit(OptionDeclarationStatement& statement)
 {
 	m_options.push_back(m_cloner.clone(statement));
 
 	AstRecursiveVisitor::visit(statement);
 }
 
-void AstStageExtractor::visit(StructDeclarationStatement& statement)
+void AstReflector::visit(StructDeclarationStatement& statement)
 {
 	if (m_structs.find(statement.name) != m_structs.end())
 	{
@@ -207,7 +286,7 @@ void AstStageExtractor::visit(StructDeclarationStatement& statement)
 	}
 }
 
-void AstStageExtractor::visit(FunctionDeclarationStatement& statement)
+void AstReflector::visit(FunctionDeclarationStatement& statement)
 {
 	if (m_functions.find(statement.name) != m_functions.end())
 	{
@@ -239,7 +318,7 @@ void AstStageExtractor::visit(FunctionDeclarationStatement& statement)
 	m_currentDependencies = nullptr;
 }
 
-void AstStageExtractor::visit(VariableDeclarationStatement& statement)
+void AstReflector::visit(VariableDeclarationStatement& statement)
 {
 	// Register global variables
 	if (!m_currentDependencies)
@@ -272,7 +351,7 @@ void AstStageExtractor::visit(VariableDeclarationStatement& statement)
 	}
 }
 
-void AstStageExtractor::visit(VariableExpression& expression)
+void AstReflector::visit(VariableExpression& expression)
 {
 	if (m_currentDependencies)
 	{
@@ -280,7 +359,7 @@ void AstStageExtractor::visit(VariableExpression& expression)
 	}
 }
 
-void AstStageExtractor::visit(FunctionCallExpression& expression)
+void AstReflector::visit(FunctionCallExpression& expression)
 {
 	if (m_currentDependencies)
 	{
@@ -290,40 +369,64 @@ void AstStageExtractor::visit(FunctionCallExpression& expression)
 	}
 }
 
-void AstStageExtractor::resolveDependencies(const DependencyData& dependencies)
+AstReflector::DependencyData& AstReflector::getStageDependencies(AstShaderStage stage)
+{
+	// Ensure current dependencies are not set
+	m_currentDependencies = nullptr;
+
+	// If dependencies were already resolved, just return them
+	const auto it = m_stageDependencies.find(stage);
+
+	if (it != m_stageDependencies.end())
+		return it->second;
+
+	// Otherwise we need to resolve stage's dependencies
+	const auto& entry = m_entries[stage];
+
+	if (!entry.statement)
+		ATEMA_ERROR("Missing entry function declaration");
+
+	auto& stageDependencies = m_stageDependencies[stage];
+
+	resolveDependencies(stageDependencies, entry.dependencies);
+
+	return stageDependencies;
+}
+
+void AstReflector::resolveDependencies(DependencyData& dstDependencies, const DependencyData& srcDependencies)
 {
 	// Recursively add other dependencies first
-	for (auto& name : dependencies.structNames)
+	for (auto& name : srcDependencies.structNames)
 	{
 		// Ensure the dependency wasn't already added
-		if (m_astDependencies.structNames.find(name) == m_astDependencies.structNames.end())
+		if (dstDependencies.structNames.find(name) == dstDependencies.structNames.end())
 		{
 			// Ensure the dependency exists, then add it
 			if (m_structs.find(name) != m_structs.end())
 			{
-				m_astDependencies.structNames.emplace(name);
+				dstDependencies.structNames.emplace(name);
 
 				auto& data = m_structs[name];
 
-				resolveDependencies(data.dependencies);
+				resolveDependencies(dstDependencies, data.dependencies);
 			}
 		}
 	}
 
 	// Recursively add other dependencies first
-	for (auto& name : dependencies.variableNames)
+	for (auto& name : srcDependencies.variableNames)
 	{
 		// Ensure the dependency wasn't already added
-		if (m_astDependencies.variableNames.find(name) == m_astDependencies.variableNames.end())
+		if (dstDependencies.variableNames.find(name) == dstDependencies.variableNames.end())
 		{
 			// Ensure the dependency exists, then add it
 			if (m_variables.find(name) != m_variables.end())
 			{
-				m_astDependencies.variableNames.emplace(name);
+				dstDependencies.variableNames.emplace(name);
 
 				auto& data = m_variables[name];
 
-				resolveDependencies(data.dependencies);
+				resolveDependencies(dstDependencies, data.dependencies);
 
 				// If the variable is a struct instance, ensure we got the struct dependency
 				const auto& variable = m_variables[name];
@@ -332,16 +435,16 @@ void AstStageExtractor::resolveDependencies(const DependencyData& dependencies)
 					const auto& structName = variable.statement->type.get<StructType>().name;
 
 					// Ensure the dependency wasn't already added
-					if (m_astDependencies.structNames.find(structName) == m_astDependencies.structNames.end())
+					if (dstDependencies.structNames.find(structName) == dstDependencies.structNames.end())
 					{
 						// Ensure the dependency exists, then add it
 						if (m_structs.find(structName) != m_structs.end())
 						{
-							m_astDependencies.structNames.emplace(structName);
+							dstDependencies.structNames.emplace(structName);
 
 							auto& structData = m_structs[structName];
 
-							resolveDependencies(structData.dependencies);
+							resolveDependencies(dstDependencies, structData.dependencies);
 						}
 					}
 				}
@@ -350,56 +453,56 @@ void AstStageExtractor::resolveDependencies(const DependencyData& dependencies)
 			else if (m_externals.find(name) != m_externals.end())
 			{
 				// Ensure the dependency wasn't already added
-				if (m_astDependencies.externalNames.find(name) == m_astDependencies.externalNames.end())
+				if (dstDependencies.externalNames.find(name) == dstDependencies.externalNames.end())
 				{
-					m_astDependencies.externalNames.emplace(name);
+					dstDependencies.externalNames.emplace(name);
 
 					auto& data = m_externals[name];
 
-					resolveDependencies(data.dependencies);
+					resolveDependencies(dstDependencies, data.dependencies);
 				}
 			}
 		}
 	}
 
 	// Recursively add other dependencies first
-	for (auto& name : dependencies.externalNames)
+	for (auto& name : srcDependencies.externalNames)
 	{
 		// Ensure the dependency wasn't already added
-		if (m_astDependencies.externalNames.find(name) == m_astDependencies.externalNames.end())
+		if (dstDependencies.externalNames.find(name) == dstDependencies.externalNames.end())
 		{
 			// Ensure the dependency exists, then add it
 			if (m_externals.find(name) != m_externals.end())
 			{
-				m_astDependencies.externalNames.emplace(name);
+				dstDependencies.externalNames.emplace(name);
 
 				auto& data = m_externals[name];
 
-				resolveDependencies(data.dependencies);
+				resolveDependencies(dstDependencies, data.dependencies);
 			}
 		}
 	}
 
 	// Recursively add other dependencies first
-	for (auto& name : dependencies.functionNames)
+	for (auto& name : srcDependencies.functionNames)
 	{
 		// Ensure the dependency wasn't already added
-		if (m_astDependencies.functionNames.find(name) == m_astDependencies.functionNames.end())
+		if (dstDependencies.functionNames.find(name) == dstDependencies.functionNames.end())
 		{
 			// Ensure the dependency exists, then add it
 			if (m_functions.find(name) != m_functions.end())
 			{
-				m_astDependencies.functionNames.emplace(name);
+				dstDependencies.functionNames.emplace(name);
 
 				auto& data = m_functions[name];
 
-				resolveDependencies(data.dependencies);
+				resolveDependencies(dstDependencies, data.dependencies);
 			}
 		}
 	}
 }
 
-void AstStageExtractor::addDependencies(const DependencyData& data)
+void AstReflector::addDependencies(const DependencyData& data)
 {
 	for (auto& name : data.structNames)
 		addStruct(name);
@@ -411,9 +514,9 @@ void AstStageExtractor::addDependencies(const DependencyData& data)
 		addFunction(name);
 }
 
-void AstStageExtractor::addStruct(const std::string& name)
+void AstReflector::addStruct(const std::string& name)
 {
-	if (m_addedStructs.count(name) > 0 || m_astDependencies.structNames.count(name) == 0)
+	if (m_addedStructs.count(name) > 0 || m_currentDependencies->structNames.count(name) == 0)
 		return;
 
 	m_addedStructs.emplace(name);
@@ -422,12 +525,12 @@ void AstStageExtractor::addStruct(const std::string& name)
 
 	addDependencies(data.dependencies);
 
-	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
+	m_currentAst->statements.emplace_back(m_cloner.clone(data.statement));
 }
 
-void AstStageExtractor::addVariable(const std::string& name)
+void AstReflector::addVariable(const std::string& name)
 {
-	if (m_addedVariables.count(name) > 0 || m_astDependencies.variableNames.count(name) == 0)
+	if (m_addedVariables.count(name) > 0 || m_currentDependencies->variableNames.count(name) == 0)
 		return;
 
 	m_addedVariables.emplace(name);
@@ -436,12 +539,12 @@ void AstStageExtractor::addVariable(const std::string& name)
 
 	addDependencies(data.dependencies);
 
-	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
+	m_currentAst->statements.emplace_back(m_cloner.clone(data.statement));
 }
 
-void AstStageExtractor::addFunction(const std::string& name)
+void AstReflector::addFunction(const std::string& name)
 {
-	if (m_addedFunctions.count(name) > 0 || m_astDependencies.functionNames.count(name) == 0)
+	if (m_addedFunctions.count(name) > 0 || m_currentDependencies->functionNames.count(name) == 0)
 		return;
 
 	m_addedFunctions.emplace(name);
@@ -450,10 +553,10 @@ void AstStageExtractor::addFunction(const std::string& name)
 
 	addDependencies(data.dependencies);
 
-	m_ast->statements.emplace_back(m_cloner.clone(data.statement));
+	m_currentAst->statements.emplace_back(m_cloner.clone(data.statement));
 }
 
-void AstStageExtractor::clear()
+void AstReflector::clear()
 {
 	m_currentDependencies = nullptr;
 

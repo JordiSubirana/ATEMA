@@ -81,12 +81,28 @@ Ptr<UberShader> UberShader::extractStage(AstShaderStage stage)
 {
 	initializeExtractor();
 
-	auto ast = m_stageExtractor.getAst(stage);
+	auto ast = m_astReflector.getAst(stage);
 
 	if (!ast)
 		ATEMA_ERROR("The required stage was not found");
 
 	return std::make_shared<UberShader>(std::move(ast));
+}
+
+AstReflection& UberShader::getReflection(AstShaderStage stage)
+{
+	// Check if stage reflection was already generated
+	const auto it = m_stageReflections.find(stage);
+
+	if (it != m_stageReflections.end())
+		return it->second;
+
+	// If not, create stage reflection
+	initializeExtractor();
+
+	m_stageReflections[stage] = m_astReflector.getReflection(stage);
+
+	return m_stageReflections[stage];
 }
 
 const Ptr<SequenceStatement>& UberShader::getAst() const
@@ -99,7 +115,7 @@ void UberShader::initializeExtractor()
 	if (m_extractorReady)
 		return;
 
-	m_ast->accept(m_stageExtractor);
+	m_ast->accept(m_astReflector);
 
 	m_extractorReady = true;
 }

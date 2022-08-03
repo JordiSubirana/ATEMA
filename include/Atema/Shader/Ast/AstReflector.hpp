@@ -19,8 +19,9 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SHADER_AST_ASTSTAGEEXTRACTOR_HPP
-#define ATEMA_SHADER_AST_ASTSTAGEEXTRACTOR_HPP
+#ifndef ATEMA_SHADER_AST_ASTREFLECTOR_HPP
+#define ATEMA_SHADER_AST_ASTREFLECTOR_HPP
+
 
 #include <Atema/Shader/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
@@ -28,18 +29,21 @@
 #include <Atema/Shader/Ast/Expression.hpp>
 #include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
 #include <Atema/Shader/Ast/AstCloner.hpp>
+#include <Atema/Shader/Ast/Reflection.hpp>
 
 #include <unordered_map>
 #include <unordered_set>
 
 namespace at
 {
-	class ATEMA_SHADER_API AstStageExtractor : public AstRecursiveVisitor
+	//*
+	class ATEMA_SHADER_API AstReflector : public AstRecursiveVisitor, public NonCopyable
 	{
 	public:
-		AstStageExtractor();
-		~AstStageExtractor();
+		AstReflector();
+		~AstReflector();
 
+		AstReflection getReflection(AstShaderStage stage);
 		UPtr<SequenceStatement> getAst(AstShaderStage stage);
 
 		void clear();
@@ -97,7 +101,9 @@ namespace at
 			DependencyData dependencies;
 		};
 
-		void resolveDependencies(const DependencyData& dependencies);
+		DependencyData& getStageDependencies(AstShaderStage stage);
+
+		void resolveDependencies(DependencyData& dstDependencies, const DependencyData& srcDependencies);
 
 		void addDependencies(const DependencyData& data);
 		void addStruct(const std::string& name);
@@ -113,12 +119,11 @@ namespace at
 		std::unordered_map<std::string, StructData> m_structs;
 		std::unordered_map<std::string, VariableData> m_variables;
 
+		SequenceStatement* m_currentAst;
 		DependencyData* m_currentDependencies;
 
-		UPtr<SequenceStatement> m_ast;
-
-		DependencyData m_astDependencies;
-
+		std::unordered_map<AstShaderStage, DependencyData> m_stageDependencies;
+		
 		std::unordered_set<std::string> m_addedStructs;
 		std::unordered_set<std::string> m_addedVariables;
 		std::unordered_set<std::string> m_addedFunctions;

@@ -19,7 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+#include <Atema/Shader/Ast/AstReflector.hpp>
 #include <Atema/Shader/Glsl/GlslShaderWriter.hpp>
 #include <Atema/Shader/Ast/AstUtils.hpp>
 #include <Atema/Shader/Glsl/GlslUtils.hpp>
@@ -446,11 +446,11 @@ void GlslShaderWriter::visit(SequenceStatement& statement)
 		if (m_stage.has_value())
 		{
 			// Extract desired stage from current sequence (when first calling this method)
-			AstStageExtractor stageExtractor;
+			AstReflector reflector;
 
-			statement.accept(stageExtractor);
+			statement.accept(reflector);
 
-			const auto processedStage = stageExtractor.getAst(m_stage.value());
+			const auto processedStage = reflector.getAst(m_stage.value());
 
 			processedStage->accept(*this);
 		}

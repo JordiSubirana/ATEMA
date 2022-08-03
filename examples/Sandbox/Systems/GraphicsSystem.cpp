@@ -204,9 +204,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		auto ast = converter.createAst(atslTokens);
 
-		AstStageExtractor stageExtractor;
+		AstReflector reflector;
 
-		ast->accept(stageExtractor);
+		ast->accept(reflector);
 
 		Shader::Settings shaderSettings;
 		shaderSettings.shaderLanguage = ShaderLanguage::Ast;
@@ -214,7 +214,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		if (shaderData.shaderStages & AstShaderStage::Vertex)
 		{
-			auto stageAst = stageExtractor.getAst(AstShaderStage::Vertex);
+			auto stageAst = reflector.getAst(AstShaderStage::Vertex);
 
 			shaderSettings.shaderData = stageAst.get();
 
@@ -223,7 +223,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		if (shaderData.shaderStages & AstShaderStage::Fragment)
 		{
-			auto stageAst = stageExtractor.getAst(AstShaderStage::Fragment);
+			auto stageAst = reflector.getAst(AstShaderStage::Fragment);
 
 			shaderSettings.shaderData = stageAst.get();
 
@@ -575,13 +575,13 @@ void GraphicsSystem::translateShaders()
 				const auto& glslSuffix = glslSuffixes[i];
 				const auto& spirvSuffix = spirvSuffixes[i];
 
-				AstStageExtractor stageExtractor;
+				AstReflector reflector;
 
-				preprocessedAst->accept(stageExtractor);
+				preprocessedAst->accept(reflector);
 
 				try
 				{
-					auto stageAst = stageExtractor.getAst(shaderStage);
+					auto stageAst = reflector.getAst(shaderStage);
 
 					{
 						std::ofstream file(shaderPath / (path.stem().string() + glslSuffix));

@@ -29,12 +29,13 @@
 #include <Atema/Shader/Ast/AstEvaluator.hpp>
 #include <Atema/Shader/Ast/AstPreprocessor.hpp>
 #include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
-#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+#include <Atema/Shader/Ast/AstReflector.hpp>
 #include <Atema/Shader/Ast/AstUtils.hpp>
 #include <Atema/Shader/Ast/AstVisitor.hpp>
 #include <Atema/Shader/Ast/Constant.hpp>
 #include <Atema/Shader/Ast/Enums.hpp>
 #include <Atema/Shader/Ast/Expression.hpp>
+#include <Atema/Shader/Ast/Reflection.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Type.hpp>
 #include <Atema/Shader/Atsl/AtslParser.hpp>

@@ -26,7 +26,7 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Constant.hpp>
-#include <Atema/Shader/Ast/AstStageExtractor.hpp>
+#include <Atema/Shader/Ast/AstReflector.hpp>
 
 namespace at
 {
@@ -48,6 +48,7 @@ namespace at
 
 		Ptr<UberShader> createInstance(const std::vector<Option>& options) const;
 		Ptr<UberShader> extractStage(AstShaderStage stage);
+		AstReflection& getReflection(AstShaderStage stage);
 
 		const Ptr<SequenceStatement>& getAst() const;
 
@@ -55,8 +56,9 @@ namespace at
 		void initializeExtractor();
 
 		Ptr<SequenceStatement> m_ast;
-		AstStageExtractor m_stageExtractor;
+		AstReflector m_astReflector;
 		bool m_extractorReady;
+		std::unordered_map<AstShaderStage, AstReflection> m_stageReflections;
 	};
 }
 
