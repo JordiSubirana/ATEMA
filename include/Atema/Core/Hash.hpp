@@ -25,6 +25,8 @@
 #include <Atema/Core/Config.hpp>
 
 #include <utility>
+#include <vector>
+#include <array>
 
 #ifndef ATEMA_HASH_SIZE
 #define ATEMA_HASH_SIZE 32
@@ -111,6 +113,28 @@ namespace at
 	{
 		return DefaultHasher::hash(str);
 	}
+}
+
+// Override some std hashes
+namespace std
+{
+	template <typename T>
+	struct hash<vector<T>>
+	{
+		std::size_t operator()(const vector<T>& object) const
+		{
+			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hashBytes(object.data(), object.size() * sizeof(T));
+		}
+	};
+
+	template <typename T, std::size_t N>
+	struct hash<array<T, N>>
+	{
+		std::size_t operator()(const array<T, N>& object) const
+		{
+			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hashBytes(object.data(), N * sizeof(T));
+		}
+	};
 }
 
 #include <Atema/Core/Hash.inl>
