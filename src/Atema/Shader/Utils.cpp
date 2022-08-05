@@ -19,33 +19,54 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_SHADER_HPP
-#define ATEMA_RENDERER_SHADER_HPP
+#include <Atema/Shader/Utils.hpp>
+#include <Atema/Core/Error.hpp>
 
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Shader/Enums.hpp>
+#include <unordered_set>
+#include <string_view>
 
-namespace at
+using namespace at;
+
+namespace
 {
-	class ATEMA_RENDERER_API Shader : public NonCopyable
+	const std::unordered_set<std::string_view> astExtensions
 	{
-	public:
-		struct Settings
-		{
-			ShaderLanguage shaderLanguage = ShaderLanguage::Atsl;
-			void* shaderData = nullptr;
-			size_t shaderDataSize = 0;
-		};
+	};
 
-		virtual ~Shader();
+	const std::unordered_set<std::string_view> atslExtensions
+	{
+		"atsl"
+	};
 
-		static Ptr<Shader> create(const Settings& settings);
+	const std::unordered_set<std::string_view> spirvExtensions
+	{
+		"spv"
+	};
 
-	protected:
-		Shader();
+	const std::unordered_set<std::string_view> glslExtensions
+	{
+		"vert", "frag", "glsl"
 	};
 }
 
-#endif
+ShaderLanguage at::getShaderLanguage(const std::string& extension)
+{
+	std::string_view ext = extension;
+	ext.remove_prefix(ext.find_first_not_of("."));
+
+	if (astExtensions.count(ext) > 0)
+		return ShaderLanguage::Ast;
+
+	if (atslExtensions.count(ext) > 0)
+		return ShaderLanguage::Atsl;
+
+	if (spirvExtensions.count(ext) > 0)
+		return ShaderLanguage::SpirV;
+
+	if (glslExtensions.count(ext) > 0)
+		return ShaderLanguage::Glsl;
+
+	ATEMA_ERROR("Unknown shader extension");
+
+	return ShaderLanguage::Ast;
+}

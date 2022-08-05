@@ -19,32 +19,19 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_SHADER_HPP
-#define ATEMA_RENDERER_SHADER_HPP
+#ifndef ATEMA_SHADER_ENUMS_HPP
+#define ATEMA_SHADER_ENUMS_HPP
 
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Shader/Enums.hpp>
+#include <Atema/Shader/Config.hpp>
 
 namespace at
 {
-	class ATEMA_RENDERER_API Shader : public NonCopyable
+	enum class ShaderLanguage
 	{
-	public:
-		struct Settings
-		{
-			ShaderLanguage shaderLanguage = ShaderLanguage::Atsl;
-			void* shaderData = nullptr;
-			size_t shaderDataSize = 0;
-		};
-
-		virtual ~Shader();
-
-		static Ptr<Shader> create(const Settings& settings);
-
-	protected:
-		Shader();
+		Ast,
+		Atsl,
+		SpirV,
+		Glsl
 	};
 }
 
