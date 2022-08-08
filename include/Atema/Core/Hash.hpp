@@ -41,7 +41,7 @@
 		{ \
 			std::size_t operator()(const type& object) const \
 			{ \
-				return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object); \
+				return at::DefaultStdHasher::hash(object); \
 			} \
 		}; \
 	}
@@ -56,7 +56,7 @@
 		{ \
 			std::size_t operator()(const type& object) const \
 			{ \
-				return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(__VA_ARGS__); \
+				return at::DefaultStdHasher::hash(__VA_ARGS__); \
 			} \
 		}; \
 	}
@@ -108,6 +108,8 @@ namespace at
 
 	using DefaultHasher = Hasher<DefaultHashFunction<Hash>>;
 
+	using DefaultStdHasher = Hasher<DefaultHashFunction<std::size_t>>;
+
 	// Hash literal operator for convenience
 	constexpr Hash operator""_hash(const char* str, size_t)
 	{
@@ -123,7 +125,7 @@ namespace std
 	{
 		std::size_t operator()(const vector<T>& object) const
 		{
-			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hashBytes(object.data(), object.size() * sizeof(T));
+			return at::DefaultStdHasher::hashBytes(object.data(), object.size() * sizeof(T));
 		}
 	};
 
@@ -132,7 +134,7 @@ namespace std
 	{
 		std::size_t operator()(const array<T, N>& object) const
 		{
-			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hashBytes(object.data(), N * sizeof(T));
+			return at::DefaultStdHasher::hashBytes(object.data(), N * sizeof(T));
 		}
 	};
 }

@@ -171,7 +171,7 @@ namespace std
 	{
 		std::size_t operator()(const at::Vector<N, T>& object) const
 		{
-			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object);
+			return at::DefaultStdHasher::hash(object);
 		}
 	};
 }

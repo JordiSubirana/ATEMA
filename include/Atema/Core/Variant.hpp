@@ -77,7 +77,7 @@ namespace std
 	{
 		std::size_t operator()(const at::Variant<Args...>& object) const
 		{
-			return at::Hasher<at::DefaultHashFunction<std::size_t>>::hash(object);
+			return at::DefaultStdHasher::hash(object);
 		}
 	};
 }
