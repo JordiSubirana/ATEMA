@@ -61,6 +61,9 @@
 
 namespace at
 {
+	// 16-bits length hash type
+	using Hash16 = uint16_t;
+
 	// 32-bits length hash type
 	using Hash32 = uint32_t;
 
@@ -70,17 +73,21 @@ namespace at
 	// Default std hash type
 	using StdHash = size_t;
 
-#if ATEMA_FORCE_HASH32
+#if ATEMA_FORCE_HASH16
+	// Default hash used by the engine (forced to Hash16)
+	// Can be forced defining ATEMA_FORCE_HASH16 / ATEMA_FORCE_HASH32 / ATEMA_FORCE_HASH64
+	using Hash = Hash16;
+#elif ATEMA_FORCE_HASH32
 	// Default hash used by the engine (forced to Hash32)
-	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
+	// Can be forced defining ATEMA_FORCE_HASH16 / ATEMA_FORCE_HASH32 / ATEMA_FORCE_HASH64
 	using Hash = Hash32;
 #elif ATEMA_FORCE_HASH64
 	// Default hash used by the engine (forced to Hash64)
-	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
+	// Can be forced defining ATEMA_FORCE_HASH16 / ATEMA_FORCE_HASH32 / ATEMA_FORCE_HASH64
 	using Hash = Hash64;
 #else
 	// Default hash used by the engine (StdHash)
-	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
+	// Can be forced defining ATEMA_FORCE_HASH16 / ATEMA_FORCE_HASH32 / ATEMA_FORCE_HASH64
 	using Hash = StdHash;
 #endif
 
@@ -90,6 +97,13 @@ namespace at
 	{
 		template <typename T, typename U = T>
 		static constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, HashType> hash(const T* data, size_t size);
+	};
+
+	template <>
+	struct FNV1a<Hash16>
+	{
+		template <typename T, typename U = T>
+		static constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, Hash16> hash(const T* data, size_t size);
 	};
 
 	/*

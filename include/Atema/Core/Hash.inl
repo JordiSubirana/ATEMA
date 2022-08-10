@@ -23,6 +23,7 @@
 #define ATEMA_CORE_HASH_INL
 
 #include <Atema/Core/Hash.hpp>
+#include <Atema/Core/Hash.hpp>
 
 namespace at
 {
@@ -71,6 +72,14 @@ namespace at
 		}
 
 		return value;
+	}
+
+	template <typename T, typename U>
+	constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, Hash16> FNV1a<Hash16>::hash(const T* data, size_t size)
+	{
+		const auto hash32 = FNV1a<Hash32>::hash(data, size);
+
+		return static_cast<Hash16>(hash32 >> 16) ^ static_cast<Hash16>(hash32 & 0xFFFF);
 	}
 
 	//----- HASHER -----//
