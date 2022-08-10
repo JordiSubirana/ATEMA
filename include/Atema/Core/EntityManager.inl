@@ -104,15 +104,19 @@ namespace at
 	{
 		constexpr auto typeID = TypeInfo<T>::id;
 
-		if (!m_components.contains(typeID))
+		const auto it = m_components.find(typeID);
+
+		if (it == m_components.end())
 		{
 			auto ptr = std::make_shared<detail::ComponentHandler<T>>();
 			auto abstractPtr = std::static_pointer_cast<detail::AbstractComponentHandler>(ptr);
 
-			m_components.insert(typeID, abstractPtr);
+			m_components.emplace(typeID, abstractPtr);
+
+			return ptr->getSet();
 		}
 
-		return std::static_pointer_cast<detail::ComponentHandler<T>>(m_components[typeID])->getSet();
+		return static_cast<detail::ComponentHandler<T>*>(it->second.get())->getSet();
 	}
 
 	template <typename T>
@@ -120,12 +124,14 @@ namespace at
 	{
 		constexpr auto typeID = TypeInfo<T>::id;
 
-		if (!m_components.contains(typeID))
+		const auto it = m_components.find(typeID);
+
+		if (it == m_components.end())
 		{
 			ATEMA_ERROR("Requested component set does not exist");
 		}
-		
-		return std::static_pointer_cast<detail::ComponentHandler<T>>(m_components[typeID])->getSet();
+
+		return static_cast<detail::ComponentHandler<T>*>(it->second.get())->getSet();
 	}
 }
 

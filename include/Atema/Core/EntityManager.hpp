@@ -26,8 +26,10 @@
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/SparseSet.hpp>
 #include <Atema/Core/SparseSetUnion.hpp>
+#include <Atema/Core/Hash.hpp>
 
 #include <list>
+#include <unordered_map>
 
 namespace at
 {
@@ -104,7 +106,7 @@ namespace at
 
 		EntityHandle m_nextID;
 		
-		SparseSet<Ptr<detail::AbstractComponentHandler>> m_components;
+		std::unordered_map<Hash, Ptr<detail::AbstractComponentHandler>> m_components;
 	};
 }
 

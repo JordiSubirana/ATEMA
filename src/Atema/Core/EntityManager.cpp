@@ -53,7 +53,7 @@ void EntityManager::removeEntity(EntityHandle entity)
 	m_availableIDs.push_back(entity);
 
 	for (auto& componentHandler : m_components)
-		componentHandler->erase(entity);
+		componentHandler.second->erase(entity);
 }
 
 void EntityManager::clear()
