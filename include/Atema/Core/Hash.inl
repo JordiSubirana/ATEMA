@@ -49,23 +49,26 @@ namespace at
 	}
 
 	template <typename HashType>
-	constexpr HashType FNV1a<HashType>::hash(const char* c)
+	template <typename T, typename U>
+	constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, HashType> FNV1a<HashType>::hash(const T* data, size_t size)
 	{
 		auto value = detail::FNV1aData<HashType>::offsetBasis;
+		for (size_t i = 0; i < size; i++)
+		{
+			HashType mask = 0x00FF;
+			HashType offset = 0;
 
-		while (*c != 0)
-			value = (value ^ static_cast<HashType>(*(c++))) * detail::FNV1aData<HashType>::prime;
+			for (size_t b = 0; b < sizeof(T); b++)
+			{
+				const HashType byte = (static_cast<HashType>(data[i]) & mask) >> offset;
 
-		return value;
-	}
+				value = (value ^ byte) * detail::FNV1aData<HashType>::prime;
 
-	template <typename HashType>
-	constexpr HashType FNV1a<HashType>::hash(const uint8_t* data, size_t byteSize)
-	{
-		auto value = detail::FNV1aData<HashType>::offsetBasis;
+				offset += 8;
 
-		for (size_t i = 0; i < byteSize; i++)
-			value = (value ^ static_cast<HashType>(data[i])) * detail::FNV1aData<HashType>::prime;
+				mask = mask << 8;
+			}
+		}
 
 		return value;
 	}
@@ -91,22 +94,30 @@ namespace at
 	}
 
 	template <typename HashFunction>
-	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::hashBytes(const void* data, size_t byteSize)
+	template <typename T, typename U>
+	constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, typename Hasher<HashFunction>::HashType> Hasher<HashFunction>::hash(const T* data, size_t size)
 	{
-		return HashFunction::hash(static_cast<const uint8_t*>(data), byteSize);
+		return HashFunction::hash(data, size);
 	}
 
 	template <typename HashFunction>
-	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::hash(const char* c)
+	template <typename T, typename U>
+	constexpr std::enable_if_t<sizeof(U) && IsChar<T>::value, typename Hasher<HashFunction>::HashType> Hasher<HashFunction>::hash(const T* str)
 	{
-		return HashFunction::hash(c);
+		return hash(str, std::char_traits<T>::length(str));
+	}
+
+	template <typename HashFunction>
+	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::hash(const void* data, size_t byteSize)
+	{
+		return hash(static_cast<const uint8_t*>(data), byteSize);
 	}
 
 	template <typename HashFunction>
 	template <typename T>
 	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::hash(const T& object)
 	{
-		return hashBytes(static_cast<const void*>(&object), sizeof(T));
+		return HashOverload<T>::hash<Hasher<HashFunction>>(object);
 	}
 
 	template <typename HashFunction>
@@ -120,18 +131,27 @@ namespace at
 	constexpr void Hasher<HashFunction>::hashCombine(HashType& seed, const T& value, Rest... rest)
 	{
 		seed ^= hash(value) + detail::HashCombineMagicNumber<HashType>::value + (seed << 6) + (seed >> 2);
-		hashCombine(seed, rest...);
+		hashCombine(seed, std::forward<Rest>(rest)...);
+	}
+
+	template <typename Hasher, typename T>
+	auto hash(const T& object)
+	{
+		return Hasher::hash(static_cast<const void*>(&object), sizeof(T));
+	}
+
+	template <typename HashFunction>
+	template <typename T>
+	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::operator()(const T& object) const
+	{
+		return hash(object);
 	}
 
 	template <typename HashFunction>
 	template <typename ... Args>
-	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::hash(Args... args)
+	constexpr typename Hasher<HashFunction>::HashType Hasher<HashFunction>::operator()(Args... args) const
 	{
-		HashType seed = 0;
-
-		hashCombine(seed, args...);
-
-		return seed;
+		return hash(std::forward<Args>(args)...);
 	}
 }
 

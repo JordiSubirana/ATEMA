@@ -23,14 +23,10 @@
 #define ATEMA_CORE_HASH_HPP
 
 #include <Atema/Core/Config.hpp>
+#include <Atema/Core/Traits.hpp>
 
 #include <utility>
-#include <vector>
-#include <array>
-
-#ifndef ATEMA_HASH_SIZE
-#define ATEMA_HASH_SIZE 32
-#endif
+#include <string>
 
 // Use Hasher::hash to generate the hash
 #define ATEMA_DECLARE_STD_HASH(type) \
@@ -56,51 +52,116 @@
 		{ \
 			std::size_t operator()(const type& object) const \
 			{ \
-				return at::DefaultStdHasher::hash(__VA_ARGS__); \
+				StdHash hash = 0; \
+				at::DefaultStdHasher::hashCombine(hash, __VA_ARGS__); \
+				return hash; \
 			} \
 		}; \
 	}
 
 namespace at
 {
+	// 32-bits length hash type
 	using Hash32 = uint32_t;
+
+	// 64-bits length hash type
 	using Hash64 = uint64_t;
 
-#if ATEMA_HASH_SIZE == 32
+	// Default std hash type
+	using StdHash = size_t;
+
+#if ATEMA_FORCE_HASH32
+	// Default hash used by the engine (forced to Hash32)
+	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
 	using Hash = Hash32;
-#elif ATEMA_HASH_SIZE == 64
+#elif ATEMA_FORCE_HASH64
+	// Default hash used by the engine (forced to Hash64)
+	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
 	using Hash = Hash64;
 #else
-#error Hash size must be 32 or 64
+	// Default hash used by the engine (StdHash)
+	// Can be forced defining ATEMA_FORCE_HASH32 or ATEMA_FORCE_HASH64
+	using Hash = StdHash;
 #endif
 
+	// FNV-1a hash function
 	template <typename HashType>
 	struct FNV1a
 	{
-		static constexpr HashType hash(const char* c);
-
-		static constexpr HashType hash(const uint8_t* data, size_t byteSize);
+		template <typename T, typename U = T>
+		static constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, HashType> hash(const T* data, size_t size);
 	};
 
+	/*
+	Defines the hash behaviour for a given type.
+	The default behaviour is to hash the object bytes.
+	To override this behaviour, specialize this struct as follows :
+	template <>
+	struct HashOverload<MyType>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const MyType& object)
+		{
+			// For example here we are combining 2 members
+			Hasher::HashType hash = 0;
+
+			Hasher::hashCombine(hash, object.myIntMember);
+			Hasher::hashCombine(hash, object.myStrMember);
+			
+			return hash;
+		}
+	};
+	*/
+	template <typename T>
+	struct HashOverload
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const T& object)
+		{
+			return Hasher::hash(static_cast<const void*>(&object), sizeof(T));
+		}
+	};
+
+	// Hasher using a hash function.
+	// Given HashType being an integral type, HashFunction must be a struct defining :
+	//
+	// template <typename T, typename U = T>
+	// static constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, HashType> hash(const T* data, size_t size);
 	template <typename HashFunction>
 	struct Hasher
 	{
-		using HashType = decltype(std::declval<HashFunction>().hash(nullptr));
+		// Return type of HashFunction::hash(const T* data, size_t size)
+		using HashType = decltype(std::declval<HashFunction>().hash(static_cast<const int*>(nullptr), 0));
 
-		static constexpr HashType hashBytes(const void* data, size_t byteSize);
+		// Hash overload for integral C-style arrays
+		template <typename T, typename U = T>
+		static constexpr std::enable_if_t<sizeof(U) && std::is_integral_v<T>, HashType> hash(const T* data, size_t size);
 
-		static constexpr HashType hash(const char* c);
+		// Hash overload for C-style strings
+		template <typename T, typename U = T>
+		static constexpr std::enable_if_t<sizeof(U) && IsChar<T>::value, HashType> hash(const T* str);
 
+		// Hash overload for abstract data, considered as a C-style byte array
+		static constexpr HashType hash(const void* data, size_t byteSize);
+
+		// Hash overload for any object, the hash is generated from hashing the bytes of the object
 		template <typename T>
 		static constexpr HashType hash(const T& object);
 
+		// Fallback for hashCombine
 		static constexpr void hashCombine(HashType& seed);
 
+		// Hashes multiple objects and combine their hash to a seed
 		template <typename T, typename... Rest>
 		static constexpr void hashCombine(HashType& seed, const T& value, Rest... rest);
 
+		// Convenience non-static method to be used for std containers
+		template <typename T>
+		constexpr HashType operator()(const T& object) const;
+
+		// Convenience non-static method
 		template <typename... Args>
-		static constexpr HashType hash(Args... args);
+		constexpr HashType operator()(Args... args) const;
 	};
 
 	template <typename T>
@@ -108,33 +169,35 @@ namespace at
 
 	using DefaultHasher = Hasher<DefaultHashFunction<Hash>>;
 
-	using DefaultStdHasher = Hasher<DefaultHashFunction<std::size_t>>;
+	using DefaultStdHasher = Hasher<DefaultHashFunction<StdHash>>;
 
 	// Hash literal operator for convenience
 	constexpr Hash operator""_hash(const char* str, size_t)
 	{
 		return DefaultHasher::hash(str);
 	}
-}
 
-// Override some std hashes
-namespace std
-{
-	template <typename T>
-	struct hash<vector<T>>
+	// Override some hashes
+
+	// std::string hash overload
+	template<class CharT, class Traits, class Allocator>
+	struct HashOverload<std::basic_string<CharT, Traits, Allocator>>
 	{
-		std::size_t operator()(const vector<T>& object) const
+		template <typename Hasher>
+		static constexpr auto hash(const std::basic_string<CharT, Traits, Allocator>& str)
 		{
-			return at::DefaultStdHasher::hashBytes(object.data(), object.size() * sizeof(T));
+			return Hasher::hash(str.c_str(), str.size());
 		}
 	};
 
-	template <typename T, std::size_t N>
-	struct hash<array<T, N>>
+	// std::string_view hash overload
+	template<class CharT, class Traits>
+	struct HashOverload<std::basic_string_view<CharT, Traits>>
 	{
-		std::size_t operator()(const array<T, N>& object) const
+		template <typename Hasher>
+		static constexpr auto hash(const std::basic_string_view<CharT, Traits>& str)
 		{
-			return at::DefaultStdHasher::hashBytes(object.data(), N * sizeof(T));
+			return Hasher::hash(str.data(), str.size());
 		}
 	};
 }

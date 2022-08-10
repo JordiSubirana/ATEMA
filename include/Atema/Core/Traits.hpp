@@ -22,8 +22,6 @@
 #ifndef ATEMA_CORE_TRAITS_HPP
 #define ATEMA_CORE_TRAITS_HPP
 
-#include <Atema/Core/Config.hpp>
-
 namespace at
 {
 	template <size_t I>
@@ -35,6 +33,36 @@ namespace at
 		}
 
 		static constexpr bool value = getValue();
+	};
+
+	template <typename T>
+	struct IsChar
+	{
+		static constexpr bool value = false;
+	};
+
+	template <>
+	struct IsChar<char>
+	{
+		static constexpr bool value = true;
+	};
+
+	template <>
+	struct IsChar<wchar_t>
+	{
+		static constexpr bool value = true;
+	};
+
+	template <>
+	struct IsChar<char16_t>
+	{
+		static constexpr bool value = true;
+	};
+
+	template <>
+	struct IsChar<char32_t>
+	{
+		static constexpr bool value = true;
 	};
 }
 
