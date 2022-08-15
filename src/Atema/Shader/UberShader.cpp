@@ -47,8 +47,6 @@ Ptr<UberShader> UberShader::createInstance(const std::vector<Option>& options) c
 	// Initialize preprocessor state
 	m_ast->accept(astPreprocessor);
 
-	size_t bufferElementIndex = 0;
-
 	for (auto& option : options)
 	{
 		ATEMA_ASSERT(!option.name.empty(), "Invalid option name");
@@ -77,7 +75,7 @@ Ptr<UberShader> UberShader::createInstance(const std::vector<Option>& options) c
 	return std::make_shared<UberShader>(std::move(sequence));
 }
 
-Ptr<UberShader> UberShader::extractStage(AstShaderStage stage)
+Ptr<UberShader> UberShader::extractStage(AstShaderStage stage) const
 {
 	initializeExtractor();
 
@@ -89,7 +87,7 @@ Ptr<UberShader> UberShader::extractStage(AstShaderStage stage)
 	return std::make_shared<UberShader>(std::move(ast));
 }
 
-const AstReflection& UberShader::getReflection(AstShaderStage stage)
+const AstReflection& UberShader::getReflection(AstShaderStage stage) const
 {
 	// Check if stage reflection was already generated
 	const auto it = m_stageReflections.find(stage);
@@ -110,7 +108,7 @@ const Ptr<SequenceStatement>& UberShader::getAst() const
 	return m_ast;
 }
 
-void UberShader::initializeExtractor()
+void UberShader::initializeExtractor() const
 {
 	if (m_extractorReady)
 		return;

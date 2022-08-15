@@ -49,18 +49,21 @@ namespace at
 		~UberShader();
 
 		Ptr<UberShader> createInstance(const std::vector<Option>& options) const;
-		Ptr<UberShader> extractStage(AstShaderStage stage);
-		const AstReflection& getReflection(AstShaderStage stage);
+		Ptr<UberShader> extractStage(AstShaderStage stage) const;
+		const AstReflection& getReflection(AstShaderStage stage) const;
 
 		const Ptr<SequenceStatement>& getAst() const;
 
 	private:
-		void initializeExtractor();
+		void initializeExtractor() const;
 
 		Ptr<SequenceStatement> m_ast;
-		AstReflector m_astReflector;
-		bool m_extractorReady;
-		std::unordered_map<AstShaderStage, AstReflection> m_stageReflections;
+
+		// The following do not modify the ast in any way, this is just for saving state
+		// So use ugly mutables to keep class methods const
+		mutable AstReflector m_astReflector;
+		mutable bool m_extractorReady;
+		mutable std::unordered_map<AstShaderStage, AstReflection> m_stageReflections;
 	};
 }
 
