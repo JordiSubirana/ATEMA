@@ -33,6 +33,7 @@
 #include <Atema/Core/Hash.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/ResourceManager.hpp>
 #include <Atema/Core/ScopedTimer.hpp>
 #include <Atema/Core/Signal.hpp>
 #include <Atema/Core/SparseSet.hpp>
