@@ -117,7 +117,7 @@ namespace at
 		static constexpr auto hash(const MyType& object)
 		{
 			// For example here we are combining 2 members
-			Hasher::HashType hash = 0;
+			typename Hasher::HashType hash = 0;
 
 			Hasher::hashCombine(hash, object.myIntMember);
 			Hasher::hashCombine(hash, object.myStrMember);
