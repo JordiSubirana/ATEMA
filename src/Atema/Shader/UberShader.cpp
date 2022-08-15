@@ -89,7 +89,7 @@ Ptr<UberShader> UberShader::extractStage(AstShaderStage stage)
 	return std::make_shared<UberShader>(std::move(ast));
 }
 
-AstReflection& UberShader::getReflection(AstShaderStage stage)
+const AstReflection& UberShader::getReflection(AstShaderStage stage)
 {
 	// Check if stage reflection was already generated
 	const auto it = m_stageReflections.find(stage);
