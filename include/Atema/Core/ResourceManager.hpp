@@ -39,12 +39,16 @@ namespace at
 		virtual ~AbstractResourceManager();
 
 		// When a resource is not used for a number of iterations, it is removed
-		// Default value is 0, meaning unused resources will be removed at each call of removeUnused()
+		// Default value is 0, meaning unused resources will be removed at each call of clearUnused()
 		virtual void setMaxUnusedCounter(uint32_t counter) = 0;
 
-		// Update the internal counter of each resource depending if it is in use
+		// Updates the internal counter of each resource depending if it is in use
 		// Then remove unused ones, depending on the max unused counter
-		virtual void removeUnused() = 0;
+		virtual void clearUnused() = 0;
+
+		// Forces the deletion of every resource no matter it is in use or not
+		// If the user owns a resource at this time (saving a Ptr to the resource) it will not be deleted
+		virtual void clear() = 0;
 	};
 
 	// Class offering resource management for a given type T, using ID class as an identifier (defaulted to std::filesystem::path)
@@ -84,12 +88,16 @@ namespace at
 		void setDeleter(const Deleter& deleter);
 
 		// When a resource is not used for a number of iterations, it is removed
-		// Default value is 0, meaning unused resources will be removed at each call of removeUnused()
+		// Default value is 0, meaning unused resources will be removed at each call of clearUnused()
 		void setMaxUnusedCounter(uint32_t counter) override;
 
-		// Update the internal counter of each resource depending if it is in use
+		// Updates the internal counter of each resource depending if it is in use
 		// Then remove unused ones, depending on the max unused counter
-		void removeUnused() override;
+		void clearUnused() override;
+
+		// Forces the deletion of every resource no matter it is in use or not
+		// If the user owns a resource at this time (saving a Ptr to the resource) it will not be deleted
+		void clear();
 
 	private:
 		StdHash getHash(const ID& id) const;

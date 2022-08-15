@@ -103,7 +103,7 @@ namespace at
 	}
 
 	template <typename T, typename ID>
-	void ResourceManager<T, ID>::removeUnused()
+	void ResourceManager<T, ID>::clearUnused()
 	{
 		for (auto it = m_resources.begin(); it != m_resources.end();)
 		{
@@ -131,6 +131,15 @@ namespace at
 				}
 			}
 		}
+	}
+
+	template <typename T, typename ID>
+	void ResourceManager<T, ID>::clear()
+	{
+		for (auto& resourceKV : m_resources)
+			m_deleter(std::move(resourceKV.second.resource));
+
+		m_resources.clear();
 	}
 
 	template <typename T, typename ID>
