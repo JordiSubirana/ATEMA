@@ -99,8 +99,8 @@ namespace
 
 	std::vector<VertexInput> postProcessVertexInput =
 	{
-		{ 0, 0, VertexFormat::RGB32_SFLOAT },
-		{ 0, 1, VertexFormat::RG32_SFLOAT }
+		{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
+		{ 0, 1, VertexInputFormat::RG32_SFLOAT }
 	};
 
 	std::vector<PPVertex> quadVertices =
@@ -273,9 +273,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		pipelineSettings.fragmentShader = fragmentShaders[screenShaderPath.string()];
 		pipelineSettings.descriptorSetLayouts = { m_screenLayout };
 		// Position / TexCoords
-		pipelineSettings.vertexInput.inputs = postProcessVertexInput;
-		pipelineSettings.depth.test = false;
-		pipelineSettings.depth.write = false;
+		pipelineSettings.state.vertexInput.inputs = postProcessVertexInput;
+		pipelineSettings.state.depth.test = false;
+		pipelineSettings.state.depth.write = false;
 
 		m_screenPipeline = GraphicsPipeline::create(pipelineSettings);
 	}
@@ -385,13 +385,13 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		graphicsPipelineSettings.vertexShader = vertexShaders[shadowMapShaderPath.string()];
 		graphicsPipelineSettings.fragmentShader = fragmentShaders[shadowMapShaderPath.string()];
 		graphicsPipelineSettings.descriptorSetLayouts = { m_frameLayout, m_shadowLayout };
-		graphicsPipelineSettings.vertexInput.inputs =
+		graphicsPipelineSettings.state.vertexInput.inputs =
 		{
-			{ 0, 0, VertexFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexFormat::RGB32_SFLOAT },
-			{ 0, 2, VertexFormat::RGB32_SFLOAT },
-			{ 0, 3, VertexFormat::RGB32_SFLOAT },
-			{ 0, 4, VertexFormat::RG32_SFLOAT }
+			{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 4, VertexInputFormat::RG32_SFLOAT }
 		};;
 
 		m_shadowPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
@@ -453,13 +453,13 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		graphicsPipelineSettings.vertexShader = vertexShaders[phongLightingDirectionalShaderPath.string()];
 		graphicsPipelineSettings.fragmentShader = fragmentShaders[phongLightingDirectionalShaderPath.string()];
 		graphicsPipelineSettings.descriptorSetLayouts = { m_gbufferShadowMapLayout, m_phongLayout };
-		graphicsPipelineSettings.vertexInput.inputs = postProcessVertexInput;
-		graphicsPipelineSettings.depth.test = false;
-		graphicsPipelineSettings.depth.write = false;
-		graphicsPipelineSettings.stencil = true;
-		graphicsPipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
-		graphicsPipelineSettings.stencilFront.compareMask = 1;
-		graphicsPipelineSettings.stencilFront.reference = 1;
+		graphicsPipelineSettings.state.vertexInput.inputs = postProcessVertexInput;
+		graphicsPipelineSettings.state.depth.test = false;
+		graphicsPipelineSettings.state.depth.write = false;
+		graphicsPipelineSettings.state.stencil = true;
+		graphicsPipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
+		graphicsPipelineSettings.state.stencilFront.compareMask = 1;
+		graphicsPipelineSettings.state.stencilFront.reference = 1;
 
 		m_phongPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
 	}
@@ -1149,20 +1149,20 @@ void GraphicsSystem::updateMaterialResources()
 		pipelineSettings.vertexShader = materialData.vertexShader;
 		pipelineSettings.fragmentShader = materialData.fragmentShader;
 		pipelineSettings.descriptorSetLayouts = { m_frameLayout, materialData.descriptorSetLayout };
-		pipelineSettings.vertexInput.inputs =
+		pipelineSettings.state.vertexInput.inputs =
 		{
-			{ 0, 0, VertexFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexFormat::RGB32_SFLOAT },
-			{ 0, 2, VertexFormat::RGB32_SFLOAT },
-			{ 0, 3, VertexFormat::RGB32_SFLOAT },
-			{ 0, 4, VertexFormat::RG32_SFLOAT }
+			{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 4, VertexInputFormat::RG32_SFLOAT }
 		};
-		pipelineSettings.stencil = true;
-		pipelineSettings.stencilFront.compareOperation = CompareOperation::Equal;
-		pipelineSettings.stencilFront.writeMask = 1;
-		pipelineSettings.stencilFront.passOperation = StencilOperation::Replace;
-		pipelineSettings.stencilFront.reference = 1;
-		pipelineSettings.rasterization.cullMode = CullMode::None;
+		pipelineSettings.state.stencil = true;
+		pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
+		pipelineSettings.state.stencilFront.writeMask = 1;
+		pipelineSettings.state.stencilFront.passOperation = StencilOperation::Replace;
+		pipelineSettings.state.stencilFront.reference = 1;
+		pipelineSettings.state.rasterization.cullMode = CullMode::None;
 
 		material.pipeline = GraphicsPipeline::create(pipelineSettings);
 		material.descriptorSet = materialData.descriptorSet;
