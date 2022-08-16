@@ -100,7 +100,7 @@ namespace at
 			uint32_t reference = 0;
 		};
 
-		struct Settings
+		struct State
 		{
 			VertexInputState vertexInput;
 			InputAssemblyState inputAssembly;
@@ -111,6 +111,11 @@ namespace at
 			bool stencil = false;
 			StencilState stencilFront;
 			StencilState stencilBack;
+		};
+
+		struct Settings
+		{
+			State state;
 
 			std::vector<Ptr<DescriptorSetLayout>> descriptorSetLayouts;
 			
@@ -122,8 +127,44 @@ namespace at
 
 		static Ptr<GraphicsPipeline> create(const Settings& settings);
 
+		const std::vector<Ptr<DescriptorSetLayout>>& getDescriptorSetLayouts() const;
+
+		const State& getState() const;
+
 	protected:
 		GraphicsPipeline();
+
+	private:
+		std::vector<Ptr<DescriptorSetLayout>> m_descriptorSetLayouts;
+		State m_state;
+	};
+
+	template <>
+	struct HashOverload<GraphicsPipeline::Settings>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const GraphicsPipeline::Settings& settings)
+		{
+			typename Hasher::HashType hash = 0;
+
+			Hasher::hashCombine(hash, Hasher::hash(static_cast<const void*>(settings.state.vertexInput.inputs.data()), settings.state.vertexInput.inputs.size() * sizeof(VertexInput)));
+			Hasher::hashCombine(hash, settings.state.inputAssembly);
+			Hasher::hashCombine(hash, settings.state.rasterization);
+			Hasher::hashCombine(hash, settings.state.multisample);
+			Hasher::hashCombine(hash, settings.state.colorBlend);
+			Hasher::hashCombine(hash, settings.state.depth);
+			Hasher::hashCombine(hash, settings.state.stencil);
+			Hasher::hashCombine(hash, settings.state.stencilFront);
+			Hasher::hashCombine(hash, settings.state.stencilBack);
+
+			for (const auto& descriptorSetLayout : settings.descriptorSetLayouts)
+				Hasher::hashCombine(hash, descriptorSetLayout.get());
+
+			Hasher::hashCombine(hash, settings.vertexShader.get());
+			Hasher::hashCombine(hash, settings.fragmentShader.get());
+
+			return hash;
+		}
 	};
 }
 

@@ -35,6 +35,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	m_fragmentShader(settings.fragmentShader),
 	m_pipelineLayout(VK_NULL_HANDLE)
 {
+	const auto& state = settings.state;
+
 	//-----
 	// Shaders
 	// Assign shader modules to a specific pipeline stage
@@ -80,7 +82,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	// Bindings : spacing between data & per-vertex/per-instance
 	// Attributes : types, binding to load them from, at which offset
 	{
-		auto& inputs = settings.vertexInput.inputs;
+		auto& inputs = state.vertexInput.inputs;
 
 		ATEMA_ASSERT(!inputs.empty(), "Invalid vertex input");
 
@@ -120,8 +122,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	//-----
 	// Input assembly (what kind of geometry)
 	m_inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	m_inputAssembly.topology = Vulkan::getPrimitiveTopology(settings.inputAssembly.topology);
-	m_inputAssembly.primitiveRestartEnable = settings.inputAssembly.primitiveRestart ? VK_TRUE : VK_FALSE;
+	m_inputAssembly.topology = Vulkan::getPrimitiveTopology(state.inputAssembly.topology);
+	m_inputAssembly.primitiveRestartEnable = state.inputAssembly.primitiveRestart ? VK_TRUE : VK_FALSE;
 	m_inputAssembly.flags = 0;
 	m_inputAssembly.pNext = nullptr;
 
@@ -140,7 +142,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	// Takes geometry from vertex shader and create fragments using fragment shaders
 	// Applies depth testing, face culling, scissors test
 	{
-		auto& rasterizerState = settings.rasterization;
+		auto& rasterizerState = state.rasterization;
 
 		m_rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		// We can clamp fragments outside near/far planes to those planes instead of discarding (requires GPU feature)
@@ -163,7 +165,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	//-----
 	// Multisampling (can be used to perform anti-aliasing but requires GPU feature)
 	{
-		auto& multisampleSettings = settings.multisample;
+		auto& multisampleSettings = state.multisample;
 
 		m_multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		m_multisampling.rasterizationSamples = Vulkan::getSamples(multisampleSettings.samples);
@@ -189,13 +191,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	//-----
 	// Color blending (configuration per attached framebuffer)
 	m_colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	m_colorBlendAttachment.blendEnable = settings.colorBlend.enabled ? VK_TRUE : VK_FALSE;
-	m_colorBlendAttachment.srcColorBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.colorSrcFactor);
-	m_colorBlendAttachment.dstColorBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.colorDstFactor);
-	m_colorBlendAttachment.colorBlendOp = Vulkan::getBlendOperation(settings.colorBlend.colorOperation);
-	m_colorBlendAttachment.srcAlphaBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.alphaSrcFactor);
-	m_colorBlendAttachment.dstAlphaBlendFactor = Vulkan::getBlendFactor(settings.colorBlend.alphaDstFactor);
-	m_colorBlendAttachment.alphaBlendOp = Vulkan::getBlendOperation(settings.colorBlend.alphaOperation);
+	m_colorBlendAttachment.blendEnable = state.colorBlend.enabled ? VK_TRUE : VK_FALSE;
+	m_colorBlendAttachment.srcColorBlendFactor = Vulkan::getBlendFactor(state.colorBlend.colorSrcFactor);
+	m_colorBlendAttachment.dstColorBlendFactor = Vulkan::getBlendFactor(state.colorBlend.colorDstFactor);
+	m_colorBlendAttachment.colorBlendOp = Vulkan::getBlendOperation(state.colorBlend.colorOperation);
+	m_colorBlendAttachment.srcAlphaBlendFactor = Vulkan::getBlendFactor(state.colorBlend.alphaSrcFactor);
+	m_colorBlendAttachment.dstAlphaBlendFactor = Vulkan::getBlendFactor(state.colorBlend.alphaDstFactor);
+	m_colorBlendAttachment.alphaBlendOp = Vulkan::getBlendOperation(state.colorBlend.alphaOperation);
 	
 
 	// Color blending (global configuration)
@@ -215,29 +217,29 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	// Enable depth testing (optionnal if we don't use any depth buffer)
 	{
 		m_depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		m_depthStencil.depthTestEnable = settings.depth.test ? VK_TRUE : VK_FALSE;
-		m_depthStencil.depthWriteEnable = settings.depth.write ? VK_TRUE : VK_FALSE;
-		m_depthStencil.depthCompareOp = Vulkan::getCompareOperation(settings.depth.compareOperation);
-		m_depthStencil.depthBoundsTestEnable = settings.depth.boundsTest ? VK_TRUE : VK_FALSE;
-		m_depthStencil.minDepthBounds = settings.depth.boundsMin; // Optional
-		m_depthStencil.maxDepthBounds = settings.depth.boundsMax; // Optional
-		m_depthStencil.stencilTestEnable = settings.stencil ? VK_TRUE : VK_FALSE;
+		m_depthStencil.depthTestEnable = state.depth.test ? VK_TRUE : VK_FALSE;
+		m_depthStencil.depthWriteEnable = state.depth.write ? VK_TRUE : VK_FALSE;
+		m_depthStencil.depthCompareOp = Vulkan::getCompareOperation(state.depth.compareOperation);
+		m_depthStencil.depthBoundsTestEnable = state.depth.boundsTest ? VK_TRUE : VK_FALSE;
+		m_depthStencil.minDepthBounds = state.depth.boundsMin; // Optional
+		m_depthStencil.maxDepthBounds = state.depth.boundsMax; // Optional
+		m_depthStencil.stencilTestEnable = state.stencil ? VK_TRUE : VK_FALSE;
 		m_depthStencil.front = {}; // Optional
-		m_depthStencil.front.failOp = Vulkan::getStencilOperation(settings.stencilFront.failOperation);
-		m_depthStencil.front.passOp = Vulkan::getStencilOperation(settings.stencilFront.passOperation);
-		m_depthStencil.front.depthFailOp = Vulkan::getStencilOperation(settings.stencilFront.depthFailOperation);
-		m_depthStencil.front.compareOp = Vulkan::getCompareOperation(settings.stencilFront.compareOperation);
-		m_depthStencil.front.compareMask = settings.stencilFront.compareMask;
-		m_depthStencil.front.writeMask = settings.stencilFront.writeMask;
-		m_depthStencil.front.reference = settings.stencilFront.reference;
+		m_depthStencil.front.failOp = Vulkan::getStencilOperation(state.stencilFront.failOperation);
+		m_depthStencil.front.passOp = Vulkan::getStencilOperation(state.stencilFront.passOperation);
+		m_depthStencil.front.depthFailOp = Vulkan::getStencilOperation(state.stencilFront.depthFailOperation);
+		m_depthStencil.front.compareOp = Vulkan::getCompareOperation(state.stencilFront.compareOperation);
+		m_depthStencil.front.compareMask = state.stencilFront.compareMask;
+		m_depthStencil.front.writeMask = state.stencilFront.writeMask;
+		m_depthStencil.front.reference = state.stencilFront.reference;
 		m_depthStencil.back = {}; // Optional
-		m_depthStencil.back.failOp = Vulkan::getStencilOperation(settings.stencilBack.failOperation);
-		m_depthStencil.back.passOp = Vulkan::getStencilOperation(settings.stencilBack.passOperation);
-		m_depthStencil.back.depthFailOp = Vulkan::getStencilOperation(settings.stencilBack.depthFailOperation);
-		m_depthStencil.back.compareOp = Vulkan::getCompareOperation(settings.stencilBack.compareOperation);
-		m_depthStencil.back.compareMask = settings.stencilBack.compareMask;
-		m_depthStencil.back.writeMask = settings.stencilBack.writeMask;
-		m_depthStencil.back.reference = settings.stencilBack.reference;
+		m_depthStencil.back.failOp = Vulkan::getStencilOperation(state.stencilBack.failOperation);
+		m_depthStencil.back.passOp = Vulkan::getStencilOperation(state.stencilBack.passOperation);
+		m_depthStencil.back.depthFailOp = Vulkan::getStencilOperation(state.stencilBack.depthFailOperation);
+		m_depthStencil.back.compareOp = Vulkan::getCompareOperation(state.stencilBack.compareOperation);
+		m_depthStencil.back.compareMask = state.stencilBack.compareMask;
+		m_depthStencil.back.writeMask = state.stencilBack.writeMask;
+		m_depthStencil.back.reference = state.stencilBack.reference;
 		m_depthStencil.flags = 0;
 		m_depthStencil.pNext = nullptr;
 	}

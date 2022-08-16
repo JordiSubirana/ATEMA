@@ -34,5 +34,20 @@ GraphicsPipeline::~GraphicsPipeline()
 
 Ptr<GraphicsPipeline> GraphicsPipeline::create(const Settings& settings)
 {
-	return Renderer::instance().createGraphicsPipeline(settings);
+	auto graphicsPipeline = Renderer::instance().createGraphicsPipeline(settings);
+
+	graphicsPipeline->m_descriptorSetLayouts = settings.descriptorSetLayouts;
+	graphicsPipeline->m_state = settings.state;
+
+	return graphicsPipeline;
+}
+
+const std::vector<Ptr<DescriptorSetLayout>>& GraphicsPipeline::getDescriptorSetLayouts() const
+{
+	return m_descriptorSetLayouts;
+}
+
+const GraphicsPipeline::State& GraphicsPipeline::getState() const
+{
+	return m_state;
 }
