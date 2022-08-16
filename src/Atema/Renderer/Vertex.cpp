@@ -20,10 +20,11 @@
 */
 
 #include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Core/Error.hpp>
 
 using namespace at;
 
-VertexInput::VertexInput(uint32_t binding, uint32_t location, VertexFormat format) :
+VertexInput::VertexInput(uint32_t binding, uint32_t location, VertexInputFormat format) :
 	binding(binding),
 	location(location),
 	format(format)
@@ -34,95 +35,95 @@ size_t VertexInput::getByteSize() const
 {
 	switch (format)
 	{
-		case VertexFormat::R8_UINT:
-		case VertexFormat::R8_SINT:
+		case VertexInputFormat::R8_UINT:
+		case VertexInputFormat::R8_SINT:
 		{
 			return 1;
 		}
-		case VertexFormat::RG8_UINT:
-		case VertexFormat::RG8_SINT:
+		case VertexInputFormat::RG8_UINT:
+		case VertexInputFormat::RG8_SINT:
 		{
 			return 2;
 		}
-		case VertexFormat::RGB8_UINT:
-		case VertexFormat::RGB8_SINT:
+		case VertexInputFormat::RGB8_UINT:
+		case VertexInputFormat::RGB8_SINT:
 		{
 			return 3;
 		}
-		case VertexFormat::RGBA8_UINT:
-		case VertexFormat::RGBA8_SINT:
+		case VertexInputFormat::RGBA8_UINT:
+		case VertexInputFormat::RGBA8_SINT:
 		{
 			return 4;
 		}
-		case VertexFormat::R16_UINT:
-		case VertexFormat::R16_SINT:
-		case VertexFormat::R16_SFLOAT:
+		case VertexInputFormat::R16_UINT:
+		case VertexInputFormat::R16_SINT:
+		case VertexInputFormat::R16_SFLOAT:
 		{
 			return 2;
 		}
-		case VertexFormat::RG16_UINT:
-		case VertexFormat::RG16_SINT:
-		case VertexFormat::RG16_SFLOAT:
+		case VertexInputFormat::RG16_UINT:
+		case VertexInputFormat::RG16_SINT:
+		case VertexInputFormat::RG16_SFLOAT:
 		{
 			return 4;
 		}
-		case VertexFormat::RGB16_UINT:
-		case VertexFormat::RGB16_SINT:
-		case VertexFormat::RGB16_SFLOAT:
+		case VertexInputFormat::RGB16_UINT:
+		case VertexInputFormat::RGB16_SINT:
+		case VertexInputFormat::RGB16_SFLOAT:
 		{
 			return 6;
 		}
-		case VertexFormat::RGBA16_UINT:
-		case VertexFormat::RGBA16_SINT:
-		case VertexFormat::RGBA16_SFLOAT:
+		case VertexInputFormat::RGBA16_UINT:
+		case VertexInputFormat::RGBA16_SINT:
+		case VertexInputFormat::RGBA16_SFLOAT:
 		{
 			return 8;
 		}
-		case VertexFormat::R32_UINT:
-		case VertexFormat::R32_SINT:
-		case VertexFormat::R32_SFLOAT:
+		case VertexInputFormat::R32_UINT:
+		case VertexInputFormat::R32_SINT:
+		case VertexInputFormat::R32_SFLOAT:
 		{
 			return 4;
 		}
-		case VertexFormat::RG32_UINT:
-		case VertexFormat::RG32_SINT:
-		case VertexFormat::RG32_SFLOAT:
+		case VertexInputFormat::RG32_UINT:
+		case VertexInputFormat::RG32_SINT:
+		case VertexInputFormat::RG32_SFLOAT:
 		{
 			return 8;
 		}
-		case VertexFormat::RGB32_UINT:
-		case VertexFormat::RGB32_SINT:
-		case VertexFormat::RGB32_SFLOAT:
+		case VertexInputFormat::RGB32_UINT:
+		case VertexInputFormat::RGB32_SINT:
+		case VertexInputFormat::RGB32_SFLOAT:
 		{
 			return 12;
 		}
-		case VertexFormat::RGBA32_UINT:
-		case VertexFormat::RGBA32_SINT:
-		case VertexFormat::RGBA32_SFLOAT:
+		case VertexInputFormat::RGBA32_UINT:
+		case VertexInputFormat::RGBA32_SINT:
+		case VertexInputFormat::RGBA32_SFLOAT:
 		{
 			return 16;
 		}
-		case VertexFormat::R64_UINT:
-		case VertexFormat::R64_SINT:
-		case VertexFormat::R64_SFLOAT:
+		case VertexInputFormat::R64_UINT:
+		case VertexInputFormat::R64_SINT:
+		case VertexInputFormat::R64_SFLOAT:
 		{
 			return 8;
 		}
-		case VertexFormat::RG64_UINT:
-		case VertexFormat::RG64_SINT:
-		case VertexFormat::RG64_SFLOAT:
+		case VertexInputFormat::RG64_UINT:
+		case VertexInputFormat::RG64_SINT:
+		case VertexInputFormat::RG64_SFLOAT:
 		{
 			return 16;
 		}
-		case VertexFormat::RGB64_UINT:
-		case VertexFormat::RGB64_SINT:
-		case VertexFormat::RGB64_SFLOAT:
+		case VertexInputFormat::RGB64_UINT:
+		case VertexInputFormat::RGB64_SINT:
+		case VertexInputFormat::RGB64_SFLOAT:
 		{
 			return 24;
 		}
-		case VertexFormat::RGBA64_UINT:
-		case VertexFormat::RGBA64_SINT:
-		case VertexFormat::RGBA64_SFLOAT:
+		case VertexInputFormat::RGBA64_UINT:
+		case VertexInputFormat::RGBA64_SINT:
+		case VertexInputFormat::RGBA64_SFLOAT:
 		{
 			return 32;
 		}

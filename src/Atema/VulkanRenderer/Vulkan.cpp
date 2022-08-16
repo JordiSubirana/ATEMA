@@ -296,54 +296,54 @@ ImageFormat Vulkan::getFormat(VkFormat format)
 	return ImageFormat::RGBA8_UNORM;
 }
 
-VkFormat Vulkan::getFormat(VertexFormat format)
+VkFormat Vulkan::getFormat(VertexInputFormat format)
 {
 	switch (format)
 	{
-		case VertexFormat::R8_UINT: return VK_FORMAT_R8_UINT;
-		case VertexFormat::R8_SINT: return VK_FORMAT_R8_SINT;
-		case VertexFormat::RG8_UINT: return VK_FORMAT_R8G8_UINT;
-		case VertexFormat::RG8_SINT: return VK_FORMAT_R8G8_SINT;
-		case VertexFormat::RGB8_UINT: return VK_FORMAT_R8G8B8_UINT;
-		case VertexFormat::RGB8_SINT: return VK_FORMAT_R8G8B8_SINT;
-		case VertexFormat::RGBA8_UINT: return VK_FORMAT_R8G8B8A8_UINT;
-		case VertexFormat::RGBA8_SINT: return VK_FORMAT_R8G8B8A8_SINT;
-		case VertexFormat::R16_UINT: return VK_FORMAT_R16_UINT;
-		case VertexFormat::R16_SINT: return VK_FORMAT_R16_SINT;
-		case VertexFormat::R16_SFLOAT: return VK_FORMAT_R16_SFLOAT;
-		case VertexFormat::RG16_UINT: return VK_FORMAT_R16G16_UINT;
-		case VertexFormat::RG16_SINT: return VK_FORMAT_R16G16_SINT;
-		case VertexFormat::RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT;
-		case VertexFormat::RGB16_UINT: return VK_FORMAT_R16G16B16_UINT;
-		case VertexFormat::RGB16_SINT: return VK_FORMAT_R16G16B16_SINT;
-		case VertexFormat::RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT;
-		case VertexFormat::RGBA16_UINT: return VK_FORMAT_R16G16B16A16_UINT;
-		case VertexFormat::RGBA16_SINT: return VK_FORMAT_R16G16B16A16_SINT;
-		case VertexFormat::RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
-		case VertexFormat::R32_UINT: return VK_FORMAT_R32_UINT;
-		case VertexFormat::R32_SINT: return VK_FORMAT_R32_SINT;
-		case VertexFormat::R32_SFLOAT: return VK_FORMAT_R32_SFLOAT;
-		case VertexFormat::RG32_UINT: return VK_FORMAT_R32G32_UINT;
-		case VertexFormat::RG32_SINT: return VK_FORMAT_R32G32_SINT;
-		case VertexFormat::RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT;
-		case VertexFormat::RGB32_UINT: return VK_FORMAT_R32G32B32_UINT;
-		case VertexFormat::RGB32_SINT: return VK_FORMAT_R32G32B32_SINT;
-		case VertexFormat::RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT;
-		case VertexFormat::RGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT;
-		case VertexFormat::RGBA32_SINT: return VK_FORMAT_R32G32B32A32_SINT;
-		case VertexFormat::RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
-		case VertexFormat::R64_UINT: return VK_FORMAT_R64_UINT;
-		case VertexFormat::R64_SINT: return VK_FORMAT_R64_SINT;
-		case VertexFormat::R64_SFLOAT: return VK_FORMAT_R64_SFLOAT;
-		case VertexFormat::RG64_UINT: return VK_FORMAT_R64G64_UINT;
-		case VertexFormat::RG64_SINT: return VK_FORMAT_R64G64_SINT;
-		case VertexFormat::RG64_SFLOAT: return VK_FORMAT_R64G64_SFLOAT;
-		case VertexFormat::RGB64_UINT: return VK_FORMAT_R64G64B64_UINT;
-		case VertexFormat::RGB64_SINT: return VK_FORMAT_R64G64B64_SINT;
-		case VertexFormat::RGB64_SFLOAT: return VK_FORMAT_R64G64B64_SFLOAT;
-		case VertexFormat::RGBA64_UINT: return VK_FORMAT_R64G64B64A64_UINT;
-		case VertexFormat::RGBA64_SINT: return VK_FORMAT_R64G64B64A64_SINT;
-		case VertexFormat::RGBA64_SFLOAT: return VK_FORMAT_R64G64B64A64_SFLOAT;
+		case VertexInputFormat::R8_UINT: return VK_FORMAT_R8_UINT;
+		case VertexInputFormat::R8_SINT: return VK_FORMAT_R8_SINT;
+		case VertexInputFormat::RG8_UINT: return VK_FORMAT_R8G8_UINT;
+		case VertexInputFormat::RG8_SINT: return VK_FORMAT_R8G8_SINT;
+		case VertexInputFormat::RGB8_UINT: return VK_FORMAT_R8G8B8_UINT;
+		case VertexInputFormat::RGB8_SINT: return VK_FORMAT_R8G8B8_SINT;
+		case VertexInputFormat::RGBA8_UINT: return VK_FORMAT_R8G8B8A8_UINT;
+		case VertexInputFormat::RGBA8_SINT: return VK_FORMAT_R8G8B8A8_SINT;
+		case VertexInputFormat::R16_UINT: return VK_FORMAT_R16_UINT;
+		case VertexInputFormat::R16_SINT: return VK_FORMAT_R16_SINT;
+		case VertexInputFormat::R16_SFLOAT: return VK_FORMAT_R16_SFLOAT;
+		case VertexInputFormat::RG16_UINT: return VK_FORMAT_R16G16_UINT;
+		case VertexInputFormat::RG16_SINT: return VK_FORMAT_R16G16_SINT;
+		case VertexInputFormat::RG16_SFLOAT: return VK_FORMAT_R16G16_SFLOAT;
+		case VertexInputFormat::RGB16_UINT: return VK_FORMAT_R16G16B16_UINT;
+		case VertexInputFormat::RGB16_SINT: return VK_FORMAT_R16G16B16_SINT;
+		case VertexInputFormat::RGB16_SFLOAT: return VK_FORMAT_R16G16B16_SFLOAT;
+		case VertexInputFormat::RGBA16_UINT: return VK_FORMAT_R16G16B16A16_UINT;
+		case VertexInputFormat::RGBA16_SINT: return VK_FORMAT_R16G16B16A16_SINT;
+		case VertexInputFormat::RGBA16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
+		case VertexInputFormat::R32_UINT: return VK_FORMAT_R32_UINT;
+		case VertexInputFormat::R32_SINT: return VK_FORMAT_R32_SINT;
+		case VertexInputFormat::R32_SFLOAT: return VK_FORMAT_R32_SFLOAT;
+		case VertexInputFormat::RG32_UINT: return VK_FORMAT_R32G32_UINT;
+		case VertexInputFormat::RG32_SINT: return VK_FORMAT_R32G32_SINT;
+		case VertexInputFormat::RG32_SFLOAT: return VK_FORMAT_R32G32_SFLOAT;
+		case VertexInputFormat::RGB32_UINT: return VK_FORMAT_R32G32B32_UINT;
+		case VertexInputFormat::RGB32_SINT: return VK_FORMAT_R32G32B32_SINT;
+		case VertexInputFormat::RGB32_SFLOAT: return VK_FORMAT_R32G32B32_SFLOAT;
+		case VertexInputFormat::RGBA32_UINT: return VK_FORMAT_R32G32B32A32_UINT;
+		case VertexInputFormat::RGBA32_SINT: return VK_FORMAT_R32G32B32A32_SINT;
+		case VertexInputFormat::RGBA32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
+		case VertexInputFormat::R64_UINT: return VK_FORMAT_R64_UINT;
+		case VertexInputFormat::R64_SINT: return VK_FORMAT_R64_SINT;
+		case VertexInputFormat::R64_SFLOAT: return VK_FORMAT_R64_SFLOAT;
+		case VertexInputFormat::RG64_UINT: return VK_FORMAT_R64G64_UINT;
+		case VertexInputFormat::RG64_SINT: return VK_FORMAT_R64G64_SINT;
+		case VertexInputFormat::RG64_SFLOAT: return VK_FORMAT_R64G64_SFLOAT;
+		case VertexInputFormat::RGB64_UINT: return VK_FORMAT_R64G64B64_UINT;
+		case VertexInputFormat::RGB64_SINT: return VK_FORMAT_R64G64B64_SINT;
+		case VertexInputFormat::RGB64_SFLOAT: return VK_FORMAT_R64G64B64_SFLOAT;
+		case VertexInputFormat::RGBA64_UINT: return VK_FORMAT_R64G64B64A64_UINT;
+		case VertexInputFormat::RGBA64_SINT: return VK_FORMAT_R64G64B64A64_SINT;
+		case VertexInputFormat::RGBA64_SFLOAT: return VK_FORMAT_R64G64B64A64_SFLOAT;
 		default:
 		{
 			ATEMA_ERROR("Invalid vertex attribute format");

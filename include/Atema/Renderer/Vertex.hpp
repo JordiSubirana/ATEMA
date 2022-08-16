@@ -23,14 +23,10 @@
 #define ATEMA_RENDERER_VERTEX_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Math/Vector.hpp>
-
-#include <cstdint> 
-#include <vector>
 
 namespace at
 {
-	enum class VertexFormat
+	enum class VertexInputFormat
 	{
 		R8_UINT,
 		R8_SINT,
@@ -96,13 +92,13 @@ namespace at
 	struct ATEMA_RENDERER_API VertexInput
 	{
 		VertexInput() = delete;
-		VertexInput(uint32_t binding, uint32_t location, VertexFormat format);
+		VertexInput(uint32_t binding, uint32_t location, VertexInputFormat format);
 
 		size_t getByteSize() const;
 
 		uint32_t binding;
 		uint32_t location;
-		VertexFormat format;
+		VertexInputFormat format;
 	};
 }
 
