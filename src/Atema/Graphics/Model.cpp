@@ -19,20 +19,46 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
-
-#include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
 
-#endif
+using namespace at;
+
+Model::Model() :
+	m_aabbValid(false)
+{
+}
+
+void Model::addMesh(const Ptr<Mesh>& mesh)
+{
+	m_meshes.emplace_back(mesh);
+
+	m_aabbValid = false;
+}
+
+const AABBf& Model::updateAABB()
+{
+	m_aabbValid = false;
+
+	return getAABB();
+}
+
+const std::vector<Ptr<Mesh>>& Model::getMeshes() const noexcept
+{
+	return m_meshes;
+}
+
+const AABBf& Model::getAABB() const
+{
+	if (!m_aabbValid)
+	{
+		m_aabb = AABBf();
+
+		for (const auto& mesh : m_meshes)
+			m_aabb.extend(mesh->getAABB());
+
+		m_aabbValid = true;
+	}
+
+	return m_aabb;
+}

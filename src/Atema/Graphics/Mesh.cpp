@@ -19,20 +19,51 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
-
-#include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
 
-#endif
+using namespace at;
+
+Mesh::Mesh(Mesh&& other) noexcept
+{
+	operator=(std::move(other));
+}
+
+void Mesh::setVertexBuffer(const Ptr<VertexBuffer>& buffer)
+{
+	m_vertexBuffer = buffer;
+}
+
+void Mesh::setIndexBuffer(const Ptr<IndexBuffer>& buffer)
+{
+	m_indexBuffer = buffer;
+}
+
+void Mesh::setAABB(const AABBf& aabb)
+{
+	m_aabb = aabb;
+}
+
+const Ptr<VertexBuffer>& Mesh::getVertexBuffer() const noexcept
+{
+	return m_vertexBuffer;
+}
+
+const Ptr<IndexBuffer>& Mesh::getIndexBuffer() const noexcept
+{
+	return m_indexBuffer;
+}
+
+const AABBf& Mesh::getAABB() const noexcept
+{
+	return m_aabb;
+}
+
+Mesh& Mesh::operator=(Mesh&& other) noexcept
+{
+	m_vertexBuffer = std::move(other.m_vertexBuffer);
+	m_indexBuffer = std::move(other.m_indexBuffer);
+
+	m_aabb = std::move(other.m_aabb);
+
+	return *this;
+}

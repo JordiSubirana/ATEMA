@@ -19,20 +19,45 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_MESH_HPP
+#define ATEMA_GRAPHICS_MESH_HPP
 
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Math/AABB.hpp>
+
+namespace at
+{
+	class VertexBuffer;
+	class IndexBuffer;
+
+	class ATEMA_GRAPHICS_API Mesh
+	{
+	public:
+		Mesh() = default;
+		Mesh(const Mesh& other) = default;
+		Mesh(Mesh&& other) noexcept;
+		~Mesh() = default;
+		
+		void setVertexBuffer(const Ptr<VertexBuffer>& vertexBuffer);
+		void setIndexBuffer(const Ptr<IndexBuffer>& indexBuffer);
+		void setAABB(const AABBf& aabb);
+
+		const VertexFormat& getVertexFormat() const noexcept;
+		const Ptr<VertexBuffer>& getVertexBuffer() const noexcept;
+		const Ptr<IndexBuffer>& getIndexBuffer() const noexcept;
+		const AABBf& getAABB() const noexcept;
+
+		Mesh& operator=(const Mesh& other) = default;
+		Mesh& operator=(Mesh&& other) noexcept;
+		
+	private:
+		Ptr<VertexBuffer> m_vertexBuffer;
+		Ptr<IndexBuffer> m_indexBuffer;
+
+		AABBf m_aabb;
+	};
+}
 
 #endif
