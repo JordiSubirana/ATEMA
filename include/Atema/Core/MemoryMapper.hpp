@@ -19,25 +19,43 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_UTILS_HPP
-#define ATEMA_CORE_UTILS_HPP
+#ifndef ATEMA_CORE_MEMORYMAPPER_HPP
+#define ATEMA_CORE_MEMORYMAPPER_HPP
 
 #include <Atema/Core/Config.hpp>
 
 namespace at
 {
-	// Maps (ptr + byteOffset) to a type
-	template <typename T>
-	T& mapMemory(void* ptr, size_t byteOffset);
+	class ATEMA_CORE_API MemoryMapper
+	{
+	public:
+		MemoryMapper();
+		MemoryMapper(void* data, size_t blockByteSize, size_t elementByteOffset = 0);
+		MemoryMapper(const MemoryMapper& other) = default;
+		MemoryMapper(MemoryMapper&& other) noexcept = default;
+		~MemoryMapper() = default;
 
-	// Consider the memory as an array of N blocks with similar structure
-	// Each block :
-	//	- is composed of one or many elements
-	//	- has a byte size of 'blockByteSize'
-	template <typename T>
-	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset = 0);
+		void setData(void* data);
+		void setBlockSize(size_t byteSize);
+		void setElementOffset(size_t byteOffset);
+
+		const void* getData() const noexcept;
+		size_t getBlockSize() const noexcept;
+		size_t getElementOffset() const noexcept;
+
+		template <typename T>
+		T& map(size_t index);
+
+		MemoryMapper& operator=(const MemoryMapper& other) = default;
+		MemoryMapper& operator=(MemoryMapper&& other) noexcept = default;
+
+	private:
+		void* m_data;
+		size_t m_blockByteSize;
+		size_t m_elementByteOffset;
+	};
 }
 
-#include <Atema/Core/Utils.inl>
+#include <Atema/Core/MemoryMapper.inl>
 
 #endif

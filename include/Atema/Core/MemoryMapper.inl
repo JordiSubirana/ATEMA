@@ -19,25 +19,15 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_UTILS_HPP
-#define ATEMA_CORE_UTILS_HPP
-
-#include <Atema/Core/Config.hpp>
+#include <Atema/Core/MemoryMapper.hpp>
+#include <Atema/Core/Utils.hpp>
 
 namespace at
 {
-	// Maps (ptr + byteOffset) to a type
 	template <typename T>
-	T& mapMemory(void* ptr, size_t byteOffset);
-
-	// Consider the memory as an array of N blocks with similar structure
-	// Each block :
-	//	- is composed of one or many elements
-	//	- has a byte size of 'blockByteSize'
-	template <typename T>
-	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset = 0);
+	T& MemoryMapper::map(size_t index)
+	{
+		return mapMemory<T>(m_data, index, m_blockByteSize, m_elementByteOffset);
+	}
 }
 
-#include <Atema/Core/Utils.inl>
-
-#endif

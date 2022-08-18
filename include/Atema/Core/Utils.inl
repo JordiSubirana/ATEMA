@@ -31,6 +31,12 @@ namespace at
 	{
 		return *reinterpret_cast<T*>(static_cast<uint8_t*>(ptr) + byteOffset);
 	}
+
+	template <typename T>
+	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset)
+	{
+		return mapMemory<T>(ptr, blockIndex * blockByteSize + elementByteOffset);
+	}
 }
 
 #endif

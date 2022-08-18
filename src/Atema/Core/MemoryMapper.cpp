@@ -19,25 +19,48 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_CORE_UTILS_HPP
-#define ATEMA_CORE_UTILS_HPP
+#include <Atema/Core/MemoryMapper.hpp>
 
-#include <Atema/Core/Config.hpp>
+using namespace at;
 
-namespace at
+MemoryMapper::MemoryMapper() :
+	MemoryMapper(nullptr, 0, 0)
 {
-	// Maps (ptr + byteOffset) to a type
-	template <typename T>
-	T& mapMemory(void* ptr, size_t byteOffset);
-
-	// Consider the memory as an array of N blocks with similar structure
-	// Each block :
-	//	- is composed of one or many elements
-	//	- has a byte size of 'blockByteSize'
-	template <typename T>
-	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset = 0);
 }
 
-#include <Atema/Core/Utils.inl>
+MemoryMapper::MemoryMapper(void* data, size_t blockByteSize, size_t elementByteOffset) :
+	m_data(data),
+	m_blockByteSize(blockByteSize),
+	m_elementByteOffset(elementByteOffset)
+{
+}
 
-#endif
+void MemoryMapper::setData(void* data)
+{
+	m_data = data;
+}
+
+void MemoryMapper::setBlockSize(size_t byteSize)
+{
+	m_blockByteSize = byteSize;
+}
+
+void MemoryMapper::setElementOffset(size_t byteOffset)
+{
+	m_elementByteOffset = byteOffset;
+}
+
+const void* MemoryMapper::getData() const noexcept
+{
+	return m_data;
+}
+
+size_t MemoryMapper::getBlockSize() const noexcept
+{
+	return m_blockByteSize;
+}
+
+size_t MemoryMapper::getElementOffset() const noexcept
+{
+	return m_elementByteOffset;
+}
