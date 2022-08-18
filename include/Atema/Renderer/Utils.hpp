@@ -19,29 +19,23 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_RENDERER_HPP
-#define ATEMA_GLOBAL_RENDERER_HPP
+#ifndef ATEMA_RENDERER_UTILS_HPP
+#define ATEMA_RENDERER_UTILS_HPP
 
-#include <Atema/Renderer/Buffer.hpp>
-#include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/CommandPool.hpp>
-#include <Atema/Renderer/DepthStencil.hpp>
-#include <Atema/Renderer/DescriptorSet.hpp>
-#include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Fence.hpp>
-#include <Atema/Renderer/Framebuffer.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Image.hpp>
-#include <Atema/Renderer/Renderer.hpp>
-#include <Atema/Renderer/RenderPass.hpp>
-#include <Atema/Renderer/Sampler.hpp>
-#include <Atema/Renderer/Semaphore.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/Utils.hpp>
 #include <Atema/Renderer/VertexInput.hpp>
-#include <Atema/Renderer/Viewport.hpp>
+#include <Atema/Shader/Ast/Type.hpp>
+
+namespace at
+{
+	ATEMA_RENDERER_API VertexInputFormat getVertexFormat(const Type& astVariableType);
+
+	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const Type& astVariableType);
+	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const ArrayType::ComponentType& astVariableType);
+	ATEMA_RENDERER_API uint32_t getDescriptorBindingCount(const Type& astVariableType);
+
+	ATEMA_RENDERER_API size_t getByteSize(IndexType indexType);
+}
 
 #endif
