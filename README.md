@@ -35,13 +35,23 @@ This software aims to be portable and all the modules _should_ (one day) work on
 
 _For now, only Windows is fully supported._
 
-## Install
+## Build & Install
 
 A [xmake](https://xmake.io) system allow you to retrieve all **ATEMA** dependencies and easily build the project. You only need to download xmake from the website, and have a compatible C++17 compiler.
 
-Once this is done, you can generate a project for your favorite IDE either using a command line, or running one of the predefined scripts (for example _build_project_xxx.bat_ on Windows).
+### Generate an IDE project
+You can generate a project for your favorite IDE either using a command line, or running one of the predefined scripts (for example _build_project_xxx.bat_ on Windows).
 
-If you wish to use the command line, open a console in the project folder and run `xmake project -k vs` for Visual Studio. The full list of tools and parameters are available on the xmake website.
+If you wish to use the command line, open a console in the project folder and run `xmake project --kind=vs` for Visual Studio. The full list of tools and parameters are available on the xmake website.
+
+### Build
+If you want to manually compile **ATEMA**, follow those steps :
+* Configure the project if needed (for example `xmake config --mode=release --arch=x64`)
+* Build all the targets `xmake build`
+
+### Install
+Finally, to retrieve **ATEMA**'s install files and dependencies for the current configuration :
+* Install to the desired directory `xmake install --installdir=INSTALLDIR`
 
 ## Examples
 
