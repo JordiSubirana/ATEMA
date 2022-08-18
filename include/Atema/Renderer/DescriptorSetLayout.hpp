@@ -24,6 +24,7 @@
 
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Hash.hpp>
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
 #include <Atema/Renderer/Enums.hpp>
@@ -62,6 +63,22 @@ namespace at
 
 	protected:
 		DescriptorSetLayout();
+	};
+
+	template <>
+	struct HashOverload<DescriptorSetLayout::Settings>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const DescriptorSetLayout::Settings& settings)
+		{
+			// For example here we are combining 2 members
+			typename Hasher::HashType hash = 0;
+
+			Hasher::hashCombine(hash, settings.pageSize);
+			Hasher::hashCombine(hash, Hasher::hash(static_cast<const void*>(settings.bindings.data()), settings.bindings.size() * sizeof(DescriptorSetBinding)));
+
+			return hash;
+		}
 	};
 }
 
