@@ -19,22 +19,25 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_OBJLOADER_HPP
+#define ATEMA_GRAPHICS_OBJLOADER_HPP
 
+#include <Atema/Core/Pointer.hpp>
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
-#include <Atema/Graphics/Loaders/ObjLoader.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
+
+#include <filesystem>
+
+namespace at
+{
+	class VertexFormat;
+	class Model;
+
+	struct ATEMA_GRAPHICS_API ObjLoader
+	{
+		static Ptr<Model> load(const std::filesystem::path& path, const ModelLoader::Settings& settings);
+		static bool isExtensionSupported(const std::filesystem::path& extension);
+	};
+}
 
 #endif
