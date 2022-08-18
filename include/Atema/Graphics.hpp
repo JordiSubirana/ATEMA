@@ -29,5 +29,6 @@
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Graphics/FrameGraphPass.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
+#include <Atema/Graphics/VertexFormat.hpp>
 
 #endif

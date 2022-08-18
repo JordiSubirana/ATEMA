@@ -41,6 +41,32 @@ namespace at
 	};
 
 	ATEMA_DECLARE_FLAGS(TextureUsage);
+
+	enum class VertexComponentType
+	{
+		Position,
+		Color,
+		TexCoords,
+		Normal,
+		Tangent,
+		Bitangent,
+		UserData
+		//TODO: Add skeletal relative components
+	};
+
+	enum class DefaultVertexFormat
+	{
+		Pos2D,
+		Pos2D_Color,
+		Pos2D_TexCoords,
+		Pos3D,
+		Pos3D_Color,
+		Pos3D_Color_Normal,
+		Pos3D_Color_Normal_Tangent_Bitangent,
+		Pos3D_TexCoords,
+		Pos3D_TexCoords_Normal,
+		Pos3D_TexCoords_Normal_Tangent_Bitangent
+	};
 }
 
 #endif
