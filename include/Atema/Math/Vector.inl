@@ -92,12 +92,18 @@ namespace at
 	template <size_t N, typename T>
 	T Vector<N, T>::getNorm() const noexcept
 	{
+		return (static_cast<T>(std::sqrt(getSquaredNorm())));
+	}
+
+	template <size_t N, typename T>
+	T Vector<N, T>::getSquaredNorm() const noexcept
+	{
 		T tmp = static_cast<T>(0);
 
 		for (size_t i = 0; i < N; i++)
 			tmp += this->data[i] * this->data[i];
 
-		return (static_cast<T>(sqrt(tmp)));
+		return tmp;
 	}
 
 	template <size_t N, typename T>
@@ -332,6 +338,12 @@ namespace at
 		this->data = std::move(other.data);
 
 		return *this;
+	}
+
+	template <size_t N, typename T>
+	bool Vector<N, T>::equals(const Vector<N, T>& other, T epsilon) const
+	{
+		return (other - *this).getSquaredNorm() <= epsilon;
 	}
 
 	template <size_t N, typename T>

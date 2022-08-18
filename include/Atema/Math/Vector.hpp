@@ -23,6 +23,7 @@
 #define ATEMA_MATH_VECTOR_HPP
 
 #include <Atema/Core/Hash.hpp>
+#include <Atema/Math/Math.hpp>
 
 #include <array>
 
@@ -79,6 +80,7 @@ namespace at
 
 		Vector<N, T>& normalize() noexcept;
 		T getNorm() const noexcept;
+		T getSquaredNorm() const noexcept;
 		Vector<N, T> getNormalized() const noexcept;
 
 		Vector<N, T> operator +(const Vector<N, T>& arg) const;
@@ -109,6 +111,8 @@ namespace at
 
 		Vector& operator=(const Vector& other);
 		Vector& operator=(Vector&& other) noexcept;
+
+		bool equals(const Vector<N, T>& other, T epsilon = Math::Epsilon<T>) const;
 
 		bool operator==(const Vector<N, T>& other) const;
 		bool operator!=(const Vector<N, T>& other) const;
