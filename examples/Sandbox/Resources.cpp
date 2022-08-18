@@ -22,50 +22,18 @@
 #include "Resources.hpp"
 
 #include <Atema/Renderer/BufferLayout.hpp>
+#include <Atema/Graphics/Loaders/ObjLoader.hpp>
+#include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/VertexFormat.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tinyobjloader/tiny_obj_loader.h>
 
 using namespace at;
 
 namespace
 {
 	const auto materialShaderPath = shaderPath / "GBufferOptions.atsl";
-
-	UPtr<SequenceStatement> initializeMaterialAst()
-	{
-		std::stringstream code;
-
-		// Load code
-		{
-			std::ifstream file(materialShaderPath);
-
-			if (!file.is_open())
-				ATEMA_ERROR("Failed to open file '" + materialShaderPath.string() + "'");
-
-			code << file.rdbuf();
-		}
-
-		// Parse code and create tokens
-		AtslParser parser;
-
-		const auto atslTokens = parser.createTokens(code.str());
-
-		// Convert tokens to AST representation
-		AtslToAstConverter converter;
-
-		return converter.createAst(atslTokens);
-	}
-
-	UberShader& getMaterialUberShader()
-	{
-		static UberShader s_uberShader(initializeMaterialAst());
-
-		return s_uberShader;
-	}
 
 	struct MaterialParameter
 	{
@@ -146,225 +114,13 @@ namespace
 
 ModelData::ModelData(const std::filesystem::path& path)
 {
-	auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
+	const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::Pos3D_TexCoords_Normal_Tangent_Bitangent);
 
-	std::vector<BasicVertex> modelVertices;
-	std::vector<uint32_t> modelIndices;
+	ModelLoader::Settings settings(vertexFormat);
+	settings.flipTexCoords = true;
+	settings.vertexTransformation = Matrix4f::createRotation({ Math::HalfPi<float>, 0.0f, 0.0f });
 
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
-
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str()))
-	{
-		ATEMA_ERROR(warn + err);
-	}
-
-	Matrix4f rotation = Matrix4f::createRotation({Math::HalfPi<float>, 0.0f, 0.0f});
-
-	for (const auto& shape : shapes)
-	{
-		for (const auto& index : shape.mesh.indices)
-		{
-			BasicVertex vertex;
-
-			vertex.position =
-			{
-				attrib.vertices[3 * index.vertex_index + 0],
-				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
-			};
-
-			vertex.texCoords =
-			{
-				attrib.texcoords[2 * index.texcoord_index + 0],
-				attrib.texcoords[2 * index.texcoord_index + 1]
-			};
-
-			vertex.normal =
-			{
-				attrib.normals[3 * index.normal_index + 0],
-				attrib.normals[3 * index.normal_index + 1],
-				attrib.normals[3 * index.normal_index + 2]
-			};
-
-			Vector4f tmp(vertex.position.x, vertex.position.y, vertex.position.z, 1.0f);
-			tmp = rotation * tmp;
-			vertex.position = { tmp.x, tmp.y, tmp.z };
-
-			tmp = { vertex.normal.x, vertex.normal.y, vertex.normal.z, 0.0f };
-			tmp = rotation * tmp;
-			vertex.normal = { tmp.x, tmp.y, tmp.z };
-			vertex.normal.normalize();
-
-			modelIndices.push_back(static_cast<uint32_t>(modelVertices.size()));
-			modelVertices.push_back(vertex);
-
-			aabb.extend(vertex.position);
-		}
-	}
-
-	// Compute tangents / bitangents
-	{
-		std::vector<BasicVertex> newVertices;
-		std::vector<uint32_t> newIndices;
-
-		const auto triangleCount = modelIndices.size() / 3;
-
-		for (size_t triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
-		{
-			const auto firstVertexIndex = triangleIndex * 3;
-
-			auto& v1 = modelVertices[modelIndices[firstVertexIndex]];
-			auto& v2 = modelVertices[modelIndices[firstVertexIndex + 1]];
-			auto& v3 = modelVertices[modelIndices[firstVertexIndex + 2]];
-
-			auto edge1 = v2.position - v1.position;
-			auto edge2 = v3.position - v1.position;
-
-			auto deltaUV1 = v2.texCoords - v1.texCoords;
-			auto deltaUV2 = v3.texCoords - v1.texCoords;
-
-			auto det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
-
-			if (false && det < Math::Epsilon<float>)
-			{
-				deltaUV1 = { 1.0f, 0.0f };
-				deltaUV2 = { 0.0f, 1.0f };
-			}
-
-			Matrix3x2f edgeMatrix;
-			edgeMatrix[0] = { edge1.x, edge2.x };
-			edgeMatrix[1] = { edge1.y, edge2.y };
-			edgeMatrix[2] = { edge1.z, edge2.z };
-
-			Matrix2f deltaUVMatrix;
-			deltaUVMatrix[0] = { deltaUV1.x, deltaUV2.x };
-			deltaUVMatrix[1] = { deltaUV1.y, deltaUV2.y };
-
-			auto tbMatrix = deltaUVMatrix.inverse() * edgeMatrix;
-
-			Vector3f tangent = { tbMatrix[0].x, tbMatrix[1].x, tbMatrix[2].x };
-			Vector3f bitangent = { tbMatrix[0].y, tbMatrix[1].y, tbMatrix[2].y };
-
-			tangent.normalize();
-			bitangent.normalize();
-
-			if (tangent.getNorm() < 0.1f || bitangent.getNorm() < 0.1f)
-				continue;
-
-			v1.tangent = tangent;
-			v1.bitangent = bitangent;
-
-			v2.tangent = tangent;
-			v2.bitangent = bitangent;
-
-			v3.tangent = tangent;
-			v3.bitangent = bitangent;
-
-			// Flip vertical component of texcoord
-			v1.texCoords.y = 1.0f - v1.texCoords.y;
-			v2.texCoords.y = 1.0f - v2.texCoords.y;
-			v3.texCoords.y = 1.0f - v3.texCoords.y;
-
-			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
-			newVertices.emplace_back(v1);
-			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
-			newVertices.emplace_back(v2);
-			newIndices.emplace_back(static_cast<uint32_t>(newVertices.size()));
-			newVertices.emplace_back(v3);
-		}
-
-		std::swap(modelVertices, newVertices);
-		std::swap(modelIndices, newIndices);
-	}
-
-	// Remove duplicates
-	{
-		std::unordered_map<BasicVertex, uint32_t> uniqueVertices{};
-
-		std::vector<BasicVertex> vertices;
-		std::vector<uint32_t> indices;
-
-		for (auto& vertex : modelVertices)
-		{
-			if (uniqueVertices.count(vertex) == 0)
-			{
-				const auto vertexIndex = static_cast<uint32_t>(vertices.size());
-
-				indices.push_back(vertexIndex);
-				vertices.push_back(vertex);
-
-				uniqueVertices[vertex] = vertexIndex;
-			}
-			else
-			{
-				indices.push_back(uniqueVertices[vertex]);
-			}
-		}
-
-		std::swap(vertices, modelVertices);
-		std::swap(indices, modelIndices);
-	}
-
-	// Create vertex buffer
-	{
-		// Fill staging buffer
-		size_t bufferSize = sizeof(modelVertices[0]) * modelVertices.size();
-
-		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
-
-		auto bufferData = stagingBuffer->map();
-
-		memcpy(bufferData, static_cast<void*>(modelVertices.data()), static_cast<size_t>(bufferSize));
-
-		stagingBuffer->unmap();
-
-		// Create vertex buffer
-		vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
-
-		// Copy staging buffer to vertex buffer
-		auto commandBuffer = commandPool->createBuffer({ true });
-
-		commandBuffer->begin();
-
-		commandBuffer->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-		commandBuffer->end();
-
-		Renderer::instance().submitAndWait({ commandBuffer });
-	}
-
-	// Create index buffer
-	{
-		// Fill staging buffer
-		size_t bufferSize = sizeof(modelIndices[0]) * modelIndices.size();
-
-		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
-
-		auto bufferData = stagingBuffer->map();
-
-		memcpy(bufferData, static_cast<void*>(modelIndices.data()), static_cast<size_t>(bufferSize));
-
-		stagingBuffer->unmap();
-
-		// Create vertex buffer
-		indexBuffer = Buffer::create({ BufferUsage::Index, bufferSize });
-
-		// Copy staging buffer to index buffer
-		auto commandBuffer = commandPool->createBuffer({ true });
-
-		commandBuffer->begin();
-
-		commandBuffer->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-		commandBuffer->end();
-
-		Renderer::instance().submitAndWait({ commandBuffer });
-	}
-
-	indexCount = static_cast<uint32_t>(modelIndices.size());
+	model = ObjLoader::load(path, settings);
 }
 
 MaterialData::MaterialData(const std::filesystem::path& path, const std::string& extension)
@@ -433,7 +189,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 			auto textureMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
 			// Fill staging buffer
-			auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, imageSize, true });
+			auto stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, imageSize });
 
 			auto bufferData = stagingBuffer->map();
 
@@ -498,9 +254,8 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment);
 
 		Buffer::Settings bufferSettings;
-		bufferSettings.usage = BufferUsage::Uniform;
+		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 		bufferSettings.byteSize = bufferLayout.getSize();
-		bufferSettings.mappable = true;
 
 		uniformBuffer = Buffer::create(bufferSettings);
 	}
@@ -526,7 +281,6 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 
 	// Initialize AST
 	std::vector<UberShader::Option> shaderOptions;
-	auto& material = getMaterialUberShader();
 
 	size_t bufferElementIndex = 0;
 
@@ -549,17 +303,8 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	if (uniformBuffer)
 		uniformBuffer->unmap();
 
-	auto materialInstance = material.createInstance(shaderOptions);
+	auto& graphics = Graphics::instance();
 
-	Shader::Settings shaderSettings;
-	shaderSettings.shaderLanguage = ShaderLanguage::Ast;
-	shaderSettings.shaderDataSize = 1;
-
-	auto vertexShaderAst = materialInstance->extractStage(AstShaderStage::Vertex)->getAst();
-	shaderSettings.shaderData = vertexShaderAst.get();
-	vertexShader = Shader::create(shaderSettings);
-
-	auto fragmentShaderAst = materialInstance->extractStage(AstShaderStage::Fragment)->getAst();
-	shaderSettings.shaderData = fragmentShaderAst.get();
-	fragmentShader = Shader::create(shaderSettings);
+	vertexShader = graphics.getShader(*graphics.getUberShader(materialShaderPath, AstShaderStage::Vertex, shaderOptions));
+	fragmentShader = graphics.getShader(*graphics.getUberShader(materialShaderPath, AstShaderStage::Fragment, shaderOptions));
 }

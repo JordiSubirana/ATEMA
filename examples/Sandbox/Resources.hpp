@@ -23,7 +23,7 @@
 #define ATEMA_SANDBOX_RESOURCES_HPP
 
 #include <Atema/Atema.hpp>
-#include <Atema/Math/AABB.hpp>
+#include <Atema/Graphics/Model.hpp>
 
 #include <filesystem>
 
@@ -75,32 +75,11 @@ inline at::Vector2f toCartesian(const at::Vector2f& polar)
 	return value;
 }
 
-struct BasicVertex
-{
-	at::Vector3f position;
-	at::Vector3f normal;
-	at::Vector3f tangent;
-	at::Vector3f bitangent;
-	at::Vector2f texCoords;
-
-	bool operator==(const BasicVertex& other) const
-	{
-		return position == other.position && normal == other.normal && tangent == other.tangent && bitangent == other.bitangent && texCoords == other.texCoords;
-	}
-};
-
-ATEMA_DECLARE_STD_HASH(BasicVertex);
-
 struct ModelData
 {
-	ModelData() = delete;
 	ModelData(const std::filesystem::path& path);
 
-	at::Ptr<at::Buffer> vertexBuffer;
-	at::Ptr<at::Buffer> indexBuffer;
-	uint32_t indexCount = 0;
-
-	at::AABBf aabb;
+	at::Ptr<at::Model> model;
 };
 
 struct MaterialData

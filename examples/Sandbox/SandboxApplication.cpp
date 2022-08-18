@@ -22,8 +22,9 @@
 #include "SandboxApplication.hpp"
 
 #include <Atema/Core/Variant.hpp>
-#include <Atema/Shader.hpp>
 #include <Atema/Core/Library.hpp>
+#include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Renderer/RenderWindow.hpp>
 
 #include "Components/GraphicsComponent.hpp"
@@ -52,12 +53,12 @@ namespace
 		"GraphicsSystem"
 	};
 
-	std::vector<BasicVertex> planeVertices =
+	std::vector<ModelLoader::StaticVertex> planeVertices =
 	{
-		{{ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 0.0f, 0.0f }},
-		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 0.0f, 1.0f }},
-		{{ +1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 1.0f, 0.0f }},
-		{{ +1.0f, +1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}, { 1.0f, 1.0f }}
+		{{ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}},
+		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}},
+		{{ +1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}},
+		{{ +1.0f, +1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f}, { 0.0f, 1.0f, 0.0f}}
 	};
 
 	std::vector<uint32_t> planeIndices =
@@ -66,7 +67,7 @@ namespace
 		1, 2, 3
 	};
 
-	Ptr<Buffer> createPlaneVertices(Ptr<CommandPool> commandPool, const Vector3f& center, const Vector2f& size)
+	Ptr<Model> createPlaneModel(const Vector3f& center, const Vector2f& size)
 	{
 		auto vertices = planeVertices;
 
@@ -83,64 +84,16 @@ namespace
 			vertex.texCoords.y *= size.y;
 		}
 
-		// Fill staging buffer
-		size_t bufferSize = sizeof(vertices[0]) * vertices.size();
+		const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::Pos3D_TexCoords_Normal_Tangent_Bitangent);
 
-		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+		ModelLoader::Settings settings(vertexFormat);
 
-		auto bufferData = stagingBuffer->map();
+		auto mesh = ModelLoader::loadMesh(vertices, planeIndices, settings);
 
-		memcpy(bufferData, static_cast<void*>(vertices.data()), static_cast<size_t>(bufferSize));
+		auto model = std::make_shared<Model>();
+		model->addMesh(mesh);
 
-		stagingBuffer->unmap();
-
-		// Create vertex buffer
-		auto vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
-
-		// Copy staging buffer to vertex buffer
-		auto commandBuffer = commandPool->createBuffer({ true });
-
-		commandBuffer->begin();
-
-		commandBuffer->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-		commandBuffer->end();
-
-		Renderer::instance().submitAndWait({ commandBuffer });
-
-		return vertexBuffer;
-	}
-
-	Ptr<Buffer> createPlaneIndices(Ptr<CommandPool> commandPool)
-	{
-		const auto& indices = planeIndices;
-
-		// Fill staging buffer
-		size_t bufferSize = sizeof(indices[0]) * indices.size();
-
-		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
-
-		auto bufferData = stagingBuffer->map();
-
-		memcpy(bufferData, indices.data(), bufferSize);
-
-		stagingBuffer->unmap();
-
-		// Create vertex buffer
-		auto indexBuffer = Buffer::create({ BufferUsage::Index, bufferSize });
-
-		// Copy staging buffer to vertex buffer
-		auto commandBuffer = commandPool->createBuffer({ true });
-
-		commandBuffer->begin();
-
-		commandBuffer->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
-
-		commandBuffer->end();
-
-		Renderer::instance().submitAndWait({ commandBuffer });
-
-		return indexBuffer;
+		return model;
 	}
 
 	constexpr size_t getObjectRadius(size_t row, size_t col)
@@ -346,15 +299,9 @@ void SandboxApplication::createScene()
 	// Create ground
 	{
 		// Resources
-		auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
-
 		auto materialData = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
 
 		const Vector2f planeSize(1000.0f, 1000.0f);
-
-		auto vertexBuffer = createPlaneVertices(commandPool, Vector3f(), planeSize);
-
-		auto indexBuffer = createPlaneIndices(commandPool);
 
 		// Entity
 		auto entity = m_entityManager.createEntity();
@@ -367,12 +314,8 @@ void SandboxApplication::createScene()
 		// Graphics component
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-		graphics.vertexBuffer = vertexBuffer;
-		graphics.indexBuffer = indexBuffer;
-		graphics.indexCount = static_cast<uint32_t>(planeIndices.size());
+		graphics.model = createPlaneModel({ 0, 0, 0 }, planeSize);
 		graphics.material = materialData;
-		graphics.aabb.min = { -planeSize.x / 2.0f, -planeSize.y / 2.0f, 0.0f };
-		graphics.aabb.max = { +planeSize.x / 2.0f, +planeSize.y / 2.0f, 0.0f };
 	}
 }
 
@@ -446,11 +389,8 @@ void SandboxApplication::updateScene()
 				// Graphics component
 				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-				graphics.vertexBuffer = m_modelData->vertexBuffer;
-				graphics.indexBuffer = m_modelData->indexBuffer;
-				graphics.indexCount = m_modelData->indexCount;
+				graphics.model = m_modelData->model;
 				graphics.material = m_materialData;
-				graphics.aabb = m_modelData->aabb;
 
 				// Transform component
 				m_entityManager.createComponent<Transform>(entity);
@@ -466,7 +406,7 @@ void SandboxApplication::updateScene()
 		auto& sceneAABB = Scene::instance().getAABB();
 		sceneAABB = AABBf();
 
-		auto aabbSize = m_modelData->aabb.getSize();
+		auto aabbSize = m_modelData->model->getAABB().getSize();
 		aabbSize.z = 0.0f;
 		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
 		const auto origin = -radius * (static_cast<float>(newObjectRows) / 2.0f);
@@ -493,7 +433,7 @@ void SandboxApplication::updateScene()
 				transform.setTranslation(position);
 
 				// Update Scene aabb
-				sceneAABB.extend(transform.getMatrix() * graphics.aabb);
+				sceneAABB.extend(transform.getMatrix() * graphics.model->getAABB());
 
 				// Velocity component
 				auto& velocity = m_entityManager.getComponent<VelocityComponent>(entity);

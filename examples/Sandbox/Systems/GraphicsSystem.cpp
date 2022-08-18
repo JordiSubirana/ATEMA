@@ -24,6 +24,10 @@
 #include <Atema/Core/Utils.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
+#include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/IndexBuffer.hpp>
+#include <Atema/Graphics/Mesh.hpp>
+#include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
@@ -132,7 +136,7 @@ namespace
 		// Fill staging buffer
 		size_t bufferSize = sizeof(vertices[0]) * vertices.size();
 
-		auto stagingBuffer = Buffer::create({ BufferUsage::Transfer, bufferSize, true });
+		auto stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, bufferSize });
 
 		auto bufferData = stagingBuffer->map();
 
@@ -141,7 +145,7 @@ namespace
 		stagingBuffer->unmap();
 
 		// Create vertex buffer
-		auto vertexBuffer = Buffer::create({ BufferUsage::Vertex, bufferSize });
+		auto vertexBuffer = Buffer::create({ BufferUsage::Vertex | BufferUsage::TransferDst, bufferSize });
 
 		// Copy staging buffer to vertex buffer
 		auto commandBuffer = commandPool->createBuffer({ true });
@@ -168,11 +172,14 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
-	translateShaders();
+	//translateShaders();
 
 	auto& renderer = Renderer::instance();
 
 	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
+
+	// Remove unused resources if they are not used during 3 cycles (arbitrary)
+	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(maxFramesInFlight) * 3);
 
 	//m_depthFormat = renderWindow->getDepthFormat();
 	m_depthFormat = ImageFormat::D32F_S8U;
@@ -330,11 +337,11 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	for (auto& frameData : m_frameDatas)
 	{
 		// Frame uniform buffers
-		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform, frameLayout.getSize(), true });
+		frameData.frameUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, frameLayout.getSize() });
 
 		// Frame object uniform buffers
 		frameData.objectCount = 1;
-		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(1 * m_dynamicObjectBufferOffset), true });
+		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(1 * m_dynamicObjectBufferOffset) });
 
 		// Add descriptor set
 		frameData.descriptorSet = m_frameLayout->createSet();
@@ -354,9 +361,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
 
 		Buffer::Settings bufferSettings;
-		bufferSettings.usage = BufferUsage::Uniform;
+		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 		bufferSettings.byteSize = shadowLayout.getSize();
-		bufferSettings.mappable = true;
 
 		for (auto& frameData : m_frameDatas)
 			frameData.shadowBuffer = Buffer::create(bufferSettings);
@@ -428,9 +434,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		phongLayout.add(BufferElementType::Float);
 
 		Buffer::Settings bufferSettings;
-		bufferSettings.usage = BufferUsage::Uniform;
+		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 		bufferSettings.byteSize = phongLayout.getSize();
-		bufferSettings.mappable = true;
 
 		for (auto& frameData : m_frameDatas)
 			frameData.phongBuffer = Buffer::create(bufferSettings);
@@ -474,6 +479,8 @@ GraphicsSystem::~GraphicsSystem()
 {
 	Renderer::instance().waitForIdle();
 
+	Graphics::instance().clear();
+
 	// Rendering resources
 	m_ppLayout.reset();
 
@@ -511,6 +518,9 @@ void GraphicsSystem::update(TimeStep timeStep)
 
 	// Update total time
 	m_totalTime += timeStep.getSeconds();
+
+	// Clear resources that have been unused for too long
+	Graphics::instance().clearUnused();
 }
 
 void GraphicsSystem::onEvent(Event& event)
@@ -778,13 +788,19 @@ void GraphicsSystem::createFrameGraph()
 									currentMaterialID = materialID;
 								}
 
-								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
-
-								commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
-
 								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
 
-								commandBuffer->drawIndexed(graphics.indexCount);
+								for (const auto& mesh : graphics.model->getMeshes())
+								{
+									const auto& vertexBuffer = mesh->getVertexBuffer();
+									const auto& indexBuffer = mesh->getIndexBuffer();
+
+									commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+
+									commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
+
+									commandBuffer->drawIndexed(indexBuffer->getSize());
+								}
 
 								i++;
 							}
@@ -866,13 +882,19 @@ void GraphicsSystem::createFrameGraph()
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
 
-								commandBuffer->bindVertexBuffer(graphics.vertexBuffer, 0);
-
-								commandBuffer->bindIndexBuffer(graphics.indexBuffer, IndexType::U32);
-
 								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
 
-								commandBuffer->drawIndexed(graphics.indexCount);
+								for (const auto& mesh : graphics.model->getMeshes())
+								{
+									const auto& vertexBuffer = mesh->getVertexBuffer();
+									const auto& indexBuffer = mesh->getIndexBuffer();
+
+									commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+
+									commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
+
+									commandBuffer->drawIndexed(indexBuffer->getSize());
+								}
 
 								i++;
 							}
@@ -1152,10 +1174,10 @@ void GraphicsSystem::updateMaterialResources()
 		pipelineSettings.state.vertexInput.inputs =
 		{
 			{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexInputFormat::RGB32_SFLOAT },
+			{ 0, 1, VertexInputFormat::RG32_SFLOAT },
 			{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
 			{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
-			{ 0, 4, VertexInputFormat::RG32_SFLOAT }
+			{ 0, 4, VertexInputFormat::RGB32_SFLOAT }
 		};
 		pipelineSettings.state.stencil = true;
 		pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
@@ -1233,7 +1255,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	{
 		// Frame object uniform buffers
 		frameData.objectCount = entities.size();
-		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset), true });
+		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset) });
 
 		// Update descriptor set
 		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, m_elementByteSize);

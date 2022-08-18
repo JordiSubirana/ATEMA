@@ -29,13 +29,9 @@
 
 struct GraphicsComponent
 {
-	at::Ptr<at::Buffer> vertexBuffer;
-	at::Ptr<at::Buffer> indexBuffer;
-	uint32_t indexCount = 0;
+	at::Ptr<at::Model> model;
 	
 	at::Ptr<MaterialData> material;
-	
-	at::AABBf aabb;
 };
 
 #endif

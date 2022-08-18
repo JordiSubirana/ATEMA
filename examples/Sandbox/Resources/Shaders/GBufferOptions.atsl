@@ -85,10 +85,10 @@ external
 input
 {
 	[location(0)] vec3f inPosition;
-	[location(1)] vec3f inNormal;
-	[location(2)] vec3f inTangent;
-	[location(3)] vec3f inBitangent;
-	[location(4)] vec2f inTexCoords;
+	[location(1)] vec2f inTexCoords;
+	[location(2)] vec3f inNormal;
+	[location(3)] vec3f inTangent;
+	[location(4)] vec3f inBitangent;
 }
 
 [stage(vertex)]

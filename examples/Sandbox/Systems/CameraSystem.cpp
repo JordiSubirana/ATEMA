@@ -55,9 +55,9 @@ void CameraSystem::update(TimeStep timeStep)
 			auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
 
 			// Don't consider the ground
-			if (graphics.aabb.getSize().z > 0.1f)
+			if (graphics.model->getAABB().getSize().z > 0.1f)
 			{
-				objectAABB = graphics.aabb;
+				objectAABB = graphics.model->getAABB();
 				break;
 			}
 		}
