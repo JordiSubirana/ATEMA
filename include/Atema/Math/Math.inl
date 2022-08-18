@@ -23,6 +23,7 @@
 #define ATEMA_MATH_MATH_INL
 
 #include <Atema/Math/Math.hpp>
+#include <Atema/Core/Error.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -34,6 +35,9 @@ namespace at
 		template <typename T>
 		constexpr bool equals(T a, T b, T epsilon)
 		{
+			if constexpr (std::is_signed_v<T>)
+				return std::abs(a - b) <= epsilon;
+
 			if (a < b)
 				std::swap(a, b);
 
