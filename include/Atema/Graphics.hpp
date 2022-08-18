@@ -29,6 +29,7 @@
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Graphics/FrameGraphPass.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
+#include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
