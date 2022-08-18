@@ -40,7 +40,7 @@
 #include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Renderer/VertexInput.hpp>
 #include <Atema/Renderer/Viewport.hpp>
 
 #endif

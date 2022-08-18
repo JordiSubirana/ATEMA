@@ -26,7 +26,7 @@
 #include <Atema/Core/Error.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Renderer/Enums.hpp>
-#include <Atema/Renderer/Vertex.hpp>
+#include <Atema/Renderer/VertexInput.hpp>
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vk_platform.h>

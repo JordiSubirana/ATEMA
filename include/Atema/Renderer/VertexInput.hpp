@@ -91,10 +91,23 @@ namespace at
 
 	struct ATEMA_RENDERER_API VertexInput
 	{
-		VertexInput() = delete;
+		VertexInput();
+		VertexInput(const VertexInput& other) = default;
 		VertexInput(uint32_t binding, uint32_t location, VertexInputFormat format);
 
+		VertexInput& operator=(const VertexInput& other) = default;
+
+		// Byte size of the VertexInputFormat
 		size_t getByteSize() const;
+
+		// 1/2/3/4 depending on the VertexInputFormat
+		size_t getElementSize() const;
+
+		// Byte size of one element
+		size_t getElementByteSize() const;
+
+		// Checks if the elements are floating points
+		bool isFloatingPoint() const;
 
 		uint32_t binding;
 		uint32_t location;
