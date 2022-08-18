@@ -128,7 +128,7 @@ namespace at
 
 		static VkAccessFlags getMemoryAccesses(Flags<MemoryAccess> value);
 
-		static VkBufferUsageFlags getBufferUsages(BufferUsage value);
+		static VkBufferUsageFlags getBufferUsages(Flags<BufferUsage> value);
 
 		static VkMemoryPropertyFlags getMemoryProperties(bool mappable);
 

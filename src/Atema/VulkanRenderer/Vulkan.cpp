@@ -833,25 +833,26 @@ VkAccessFlags Vulkan::getMemoryAccesses(Flags<MemoryAccess> value)
 	return flags;
 }
 
-VkBufferUsageFlags Vulkan::getBufferUsages(BufferUsage value)
+VkBufferUsageFlags Vulkan::getBufferUsages(Flags<BufferUsage> value)
 {
-	switch (value)
-	{
-		case BufferUsage::Vertex:
-			return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		case BufferUsage::Index:
-			return VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		case BufferUsage::Uniform:
-			return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		case BufferUsage::Transfer:
-			return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-		default:
-		{
-			ATEMA_ERROR("Invalid buffer usage");
-		}
-	}
+	VkBufferUsageFlags flags = 0;
 
-	return 0;
+	if (value & BufferUsage::Vertex)
+		flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+	if (value & BufferUsage::Index)
+		flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+	if (value & BufferUsage::Uniform)
+		flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+	if (value & BufferUsage::TransferSrc)
+		flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	if (value & BufferUsage::TransferDst)
+		flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+	return flags;
 }
 
 VkMemoryPropertyFlags Vulkan::getMemoryProperties(bool mappable)

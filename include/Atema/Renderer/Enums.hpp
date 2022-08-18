@@ -427,11 +427,21 @@ namespace at
 
 	enum class BufferUsage
 	{
-		Vertex,
-		Index,
-		Uniform,
-		Transfer
+		// The buffer can be bound as a vertex buffer
+		Vertex		= 1 << 0,
+		// The buffer can be bound as an index buffer
+		Index		= 1 << 1,
+		// The buffer can be bound as an uniform buffer
+		Uniform		= 1 << 2,
+		// The buffer can be used as a transfer source
+		TransferSrc	= 1 << 3,
+		// The buffer can be used as a transfer destination
+		TransferDst	= 1 << 4,
+		// The buffer can be mapped
+		Map			= 1 << 5
 	};
+
+	ATEMA_DECLARE_FLAGS(BufferUsage);
 
 	enum class BufferElementType
 	{

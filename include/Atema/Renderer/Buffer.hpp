@@ -34,9 +34,8 @@ namespace at
 	public:
 		struct Settings
 		{
-			BufferUsage usage = BufferUsage::Vertex;
+			Flags<BufferUsage> usages;
 			size_t byteSize = 0;
-			bool mappable = false;
 		};
 
 		virtual ~Buffer();
@@ -45,9 +44,9 @@ namespace at
 
 		virtual size_t getByteSize() const = 0;
 
-		// For mappable buffers only
+		// Requires BufferUsage::Map
 		virtual void* map(size_t byteOffset = 0, size_t byteSize = 0) = 0;
-		// For mappable buffers only
+		// Requires BufferUsage::Map
 		virtual void unmap() = 0;
 
 	protected:

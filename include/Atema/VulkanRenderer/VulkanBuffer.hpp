@@ -46,7 +46,6 @@ namespace at
 		const VulkanDevice& m_device;
 		VkBuffer m_buffer;
 		VmaAllocation m_allocation;
-		BufferUsage m_usage;
 		bool m_mappable;
 		void* m_mappedData;
 		size_t m_byteSize;

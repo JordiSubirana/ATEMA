@@ -31,8 +31,7 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& s
 	m_device(device),
 	m_buffer(VK_NULL_HANDLE),
 	m_allocation(VK_NULL_HANDLE),
-	m_usage(settings.usage),
-	m_mappable(settings.mappable),
+	m_mappable(settings.usages & BufferUsage::Map),
 	m_mappedData(nullptr),
 	m_byteSize(settings.byteSize)
 {
@@ -41,7 +40,7 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& s
 	VkBufferCreateInfo bufferCreateInfo{};
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferCreateInfo.size = static_cast<VkDeviceSize>(settings.byteSize);
-	bufferCreateInfo.usage = Vulkan::getBufferUsages(settings.usage);
+	bufferCreateInfo.usage = Vulkan::getBufferUsages(settings.usages);
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	VmaAllocationCreateInfo allocCreateInfo = {};
@@ -50,12 +49,12 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& s
 	VmaAllocationInfo allocInfo;
 
 	// Persistent mapped buffer
-	if (settings.mappable)
+	if (m_mappable)
 		allocCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
 	ATEMA_VK_CHECK(vmaCreateBuffer(m_device.getVmaAllocator(), &bufferCreateInfo, &allocCreateInfo, &m_buffer, &m_allocation, &allocInfo));
 
-	if (settings.mappable)
+	if (m_mappable)
 		m_mappedData = allocInfo.pMappedData;
 }
 
@@ -76,7 +75,7 @@ size_t VulkanBuffer::getByteSize() const
 
 void* VulkanBuffer::map(size_t byteOffset, size_t byteSize)
 {
-	ATEMA_ASSERT(m_mappable, "Only mappable buffers can be mapped");
+	ATEMA_ASSERT(m_mappable, "BufferUsage::Map must be set to map a buffer");
 	
 	return m_mappedData;
 }
