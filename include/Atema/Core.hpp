@@ -31,6 +31,7 @@
 #include <Atema/Core/EventDispatcher.hpp>
 #include <Atema/Core/Flags.hpp>
 #include <Atema/Core/Hash.hpp>
+#include <Atema/Core/MemoryMapper.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ResourceManager.hpp>
