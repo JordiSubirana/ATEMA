@@ -19,18 +19,51 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
-
-#include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Renderer/Utils.hpp>
+#include <Atema/Core/Error.hpp>
 
-#endif
+using namespace at;
+
+IndexBuffer::IndexBuffer(const Settings& settings) :
+	m_indexType(settings.indexType),
+	m_size(settings.size)
+{
+	ATEMA_ASSERT(m_size > 0, "Invalid size");
+
+	Buffer::Settings bufferSettings;
+	bufferSettings.usages = settings.usages | BufferUsage::Index;
+	bufferSettings.byteSize = m_size * ::getByteSize(m_indexType);
+
+	m_buffer = Buffer::create(bufferSettings);
+}
+
+IndexType IndexBuffer::getIndexType() const noexcept
+{
+	return m_indexType;
+}
+
+const Ptr<Buffer>& IndexBuffer::getBuffer() const noexcept
+{
+	return m_buffer;
+}
+
+size_t IndexBuffer::getSize() const
+{
+	return m_size;
+}
+
+size_t IndexBuffer::getByteSize() const
+{
+	return m_buffer->getByteSize();
+}
+
+void* IndexBuffer::map(size_t byteOffset, size_t byteSize)
+{
+	return m_buffer->map(byteOffset, byteSize);
+}
+
+void IndexBuffer::unmap()
+{
+	m_buffer->unmap();
+}
