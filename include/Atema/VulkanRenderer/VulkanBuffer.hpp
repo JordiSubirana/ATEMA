@@ -37,6 +37,8 @@ namespace at
 
 		VkBuffer getHandle() const noexcept;
 
+		size_t getByteSize() const override;
+
 		void* map(size_t byteOffset, size_t byteSize) override;
 		void unmap() override;
 		
@@ -47,6 +49,7 @@ namespace at
 		BufferUsage m_usage;
 		bool m_mappable;
 		void* m_mappedData;
+		size_t m_byteSize;
 	};
 }
 

@@ -43,8 +43,11 @@ namespace at
 
 		static Ptr<Buffer> create(const Settings& settings);
 
-		// For transfer buffers only
+		virtual size_t getByteSize() const = 0;
+
+		// For mappable buffers only
 		virtual void* map(size_t byteOffset = 0, size_t byteSize = 0) = 0;
+		// For mappable buffers only
 		virtual void unmap() = 0;
 
 	protected:
