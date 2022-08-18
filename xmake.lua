@@ -148,6 +148,13 @@ if (addExamples == true) then
 			
 		end
 		
+		-- Add shared libs from packages to the install dir (xmake install -o installDir)
+		-- https://github.com/xmake-io/xmake/issues/961
+		on_install(function (target)
+			import("target.action.install")
+			install(target, {bindir = "bin", libdir = "lib"})
+		end)
+		
 	end
 	
 end
