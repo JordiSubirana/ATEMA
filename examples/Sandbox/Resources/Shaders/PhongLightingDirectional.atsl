@@ -141,7 +141,7 @@ void main()
 	
 	vec3f reflectDir = reflect(-inverseLightDir, normal);
 	
-	float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), roughness);
+	float specularFactor = clamp(pow(max(dot(viewDir, reflectDir), 0.0), roughness), 0.0, 1.0);
 	
 	vec3f specularColor = specularFactor * metalness * phongData.lightColor;
 	
