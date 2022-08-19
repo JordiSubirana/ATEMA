@@ -24,16 +24,14 @@
 using namespace at;
 
 Transform::Transform() :
+	m_scale(1.0f, 1.0f, 1.0f),
+	m_transformValid(false),
 	m_transform(1.0f)
 {
 }
 
-Transform::Transform(const Vector3f& translation, const Vector3f& rotation)
-{
-	set(translation, rotation);
-}
-
-Transform::Transform(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale)
+Transform::Transform(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale) :
+	Transform()
 {
 	set(translation, rotation, scale);
 }
@@ -63,37 +61,34 @@ Transform& Transform::scale(const Vector3f& scale)
 	return *this;
 }
 
-void Transform::set(const Vector3f& translation, const Vector3f& rotation)
+void Transform::set(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale)
 {
 	m_translation = translation;
 	m_rotation = rotation;
-	m_scale = Vector3f(1.0f, 1.0f, 1.0f);
-
-	m_transform = Matrix4f::createTranslation(m_translation) * Matrix4f::createRotation(m_rotation);
-}
-
-void Transform::set(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale)
-{
-	set(translation, rotation);
-
 	m_scale = scale;
-	
-	m_transform = Matrix4f::createScale(m_scale) * m_transform;
+
+	m_transformValid = false;
 }
 
 void Transform::setTranslation(const Vector3f& translation)
 {
-	set(translation, m_rotation, m_scale);
+	m_translation = translation;
+
+	m_transformValid = false;
 }
 
 void Transform::setRotation(const Vector3f& rotation)
 {
-	set(m_translation, rotation, m_scale);
+	m_rotation = rotation;
+
+	m_transformValid = false;
 }
 
 void Transform::setScale(const Vector3f& scale)
 {
-	set(m_translation, m_rotation, scale);
+	m_scale = scale;
+
+	m_transformValid = false;
 }
 
 const Vector3f& Transform::getTranslation() const noexcept
@@ -113,5 +108,11 @@ const Vector3f& Transform::getScale() const noexcept
 
 const Matrix4f& Transform::getMatrix() const noexcept
 {
+	if (!m_transformValid)
+	{
+		m_transform = Matrix4f::createTranslation(m_translation) * Matrix4f::createRotation(m_rotation) * Matrix4f::createScale(m_scale);
+		m_transformValid = true;
+	}
+
 	return m_transform;
 }

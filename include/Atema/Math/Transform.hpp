@@ -32,7 +32,6 @@ namespace at
 	{
 	public:
 		Transform();
-		Transform(const Vector3f& translation, const Vector3f& rotation);
 		Transform(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale);
 		~Transform();
 
@@ -40,7 +39,6 @@ namespace at
 		Transform& rotate(const Vector3f& rotation);
 		Transform& scale(const Vector3f& scale);
 
-		void set(const Vector3f& translation, const Vector3f& rotation);
 		void set(const Vector3f& translation, const Vector3f& rotation, const Vector3f& scale);
 		
 		void setTranslation(const Vector3f& translation);
@@ -58,7 +56,8 @@ namespace at
 		Vector3f m_rotation;
 		Vector3f m_scale;
 
-		Matrix4f m_transform;
+		mutable bool m_transformValid;
+		mutable Matrix4f m_transform;
 	};
 }
 
