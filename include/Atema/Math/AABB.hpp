@@ -51,6 +51,8 @@ namespace at
 
 		Vector3<T> getCenter() const noexcept;
 		Vector3<T> getSize() const noexcept;
+		Vector3<T> getPositiveVertex(const Vector3<T>& normal) const noexcept;
+		Vector3<T> getNegativeVertex(const Vector3<T>& normal) const noexcept;
 
 		AABB& operator=(const AABB& other);
 		AABB& operator=(AABB&& other) noexcept;

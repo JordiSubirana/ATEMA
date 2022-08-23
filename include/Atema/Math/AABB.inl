@@ -124,6 +124,40 @@ namespace at
 	}
 
 	template <typename T>
+	Vector3<T> AABB<T>::getPositiveVertex(const Vector3<T>& normal) const noexcept
+	{
+		Vector3<T> vertex = min;
+
+		if (normal.x >= static_cast<T>(0))
+			vertex.x = max.x;
+
+		if (normal.y >= static_cast<T>(0))
+			vertex.y = max.y;
+
+		if (normal.z >= static_cast<T>(0))
+			vertex.z = max.z;
+
+		return vertex;
+	}
+
+	template <typename T>
+	Vector3<T> AABB<T>::getNegativeVertex(const Vector3<T>& normal) const noexcept
+	{
+		Vector3<T> vertex = max;
+
+		if (normal.x >= static_cast<T>(0))
+			vertex.x = min.x;
+
+		if (normal.y >= static_cast<T>(0))
+			vertex.y = min.y;
+
+		if (normal.z >= static_cast<T>(0))
+			vertex.z = min.z;
+
+		return vertex;
+	}
+
+	template <typename T>
 	AABB<T>& AABB<T>::operator=(const AABB& other)
 	{
 		min = other.min;
