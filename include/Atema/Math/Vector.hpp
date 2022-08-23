@@ -42,8 +42,8 @@ namespace at
 		{
 			union
 			{
-				std::array<T, 2> data;
 				struct { T x, y; };
+				std::array<T, 2> data;
 			};
 		};
 
@@ -52,8 +52,8 @@ namespace at
 		{
 			union
 			{
-				std::array<T, 3> data;
 				struct { T x, y, z; };
+				std::array<T, 3> data;
 			};
 		};
 
@@ -62,8 +62,8 @@ namespace at
 		{
 			union
 			{
-				std::array<T, 4> data;
 				struct { T x, y, z, w; };
+				std::array<T, 4> data;
 			};
 		};
 	}

@@ -98,12 +98,7 @@ namespace at
 	template <size_t N, typename T>
 	T Vector<N, T>::getSquaredNorm() const noexcept
 	{
-		T tmp = static_cast<T>(0);
-
-		for (size_t i = 0; i < N; i++)
-			tmp += this->data[i] * this->data[i];
-
-		return tmp;
+		return dot(*this);
 	}
 
 	template <size_t N, typename T>
