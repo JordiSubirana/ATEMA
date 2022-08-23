@@ -19,16 +19,46 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_FRUSTUM_HPP
+#define ATEMA_MATH_FRUSTUM_HPP
 
-#include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Config.hpp>
-#include <Atema/Math/Frustum.hpp>
-#include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/Plane.hpp>
-#include <Atema/Math/Transform.hpp>
-#include <Atema/Math/Vector.hpp>
+#include <Atema/Math/Matrix.hpp>
+#include <Atema/Math/AABB.hpp>
+
+namespace at
+{
+	template <typename T>
+	class Frustum
+	{
+	public:
+		Frustum() = default;
+		Frustum(const Frustum& other) = default;
+		Frustum(Frustum&& other) noexcept = default;
+		Frustum(const std::array<Plane<T>, 6>& planes);
+		Frustum(const Matrix4<T>& viewProjection);
+		~Frustum() = default;
+
+		void set(const std::array<Plane<T>, 6>& planes);
+		void set(const Matrix4<T>& viewProjection);
+
+		bool contains(const Vector3<T>& point) const noexcept;
+		bool contains(const AABB<T>& aabb) const noexcept;
+
+		const std::array<Plane<T>, 6>& getPlanes() const noexcept;
+
+		Frustum& operator=(const Frustum& other) = default;
+		Frustum& operator=(Frustum&& other) noexcept = default;
+		
+	private:
+		std::array<Plane<T>, 6> m_planes;
+	};
+
+	using Frustumf = Frustum<float>;
+	using Frustumd = Frustum<double>;
+}
+
+#include <Atema/Math/Frustum.inl>
 
 #endif
