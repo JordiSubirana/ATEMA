@@ -42,6 +42,8 @@ namespace at
 	void Frustum<T>::set(const std::array<Plane<T>, 6>& planes)
 	{
 		m_planes = planes;
+
+		updatePositiveVertexIndices();
 	}
 
 	template <typename T>
@@ -124,6 +126,8 @@ namespace at
 		distance /= norm;
 
 		m_planes[planeIndex].set(normal, -distance);
+
+		updatePositiveVertexIndices();
 	}
 
 	template <typename T>
@@ -142,9 +146,19 @@ namespace at
 	bool Frustum<T>::contains(const AABB<T>& aabb) const noexcept
 	{
 		// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
-		for (const auto& plane : m_planes)
+		for (size_t i = 0; i < m_planes.size(); i++)
 		{
-			if (plane.getSignedDistance(aabb.getPositiveVertex(plane.getNormal())) < 0)
+			const auto& plane = m_planes[i];
+			const auto& indices = m_aabbPositiveVertexIndices[i];
+			const auto values = reinterpret_cast<const T*>(&aabb.min);
+
+			// See updatePositiveVertexIndices() for details on this optimization
+			Vector3<T> positiveVertex;
+			positiveVertex.x = values[indices.x];
+			positiveVertex.y = values[indices.y];
+			positiveVertex.z = values[indices.z];
+
+			if (plane.getSignedDistance(positiveVertex) < 0)
 				return false;
 		}
 
@@ -155,6 +169,31 @@ namespace at
 	const std::array<Plane<T>, 6>& Frustum<T>::getPlanes() const noexcept
 	{
 		return m_planes;
+	}
+
+	template <typename T>
+	void Frustum<T>::updatePositiveVertexIndices()
+	{
+		// We will consider the AABB to be an array of floats :
+		// [min.x, min.y, min.z, max.x, max.y, max.z]
+		// Here we precompute positive vertex indices for each plane from its normal
+		// So when we test multiple AABBs with this frustum, we already have the correct positive vertex
+		for (size_t i = 0; i < m_planes.size(); i++)
+		{
+			const auto& normal = m_planes[i].getNormal();
+			auto& indices = m_aabbPositiveVertexIndices[i];
+
+			indices = { 0, 1, 2 };
+
+			if (normal.x >= static_cast<T>(0))
+				indices.x = 3;
+
+			if (normal.y >= static_cast<T>(0))
+				indices.y = 4;
+
+			if (normal.z >= static_cast<T>(0))
+				indices.z = 5;
+		}
 	}
 }
 

@@ -52,7 +52,10 @@ namespace at
 		Frustum& operator=(Frustum&& other) noexcept = default;
 		
 	private:
+		void updatePositiveVertexIndices();
+
 		std::array<Plane<T>, 6> m_planes;
+		std::array<Vector3u, 6> m_aabbPositiveVertexIndices;
 	};
 
 	using Frustumf = Frustum<float>;
