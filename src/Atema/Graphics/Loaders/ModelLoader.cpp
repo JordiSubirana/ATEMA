@@ -199,6 +199,9 @@ void ModelLoader::generateTangents(std::vector<StaticVertex>& vertices, std::vec
 	std::vector<StaticVertex> newVertices;
 	std::vector<uint32_t> newIndices;
 
+	newVertices.reserve(indices.size());
+	newIndices.reserve(indices.size());
+
 	const auto triangleCount = indices.size() / 3;
 
 	uint32_t newIndex = 0;
@@ -232,6 +235,15 @@ void ModelLoader::generateTangents(std::vector<StaticVertex>& vertices, std::vec
 
 		tangent.normalize();
 		bitangent.normalize();
+
+		// Ensure this is a valid orthogonal basis
+		const auto& normalRef = v1.normal;
+
+		const auto normal = cross(tangent, bitangent);
+
+		// If not, flip the tangent
+		if (normalRef.dot(normal) <= -Math::Epsilon<float>)
+			tangent *= -1.0f;
 
 		// Remove invalid triangles
 		if (tangent.getSquaredNorm() < 0.1f || bitangent.getSquaredNorm() < 0.1f)
