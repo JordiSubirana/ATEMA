@@ -311,19 +311,28 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 		if (hasNormal)
 		{
 			for (auto& vertex : vertices)
-				vertex.normal = transform.transformPosition(vertex.normal);
+			{
+				vertex.normal = transform.transformVector(vertex.normal);
+				vertex.normal.normalize();
+			}
 		}
 
 		if (hasTangent)
 		{
 			for (auto& vertex : vertices)
-				vertex.tangent = transform.transformPosition(vertex.tangent);
+			{
+				vertex.tangent = transform.transformVector(vertex.tangent);
+				vertex.tangent.normalize();
+			}
 		}
 
 		if (hasBitangent)
 		{
 			for (auto& vertex : vertices)
-				vertex.bitangent = transform.transformPosition(vertex.bitangent);
+			{
+				vertex.bitangent = transform.transformVector(vertex.bitangent);
+				vertex.bitangent.normalize();
+			}
 		}
 	}
 

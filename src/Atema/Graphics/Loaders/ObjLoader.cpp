@@ -145,7 +145,10 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 			if (hasNormal)
 			{
 				for (auto& vertex : vertices)
-					vertex.normal = transform.transformPosition(vertex.normal);
+				{
+					vertex.normal = transform.transformVector(vertex.normal);
+					vertex.normal.normalize();
+				}
 			}
 		}
 
