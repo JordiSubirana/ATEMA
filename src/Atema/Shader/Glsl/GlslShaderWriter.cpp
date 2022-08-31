@@ -57,7 +57,7 @@ GlslShaderWriter::~GlslShaderWriter()
 {
 }
 
-void GlslShaderWriter::visit(ConditionalStatement& statement)
+void GlslShaderWriter::visit(const ConditionalStatement& statement)
 {
 	bool isFirst = true;
 
@@ -97,7 +97,7 @@ void GlslShaderWriter::visit(ConditionalStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(ForLoopStatement& statement)
+void GlslShaderWriter::visit(const ForLoopStatement& statement)
 {
 	m_ostream << "for (";
 
@@ -125,7 +125,7 @@ void GlslShaderWriter::visit(ForLoopStatement& statement)
 	endBlock();
 }
 
-void GlslShaderWriter::visit(WhileLoopStatement& statement)
+void GlslShaderWriter::visit(const WhileLoopStatement& statement)
 {
 	m_ostream << "while (";
 
@@ -140,7 +140,7 @@ void GlslShaderWriter::visit(WhileLoopStatement& statement)
 	endBlock();
 }
 
-void GlslShaderWriter::visit(DoWhileLoopStatement& statement)
+void GlslShaderWriter::visit(const DoWhileLoopStatement& statement)
 {
 	m_ostream << "do";
 
@@ -159,7 +159,7 @@ void GlslShaderWriter::visit(DoWhileLoopStatement& statement)
 	addDelimiter();
 }
 
-void GlslShaderWriter::visit(VariableDeclarationStatement& statement)
+void GlslShaderWriter::visit(const VariableDeclarationStatement& statement)
 {
 	if (statement.qualifiers & VariableQualifier::Const)
 		m_ostream << "const ";
@@ -167,7 +167,7 @@ void GlslShaderWriter::visit(VariableDeclarationStatement& statement)
 	writeVariableDeclaration(statement.type, statement.name, statement.value.get());
 }
 
-void GlslShaderWriter::visit(StructDeclarationStatement& statement)
+void GlslShaderWriter::visit(const StructDeclarationStatement& statement)
 {
 	m_ostream << "struct " << statement.name;
 
@@ -207,7 +207,7 @@ void GlslShaderWriter::visit(StructDeclarationStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(InputDeclarationStatement& statement)
+void GlslShaderWriter::visit(const InputDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -250,7 +250,7 @@ void GlslShaderWriter::visit(InputDeclarationStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
+void GlslShaderWriter::visit(const OutputDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -293,7 +293,7 @@ void GlslShaderWriter::visit(OutputDeclarationStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
+void GlslShaderWriter::visit(const ExternalDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -338,7 +338,7 @@ void GlslShaderWriter::visit(ExternalDeclarationStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(OptionDeclarationStatement& statement)
+void GlslShaderWriter::visit(const OptionDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -357,7 +357,7 @@ void GlslShaderWriter::visit(OptionDeclarationStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(FunctionDeclarationStatement& statement)
+void GlslShaderWriter::visit(const FunctionDeclarationStatement& statement)
 {
 	writeType(statement.returnType);
 
@@ -384,7 +384,7 @@ void GlslShaderWriter::visit(FunctionDeclarationStatement& statement)
 	endBlock();
 }
 
-void GlslShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
+void GlslShaderWriter::visit(const EntryFunctionDeclarationStatement& statement)
 {
 	m_ostream << "void main()";
 
@@ -396,28 +396,28 @@ void GlslShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
 	endBlock();
 }
 
-void GlslShaderWriter::visit(ExpressionStatement& statement)
+void GlslShaderWriter::visit(const ExpressionStatement& statement)
 {
 	statement.expression->accept(*this);
 
 	addDelimiter();
 }
 
-void GlslShaderWriter::visit(BreakStatement& statement)
+void GlslShaderWriter::visit(const BreakStatement& statement)
 {
 	m_ostream << "break";
 
 	addDelimiter();
 }
 
-void GlslShaderWriter::visit(ContinueStatement& statement)
+void GlslShaderWriter::visit(const ContinueStatement& statement)
 {
 	m_ostream << "continue";
 
 	addDelimiter();
 }
 
-void GlslShaderWriter::visit(ReturnStatement& statement)
+void GlslShaderWriter::visit(const ReturnStatement& statement)
 {
 	m_ostream << "return";
 
@@ -431,7 +431,7 @@ void GlslShaderWriter::visit(ReturnStatement& statement)
 	addDelimiter();
 }
 
-void GlslShaderWriter::visit(SequenceStatement& statement)
+void GlslShaderWriter::visit(const SequenceStatement& statement)
 {
 	if (!m_isSequenceProcessed)
 	{
@@ -477,7 +477,7 @@ void GlslShaderWriter::visit(SequenceStatement& statement)
 	}
 }
 
-void GlslShaderWriter::visit(OptionalStatement& statement)
+void GlslShaderWriter::visit(const OptionalStatement& statement)
 {
 	preprocessorIf(*statement.condition);
 
@@ -490,7 +490,7 @@ void GlslShaderWriter::visit(OptionalStatement& statement)
 	preprocessorEndif();
 }
 
-void GlslShaderWriter::visit(ConstantExpression& expression)
+void GlslShaderWriter::visit(const ConstantExpression& expression)
 {
 	const auto& value = expression.value;
 
@@ -570,12 +570,12 @@ void GlslShaderWriter::visit(ConstantExpression& expression)
 	}
 }
 
-void GlslShaderWriter::visit(VariableExpression& expression)
+void GlslShaderWriter::visit(const VariableExpression& expression)
 {
 	m_ostream << expression.identifier;
 }
 
-void GlslShaderWriter::visit(AccessIndexExpression& expression)
+void GlslShaderWriter::visit(const AccessIndexExpression& expression)
 {
 	expression.expression->accept(*this);
 
@@ -586,7 +586,7 @@ void GlslShaderWriter::visit(AccessIndexExpression& expression)
 	m_ostream << "]";
 }
 
-void GlslShaderWriter::visit(AccessIdentifierExpression& expression)
+void GlslShaderWriter::visit(const AccessIdentifierExpression& expression)
 {
 	// Check if we need to protect the expression with parenthesis
 	if (expression.expression->getType() == Expression::Type::Binary)
@@ -605,7 +605,7 @@ void GlslShaderWriter::visit(AccessIdentifierExpression& expression)
 	m_ostream << "." << expression.identifier;
 }
 
-void GlslShaderWriter::visit(AssignmentExpression& expression)
+void GlslShaderWriter::visit(const AssignmentExpression& expression)
 {
 	expression.left->accept(*this);
 
@@ -614,7 +614,7 @@ void GlslShaderWriter::visit(AssignmentExpression& expression)
 	expression.right->accept(*this);
 }
 
-void GlslShaderWriter::visit(UnaryExpression& expression)
+void GlslShaderWriter::visit(const UnaryExpression& expression)
 {
 	std::string prefix;
 	std::string suffix;
@@ -671,7 +671,7 @@ void GlslShaderWriter::visit(UnaryExpression& expression)
 		m_ostream << suffix;
 }
 
-void GlslShaderWriter::visit(BinaryExpression& expression)
+void GlslShaderWriter::visit(const BinaryExpression& expression)
 {
 	std::string operatorStr;
 
@@ -818,12 +818,12 @@ void GlslShaderWriter::visit(BinaryExpression& expression)
 	}
 }
 
-void GlslShaderWriter::visit(FunctionCallExpression& expression)
+void GlslShaderWriter::visit(const FunctionCallExpression& expression)
 {
 	writeFunctionCall(expression.identifier, expression.arguments);
 }
 
-void GlslShaderWriter::visit(BuiltInFunctionCallExpression& expression)
+void GlslShaderWriter::visit(const BuiltInFunctionCallExpression& expression)
 {
 	//TODO: In the future some arguments positions may change
 
@@ -886,7 +886,7 @@ void GlslShaderWriter::visit(BuiltInFunctionCallExpression& expression)
 	}
 }
 
-void GlslShaderWriter::visit(CastExpression& expression)
+void GlslShaderWriter::visit(const CastExpression& expression)
 {
 	writeType(expression.type);
 
@@ -904,7 +904,7 @@ void GlslShaderWriter::visit(CastExpression& expression)
 	m_ostream << ")";
 }
 
-void GlslShaderWriter::visit(SwizzleExpression& expression)
+void GlslShaderWriter::visit(const SwizzleExpression& expression)
 {
 	expression.expression->accept(*this);
 
@@ -943,7 +943,7 @@ void GlslShaderWriter::visit(SwizzleExpression& expression)
 	}
 }
 
-void GlslShaderWriter::visit(TernaryExpression& expression)
+void GlslShaderWriter::visit(const TernaryExpression& expression)
 {
 	m_ostream << "(";
 

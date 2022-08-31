@@ -45,7 +45,7 @@ namespace at
 		void compile(std::vector<uint32_t>& spirv);
 		void compile(std::ostream& ostream);
 
-		void visit(EntryFunctionDeclarationStatement& statement) override;
+		void visit(const EntryFunctionDeclarationStatement& statement) override;
 		
 	private:
 		void compileSpirv(std::vector<uint32_t>& spirv);

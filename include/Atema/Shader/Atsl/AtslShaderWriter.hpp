@@ -38,37 +38,37 @@ namespace at
 		AtslShaderWriter(std::ostream& ostream);
 		~AtslShaderWriter();
 
-		void visit(ConditionalStatement& statement) override;
-		void visit(ForLoopStatement& statement) override;
-		void visit(WhileLoopStatement& statement) override;
-		void visit(DoWhileLoopStatement& statement) override;
-		void visit(VariableDeclarationStatement& statement) override;
-		void visit(StructDeclarationStatement& statement) override;
-		void visit(InputDeclarationStatement& statement) override;
-		void visit(OutputDeclarationStatement& statement) override;
-		void visit(ExternalDeclarationStatement& statement) override;
-		void visit(OptionDeclarationStatement& statement) override;
-		void visit(FunctionDeclarationStatement& statement) override;
-		void visit(EntryFunctionDeclarationStatement& statement) override;
-		void visit(ExpressionStatement& statement) override;
-		void visit(BreakStatement& statement) override;
-		void visit(ContinueStatement& statement) override;
-		void visit(ReturnStatement& statement) override;
-		void visit(SequenceStatement& statement) override;
-		void visit(OptionalStatement& statement) override;
+		void visit(const ConditionalStatement& statement) override;
+		void visit(const ForLoopStatement& statement) override;
+		void visit(const WhileLoopStatement& statement) override;
+		void visit(const DoWhileLoopStatement& statement) override;
+		void visit(const VariableDeclarationStatement& statement) override;
+		void visit(const StructDeclarationStatement& statement) override;
+		void visit(const InputDeclarationStatement& statement) override;
+		void visit(const OutputDeclarationStatement& statement) override;
+		void visit(const ExternalDeclarationStatement& statement) override;
+		void visit(const OptionDeclarationStatement& statement) override;
+		void visit(const FunctionDeclarationStatement& statement) override;
+		void visit(const EntryFunctionDeclarationStatement& statement) override;
+		void visit(const ExpressionStatement& statement) override;
+		void visit(const BreakStatement& statement) override;
+		void visit(const ContinueStatement& statement) override;
+		void visit(const ReturnStatement& statement) override;
+		void visit(const SequenceStatement& statement) override;
+		void visit(const OptionalStatement& statement) override;
 
-		void visit(ConstantExpression& expression) override;
-		void visit(VariableExpression& expression) override;
-		void visit(AccessIndexExpression& expression) override;
-		void visit(AccessIdentifierExpression& expression) override;
-		void visit(AssignmentExpression& expression) override;
-		void visit(UnaryExpression& expression) override;
-		void visit(BinaryExpression& expression) override;
-		void visit(FunctionCallExpression& expression) override;
-		void visit(BuiltInFunctionCallExpression& expression) override;
-		void visit(CastExpression& expression) override;
-		void visit(SwizzleExpression& expression) override;
-		void visit(TernaryExpression& expression) override;
+		void visit(const ConstantExpression& expression) override;
+		void visit(const VariableExpression& expression) override;
+		void visit(const AccessIndexExpression& expression) override;
+		void visit(const AccessIdentifierExpression& expression) override;
+		void visit(const AssignmentExpression& expression) override;
+		void visit(const UnaryExpression& expression) override;
+		void visit(const BinaryExpression& expression) override;
+		void visit(const FunctionCallExpression& expression) override;
+		void visit(const BuiltInFunctionCallExpression& expression) override;
+		void visit(const CastExpression& expression) override;
+		void visit(const SwizzleExpression& expression) override;
+		void visit(const TernaryExpression& expression) override;
 
 	private:
 		struct Attribute

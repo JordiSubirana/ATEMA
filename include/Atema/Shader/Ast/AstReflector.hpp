@@ -37,7 +37,7 @@
 namespace at
 {
 	//*
-	class ATEMA_SHADER_API AstReflector : public AstRecursiveVisitor, public NonCopyable
+	class ATEMA_SHADER_API AstReflector : public AstConstRecursiveVisitor, public NonCopyable
 	{
 	public:
 		AstReflector();
@@ -48,17 +48,17 @@ namespace at
 
 		void clear();
 
-		void visit(EntryFunctionDeclarationStatement& statement) override;
-		void visit(InputDeclarationStatement& statement) override;
-		void visit(OutputDeclarationStatement& statement) override;
-		void visit(ExternalDeclarationStatement& statement) override;
-		void visit(OptionDeclarationStatement& statement) override;
-		void visit(StructDeclarationStatement& statement) override;
-		void visit(FunctionDeclarationStatement& statement) override;
-		void visit(VariableDeclarationStatement& statement) override;
+		void visit(const EntryFunctionDeclarationStatement& statement) override;
+		void visit(const InputDeclarationStatement& statement) override;
+		void visit(const OutputDeclarationStatement& statement) override;
+		void visit(const ExternalDeclarationStatement& statement) override;
+		void visit(const OptionDeclarationStatement& statement) override;
+		void visit(const StructDeclarationStatement& statement) override;
+		void visit(const FunctionDeclarationStatement& statement) override;
+		void visit(const VariableDeclarationStatement& statement) override;
 
-		void visit(VariableExpression& expression) override;
-		void visit(FunctionCallExpression& expression) override;
+		void visit(const VariableExpression& expression) override;
+		void visit(const FunctionCallExpression& expression) override;
 
 	private:
 		struct DependencyData

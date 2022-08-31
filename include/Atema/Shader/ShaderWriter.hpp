@@ -27,7 +27,7 @@
 
 namespace at
 {
-	class ATEMA_SHADER_API ShaderWriter : public AstVisitor
+	class ATEMA_SHADER_API ShaderWriter : public AstConstVisitor
 	{
 	public:
 		ShaderWriter();

@@ -173,7 +173,7 @@ UPtr<SequenceStatement> AstReflector::getAst(AstShaderStage stage)
 	return ast;
 }
 
-void AstReflector::visit(EntryFunctionDeclarationStatement& statement)
+void AstReflector::visit(const EntryFunctionDeclarationStatement& statement)
 {
 	if (m_entries[statement.stage].statement)
 	{
@@ -201,11 +201,11 @@ void AstReflector::visit(EntryFunctionDeclarationStatement& statement)
 
 	// Find dependencies
 	m_currentDependencies = &entry.dependencies;
-	AstRecursiveVisitor::visit(statement);
+	AstConstRecursiveVisitor::visit(statement);
 	m_currentDependencies = nullptr;
 }
 
-void AstReflector::visit(InputDeclarationStatement& statement)
+void AstReflector::visit(const InputDeclarationStatement& statement)
 {
 	auto& entry = m_entries[statement.stage];
 
@@ -221,7 +221,7 @@ void AstReflector::visit(InputDeclarationStatement& statement)
 	}
 }
 
-void AstReflector::visit(OutputDeclarationStatement& statement)
+void AstReflector::visit(const OutputDeclarationStatement& statement)
 {
 	auto& entry = m_entries[statement.stage];
 
@@ -237,7 +237,7 @@ void AstReflector::visit(OutputDeclarationStatement& statement)
 	}
 }
 
-void AstReflector::visit(ExternalDeclarationStatement& statement)
+void AstReflector::visit(const ExternalDeclarationStatement& statement)
 {
 	for (auto& variable : statement.variables)
 	{
@@ -258,14 +258,14 @@ void AstReflector::visit(ExternalDeclarationStatement& statement)
 	}
 }
 
-void AstReflector::visit(OptionDeclarationStatement& statement)
+void AstReflector::visit(const OptionDeclarationStatement& statement)
 {
 	m_options.push_back(m_cloner.clone(statement));
 
-	AstRecursiveVisitor::visit(statement);
+	AstConstRecursiveVisitor::visit(statement);
 }
 
-void AstReflector::visit(StructDeclarationStatement& statement)
+void AstReflector::visit(const StructDeclarationStatement& statement)
 {
 	if (m_structs.find(statement.name) != m_structs.end())
 	{
@@ -286,7 +286,7 @@ void AstReflector::visit(StructDeclarationStatement& statement)
 	}
 }
 
-void AstReflector::visit(FunctionDeclarationStatement& statement)
+void AstReflector::visit(const FunctionDeclarationStatement& statement)
 {
 	if (m_functions.find(statement.name) != m_functions.end())
 	{
@@ -314,11 +314,11 @@ void AstReflector::visit(FunctionDeclarationStatement& statement)
 
 	// Find dependencies
 	m_currentDependencies = &function.dependencies;
-	AstRecursiveVisitor::visit(statement);
+	AstConstRecursiveVisitor::visit(statement);
 	m_currentDependencies = nullptr;
 }
 
-void AstReflector::visit(VariableDeclarationStatement& statement)
+void AstReflector::visit(const VariableDeclarationStatement& statement)
 {
 	// Register global variables
 	if (!m_currentDependencies)
@@ -334,7 +334,7 @@ void AstReflector::visit(VariableDeclarationStatement& statement)
 
 		// Find dependencies
 		m_currentDependencies = &variable.dependencies;
-		AstRecursiveVisitor::visit(statement);
+		AstConstRecursiveVisitor::visit(statement);
 		m_currentDependencies = nullptr;
 	}
 	// Register local variable struct types in the current dependencies
@@ -347,11 +347,11 @@ void AstReflector::visit(VariableDeclarationStatement& statement)
 			m_currentDependencies->structNames.emplace(typeName);
 		}
 
-		AstRecursiveVisitor::visit(statement);
+		AstConstRecursiveVisitor::visit(statement);
 	}
 }
 
-void AstReflector::visit(VariableExpression& expression)
+void AstReflector::visit(const VariableExpression& expression)
 {
 	if (m_currentDependencies)
 	{
@@ -359,13 +359,13 @@ void AstReflector::visit(VariableExpression& expression)
 	}
 }
 
-void AstReflector::visit(FunctionCallExpression& expression)
+void AstReflector::visit(const FunctionCallExpression& expression)
 {
 	if (m_currentDependencies)
 	{
 		m_currentDependencies->functionNames.emplace(expression.identifier);
 
-		AstRecursiveVisitor::visit(expression);
+		AstConstRecursiveVisitor::visit(expression);
 	}
 }
 

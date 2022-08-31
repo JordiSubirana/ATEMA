@@ -191,7 +191,7 @@ void SpirvShaderWriter::compile(std::ostream& ostream)
 		ostream << codeData[i];
 }
 
-void SpirvShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
+void SpirvShaderWriter::visit(const EntryFunctionDeclarationStatement& statement)
 {
 	if (m_requestedStage.has_value())
 	{

@@ -33,7 +33,7 @@ AtslShaderWriter::~AtslShaderWriter()
 {
 }
 
-void AtslShaderWriter::visit(ConditionalStatement& statement)
+void AtslShaderWriter::visit(const ConditionalStatement& statement)
 {
 	bool isFirst = true;
 
@@ -73,7 +73,7 @@ void AtslShaderWriter::visit(ConditionalStatement& statement)
 	}
 }
 
-void AtslShaderWriter::visit(ForLoopStatement& statement)
+void AtslShaderWriter::visit(const ForLoopStatement& statement)
 {
 	m_ostream << "for (";
 
@@ -101,7 +101,7 @@ void AtslShaderWriter::visit(ForLoopStatement& statement)
 	endBlock();
 }
 
-void AtslShaderWriter::visit(WhileLoopStatement& statement)
+void AtslShaderWriter::visit(const WhileLoopStatement& statement)
 {
 	m_ostream << "while (";
 
@@ -116,7 +116,7 @@ void AtslShaderWriter::visit(WhileLoopStatement& statement)
 	endBlock();
 }
 
-void AtslShaderWriter::visit(DoWhileLoopStatement& statement)
+void AtslShaderWriter::visit(const DoWhileLoopStatement& statement)
 {
 	m_ostream << "do";
 
@@ -135,7 +135,7 @@ void AtslShaderWriter::visit(DoWhileLoopStatement& statement)
 	addDelimiter();
 }
 
-void AtslShaderWriter::visit(VariableDeclarationStatement& statement)
+void AtslShaderWriter::visit(const VariableDeclarationStatement& statement)
 {
 	if (statement.qualifiers & VariableQualifier::Const)
 		m_ostream << "const ";
@@ -143,7 +143,7 @@ void AtslShaderWriter::visit(VariableDeclarationStatement& statement)
 	writeVariableDeclaration(statement.type, statement.name, statement.value.get());
 }
 
-void AtslShaderWriter::visit(StructDeclarationStatement& statement)
+void AtslShaderWriter::visit(const StructDeclarationStatement& statement)
 {
 	m_ostream << "struct " << statement.name;
 
@@ -173,7 +173,7 @@ void AtslShaderWriter::visit(StructDeclarationStatement& statement)
 	endBlock();
 }
 
-void AtslShaderWriter::visit(InputDeclarationStatement& statement)
+void AtslShaderWriter::visit(const InputDeclarationStatement& statement)
 {
 	// Write block declaration attributes
 	const std::vector<Attribute> blockAttributes =
@@ -226,7 +226,7 @@ void AtslShaderWriter::visit(InputDeclarationStatement& statement)
 		endBlock();
 }
 
-void AtslShaderWriter::visit(OutputDeclarationStatement& statement)
+void AtslShaderWriter::visit(const OutputDeclarationStatement& statement)
 {
 	// Write block declaration attributes
 	const std::vector<Attribute> blockAttributes =
@@ -279,7 +279,7 @@ void AtslShaderWriter::visit(OutputDeclarationStatement& statement)
 		endBlock();
 }
 
-void AtslShaderWriter::visit(ExternalDeclarationStatement& statement)
+void AtslShaderWriter::visit(const ExternalDeclarationStatement& statement)
 {
 	// Begin block
 	m_ostream << "external";
@@ -332,7 +332,7 @@ void AtslShaderWriter::visit(ExternalDeclarationStatement& statement)
 		endBlock();
 }
 
-void AtslShaderWriter::visit(OptionDeclarationStatement& statement)
+void AtslShaderWriter::visit(const OptionDeclarationStatement& statement)
 {
 	m_ostream << "option";
 
@@ -354,7 +354,7 @@ void AtslShaderWriter::visit(OptionDeclarationStatement& statement)
 		endBlock();
 }
 
-void AtslShaderWriter::visit(FunctionDeclarationStatement& statement)
+void AtslShaderWriter::visit(const FunctionDeclarationStatement& statement)
 {
 	writeType(statement.returnType);
 
@@ -381,7 +381,7 @@ void AtslShaderWriter::visit(FunctionDeclarationStatement& statement)
 	endBlock();
 }
 
-void AtslShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
+void AtslShaderWriter::visit(const EntryFunctionDeclarationStatement& statement)
 {
 	const std::vector<Attribute> attributes =
 	{
@@ -392,31 +392,31 @@ void AtslShaderWriter::visit(EntryFunctionDeclarationStatement& statement)
 
 	newLine();
 
-	visit(static_cast<FunctionDeclarationStatement&>(statement));
+	visit(static_cast<const FunctionDeclarationStatement&>(statement));
 }
 
-void AtslShaderWriter::visit(ExpressionStatement& statement)
+void AtslShaderWriter::visit(const ExpressionStatement& statement)
 {
 	statement.expression->accept(*this);
 
 	addDelimiter();
 }
 
-void AtslShaderWriter::visit(BreakStatement& statement)
+void AtslShaderWriter::visit(const BreakStatement& statement)
 {
 	m_ostream << "break";
 
 	addDelimiter();
 }
 
-void AtslShaderWriter::visit(ContinueStatement& statement)
+void AtslShaderWriter::visit(const ContinueStatement& statement)
 {
 	m_ostream << "continue";
 
 	addDelimiter();
 }
 
-void AtslShaderWriter::visit(ReturnStatement& statement)
+void AtslShaderWriter::visit(const ReturnStatement& statement)
 {
 	m_ostream << "return";
 
@@ -430,7 +430,7 @@ void AtslShaderWriter::visit(ReturnStatement& statement)
 	addDelimiter();
 }
 
-void AtslShaderWriter::visit(SequenceStatement& statement)
+void AtslShaderWriter::visit(const SequenceStatement& statement)
 {
 	for (auto& subStatement : statement.statements)
 	{
@@ -445,7 +445,7 @@ void AtslShaderWriter::visit(SequenceStatement& statement)
 	}
 }
 
-void AtslShaderWriter::visit(OptionalStatement& statement)
+void AtslShaderWriter::visit(const OptionalStatement& statement)
 {
 	m_ostream << "optional (";
 
@@ -473,7 +473,7 @@ void AtslShaderWriter::visit(OptionalStatement& statement)
 	}
 }
 
-void AtslShaderWriter::visit(ConstantExpression& expression)
+void AtslShaderWriter::visit(const ConstantExpression& expression)
 {
 	const auto& value = expression.value;
 
@@ -553,12 +553,12 @@ void AtslShaderWriter::visit(ConstantExpression& expression)
 	}
 }
 
-void AtslShaderWriter::visit(VariableExpression& expression)
+void AtslShaderWriter::visit(const VariableExpression& expression)
 {
 	m_ostream << expression.identifier;
 }
 
-void AtslShaderWriter::visit(AccessIndexExpression& expression)
+void AtslShaderWriter::visit(const AccessIndexExpression& expression)
 {
 	expression.expression->accept(*this);
 
@@ -569,7 +569,7 @@ void AtslShaderWriter::visit(AccessIndexExpression& expression)
 	m_ostream << "]";
 }
 
-void AtslShaderWriter::visit(AccessIdentifierExpression& expression)
+void AtslShaderWriter::visit(const AccessIdentifierExpression& expression)
 {
 	// Check if we need to protect the expression with parenthesis
 	if (expression.expression->getType() == Expression::Type::Binary)
@@ -588,7 +588,7 @@ void AtslShaderWriter::visit(AccessIdentifierExpression& expression)
 	m_ostream << "." << expression.identifier;
 }
 
-void AtslShaderWriter::visit(AssignmentExpression& expression)
+void AtslShaderWriter::visit(const AssignmentExpression& expression)
 {
 	expression.left->accept(*this);
 
@@ -597,7 +597,7 @@ void AtslShaderWriter::visit(AssignmentExpression& expression)
 	expression.right->accept(*this);
 }
 
-void AtslShaderWriter::visit(UnaryExpression& expression)
+void AtslShaderWriter::visit(const UnaryExpression& expression)
 {
 	std::string prefix;
 	std::string suffix;
@@ -654,7 +654,7 @@ void AtslShaderWriter::visit(UnaryExpression& expression)
 		m_ostream << suffix;
 }
 
-void AtslShaderWriter::visit(BinaryExpression& expression)
+void AtslShaderWriter::visit(const BinaryExpression& expression)
 {
 	std::string operatorStr;
 
@@ -782,17 +782,17 @@ void AtslShaderWriter::visit(BinaryExpression& expression)
 	}
 }
 
-void AtslShaderWriter::visit(FunctionCallExpression& expression)
+void AtslShaderWriter::visit(const FunctionCallExpression& expression)
 {
 	writeFunctionCall(expression.identifier, expression.arguments);
 }
 
-void AtslShaderWriter::visit(BuiltInFunctionCallExpression& expression)
+void AtslShaderWriter::visit(const BuiltInFunctionCallExpression& expression)
 {
 	writeFunctionCall(atsl::getBuiltInFunctionStr(expression.function), expression.arguments);
 }
 
-void AtslShaderWriter::visit(CastExpression& expression)
+void AtslShaderWriter::visit(const CastExpression& expression)
 {
 	writeType(expression.type);
 
@@ -810,7 +810,7 @@ void AtslShaderWriter::visit(CastExpression& expression)
 	m_ostream << ")";
 }
 
-void AtslShaderWriter::visit(SwizzleExpression& expression)
+void AtslShaderWriter::visit(const SwizzleExpression& expression)
 {
 	expression.expression->accept(*this);
 
@@ -849,7 +849,7 @@ void AtslShaderWriter::visit(SwizzleExpression& expression)
 	}
 }
 
-void AtslShaderWriter::visit(TernaryExpression& expression)
+void AtslShaderWriter::visit(const TernaryExpression& expression)
 {
 	m_ostream << "(";
 
