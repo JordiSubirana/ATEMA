@@ -56,16 +56,20 @@ namespace at
 
 	enum class DefaultVertexFormat
 	{
-		Pos2D,
-		Pos2D_Color,
-		Pos2D_TexCoords,
-		Pos3D,
-		Pos3D_Color,
-		Pos3D_Color_Normal,
-		Pos3D_Color_Normal_Tangent_Bitangent,
-		Pos3D_TexCoords,
-		Pos3D_TexCoords_Normal,
-		Pos3D_TexCoords_Normal_Tangent_Bitangent
+		XY,
+		XY_RGB,
+		XY_RGBA,
+		XY_UV,
+		XYZ,
+		XYZ_RGB,
+		XYZ_RGB_Normal,
+		XYZ_RGB_Normal_Tangent_Bitangent,
+		XYZ_RGBA,
+		XYZ_RGBA_Normal,
+		XYZ_RGBA_Normal_Tangent_Bitangent,
+		XYZ_UV,
+		XYZ_UV_Normal,
+		XYZ_UV_Normal_Tangent_Bitangent
 	};
 }
 
