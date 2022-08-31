@@ -123,7 +123,10 @@ private:
 	// Misc
 	at::Ptr<at::DebugRenderer> m_debugRenderer;
 
+	float m_frustumRotation;
 	at::Frustumf m_cameraFrustum;
+	at::Frustumf m_customfrustum;
+	std::function<bool(const at::AABBf&)> m_cullFunction;
 
 	at::Matrix4f m_viewProjection;
 };

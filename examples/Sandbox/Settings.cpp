@@ -25,6 +25,7 @@ Settings::Settings() :
 	enableFpsLimit(false),
 	fpsLimit(60),
 	objectRows(3),
+	customFrustumCulling(false),
 	shadowMapSize(2048),
 	shadowBoxMinSize(20.0f),
 	shadowBoxMaxSize(100.0f),

@@ -59,6 +59,9 @@ public:
 	//Scene
 	uint32_t objectRows;
 
+	// Culling
+	bool customFrustumCulling;
+
 	// ShadowMap
 	uint32_t shadowMapSize;
 	float shadowBoxMinSize;

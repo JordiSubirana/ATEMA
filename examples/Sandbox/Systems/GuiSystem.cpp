@@ -263,6 +263,31 @@ void GuiSystem::showSettings()
 			ImGui::EndTable();
 		}
 
+		// Rendering
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Rendering"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			// Object rows
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Enable Custom Frustum");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Enable Custom Frustum", &settings.customFrustumCulling);
+			}
+
+			ImGui::EndTable();
+		}
+
 		// ShadowMap
 		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 

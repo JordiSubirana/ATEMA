@@ -516,6 +516,9 @@ void GraphicsSystem::update(TimeStep timeStep)
 	if (m_updateFrameGraph)
 		createFrameGraph();
 
+	// Update frustum rotation
+	m_frustumRotation += (Math::Pi<float> / 4.0f) * timeStep.getSeconds();
+
 	// Start frame
 	updateFrame();
 
@@ -788,7 +791,7 @@ void GraphicsSystem::createFrameGraph()
 								auto& transform = entities.get<Transform>(*it);
 
 								// Frustum culling
-								if (!m_cameraFrustum.contains(transform.getMatrix() * graphics.model->getAABB()))
+								if (m_cullFunction(transform.getMatrix() * graphics.model->getAABB()))
 									continue;
 
 								auto materialID = graphics.material.get();
@@ -1010,9 +1013,8 @@ void GraphicsSystem::createFrameGraph()
 
 				m_debugRenderer->clear();
 
-				m_debugRenderer->draw(m_cameraFrustum, Color::Red);
-
-				const auto& leftPlane = m_cameraFrustum.getPlanes()[0];
+				if (Settings::instance().customFrustumCulling)
+					m_debugRenderer->draw(m_customfrustum, Color::Red);
 
 				for (auto& entity : entities)
 				{
@@ -1298,8 +1300,38 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 				// Update view projection matrix
 				m_viewProjection = mapMemory<Matrix4f>(data, projOffset) * mapMemory<Matrix4f>(data, viewOffset);
 
-				// Update camera frustum
 				m_cameraFrustum.set(m_viewProjection);
+
+				// Update custom frustum
+				if (Settings::instance().customFrustumCulling)
+				{
+					auto frustumDir2D = toCartesian(Vector2f(1.0f, m_frustumRotation));
+
+					auto origin = Vector3f(0, 0, 0);
+					auto dir = Vector3f(frustumDir2D.x, frustumDir2D.y, 0).normalize();
+
+					float nearZ = 0.1f;
+					float farZ = 500.0f;
+
+					auto center = origin + dir * (farZ - nearZ) / 2.0f;
+
+					auto view = Matrix4f::createLookAt(origin, origin + dir, Vector3f(0, 0, 1));
+					auto proj = Matrix4f::createPerspective(Math::toRadians(70.0f), camera.aspectRatio, nearZ, farZ);
+
+					m_customfrustum.set(proj * view);
+
+					m_cullFunction = [this](const AABBf& aabb)
+					{
+						return !m_cameraFrustum.contains(aabb) || !m_customfrustum.contains(aabb);
+					};
+				}
+				else
+				{
+					m_cullFunction = [this](const AABBf& aabb)
+					{
+						return !m_cameraFrustum.contains(aabb);
+					};
+				}
 
 				frameData.frameUniformBuffer->unmap();
 
