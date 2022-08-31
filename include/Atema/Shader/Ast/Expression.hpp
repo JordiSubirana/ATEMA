@@ -34,6 +34,7 @@
 namespace at
 {
 	class AstVisitor;
+	class AstConstVisitor;
 
 	// Base class
 	struct ATEMA_SHADER_API Expression : public NonCopyable
@@ -50,6 +51,7 @@ namespace at
 		virtual Expression::Type getType() const noexcept = 0;
 
 		virtual void accept(AstVisitor& visitor) = 0;
+		virtual void accept(AstConstVisitor& visitor) const = 0;
 	};
 
 	// Direct value
@@ -58,6 +60,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		ConstantValue value;
 	};
@@ -67,6 +70,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		std::string identifier;
 	};
@@ -77,6 +81,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> expression;
 		UPtr<Expression> index;
@@ -87,6 +92,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> expression;
 		std::string identifier;
@@ -98,6 +104,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> left;
 		UPtr<Expression> right;
@@ -109,6 +116,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UnaryOperator op;
 		UPtr<Expression> operand;
@@ -119,6 +127,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		BinaryOperator op;
 		UPtr<Expression> left;
@@ -131,6 +140,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		std::string identifier;
 		std::vector<UPtr<Expression>> arguments;
@@ -141,6 +151,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		BuiltInFunction function;
 		std::vector<UPtr<Expression>> arguments;
@@ -152,6 +163,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		at::Type type;
 		std::vector<UPtr<Expression>> components;
@@ -162,6 +174,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> expression;
 		std::vector<size_t> components;
@@ -172,6 +185,7 @@ namespace at
 		Expression::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> condition;
 		UPtr<Expression> trueValue;

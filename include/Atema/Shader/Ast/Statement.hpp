@@ -36,6 +36,7 @@ namespace at
 	struct Expression;
 	struct SequenceStatement;
 	class AstVisitor;
+	class AstConstVisitor;
 
 	struct ATEMA_SHADER_API Statement : public NonCopyable
 	{
@@ -51,6 +52,7 @@ namespace at
 		virtual Statement::Statement::Type getType() const noexcept = 0;
 
 		virtual void accept(AstVisitor& visitor) = 0;
+		virtual void accept(AstConstVisitor& visitor) const = 0;
 	};
 
 	// Branches / conditions
@@ -59,6 +61,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 		
 		struct Branch
 		{
@@ -76,6 +79,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Statement> initialization;
 		UPtr<Expression> condition;
@@ -88,6 +92,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
@@ -98,6 +103,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
@@ -109,6 +115,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 		
 		std::string name;
 		Flags<VariableQualifier> qualifiers;
@@ -121,6 +128,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Member
 		{
@@ -139,6 +147,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Variable
 		{
@@ -157,6 +166,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Variable
 		{
@@ -175,6 +185,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Variable
 		{
@@ -194,6 +205,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Variable
 		{
@@ -211,6 +223,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		struct Argument
 		{
@@ -229,6 +242,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		AstShaderStage stage;
 	};
@@ -239,6 +253,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> expression;
 	};
@@ -248,6 +263,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 	};
 
 	struct ATEMA_SHADER_API ContinueStatement : public Statement
@@ -255,6 +271,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 	};
 
 	struct ATEMA_SHADER_API ReturnStatement : public Statement
@@ -262,6 +279,7 @@ namespace at
 		Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> expression;
 	};
@@ -271,6 +289,7 @@ namespace at
 		Statement::Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		std::vector<UPtr<Statement>> statements;
 	};
@@ -280,6 +299,7 @@ namespace at
 		Statement::Statement::Type getType() const noexcept override;
 
 		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
 
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
