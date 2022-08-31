@@ -77,9 +77,6 @@ namespace at
 			Vector3f point2;
 		};
 
-		void addLine(const Vector3f& point1, const Vector3f& point2, const Color& color);
-		void addLines(const std::vector<Line>& lines, const Color& color);
-
 		Ptr<DescriptorSetLayout> m_descriptorSetLayout;
 		Ptr<GraphicsPipeline> m_graphicsPipeline;
 		Ptr<const VertexFormat> m_vertexFormat;

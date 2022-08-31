@@ -85,6 +85,11 @@ namespace
 	{
 		outColor = vec4f(inColor, 1.0);
 	})";
+
+	Vector3f getColor(const Color& color)
+	{
+		return { color.r, color.g, color.b };
+	}
 }
 
 DebugRenderer::DebugRenderer()
@@ -165,37 +170,47 @@ void DebugRenderer::clear()
 
 void DebugRenderer::drawLine(const Vector3f& point1, const Vector3f& point2, const Color& color)
 {
-	addLine(point1, point2, color);
+	const auto c = getColor(color);
+
+	m_vertices.emplace_back(point1, c);
+	m_vertices.emplace_back(point2, c);
 }
 
 void DebugRenderer::draw(const AABBf& aabb, const Color& color)
 {
-	const std::vector<Line> lines =
-	{
-		{{ aabb.min.x, aabb.min.y, aabb.min.z }, { aabb.min.x, aabb.min.y, aabb.max.z }},
-		{{ aabb.min.x, aabb.min.y, aabb.min.z }, { aabb.min.x, aabb.max.y, aabb.min.z }},
-		{{ aabb.min.x, aabb.min.y, aabb.min.z }, { aabb.max.x, aabb.min.y, aabb.min.z }},
+	const auto c = getColor(color);
 
-		{{ aabb.min.x, aabb.max.y, aabb.max.z }, { aabb.min.x, aabb.max.y, aabb.min.z }},
-		{{ aabb.min.x, aabb.max.y, aabb.max.z }, { aabb.min.x, aabb.min.y, aabb.max.z }},
-		{{ aabb.min.x, aabb.max.y, aabb.max.z }, { aabb.max.x, aabb.max.y, aabb.max.z }},
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.min.z), c);
 
-		{{ aabb.max.x, aabb.min.y, aabb.max.z }, { aabb.max.x, aabb.min.y, aabb.min.z }},
-		{{ aabb.max.x, aabb.min.y, aabb.max.z }, { aabb.max.x, aabb.max.y, aabb.max.z }},
-		{{ aabb.max.x, aabb.min.y, aabb.max.z }, { aabb.min.x, aabb.min.y, aabb.max.z }},
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.max.z), c);
 
-		{{ aabb.max.x, aabb.max.y, aabb.min.z }, { aabb.max.x, aabb.max.y, aabb.max.z }},
-		{{ aabb.max.x, aabb.max.y, aabb.min.z }, { aabb.max.x, aabb.min.y, aabb.min.z }},
-		{{ aabb.max.x, aabb.max.y, aabb.min.z }, { aabb.min.x, aabb.max.y, aabb.min.z }}
-	};
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.min.y, aabb.max.z), c);
 
-	addLines(lines, color);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.max.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.min.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.max.x, aabb.max.y, aabb.min.z), c);
+	m_vertices.emplace_back(Vector3f(aabb.min.x, aabb.max.y, aabb.min.z), c);
 }
 
 void DebugRenderer::draw(const Frustumf& frustum, const Color& color)
 {
-	const auto& corners = frustum.getCorners();
-
 	const auto& nbl = frustum.getCorner(FrustumCorner::NearBottomLeft);
 	const auto& nbr = frustum.getCorner(FrustumCorner::NearBottomRight);
 	const auto& ntl = frustum.getCorner(FrustumCorner::NearTopLeft);
@@ -205,25 +220,34 @@ void DebugRenderer::draw(const Frustumf& frustum, const Color& color)
 	const auto& ftl = frustum.getCorner(FrustumCorner::FarTopLeft);
 	const auto& ftr = frustum.getCorner(FrustumCorner::FarTopRight);
 
-	const std::vector<Line> lines =
-	{
-		{ nbl, nbr },
-		{ nbr, ntr },
-		{ ntr, ntl },
-		{ ntl, nbl },
+	const auto c = getColor(color);
 
-		{ fbl, fbr },
-		{ fbr, ftr },
-		{ ftr, ftl },
-		{ ftl, fbl },
+	m_vertices.emplace_back(nbl, c);
+	m_vertices.emplace_back(nbr, c);
+	m_vertices.emplace_back(nbr, c);
+	m_vertices.emplace_back(ntr, c);
+	m_vertices.emplace_back(ntr, c);
+	m_vertices.emplace_back(ntl, c);
+	m_vertices.emplace_back(ntl, c);
+	m_vertices.emplace_back(nbl, c);
 
-		{ nbl, fbl },
-		{ nbr, fbr },
-		{ ntr, ftr },
-		{ ntl, ftl },
-	};
+	m_vertices.emplace_back(fbl, c);
+	m_vertices.emplace_back(fbr, c);
+	m_vertices.emplace_back(fbr, c);
+	m_vertices.emplace_back(ftr, c);
+	m_vertices.emplace_back(ftr, c);
+	m_vertices.emplace_back(ftl, c);
+	m_vertices.emplace_back(ftl, c);
+	m_vertices.emplace_back(fbl, c);
 
-	addLines(lines, color);
+	m_vertices.emplace_back(nbl, c);
+	m_vertices.emplace_back(fbl, c);
+	m_vertices.emplace_back(nbr, c);
+	m_vertices.emplace_back(fbr, c);
+	m_vertices.emplace_back(ntr, c);
+	m_vertices.emplace_back(ftr, c);
+	m_vertices.emplace_back(ntl, c);
+	m_vertices.emplace_back(ftl, c);
 }
 
 void DebugRenderer::render(FrameGraphContext& frameGraphContext, CommandBuffer& commandBuffer, const Matrix4f& viewProjection)
@@ -270,16 +294,4 @@ void DebugRenderer::render(FrameGraphContext& frameGraphContext, CommandBuffer& 
 		frameGraphContext.destroyAfterUse(std::move(vertexBuffer));
 
 	m_obsoleteVertexBuffers.clear();
-}
-
-void DebugRenderer::addLine(const Vector3f& point1, const Vector3f& point2, const Color& color)
-{
-	m_vertices.emplace_back(point1, Vector3f(color.r, color.g, color.b));
-	m_vertices.emplace_back(point2, Vector3f(color.r, color.g, color.b));
-}
-
-void DebugRenderer::addLines(const std::vector<Line>& lines, const Color& color)
-{
-	for (const auto& line : lines)
-		addLine(line.point1, line.point2, color);
 }
