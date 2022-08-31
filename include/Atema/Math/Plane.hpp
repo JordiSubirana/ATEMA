@@ -44,9 +44,11 @@ namespace at
 		void set(const Vector3<T>& normal, T distanceToOrigin);
 
 		const Vector3<T>& getNormal() const;
+		T getDistanceToOrigin() const;
 
 		T getDistance(const Vector3<T>& point) const;
 		T getSignedDistance(const Vector3<T>& point) const;
+		Vector3<T> getProjection(const Vector3<T>& point) const;
 
 		Plane& operator=(const Plane& other) = default;
 		Plane& operator=(Plane&& other) noexcept = default;

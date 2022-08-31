@@ -80,6 +80,12 @@ namespace at
 	}
 
 	template <typename T>
+	T Plane<T>::getDistanceToOrigin() const
+	{
+		return m_distance;
+	}
+
+	template <typename T>
 	T Plane<T>::getDistance(const Vector3<T>& point) const
 	{
 		return std::abs(getSignedDistance(point));
@@ -89,6 +95,12 @@ namespace at
 	T Plane<T>::getSignedDistance(const Vector3<T>& point) const
 	{
 		return m_normal.dot(point) - m_distance;
+	}
+
+	template <typename T>
+	Vector3<T> Plane<T>::getProjection(const Vector3<T>& point) const
+	{
+		return point - m_normal * getSignedDistance(point);
 	}
 }
 
