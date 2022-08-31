@@ -23,6 +23,7 @@
 
 using namespace at;
 
+// AstVisitor
 AstVisitor::AstVisitor()
 {
 }
@@ -69,4 +70,53 @@ void AstVisitor::visit(Expression& expression)
 #include <Atema/Shader/Ast/StatementMacroList.hpp>
 
 #define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) void AstVisitor::visit(at_expression ## Expression& expression) {}
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+
+// AstConstVisitor
+AstConstVisitor::AstConstVisitor()
+{
+}
+
+AstConstVisitor::~AstConstVisitor()
+{
+}
+
+void AstConstVisitor::visit(const Statement& statement) const
+{
+	switch (statement.getType())
+	{
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) case Statement::Type::at_statement: \
+	{ \
+		visit(static_cast<const at_statement ## Statement&>(statement)); \
+		break; \
+	}
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
+		default:
+		{
+			ATEMA_ERROR("Invalid statement type");
+		}
+	}
+}
+
+void AstConstVisitor::visit(const Expression& expression) const
+{
+	switch (expression.getType())
+	{
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) case Expression::Type::at_expression: \
+	{ \
+		visit(static_cast<const at_expression ## Expression&>(expression)); \
+		break; \
+	}
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+		default:
+		{
+			ATEMA_ERROR("Invalid expression type");
+		}
+	}
+}
+
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) void AstConstVisitor::visit(const at_statement ## Statement& statement) {}
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
+
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) void AstConstVisitor::visit(const at_expression ## Expression& expression) {}
 #include <Atema/Shader/Ast/ExpressionMacroList.hpp>

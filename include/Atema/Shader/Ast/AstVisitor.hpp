@@ -43,6 +43,22 @@ namespace at
 #define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) virtual void visit(at_expression ## Expression& expression);
 #include <Atema/Shader/Ast/ExpressionMacroList.hpp>
 	};
+
+	class ATEMA_SHADER_API AstConstVisitor
+	{
+	public:
+		AstConstVisitor();
+		virtual ~AstConstVisitor();
+
+		void visit(const Statement& statement) const;
+		void visit(const Expression& statement) const;
+
+#define ATEMA_MACROLIST_SHADERASTSTATEMENT(at_statement) virtual void visit(const at_statement ## Statement& statement);
+#include <Atema/Shader/Ast/StatementMacroList.hpp>
+
+#define ATEMA_MACROLIST_SHADERASTEXPRESSION(at_expression) virtual void visit(const at_expression ## Expression& expression);
+#include <Atema/Shader/Ast/ExpressionMacroList.hpp>
+	};
 }
 
 #endif

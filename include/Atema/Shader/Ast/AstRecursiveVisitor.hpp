@@ -62,6 +62,42 @@ namespace at
 		void visit(TernaryExpression& expression) override;
 		
 	};
+
+	class ATEMA_SHADER_API AstConstRecursiveVisitor : public AstConstVisitor
+	{
+	public:
+		AstConstRecursiveVisitor();
+		~AstConstRecursiveVisitor();
+
+		void visit(const ConditionalStatement& statement) override;
+		void visit(const ForLoopStatement& statement) override;
+		void visit(const WhileLoopStatement& statement) override;
+		void visit(const DoWhileLoopStatement& statement) override;
+		void visit(const VariableDeclarationStatement& statement) override;
+		void visit(const StructDeclarationStatement& statement) override;
+		void visit(const InputDeclarationStatement& statement) override;
+		void visit(const OutputDeclarationStatement& statement) override;
+		void visit(const ExternalDeclarationStatement& statement) override;
+		void visit(const OptionDeclarationStatement& statement) override;
+		void visit(const FunctionDeclarationStatement& statement) override;
+		void visit(const EntryFunctionDeclarationStatement& statement) override;
+		void visit(const ExpressionStatement& statement) override;
+		void visit(const ReturnStatement& statement) override;
+		void visit(const SequenceStatement& statement) override;
+		void visit(const OptionalStatement& statement) override;
+
+		void visit(const AccessIndexExpression& expression) override;
+		void visit(const AccessIdentifierExpression& expression) override;
+		void visit(const AssignmentExpression& expression) override;
+		void visit(const UnaryExpression& expression) override;
+		void visit(const BinaryExpression& expression) override;
+		void visit(const FunctionCallExpression& expression) override;
+		void visit(const BuiltInFunctionCallExpression& expression) override;
+		void visit(const CastExpression& expression) override;
+		void visit(const SwizzleExpression& expression) override;
+		void visit(const TernaryExpression& expression) override;
+
+	};
 }
 
 #endif

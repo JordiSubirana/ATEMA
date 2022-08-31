@@ -23,6 +23,7 @@
 
 using namespace at;
 
+// AstRecursiveVisitor
 AstRecursiveVisitor::AstRecursiveVisitor() : AstVisitor()
 {
 }
@@ -212,6 +213,202 @@ void AstRecursiveVisitor::visit(SwizzleExpression& expression)
 }
 
 void AstRecursiveVisitor::visit(TernaryExpression& expression)
+{
+	expression.condition->accept(*this);
+	expression.trueValue->accept(*this);
+	expression.falseValue->accept(*this);
+}
+
+// AstConstRecursiveVisitor
+AstConstRecursiveVisitor::AstConstRecursiveVisitor() : AstConstVisitor()
+{
+}
+
+AstConstRecursiveVisitor::~AstConstRecursiveVisitor()
+{
+}
+
+void AstConstRecursiveVisitor::visit(const ConditionalStatement& statement)
+{
+	for (auto& branch : statement.branches)
+	{
+		branch.condition->accept(*this);
+		branch.statement->accept(*this);
+	}
+
+	if (statement.elseStatement)
+		statement.elseStatement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const ForLoopStatement& statement)
+{
+	if (statement.initialization)
+		statement.initialization->accept(*this);
+
+	if (statement.condition)
+		statement.condition->accept(*this);
+
+	if (statement.increase)
+		statement.increase->accept(*this);
+
+	if (statement.statement)
+		statement.statement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const WhileLoopStatement& statement)
+{
+	statement.condition->accept(*this);
+	statement.statement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const DoWhileLoopStatement& statement)
+{
+	statement.condition->accept(*this);
+	statement.statement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const VariableDeclarationStatement& statement)
+{
+	if (statement.value)
+		statement.value->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const StructDeclarationStatement& statement)
+{
+	for (auto& member : statement.members)
+	{
+		if (member.condition)
+			member.condition->accept(*this);
+	}
+}
+
+void AstConstRecursiveVisitor::visit(const InputDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.location->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
+void AstConstRecursiveVisitor::visit(const OutputDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.location->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
+void AstConstRecursiveVisitor::visit(const ExternalDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		variable.setIndex->accept(*this);
+		variable.bindingIndex->accept(*this);
+
+		if (variable.condition)
+			variable.condition->accept(*this);
+	}
+}
+
+void AstConstRecursiveVisitor::visit(const OptionDeclarationStatement& statement)
+{
+	for (auto& variable : statement.variables)
+	{
+		if (variable.value)
+			variable.value->accept(*this);
+	}
+}
+
+void AstConstRecursiveVisitor::visit(const FunctionDeclarationStatement& statement)
+{
+	statement.sequence->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const EntryFunctionDeclarationStatement& statement)
+{
+	statement.sequence->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const ExpressionStatement& statement)
+{
+	statement.expression->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const ReturnStatement& statement)
+{
+	statement.expression->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const SequenceStatement& statement)
+{
+	for (auto& subStatement : statement.statements)
+		subStatement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const OptionalStatement& statement)
+{
+	statement.condition->accept(*this);
+	statement.statement->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const AccessIndexExpression& expression)
+{
+	expression.expression->accept(*this);
+	expression.index->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const AccessIdentifierExpression& expression)
+{
+	expression.expression->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const AssignmentExpression& expression)
+{
+	expression.left->accept(*this);
+	expression.right->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const UnaryExpression& expression)
+{
+	expression.operand->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const BinaryExpression& expression)
+{
+	expression.left->accept(*this);
+	expression.right->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const FunctionCallExpression& expression)
+{
+	for (auto& argument : expression.arguments)
+		argument->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const BuiltInFunctionCallExpression& expression)
+{
+	for (auto& argument : expression.arguments)
+		argument->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const CastExpression& expression)
+{
+	for (auto& component : expression.components)
+		component->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const SwizzleExpression& expression)
+{
+	expression.expression->accept(*this);
+}
+
+void AstConstRecursiveVisitor::visit(const TernaryExpression& expression)
 {
 	expression.condition->accept(*this);
 	expression.trueValue->accept(*this);
