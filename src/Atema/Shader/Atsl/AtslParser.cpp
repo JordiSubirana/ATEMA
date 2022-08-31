@@ -143,12 +143,16 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 		if (isSpace(c))
 		{
 			m_currentColumn++;
+
+			continue;
 		}
 		// New line
 		else if (isNewLine(c))
 		{
 			m_currentLine++;
 			m_currentColumn = 0; // Will be incremented by the next char
+
+			continue;
 		}
 		// Symbols
 		else if (isSymbol(c))
@@ -262,7 +266,7 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 
 bool AtslParser::hasNext() const
 {
-	return m_currentIndex < m_code.size() - 1;
+	return m_currentIndex < m_code.size();
 }
 
 char AtslParser::getNext()
