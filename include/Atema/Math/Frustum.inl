@@ -26,6 +26,44 @@
 
 namespace at
 {
+
+	namespace
+	{
+		template <typename T>
+		struct Line
+		{
+			Vector3<T> point;
+			Vector3<T> direction;
+		};
+
+		template <typename T>
+		Line<T> getIntersection(const Plane<T>& p1, const Plane<T>& p2)
+		{
+			Line<T> line;
+
+			line.direction = cross(p1.getNormal(), p2.getNormal());
+
+			line.point = -cross(line.direction, p2.getNormal()) * p1.getDistanceToOrigin() - cross(p1.getNormal(), line.direction) * p2.getDistanceToOrigin();
+			line.point /= line.direction.getSquaredNorm();
+
+			line.direction.normalize();
+
+			return line;
+		}
+
+		template <typename T>
+		Vector3<T> getIntersection(const Plane<T>& plane, const Line<T>& line)
+		{
+			const auto dot = plane.getNormal().dot(line.direction);
+
+			ATEMA_ASSERT(std::fabs(dot) >= Math::Epsilon<T>);
+
+			T t = plane.getSignedDistance(line.point) / dot;
+
+			return line.point - line.direction * t;
+		}
+	}
+
 	template <typename T>
 	Frustum<T>::Frustum(const std::array<Plane<T>, 6>& planes)
 	{
@@ -44,13 +82,13 @@ namespace at
 		m_planes = planes;
 
 		updatePositiveVertexIndices();
+
+		updateCorners();
 	}
 
 	template <typename T>
 	void Frustum<T>::set(const Matrix4<T>& viewProjection)
 	{
-		size_t planeIndex = 0;
-
 		Vector3<T> normal;
 		T norm;
 		T distance;
@@ -65,7 +103,7 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex++].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Left)].set(normal, -distance);
 
 		// Right
 		normal.x = viewProjection[0][3] - viewProjection[0][0];
@@ -77,7 +115,7 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex++].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Right)].set(normal, -distance);
 
 		// Bottom
 		normal.x = viewProjection[0][3] + viewProjection[0][1];
@@ -89,7 +127,7 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex++].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Bottom)].set(normal, -distance);
 
 		// Top
 		normal.x = viewProjection[0][3] - viewProjection[0][1];
@@ -101,7 +139,7 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex++].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Top)].set(normal, -distance);
 
 		// Near
 		normal.x = viewProjection[0][3] + viewProjection[0][2];
@@ -113,7 +151,7 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex++].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Near)].set(normal, -distance);
 
 		// Far
 		normal.x = viewProjection[0][3] - viewProjection[0][2];
@@ -125,9 +163,11 @@ namespace at
 		normal /= norm;
 		distance /= norm;
 
-		m_planes[planeIndex].set(normal, -distance);
+		m_planes[static_cast<size_t>(FrustumPlane::Far)].set(normal, -distance);
 
 		updatePositiveVertexIndices();
+
+		updateCorners();
 	}
 
 	template <typename T>
@@ -158,7 +198,7 @@ namespace at
 			positiveVertex.y = values[indices.y];
 			positiveVertex.z = values[indices.z];
 
-			if (plane.getSignedDistance(positiveVertex) < 0)
+			if (plane.getSignedDistance(positiveVertex) < static_cast<T>(0))
 				return false;
 		}
 
@@ -169,6 +209,42 @@ namespace at
 	const std::array<Plane<T>, 6>& Frustum<T>::getPlanes() const noexcept
 	{
 		return m_planes;
+	}
+
+	template <typename T>
+	const std::array<Vector3<T>, 8>& Frustum<T>::getCorners() const noexcept
+	{
+		return m_corners;
+	}
+
+	template <typename T>
+	const Plane<T>& Frustum<T>::getPlane(FrustumPlane plane) const
+	{
+		return m_planes[static_cast<size_t>(plane)];
+	}
+
+	template <typename T>
+	const Vector3<T>& Frustum<T>::getCorner(FrustumCorner corner) const
+	{
+		return m_corners[static_cast<size_t>(corner)];
+	}
+
+	template <typename T>
+	void Frustum<T>::updateCorners()
+	{
+		auto lb = getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Left)],	m_planes[static_cast<size_t>(FrustumPlane::Bottom)]);
+		auto rb = getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Right)],	m_planes[static_cast<size_t>(FrustumPlane::Bottom)]);
+		auto lt = getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Left)],	m_planes[static_cast<size_t>(FrustumPlane::Top)]);
+		auto rt = getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Right)],	m_planes[static_cast<size_t>(FrustumPlane::Top)]);
+
+		m_corners[static_cast<size_t>(FrustumCorner::NearBottomLeft)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Near)], lb);
+		m_corners[static_cast<size_t>(FrustumCorner::NearBottomRight)] =	getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Near)], rb);
+		m_corners[static_cast<size_t>(FrustumCorner::NearTopLeft)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Near)], lt);
+		m_corners[static_cast<size_t>(FrustumCorner::NearTopRight)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Near)], rt);
+		m_corners[static_cast<size_t>(FrustumCorner::FarBottomLeft)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Far)], lb);
+		m_corners[static_cast<size_t>(FrustumCorner::FarBottomRight)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Far)], rb);
+		m_corners[static_cast<size_t>(FrustumCorner::FarTopLeft)] =			getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Far)], lt);
+		m_corners[static_cast<size_t>(FrustumCorner::FarTopRight)] =		getIntersection(m_planes[static_cast<size_t>(FrustumPlane::Far)], rt);
 	}
 
 	template <typename T>

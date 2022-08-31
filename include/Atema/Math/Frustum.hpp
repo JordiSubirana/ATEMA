@@ -29,6 +29,28 @@
 
 namespace at
 {
+	enum class FrustumPlane
+	{
+		Left,
+		Right,
+		Bottom,
+		Top,
+		Near,
+		Far
+	};
+
+	enum class FrustumCorner
+	{
+		NearBottomLeft,
+		NearBottomRight,
+		NearTopLeft,
+		NearTopRight,
+		FarBottomLeft,
+		FarBottomRight,
+		FarTopLeft,
+		FarTopRight
+	};
+
 	template <typename T>
 	class Frustum
 	{
@@ -47,15 +69,21 @@ namespace at
 		bool contains(const AABB<T>& aabb) const noexcept;
 
 		const std::array<Plane<T>, 6>& getPlanes() const noexcept;
+		const std::array<Vector3<T>, 8>& getCorners() const noexcept;
+
+		const Plane<T>& getPlane(FrustumPlane plane) const;
+		const Vector3<T>& getCorner(FrustumCorner corner) const;
 
 		Frustum& operator=(const Frustum& other) = default;
 		Frustum& operator=(Frustum&& other) noexcept = default;
-		
+
 	private:
+		void updateCorners();
 		void updatePositiveVertexIndices();
 
 		std::array<Plane<T>, 6> m_planes;
 		std::array<Vector3u, 6> m_aabbPositiveVertexIndices;
+		std::array<Vector3<T>, 8> m_corners;
 	};
 
 	using Frustumf = Frustum<float>;
