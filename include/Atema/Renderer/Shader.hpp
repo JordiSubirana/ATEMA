@@ -35,7 +35,7 @@ namespace at
 		struct Settings
 		{
 			ShaderLanguage shaderLanguage = ShaderLanguage::Atsl;
-			void* shaderData = nullptr;
+			const void* shaderData = nullptr;
 			size_t shaderDataSize = 0;
 		};
 

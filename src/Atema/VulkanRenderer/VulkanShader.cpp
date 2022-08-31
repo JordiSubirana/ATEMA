@@ -39,7 +39,7 @@ VulkanShader::VulkanShader(const VulkanDevice& device, const Shader::Settings& s
 	{
 		case ShaderLanguage::Ast:
 		{
-			auto ast = static_cast<Statement*>(settings.shaderData);
+			const auto ast = static_cast<const Statement*>(settings.shaderData);
 
 			SpirvShaderWriter spvWriter;
 
@@ -77,7 +77,7 @@ VulkanShader::VulkanShader(const VulkanDevice& device, const Shader::Settings& s
 		}
 		case ShaderLanguage::SpirV:
 		{
-			create(static_cast<uint32_t*>(settings.shaderData), settings.shaderDataSize);
+			create(static_cast<const uint32_t*>(settings.shaderData), settings.shaderDataSize);
 
 			break;
 		}
