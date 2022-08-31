@@ -201,22 +201,16 @@ namespace at
 	template <typename T>
 	AABB<T> operator*(const Matrix4<T>& matrix, const AABB<T>& aabb)
 	{
-		const std::vector<Vector3<T>> corners =
-		{
-			{ aabb.min.x, aabb.min.y, aabb.min.z },
-			{ aabb.min.x, aabb.min.y, aabb.max.z },
-			{ aabb.min.x, aabb.max.y, aabb.min.z },
-			{ aabb.min.x, aabb.max.y, aabb.max.z },
-			{ aabb.max.x, aabb.min.y, aabb.min.z },
-			{ aabb.max.x, aabb.min.y, aabb.max.z },
-			{ aabb.max.x, aabb.max.y, aabb.min.z },
-			{ aabb.max.x, aabb.max.y, aabb.max.z }
-		};
-
 		AABB<T> newAABB;
 
-		for (const auto& corner : corners)
-			newAABB.extend(matrix.transformPosition(corner));
+		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.min.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.max.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.min.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.max.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.min.y, aabb.min.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.min.y, aabb.max.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.max.y, aabb.min.z }));
+		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.max.y, aabb.max.z }));
 
 		return newAABB;
 	}
