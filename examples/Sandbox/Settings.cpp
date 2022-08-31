@@ -28,6 +28,7 @@ Settings::Settings() :
 	shadowMapSize(2048),
 	shadowBoxMinSize(20.0f),
 	shadowBoxMaxSize(100.0f),
+	enableDebugRenderer(false),
 	debugViewMode(DebugViewMode::Disabled),
 	debugViews(4),
 	metricsUpdateTime(0.2f),

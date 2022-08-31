@@ -84,7 +84,7 @@ namespace
 			vertex.texCoords.y *= size.y;
 		}
 
-		const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::Pos3D_TexCoords_Normal_Tangent_Bitangent);
+		const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_Normal_Tangent_Bitangent);
 
 		ModelLoader::Settings settings(vertexFormat);
 
@@ -441,7 +441,7 @@ void SandboxApplication::updateScene()
 				//const auto distance = Vector2f(i, j).getNorm();
 				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
 
-				const auto percent = (newObjectRows == 1) ? 0.2f : distance / maxDistance;
+				const auto percent = (newObjectRows == 1) ? 0.0f : distance / maxDistance;
 
 				velocity.speed = percent * 3.14159f * 2.0f;
 			}

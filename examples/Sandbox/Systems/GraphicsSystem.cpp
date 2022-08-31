@@ -168,6 +168,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_totalTime(0.0f),
 	m_updateFrameGraph(true),
 	m_shadowMapSize(0),
+	m_enableDebugRenderer(false),
 	m_debugViewMode(Settings::DebugViewMode::Disabled)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
@@ -175,6 +176,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	//translateShaders();
 
 	auto& renderer = Renderer::instance();
+
+	m_debugRenderer = std::make_shared<DebugRenderer>();
 
 	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
 
@@ -643,6 +646,13 @@ void GraphicsSystem::checkSettings()
 		m_updateFrameGraph = true;
 	}
 
+	if (m_enableDebugRenderer != settings.enableDebugRenderer)
+	{
+		m_enableDebugRenderer = settings.enableDebugRenderer;
+
+		m_updateFrameGraph = true;
+	}
+
 	if (m_debugViewMode != settings.debugViewMode)
 	{
 		m_debugViewMode = settings.debugViewMode;
@@ -772,9 +782,14 @@ void GraphicsSystem::createFrameGraph()
 							MaterialData* currentMaterialID = nullptr;
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
-							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
+								auto& transform = entities.get<Transform>(*it);
+
+								// Frustum culling
+								if (!m_cameraFrustum.contains(transform.getMatrix() * graphics.model->getAABB()))
+									continue;
 
 								auto materialID = graphics.material.get();
 
@@ -801,8 +816,6 @@ void GraphicsSystem::createFrameGraph()
 
 									commandBuffer->drawIndexed(indexBuffer->getSize());
 								}
-
-								i++;
 							}
 
 							commandBuffer->end();
@@ -969,6 +982,47 @@ void GraphicsSystem::createFrameGraph()
 
 				context.destroyAfterUse(std::move(gbufferSMSet));
 				context.destroyAfterUse(std::move(phongSet));
+			});
+	}
+
+	// Debug (DebugRenderer)
+	if (m_enableDebugRenderer)
+	{
+		auto& pass = frameGraphBuilder.createPass("debug renderer");
+
+		pass.addOutputTexture(phongOutputTexture, 0);
+
+		pass.setDepthTexture(gbufferDepthTexture);
+
+		pass.setExecutionCallback([this](FrameGraphContext& context)
+			{
+				ATEMA_BENCHMARK("CommandBuffer (debug renderer)");
+
+				auto& commandBuffer = context.getCommandBuffer();
+
+				commandBuffer.setViewport(m_viewport);
+
+				commandBuffer.setScissor(Vector2i(), m_windowSize);
+
+				auto& entityManager = getEntityManager();
+
+				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
+
+				m_debugRenderer->clear();
+
+				m_debugRenderer->draw(m_cameraFrustum, Color::Red);
+
+				const auto& leftPlane = m_cameraFrustum.getPlanes()[0];
+
+				for (auto& entity : entities)
+				{
+					auto& graphics = entities.get<GraphicsComponent>(entity);
+					auto& transform = entities.get<Transform>(entity);
+
+					m_debugRenderer->draw(transform.getMatrix()* graphics.model->getAABB(), Color::Green);
+				}
+
+				m_debugRenderer->render(context, commandBuffer, m_viewProjection);
 			});
 	}
 
@@ -1240,6 +1294,12 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 				mapMemory<Matrix4f>(data, projOffset) = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
 				mapMemory<Matrix4f>(data, projOffset)[1][1] *= -1;
 				mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
+
+				// Update view projection matrix
+				m_viewProjection = mapMemory<Matrix4f>(data, projOffset) * mapMemory<Matrix4f>(data, viewOffset);
+
+				// Update camera frustum
+				m_cameraFrustum.set(m_viewProjection);
 
 				frameData.frameUniformBuffer->unmap();
 

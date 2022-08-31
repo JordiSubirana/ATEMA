@@ -338,7 +338,7 @@ void GuiSystem::showSettings()
 		// Debug views
 		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
-		if (ImGui::CollapsingHeader("Debug Views"))
+		if (ImGui::CollapsingHeader("Debug"))
 		{
 			ImGui::BeginTable("Properties", 2);
 
@@ -364,13 +364,28 @@ void GuiSystem::showSettings()
 				"ShadowMap"
 			};
 
-			// Mode
+			// Debug Renderer
 			{
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Mode");
+				ImGui::Text("Enable Debug Renderer");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Enable Debug Renderer", &settings.enableDebugRenderer);
+			}
+
+			// Views
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Views");
 
 				ImGui::TableNextColumn();
 
@@ -382,7 +397,7 @@ void GuiSystem::showSettings()
 					"Corner",
 					"Full"
 				};
-				ImGui::Combo("##Mode", &debugViewMode, items.data(), static_cast<int>(items.size()));
+				ImGui::Combo("##Views", &debugViewMode, items.data(), static_cast<int>(items.size()));
 
 				settings.debugViewMode = static_cast<Settings::DebugViewMode>(debugViewMode);
 			}

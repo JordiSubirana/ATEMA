@@ -65,6 +65,7 @@ public:
 	float shadowBoxMaxSize;
 
 	// Debug views
+	bool enableDebugRenderer;
 	DebugViewMode debugViewMode;
 	std::vector<DebugView> debugViews;
 

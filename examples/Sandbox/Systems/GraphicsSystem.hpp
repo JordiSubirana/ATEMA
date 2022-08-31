@@ -22,6 +22,7 @@
 #ifndef ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
 #define ATEMA_SANDBOX_GRAPHICSSYSTEM_HPP
 
+#include <Atema/Graphics/DebugRenderer.hpp>
 #include <Atema/Math/AABB.hpp>
 
 #include "System.hpp"
@@ -115,8 +116,16 @@ private:
 	at::Ptr<at::GraphicsPipeline> m_screenPipeline;
 
 	// Settings
+	bool m_enableDebugRenderer;
 	Settings::DebugViewMode m_debugViewMode;
 	std::vector<Settings::DebugView> m_debugViews;
+
+	// Misc
+	at::Ptr<at::DebugRenderer> m_debugRenderer;
+
+	at::Frustumf m_cameraFrustum;
+
+	at::Matrix4f m_viewProjection;
 };
 
 #endif
