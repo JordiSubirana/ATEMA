@@ -705,7 +705,7 @@ namespace at
 		mat[3][0] = static_cast<T>(0);
 		mat[3][1] = static_cast<T>(0);
 		mat[3][2] = -zFar * zNear * static_cast<T>(2) / (zFar - zNear);
-		mat[3][3] = static_cast<T>(1);
+		mat[3][3] = static_cast<T>(0);
 
 		return (mat);
 	}
@@ -727,12 +727,12 @@ namespace at
 
 		mat[2][0] = static_cast<T>(0);
 		mat[2][1] = static_cast<T>(0);
-		mat[2][2] = static_cast<T>(1) / (zNear - zFar);
+		mat[2][2] = static_cast<T>(2) / (zNear - zFar);
 		mat[2][3] = static_cast<T>(0);
 
 		mat[3][0] = (left + right) / (left - right);
 		mat[3][1] = (bottom + top) / (bottom - top);
-		mat[3][2] = zNear / (zNear - zFar);
+		mat[3][2] = (zNear + zFar) / (zNear - zFar);
 		mat[3][3] = static_cast<T>(1);
 
 		return mat;
