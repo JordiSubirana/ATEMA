@@ -128,6 +128,8 @@ private:
 	at::Frustumf m_customfrustum;
 	std::function<bool(const at::AABBf&)> m_cullFunction;
 
+	at::Frustumf m_lightFrustum;
+
 	at::Matrix4f m_viewProjection;
 };
 

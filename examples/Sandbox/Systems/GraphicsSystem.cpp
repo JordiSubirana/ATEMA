@@ -894,9 +894,14 @@ void GraphicsSystem::createFrameGraph()
 							commandBuffer->bindDescriptorSet(1, frameData.shadowSet);
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
-							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
+								auto& transform = entities.get<Transform>(*it);
+
+								// Frustum culling
+								if (!m_lightFrustum.contains(transform.getMatrix() * graphics.model->getAABB()))
+									continue;
 
 								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
 
@@ -911,8 +916,6 @@ void GraphicsSystem::createFrameGraph()
 
 									commandBuffer->drawIndexed(indexBuffer->getSize());
 								}
-
-								i++;
 							}
 
 							commandBuffer->end();
@@ -1012,6 +1015,8 @@ void GraphicsSystem::createFrameGraph()
 				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
 				m_debugRenderer->clear();
+
+				m_debugRenderer->draw(m_lightFrustum, Color::Yellow);
 
 				if (Settings::instance().customFrustumCulling)
 					m_debugRenderer->draw(m_customfrustum, Color::Red);
@@ -1492,6 +1497,8 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		auto data = frameData.shadowBuffer->map();
 
 		mapMemory<Matrix4f>(data, mvpOffset) = proj * view;
+
+		m_lightFrustum.set(mapMemory<Matrix4f>(data, mvpOffset));
 
 		frameData.shadowBuffer->unmap();
 	}
