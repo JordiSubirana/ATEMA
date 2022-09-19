@@ -243,12 +243,12 @@ namespace
 	{
 		switch (glfwState)
 		{
-		case GLFW_PRESS: return MouseButtonState::Press;
-		case GLFW_RELEASE: return MouseButtonState::Release;
-		default:
-		{
-			ATEMA_ERROR("Invalid mouse button state");
-		}
+			case GLFW_PRESS: return MouseButtonState::Press;
+			case GLFW_RELEASE: return MouseButtonState::Release;
+			default:
+			{
+				ATEMA_ERROR("Invalid mouse button state");
+			}
 		}
 
 		return MouseButtonState::Press;
@@ -316,6 +316,7 @@ public:
 		glfwSetFramebufferSizeCallback(m_window, onFramebufferResized);
 		glfwSetKeyCallback(m_window, onKeyEvent);
 		glfwSetCursorPosCallback(m_window, onMouseMoveEvent);
+		glfwSetMouseButtonCallback(m_window, onMouseButtonEvent);
 
 		int w, h;
 		glfwGetWindowSize(m_window, &w, &h);
