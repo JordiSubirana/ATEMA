@@ -31,12 +31,15 @@ namespace
 	const Vector3f rightVector(0.0f, -1.0f, 0.0f);
 }
 
-FirstPersonCameraSystem::FirstPersonCameraSystem() :
+FirstPersonCameraSystem::FirstPersonCameraSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 	System(),
+	m_window(renderWindow.get()),
 	m_front(false),
 	m_back(false),
 	m_right(false),
-	m_left(false)
+	m_left(false),
+	m_cameraRotationEnabled(false),
+	m_initMousePosition(false)
 {
 }
 
@@ -116,13 +119,13 @@ void FirstPersonCameraSystem::onEvent(Event& event)
 
 	if (event.is<KeyEvent>())
 	{
-		auto& keyEvent = static_cast<KeyEvent&>(event);
+		const auto& keyEvent = static_cast<KeyEvent&>(event);
 
 		// We don't care about repeat events
 		if (keyEvent.state == KeyState::Repeat)
 			return;
 
-		bool pressed = keyEvent.state == KeyState::Press;
+		const bool pressed = keyEvent.state == KeyState::Press;
 
 		// Front
 		if (keyEvent.key == Key::W)
@@ -137,17 +140,47 @@ void FirstPersonCameraSystem::onEvent(Event& event)
 		else if (keyEvent.key == Key::D)
 			m_right = pressed;
 	}
-	else if (event.is<MouseMoveEvent>())
+	else if (event.is<MouseButtonEvent>())
 	{
-		auto& mouseEvent = static_cast<MouseMoveEvent&>(event);
+		const auto& mouseEvent = static_cast<MouseButtonEvent&>(event);
 
-		const auto& position = mouseEvent.position;
+		if (mouseEvent.button != MouseButton::Right)
+			return;
 
-		const auto delta = position - m_lastPosition;
+		if (mouseEvent.state == MouseButtonState::Press)
+		{
+			m_cameraRotationEnabled = true;
+			m_initMousePosition = true;
+			m_lastPosition = mouseEvent.position;
+		}
+		else if (m_cameraRotationEnabled)
+		{
+			m_cameraRotationEnabled = false;
+			rotate(*transform, mouseEvent.position);
+		}
 
-		//transform->rotate({ delta.x * scale, delta.y * scale, 0.0f });
-		transform->rotate({ 0.0f, delta.y * cameraScale, - delta.x * cameraScale });
-
-		m_lastPosition = position;
+		m_window->setCursorEnabled(!m_cameraRotationEnabled);
 	}
+	else if (m_cameraRotationEnabled && event.is<MouseMoveEvent>())
+	{
+		const auto& mouseEvent = static_cast<MouseMoveEvent&>(event);
+
+		rotate(*transform, mouseEvent.position);
+	}
+}
+
+void FirstPersonCameraSystem::rotate(at::Transform& transform, const at::Vector2f& mousePosition)
+{
+	if (m_initMousePosition)
+	{
+		m_lastPosition = mousePosition;
+		m_initMousePosition = false;
+		return;
+	}
+
+	const auto delta = mousePosition - m_lastPosition;
+
+	transform.rotate({ 0.0f, delta.y * cameraScale, -delta.x * cameraScale });
+
+	m_lastPosition = mousePosition;
 }

@@ -168,7 +168,7 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(cameraSystem);
 
-	auto firstPersonCameraSystem = std::make_shared<FirstPersonCameraSystem>();
+	auto firstPersonCameraSystem = std::make_shared<FirstPersonCameraSystem>(m_window);
 	firstPersonCameraSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(firstPersonCameraSystem);
@@ -218,17 +218,6 @@ void SandboxApplication::onEvent(at::Event& event)
 			return;
 
 		system->onEvent(event);
-	}
-
-	// Manage cursor depending on which camera is active
-	if (event.is<KeyEvent>())
-	{
-		auto& keyEvent = static_cast<KeyEvent&>(event);
-
-		if (keyEvent.key == Key::Space && keyEvent.state == KeyState::Press)
-		{
-			m_window->setCursorEnabled(!m_window->isCursorEnabled());
-		}
 	}
 }
 

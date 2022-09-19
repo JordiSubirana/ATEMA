@@ -27,14 +27,20 @@
 class FirstPersonCameraSystem : public System
 {
 public:
-	FirstPersonCameraSystem();
+	FirstPersonCameraSystem() = delete;
+	FirstPersonCameraSystem(const at::Ptr<at::RenderWindow>& renderWindow);
 	virtual ~FirstPersonCameraSystem();
 
 	void update(at::TimeStep timeStep) override;
 	void onEvent(at::Event& event) override;
 
 private:
+	void rotate(at::Transform& transform, const at::Vector2f& mousePosition);
+
+	at::RenderWindow* m_window;
 	bool m_front, m_back, m_right, m_left;
+	bool m_cameraRotationEnabled;
+	bool m_initMousePosition;
 	at::Vector2f m_lastPosition;
 };
 
