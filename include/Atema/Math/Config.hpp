@@ -42,4 +42,16 @@
 
 #endif
 
+// Clip space definition : by default clip space's Z is between [0,1]
+#define ATEMA_CLIPSPACE_Z_ZERO_TO_ONE 1
+#define ATEMA_CLIPSPACE_Z_MINUS_ONE_TO_ONE 2
+
+#ifndef ATEMA_CLIPSPACE_Z
+#define ATEMA_CLIPSPACE_Z ATEMA_CLIPSPACE_Z_ZERO_TO_ONE
+#endif
+
+#if ATEMA_CLIPSPACE_Z != ATEMA_CLIPSPACE_Z_ZERO_TO_ONE && ATEMA_CLIPSPACE_Z != ATEMA_CLIPSPACE_Z_MINUS_ONE_TO_ONE
+#error Invalid clipspace Z range
+#endif
+
 #endif

@@ -142,10 +142,19 @@ namespace at
 		m_planes[static_cast<size_t>(FrustumPlane::Top)].set(normal, -distance);
 
 		// Near
+#if ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_ZERO_TO_ONE // Clip space Z : [0;1]
+		normal.x = viewProjection[0][2];
+		normal.y = viewProjection[1][2];
+		normal.z = viewProjection[2][2];
+		distance = viewProjection[3][2];
+#elif ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_MINUS_ONE_TO_ONE // Clip space Z : [-1;1]
 		normal.x = viewProjection[0][3] + viewProjection[0][2];
 		normal.y = viewProjection[1][3] + viewProjection[1][2];
 		normal.z = viewProjection[2][3] + viewProjection[2][2];
 		distance = viewProjection[3][3] + viewProjection[3][2];
+#else
+#error Invalid clipspace Z range
+#endif
 
 		norm = normal.getNorm();
 		normal /= norm;

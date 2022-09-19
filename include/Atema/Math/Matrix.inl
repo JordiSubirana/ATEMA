@@ -688,24 +688,20 @@ namespace at
 		T top = range / ratio;
 
 		mat[0][0] = (static_cast<T>(2) * zNear) / (right - left);
-		mat[0][1] = static_cast<T>(0);
-		mat[0][2] = static_cast<T>(0);
-		mat[0][3] = static_cast<T>(0);
-
-		mat[1][0] = static_cast<T>(0);
+		
 		mat[1][1] = (static_cast<T>(2) * zNear) / (top - bottom);
-		mat[1][2] = static_cast<T>(0);
-		mat[1][3] = static_cast<T>(0);
 
-		mat[2][0] = static_cast<T>(0);
-		mat[2][1] = static_cast<T>(0);
-		mat[2][2] = -(zFar + zNear) / (zFar - zNear);
 		mat[2][3] = static_cast<T>(-1);
 
-		mat[3][0] = static_cast<T>(0);
-		mat[3][1] = static_cast<T>(0);
-		mat[3][2] = -zFar * zNear * static_cast<T>(2) / (zFar - zNear);
-		mat[3][3] = static_cast<T>(0);
+#if ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_ZERO_TO_ONE // Clip space Z : [0;1]
+		mat[2][2] = zFar / (zNear - zFar);
+		mat[3][2] = (zNear * zFar) / (zNear - zFar);
+#elif ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_MINUS_ONE_TO_ONE // Clip space Z : [-1;1]
+		mat[2][2] = (zNear + zFar) / (zNear - zFar);
+		mat[3][2] = (static_cast<T>(2) * zFar * zNear) / (zNear - zFar);
+#else
+#error Invalid clipspace Z range
+#endif
 
 		return (mat);
 	}
@@ -716,24 +712,22 @@ namespace at
 		Matrix4<T> mat(1.0f);
 
 		mat[0][0] = static_cast<T>(2) / (right - left);
-		mat[0][1] = static_cast<T>(0);
-		mat[0][2] = static_cast<T>(0);
-		mat[0][3] = static_cast<T>(0);
-
-		mat[1][0] = static_cast<T>(0);
+		
 		mat[1][1] = static_cast<T>(2) / (top - bottom);
-		mat[1][2] = static_cast<T>(0);
-		mat[1][3] = static_cast<T>(0);
-
-		mat[2][0] = static_cast<T>(0);
-		mat[2][1] = static_cast<T>(0);
-		mat[2][2] = static_cast<T>(2) / (zNear - zFar);
-		mat[2][3] = static_cast<T>(0);
 
 		mat[3][0] = (left + right) / (left - right);
 		mat[3][1] = (bottom + top) / (bottom - top);
-		mat[3][2] = (zNear + zFar) / (zNear - zFar);
 		mat[3][3] = static_cast<T>(1);
+
+#if ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_ZERO_TO_ONE // Clip space Z : [0;1]
+		mat[2][2] = static_cast<T>(1) / (zNear - zFar);
+		mat[3][2] = zNear / (zNear - zFar);
+#elif ATEMA_CLIPSPACE_Z == ATEMA_CLIPSPACE_Z_MINUS_ONE_TO_ONE // Clip space Z : [-1;1]
+		mat[2][2] = static_cast<T>(2) / (zNear - zFar);
+		mat[3][2] = (zNear + zFar) / (zNear - zFar);
+#else
+#error Invalid clipspace Z range
+#endif
 
 		return mat;
 	}
