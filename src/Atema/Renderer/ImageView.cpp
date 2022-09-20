@@ -19,41 +19,40 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
-#define ATEMA_RENDERER_FRAMEBUFFER_HPP
+#include <Atema/Renderer/ImageView.hpp>
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Math/Vector.hpp>
+using namespace at;
 
-#include <vector>
-
-namespace at
+ImageView::ImageView(ImageFormat format, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount) :
+	m_format(format),
+	m_baseLayer(baseLayer),
+	m_layerCount(layerCount),
+	m_baseMipLevel(baseMipLevel),
+	m_mipLevelCount(mipLevelCount)
 {
-	class RenderPass;
-	class ImageView;
-	
-	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
-	{
-	public:
-		struct Settings
-		{
-			Ptr<RenderPass> renderPass;
-			std::vector<Ptr<ImageView>> imageViews;
-			uint32_t width = 0;
-			uint32_t height = 0;
-		};
-		
-		virtual ~Framebuffer();
-
-		static Ptr<Framebuffer> create(const Settings& settings);
-
-		virtual Vector2u getSize() const noexcept = 0;
-		
-	protected:
-		Framebuffer();
-	};
 }
 
-#endif
+ImageFormat ImageView::getFormat() const noexcept
+{
+	return m_format;
+}
+
+uint32_t ImageView::getBaseLayer() const noexcept
+{
+	return m_baseLayer;
+}
+
+uint32_t ImageView::getLayerCount() const noexcept
+{
+	return m_layerCount;
+}
+
+uint32_t ImageView::getBaseMipLevel() const noexcept
+{
+	return m_baseMipLevel;
+}
+
+uint32_t ImageView::getMipLevelCount() const noexcept
+{
+	return m_mipLevelCount;
+}

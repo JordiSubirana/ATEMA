@@ -35,6 +35,7 @@
 #include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Renderer/Image.hpp>
+#include <Atema/Renderer/ImageView.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 #include <Atema/Renderer/Sampler.hpp>

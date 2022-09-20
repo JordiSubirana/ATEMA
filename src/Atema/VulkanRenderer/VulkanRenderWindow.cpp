@@ -334,10 +334,10 @@ void VulkanRenderWindow::createSwapChainResources()
 
 	for (auto& swapChainImage : swapChainImages)
 	{
-		framebufferSettings.images =
+		framebufferSettings.imageViews =
 		{
-			swapChainImage,
-			m_depthImage
+			swapChainImage->getView(),
+			m_depthImage->getView()
 		};
 
 		auto framebuffer = std::make_shared<VulkanFramebuffer>(m_device, framebufferSettings);

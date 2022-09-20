@@ -26,6 +26,8 @@
 #include <Atema/Renderer/Image.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 
+#include <unordered_map>
+
 namespace at
 {
 	class ATEMA_VULKANRENDERER_API VulkanImage final : public Image
@@ -33,29 +35,31 @@ namespace at
 	public:
 		VulkanImage() = delete;
 		VulkanImage(const VulkanDevice& device, const Image::Settings& settings);
-		VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
+		VulkanImage(const VulkanDevice& device, VkImage imageHandle, const Image::Settings& settings);
 		virtual ~VulkanImage();
 
-		VkImage getImageHandle() const noexcept;
-		VkImageView getViewHandle() const noexcept;
+		VkImage getHandle() const noexcept;
+
+		Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
 
 		ImageFormat getFormat() const noexcept override;
 
 		Vector2u getSize() const noexcept override;
 
+		uint32_t getLayers() const noexcept override;
+
 		uint32_t getMipLevels() const noexcept override;
 		
 	private:
-		void createView(VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels);
-
 		const VulkanDevice& m_device;
 		bool m_ownsImage;
 		VkImage m_image;
-		VkImageView m_view;
 		VmaAllocation m_allocation;
 		ImageFormat m_format;
 		Vector2u m_size;
+		uint32_t m_layers;
 		uint32_t m_mipLevels;
+		std::unordered_map<Hash, Ptr<ImageView>> m_views;
 	};
 }
 

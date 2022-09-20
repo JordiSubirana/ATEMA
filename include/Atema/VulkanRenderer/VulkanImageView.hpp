@@ -19,40 +19,30 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
-#define ATEMA_RENDERER_FRAMEBUFFER_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANIMAGEVIEW_HPP
+#define ATEMA_VULKANRENDERER_VULKANIMAGEVIEW_HPP
 
-#include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Math/Vector.hpp>
-
-#include <vector>
+#include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/ImageView.hpp>
+#include <Atema/VulkanRenderer/Vulkan.hpp>
 
 namespace at
 {
-	class RenderPass;
-	class ImageView;
-	
-	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
+	class VulkanDevice;
+	class VulkanImage;
+
+	class ATEMA_VULKANRENDERER_API VulkanImageView final : public ImageView
 	{
 	public:
-		struct Settings
-		{
-			Ptr<RenderPass> renderPass;
-			std::vector<Ptr<ImageView>> imageViews;
-			uint32_t width = 0;
-			uint32_t height = 0;
-		};
-		
-		virtual ~Framebuffer();
+		VulkanImageView() = delete;
+		VulkanImageView(const VulkanDevice& device, const VulkanImage& image, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount);
+		~VulkanImageView() override;
 
-		static Ptr<Framebuffer> create(const Settings& settings);
-
-		virtual Vector2u getSize() const noexcept = 0;
+		VkImageView getHandle() const noexcept;
 		
-	protected:
-		Framebuffer();
+	private:
+		const VulkanDevice& m_device;
+		VkImageView m_imageView;
 	};
 }
 

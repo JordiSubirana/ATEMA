@@ -52,12 +52,12 @@ void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<P
 	update({ binding }, { index }, { buffers }, { bufferRanges }, {}, {}, {}, {});
 }
 
-void DescriptorSet::update(uint32_t binding, const Ptr<Image>& image, const Ptr<Sampler>& sampler)
+void DescriptorSet::update(uint32_t binding, const Ptr<ImageView>& imageView, const Ptr<Sampler>& sampler)
 {
-	update({}, {}, {}, {}, { binding }, { 0 }, { { image } }, { { sampler } });
+	update({}, {}, {}, {}, { binding }, { 0 }, { { imageView } }, { { sampler } });
 }
 
-void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<Image>>& images, const std::vector<Ptr<Sampler>>& samplers)
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<ImageView>>& imageViews, const std::vector<Ptr<Sampler>>& samplers)
 {
-	update({}, {}, {}, {}, { binding }, { index }, { images }, { samplers });
+	update({}, {}, {}, {}, { binding }, { index }, { imageViews }, { samplers });
 }

@@ -19,40 +19,39 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_RENDERER_FRAMEBUFFER_HPP
-#define ATEMA_RENDERER_FRAMEBUFFER_HPP
+#ifndef ATEMA_RENDERER_IMAGEVIEW_HPP
+#define ATEMA_RENDERER_IMAGEVIEW_HPP
 
 #include <Atema/Renderer/Config.hpp>
-#include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Math/Vector.hpp>
-
-#include <vector>
+#include <Atema/Renderer/Enums.hpp>
 
 namespace at
 {
-	class RenderPass;
-	class ImageView;
-	
-	class ATEMA_RENDERER_API Framebuffer : public NonCopyable
+	class ATEMA_RENDERER_API ImageView : public NonCopyable
 	{
 	public:
-		struct Settings
-		{
-			Ptr<RenderPass> renderPass;
-			std::vector<Ptr<ImageView>> imageViews;
-			uint32_t width = 0;
-			uint32_t height = 0;
-		};
-		
-		virtual ~Framebuffer();
+		ImageView() = delete;
+		virtual ~ImageView() = default;
 
-		static Ptr<Framebuffer> create(const Settings& settings);
+		ImageFormat getFormat() const noexcept;
 
-		virtual Vector2u getSize() const noexcept = 0;
-		
+		uint32_t getBaseLayer() const noexcept;
+		uint32_t getLayerCount() const noexcept;
+
+		uint32_t getBaseMipLevel() const noexcept;
+		uint32_t getMipLevelCount() const noexcept;
+
 	protected:
-		Framebuffer();
+		ImageView(ImageFormat format, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount);
+
+	private:
+		ImageFormat m_format;
+		uint32_t m_baseLayer;
+		uint32_t m_layerCount;
+		uint32_t m_baseMipLevel;
+		uint32_t m_mipLevelCount;
 	};
 }
 

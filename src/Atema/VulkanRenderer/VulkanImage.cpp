@@ -20,6 +20,7 @@
 */
 
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanImageView.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 
 #include <vma/vk_mem_alloc.h>
@@ -31,10 +32,10 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	m_device(device),
 	m_ownsImage(true),
 	m_image(VK_NULL_HANDLE),
-	m_view(VK_NULL_HANDLE),
 	m_allocation(VK_NULL_HANDLE),
 	m_format(settings.format),
 	m_size(settings.width, settings.height),
+	m_layers(settings.layers),
 	m_mipLevels(settings.mipLevels)
 {
 	const auto format = Vulkan::getFormat(settings.format);
@@ -46,7 +47,7 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	imageCreateInfo.extent.height = settings.height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.mipLevels = settings.mipLevels;
-	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.arrayLayers = settings.layers;
 	imageCreateInfo.format = format; // Use the same format than the buffer
 	imageCreateInfo.tiling = Vulkan::getTiling(settings.tiling); // Optimal or linear if we want to change pixels client side
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -62,41 +63,49 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	allocCreateInfo.priority = 1.0f;
 
 	ATEMA_VK_CHECK(vmaCreateImage(m_device.getVmaAllocator(), &imageCreateInfo, &allocCreateInfo, &m_image, &m_allocation, nullptr));
-
-	// Create view
-	createView(format, Vulkan::getAspect(settings.format), settings.mipLevels);
 }
 
-VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels) :
+VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, const Image::Settings& settings) :
 	Image(),
 	m_device(device),
 	m_ownsImage(false),
 	m_image(imageHandle),
-	m_view(VK_NULL_HANDLE),
 	m_allocation(VK_NULL_HANDLE),
-	m_format(Vulkan::getFormat(format)),
-	m_size(0, 0),
-	m_mipLevels(1)
+	m_format(settings.format),
+	m_size(settings.width, settings.height),
+	m_layers(settings.layers),
+	m_mipLevels(settings.mipLevels)
 {
-	createView(format, aspect, mipLevels);
 }
 
 VulkanImage::~VulkanImage()
 {
-	ATEMA_VK_DESTROY(m_device, vkDestroyImageView, m_view);
+	m_views.clear();
 
 	if (m_ownsImage)
 		vmaDestroyImage(m_device.getVmaAllocator(), m_image, m_allocation);
 }
 
-VkImage VulkanImage::getImageHandle() const noexcept
+VkImage VulkanImage::getHandle() const noexcept
 {
 	return m_image;
 }
 
-VkImageView VulkanImage::getViewHandle() const noexcept
+Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
-	return m_view;
+	Hash hash = 0;
+	DefaultHasher::hashCombine(hash, baseLayer, layerCount, baseMipLevel, mipLevelCount);
+
+	const auto it = m_views.find(hash);
+
+	if (it != m_views.end())
+		return it->second;
+
+	auto imageView = std::make_shared<VulkanImageView>(m_device, *this, baseLayer, layerCount, baseMipLevel, mipLevelCount);
+
+	m_views[hash] = imageView;
+
+	return imageView;
 }
 
 ImageFormat VulkanImage::getFormat() const noexcept
@@ -109,30 +118,12 @@ Vector2u VulkanImage::getSize() const noexcept
 	return m_size;
 }
 
+uint32_t VulkanImage::getLayers() const noexcept
+{
+	return m_layers;
+}
+
 uint32_t VulkanImage::getMipLevels() const noexcept
 {
 	return m_mipLevels;
-}
-
-void VulkanImage::createView(VkFormat format, VkImageAspectFlags aspect, uint32_t mipLevels)
-{
-	// Create view
-	//TODO: Check if this is the right place
-	{
-		VkImageViewCreateInfo viewInfo{};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = m_image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = format;
-
-		// Describe what the image's purpose is and which part of the image should be accessed
-		// Here, no mipmaps, no multiple layers (for stereographic 3D with R/L eyes for example)
-		viewInfo.subresourceRange.aspectMask = aspect;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = mipLevels;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-
-		ATEMA_VK_CHECK(m_device.vkCreateImageView(m_device, &viewInfo, nullptr, &m_view));
-	}
 }

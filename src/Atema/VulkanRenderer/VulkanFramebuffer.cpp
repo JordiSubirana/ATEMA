@@ -22,6 +22,7 @@
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanImageView.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 
 using namespace at;
@@ -34,11 +35,11 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanDevice& device, const Framebuff
 	auto renderPass = std::static_pointer_cast<VulkanRenderPass>(settings.renderPass);
 	std::vector<VkImageView> attachments;
 
-	for (auto& image : settings.images)
+	for (auto& imageView : settings.imageViews)
 	{
-		auto vkImage = std::static_pointer_cast<VulkanImage>(image);
+		auto vkImageView = std::static_pointer_cast<VulkanImageView>(imageView);
 
-		attachments.push_back(vkImage->getViewHandle());
+		attachments.push_back(vkImageView->getHandle());
 	}
 	
 	VkFramebufferCreateInfo framebufferInfo{};

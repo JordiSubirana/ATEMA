@@ -292,7 +292,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		{
 			shaderOptions.emplace_back("Material" + materialParameter.name + "Binding", bindingIndex);
 
-			descriptorSet->update(bindingIndex++, texture, sampler);
+			descriptorSet->update(bindingIndex++, texture->getView(), sampler);
 		}
 		else
 		{

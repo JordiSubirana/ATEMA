@@ -48,7 +48,7 @@ namespace at
 			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<Ptr<Image>>>& images,
+			const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
 			const std::vector<std::vector<Ptr<Sampler>>>& samplers) override;
 		
 	private:

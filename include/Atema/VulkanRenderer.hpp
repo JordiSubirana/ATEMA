@@ -34,6 +34,7 @@
 #include <Atema/VulkanRenderer/VulkanFramebuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanGraphicsPipeline.hpp>
 #include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanImageView.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 #include <Atema/VulkanRenderer/VulkanSampler.hpp>

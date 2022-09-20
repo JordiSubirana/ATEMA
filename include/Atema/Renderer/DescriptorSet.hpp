@@ -32,7 +32,7 @@
 namespace at
 {
 	class Buffer;
-	class Image;
+	class ImageView;
 	class Sampler;
 
 	class ATEMA_RENDERER_API DescriptorSet : public NonCopyable
@@ -44,8 +44,8 @@ namespace at
 		void update(uint32_t binding, const Ptr<Buffer>& buffer, size_t bufferRange);
 		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers);
 		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers, const std::vector<size_t>& bufferRanges);
-		void update(uint32_t binding, const Ptr<Image>& image, const Ptr<Sampler>& sampler);
-		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Image>>& images, const std::vector<Ptr<Sampler>>& samplers);
+		void update(uint32_t binding, const Ptr<ImageView>& imageView, const Ptr<Sampler>& sampler);
+		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<ImageView>>& imageViews, const std::vector<Ptr<Sampler>>& samplers);
 
 		virtual void update(
 			const std::vector<uint32_t>& bufferBindings,
@@ -54,7 +54,7 @@ namespace at
 			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<Ptr<Image>>>& images,
+			const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
 			const std::vector<std::vector<Ptr<Sampler>>>& samplers) = 0;
 		
 	protected:

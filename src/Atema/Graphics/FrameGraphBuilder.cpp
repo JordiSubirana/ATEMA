@@ -959,7 +959,7 @@ void FrameGraphBuilder::createPhysicalPasses()
 			}
 
 			// Add corresponding image to framebuffer and add the corresponding clear value
-			framebufferSettings.images.emplace_back(textureData.physicalTexture->image);
+			framebufferSettings.imageViews.emplace_back(textureData.physicalTexture->image->getView());
 
 			if (Renderer::isDepthImageFormat(texture.format) || Renderer::isStencilImageFormat(texture.format))
 			{

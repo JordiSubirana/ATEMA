@@ -30,6 +30,8 @@
 
 namespace at
 {
+	class ImageView;
+
 	class ATEMA_RENDERER_API Image : public NonCopyable
 	{
 	public:
@@ -37,6 +39,7 @@ namespace at
 		{
 			uint32_t width = 8;
 			uint32_t height = 8;
+			uint32_t layers = 1;
 			uint32_t mipLevels = 1;
 
 			ImageFormat format = ImageFormat::RGBA8_UNORM;
@@ -49,9 +52,16 @@ namespace at
 
 		static Ptr<Image> create(const Settings& settings);
 
+		// Returns a view containing all the required layers and mip levels
+		// If layerCount is 0, then the view contains all the remaining layers
+		// If mipLevelCount is 0, then the view contains all the remaining mip levels
+		virtual Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+
 		virtual ImageFormat getFormat() const noexcept = 0;
 
 		virtual Vector2u getSize() const noexcept = 0;
+
+		virtual uint32_t getLayers() const noexcept = 0;
 
 		virtual uint32_t getMipLevels() const noexcept = 0;
 		

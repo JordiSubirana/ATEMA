@@ -281,7 +281,7 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Ima
 	m_device.vkCmdCopyBufferToImage(
 		m_commandBuffer,
 		vkBuffer->getHandle(),
-		vkImage->getImageHandle(),
+		vkImage->getHandle(),
 		layout,
 		1,
 		&region
@@ -371,7 +371,7 @@ void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
 	// Specify image & subResourceRange (used for mipmaps or arrays)
-	barrier.image = vkImage->getImageHandle();
+	barrier.image = vkImage->getHandle();
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	barrier.subresourceRange.baseArrayLayer = 0;
@@ -405,7 +405,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image, Flags<PipelineS
 	const auto mipLevels = vkImage->getMipLevels();
 	const auto format = Vulkan::getFormat(vkImage->getFormat());
 	const auto size = vkImage->getSize();
-	const auto imageHandle = vkImage->getImageHandle();
+	const auto imageHandle = vkImage->getHandle();
 
 	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
 	const auto dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
@@ -428,7 +428,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image, Flags<PipelineS
 	// Generate mip levels
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.image = vkImage->getImageHandle();
+	barrier.image = imageHandle;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage->getFormat());

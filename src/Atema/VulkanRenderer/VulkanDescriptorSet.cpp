@@ -21,7 +21,7 @@
 
 #include <Atema/VulkanRenderer/VulkanDescriptorSet.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanImage.hpp>
+#include <Atema/VulkanRenderer/VulkanImageView.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderer.hpp>
 #include <Atema/VulkanRenderer/VulkanSampler.hpp>
 
@@ -54,14 +54,14 @@ void VulkanDescriptorSet::update(
 	const std::vector<std::vector<size_t>>& bufferRanges,
 	const std::vector<uint32_t>& imageSamplerBindings,
 	const std::vector<uint32_t>& imageSamplerIndices,
-	const std::vector<std::vector<Ptr<Image>>>& images,
+	const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
 	const std::vector<std::vector<Ptr<Sampler>>>& samplers)
 {
 	ATEMA_ASSERT(bufferBindings.size() == bufferIndices.size(), "Inconsistent buffer sizes");
 	ATEMA_ASSERT(bufferBindings.size() == buffers.size(), "Inconsistent buffer sizes");
 	ATEMA_ASSERT(bufferBindings.size() == bufferRanges.size(), "Inconsistent buffer sizes");
 	ATEMA_ASSERT(imageSamplerBindings.size() == imageSamplerIndices.size(), "Inconsistent image sampler sizes");
-	ATEMA_ASSERT(imageSamplerBindings.size() == images.size(), "Inconsistent image sampler sizes");
+	ATEMA_ASSERT(imageSamplerBindings.size() == imageViews.size(), "Inconsistent image sampler sizes");
 	ATEMA_ASSERT(imageSamplerBindings.size() == samplers.size(), "Inconsistent image sampler sizes");
 
 	std::vector<std::vector<VkDescriptorBufferInfo>> descriptorBuffers;
@@ -123,20 +123,20 @@ void VulkanDescriptorSet::update(
 
 	for (size_t i = 0; i < imageSamplerBindings.size(); i++)
 	{
-		ATEMA_ASSERT(images[i].size() == samplers[i].size(), "Each image must be associated with a sampler");
+		ATEMA_ASSERT(imageViews[i].size() == samplers[i].size(), "Each image must be associated with a sampler");
 
 		descriptorImages.resize(descriptorImages.size() + 1);
 
 		auto& descriptors = descriptorImages.back();
-		descriptors.resize(images[i].size());
+		descriptors.resize(imageViews[i].size());
 
 		for (size_t j = 0; j < descriptors.size(); j++)
 		{
-			const auto image = std::static_pointer_cast<VulkanImage>(images[i][j]);
+			const auto imageView = std::static_pointer_cast<VulkanImageView>(imageViews[i][j]);
 			const auto sampler = std::static_pointer_cast<VulkanSampler>(samplers[i][j]);
 
 			descriptors[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptors[j].imageView = image->getViewHandle();
+			descriptors[j].imageView = imageView->getHandle();
 			descriptors[j].sampler = sampler->getHandle();
 		}
 

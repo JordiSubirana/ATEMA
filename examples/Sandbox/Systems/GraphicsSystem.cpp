@@ -962,10 +962,10 @@ void GraphicsSystem::createFrameGraph()
 					for (uint32_t i = 0; i < gbufferTextures.size(); i++)
 					{
 						auto gbufferImage = context.getTexture(gbufferTextures[i]);
-						gbufferSMSet->update(i, gbufferImage, m_ppSampler);
+						gbufferSMSet->update(i, gbufferImage->getView(), m_ppSampler);
 					}
 
-					gbufferSMSet->update(shadowMapBindingIndex, context.getTexture(shadowMapTexture), m_shadowMapSampler);
+					gbufferSMSet->update(shadowMapBindingIndex, context.getTexture(shadowMapTexture)->getView(), m_shadowMapSampler);
 
 					phongSet->update(0, frameData.shadowBuffer);
 					phongSet->update(1, frameData.phongBuffer);
@@ -1050,7 +1050,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto descriptorSet = m_screenLayout->createSet();
 
-				descriptorSet->update(0, context.getTexture(debugTexture), m_ppSampler);
+				descriptorSet->update(0, context.getTexture(debugTexture)->getView(), m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -1120,7 +1120,7 @@ void GraphicsSystem::createFrameGraph()
 
 						auto descriptorSet = m_screenLayout->createSet();
 
-						descriptorSet->update(0, context.getTexture(debugTextures[i]), m_ppSampler);
+						descriptorSet->update(0, context.getTexture(debugTextures[i])->getView(), m_ppSampler);
 
 						commandBuffer.bindDescriptorSet(0, descriptorSet);
 
@@ -1148,8 +1148,8 @@ void GraphicsSystem::createFrameGraph()
 				auto descriptorSet1 = m_screenLayout->createSet();
 				auto descriptorSet2 = m_screenLayout->createSet();
 
-				descriptorSet1->update(0, context.getTexture(phongOutputTexture), m_ppSampler);
-				descriptorSet2->update(0, context.getTexture(shadowMapTexture), m_ppSampler);
+				descriptorSet1->update(0, context.getTexture(phongOutputTexture)->getView(), m_ppSampler);
+				descriptorSet2->update(0, context.getTexture(shadowMapTexture)->getView(), m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 

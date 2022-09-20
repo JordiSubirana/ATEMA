@@ -165,9 +165,14 @@ VulkanSwapChain::VulkanSwapChain(VulkanRenderWindow& renderWindow, const Setting
 
 		m_device.vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapChainImages.data());
 
+		Image::Settings imageSettings;
+		imageSettings.format = Vulkan::getFormat(m_format);
+		imageSettings.width = m_extent.width;
+		imageSettings.height = m_extent.height;
+
 		for (auto& swapChainImage : swapChainImages)
 		{
-			auto image = std::make_shared<VulkanImage>(m_device, swapChainImage, m_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			auto image = std::make_shared<VulkanImage>(m_device, swapChainImage, imageSettings);
 
 			m_images.push_back(std::static_pointer_cast<Image>(image));
 		}
