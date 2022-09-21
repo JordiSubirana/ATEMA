@@ -38,6 +38,11 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	m_layers(settings.layers),
 	m_mipLevels(settings.mipLevels)
 {
+	ATEMA_ASSERT(settings.width > 0, "Image width must be greater than 0");
+	ATEMA_ASSERT(settings.height > 0, "Image height must be greater than 0");
+	ATEMA_ASSERT(settings.layers > 0, "Image layers must be greater than 0");
+	ATEMA_ASSERT(settings.mipLevels > 0, "Image mipLevels must be greater than 0");
+
 	const auto format = Vulkan::getFormat(settings.format);
 
 	VkImageCreateInfo imageCreateInfo{};
@@ -93,6 +98,14 @@ VkImage VulkanImage::getHandle() const noexcept
 
 Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
+	// Explicitly set remaining layers
+	if (layerCount == 0)
+		layerCount = m_layers - baseLayer;
+
+	// Explicitly set remaining mip levels
+	if (mipLevelCount == 0)
+		mipLevelCount = m_mipLevels - baseMipLevel;
+
 	Hash hash = 0;
 	DefaultHasher::hashCombine(hash, baseLayer, layerCount, baseMipLevel, mipLevelCount);
 
