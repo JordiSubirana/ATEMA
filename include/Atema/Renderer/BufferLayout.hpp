@@ -35,12 +35,14 @@ namespace at
 		BufferLayout(StructLayout structLayout);
 		~BufferLayout();
 
-		size_t getAlignment(BufferElementType elementType);
-		size_t getSize(BufferElementType elementType);
+		size_t getAlignment(BufferElementType elementType) const;
+		size_t getArrayAlignment(BufferElementType elementType) const;
+		size_t getSize(BufferElementType elementType) const;
 
 		size_t add(BufferElementType elementType);
 		size_t addArray(BufferElementType elementType, size_t size);
 		size_t addMatrix(BufferElementType elementType, size_t rows, size_t columns, bool columnMajor = true);
+		size_t addMatrixArray(BufferElementType elementType, size_t rows, size_t columns, bool columnMajor, size_t size);
 		size_t addStruct(const BufferLayout& structLayout);
 		size_t addStructArray(const BufferLayout& structLayout, size_t size);
 

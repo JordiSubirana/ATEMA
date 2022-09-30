@@ -36,7 +36,7 @@ BufferLayout::~BufferLayout()
 {
 }
 
-size_t BufferLayout::getAlignment(BufferElementType elementType)
+size_t BufferLayout::getAlignment(BufferElementType elementType) const
 {
 	switch (m_structLayout)
 	{
@@ -82,7 +82,21 @@ size_t BufferLayout::getAlignment(BufferElementType elementType)
 	}
 }
 
-size_t BufferLayout::getSize(BufferElementType elementType)
+size_t BufferLayout::getArrayAlignment(BufferElementType elementType) const
+{
+	auto alignment = getAlignment(elementType);
+
+	if (m_structLayout == StructLayout::Std140)
+	{
+		const auto multiple = getAlignment(BufferElementType::Float4);
+
+		alignment = Math::getNextMultiple(alignment, multiple);
+	}
+
+	return alignment;
+}
+
+size_t BufferLayout::getSize(BufferElementType elementType) const
 {
 	switch (elementType)
 	{
@@ -133,15 +147,8 @@ size_t BufferLayout::addArray(BufferElementType elementType, size_t size)
 {
 	ATEMA_ASSERT(size > 0, "Array size must be greater than zero");
 
-	auto alignment = getAlignment(elementType);
+	const auto alignment = getArrayAlignment(elementType);
 	const auto elementSize = getSize(elementType);
-
-	if (m_structLayout == StructLayout::Std140)
-	{
-		const auto multiple = getAlignment(BufferElementType::Float4);
-
-		alignment = Math::getNextMultiple(alignment, multiple);
-	}
 
 	const auto firstElementAddress = add(alignment, elementSize);
 
@@ -161,6 +168,19 @@ size_t BufferLayout::addMatrix(BufferElementType elementType, size_t rows, size_
 		return addArray(static_cast<BufferElementType>(static_cast<int>(elementType) + rows - 1), columns);
 
 	return addArray(static_cast<BufferElementType>(static_cast<int>(elementType) + columns - 1), rows);
+}
+
+size_t BufferLayout::addMatrixArray(BufferElementType elementType, size_t rows, size_t columns, bool columnMajor, size_t size)
+{
+	ATEMA_ASSERT(size > 0, "Array size must be greater than zero");
+	ATEMA_ASSERT(elementType == BufferElementType::Int || elementType == BufferElementType::UInt || elementType == BufferElementType::Float || elementType == BufferElementType::Double, "elementType must be one of : Int, UInt, Float, Double");
+	ATEMA_ASSERT(1 < rows && rows <= 4, "Rows must be between 2 and 4");
+	ATEMA_ASSERT(1 < columns && columns <= 4, "Columns must be between 2 and 4");
+
+	if (columnMajor)
+		return addArray(static_cast<BufferElementType>(static_cast<int>(elementType) + rows - 1), columns * size);
+
+	return addArray(static_cast<BufferElementType>(static_cast<int>(elementType) + columns - 1), rows * size);
 }
 
 size_t BufferLayout::addStruct(const BufferLayout& structLayout)
