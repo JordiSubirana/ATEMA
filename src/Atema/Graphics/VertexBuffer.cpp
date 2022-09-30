@@ -72,10 +72,3 @@ void VertexBuffer::unmap()
 
 	m_data = nullptr;
 }
-
-MemoryMapper VertexBuffer::mapComponent(VertexComponentType type) const
-{
-	ATEMA_ASSERT(m_data, "VertexBuffer is not mapped");
-
-	return { m_data, m_format->getByteSize(), m_format->getComponent(type).getByteOffset() };
-}

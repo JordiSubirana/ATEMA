@@ -66,11 +66,6 @@ namespace at
 		// Requires BufferUsage::Map
 		void unmap();
 
-		// Map the required component
-		// The buffer must have been mapped before calling this method
-		// The range of the mapper matches the map range
-		MemoryMapper mapComponent(VertexComponentType type) const;
-
 	private:
 		Ptr<const VertexFormat> m_format;
 		Ptr<Buffer> m_buffer;

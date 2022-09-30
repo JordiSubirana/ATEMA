@@ -28,10 +28,10 @@ MemoryMapper::MemoryMapper() :
 {
 }
 
-MemoryMapper::MemoryMapper(void* data, size_t blockByteSize, size_t elementByteOffset) :
+MemoryMapper::MemoryMapper(void* data, size_t byteOffset, size_t blockByteSize) :
 	m_data(data),
-	m_blockByteSize(blockByteSize),
-	m_elementByteOffset(elementByteOffset)
+	m_byteOffset(byteOffset),
+	m_blockByteSize(blockByteSize)
 {
 }
 
@@ -45,11 +45,6 @@ void MemoryMapper::setBlockSize(size_t byteSize)
 	m_blockByteSize = byteSize;
 }
 
-void MemoryMapper::setElementOffset(size_t byteOffset)
-{
-	m_elementByteOffset = byteOffset;
-}
-
 const void* MemoryMapper::getData() const noexcept
 {
 	return m_data;
@@ -58,9 +53,4 @@ const void* MemoryMapper::getData() const noexcept
 size_t MemoryMapper::getBlockSize() const noexcept
 {
 	return m_blockByteSize;
-}
-
-size_t MemoryMapper::getElementOffset() const noexcept
-{
-	return m_elementByteOffset;
 }
