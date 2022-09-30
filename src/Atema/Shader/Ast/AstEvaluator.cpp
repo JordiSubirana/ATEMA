@@ -692,6 +692,9 @@ void AstEvaluator::visit(BuiltInFunctionCallExpression& expression)
 
 void AstEvaluator::visit(CastExpression& expression)
 {
+	stackInvalidResult();
+	return;
+
 	auto& optionalResult = m_resultStack.emplace();
 
 	std::vector<ConstantValue> components;
