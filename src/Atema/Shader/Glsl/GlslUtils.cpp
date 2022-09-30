@@ -107,17 +107,13 @@ namespace
 				typeStr += "Cube";
 				break;
 			}
-			case ImageType::Shadow1D:
+			case ImageType::TextureArray1D:
 			{
-				return typeStr + "1DShadow";
+				return typeStr + "1DArray";
 			}
-			case ImageType::Shadow2D:
+			case ImageType::TextureArray2D:
 			{
-				return typeStr + "2DShadow";
-			}
-			case ImageType::CubeShadow:
-			{
-				return typeStr + "CubeShadow";
+				return typeStr + "2DArray";
 			}
 			default:
 			{
