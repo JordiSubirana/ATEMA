@@ -31,86 +31,86 @@ using namespace at;
 
 namespace
 {
-	void vec2fToRG32f(MemoryMapper& src, MemoryMapper& dst, size_t size)
+	void vec2fToRG32f(MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size)
 	{
 		for (size_t i = 0; i < size; i++)
-			dst.map<Vector2f>(i) = src.map<Vector2f>(i);
+			dst.map<Vector2f>(i, dstOffset) = src.map<Vector2f>(i, srcOffset);
 	}
 
-	void vec2fToRG64f(MemoryMapper& src, MemoryMapper& dst, size_t size)
-	{
-		for (size_t i = 0; i < size; i++)
-		{
-			const auto& vec = src.map<Vector2f>(i);
-			dst.map<Vector2d>(i) = { vec.x, vec.y };
-		}
-	}
-
-	void vec3fToRGB32f (MemoryMapper& src, MemoryMapper& dst, size_t size)
-	{
-		for (size_t i = 0; i < size; i++)
-			dst.map<Vector3f>(i) = src.map<Vector3f>(i);
-	}
-
-	void vec3fToRGBA32f(MemoryMapper& src, MemoryMapper& dst, size_t size, float w)
+	void vec2fToRG64f(MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size)
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			const auto& vec = src.map<Vector3f>(i);
-			dst.map<Vector4f>(i) = { vec.x, vec.y, vec.z, w };
+			const auto& vec = src.map<Vector2f>(i, srcOffset);
+			dst.map<Vector2d>(i, dstOffset) = { vec.x, vec.y };
 		}
 	}
 
-	void vec3fToRGB64f(MemoryMapper& src, MemoryMapper& dst, size_t size)
+	void vec3fToRGB32f (MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size)
+	{
+		for (size_t i = 0; i < size; i++)
+			dst.map<Vector3f>(i, dstOffset) = src.map<Vector3f>(i, srcOffset);
+	}
+
+	void vec3fToRGBA32f(MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size, float w)
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			const auto& vec = src.map<Vector3f>(i);
-			dst.map<Vector3d>(i) = { vec.x, vec.y, vec.z };
+			const auto& vec = src.map<Vector3f>(i, srcOffset);
+			dst.map<Vector4f>(i, dstOffset) = { vec.x, vec.y, vec.z, w };
 		}
 	}
 
-	void vec3fToRGBA64f(MemoryMapper& src, MemoryMapper& dst, size_t size, double w)
+	void vec3fToRGB64f(MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size)
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			const auto& vec = src.map<Vector3f>(i);
-			dst.map<Vector4d>(i) = { static_cast<double>(vec.x), static_cast<double>(vec.y), static_cast<double>(vec.z), w };
+			const auto& vec = src.map<Vector3f>(i, srcOffset);
+			dst.map<Vector3d>(i, dstOffset) = { vec.x, vec.y, vec.z };
 		}
 	}
 
-	void copyComponent(VertexInputFormat format, MemoryMapper& src, MemoryMapper& dst, size_t size, double w = 0.0)
+	void vec3fToRGBA64f(MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size, double w)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+			const auto& vec = src.map<Vector3f>(i, srcOffset);
+			dst.map<Vector4d>(i, dstOffset) = { static_cast<double>(vec.x), static_cast<double>(vec.y), static_cast<double>(vec.z), w };
+		}
+	}
+
+	void copyComponent(VertexInputFormat format, MemoryMapper& src, size_t srcOffset, MemoryMapper& dst, size_t dstOffset, size_t size, double w = 0.0)
 	{
 		switch (format)
 		{
 			case VertexInputFormat::RG32_SFLOAT:
 			{
-				vec2fToRG32f(src, dst, size);
+				vec2fToRG32f(src, srcOffset, dst, dstOffset, size);
 				break;
 			}
 			case VertexInputFormat::RGB32_SFLOAT:
 			{
-				vec3fToRGB32f(src, dst, size);
+				vec3fToRGB32f(src, srcOffset, dst, dstOffset, size);
 				break;
 			}
 			case VertexInputFormat::RGBA32_SFLOAT:
 			{
-				vec3fToRGBA32f(src, dst, size, static_cast<float>(w));
+				vec3fToRGBA32f(src, srcOffset, dst, dstOffset, size, static_cast<float>(w));
 				break;
 			}
 			case VertexInputFormat::RG64_SFLOAT:
 			{
-				vec2fToRG64f(src, dst, size);
+				vec2fToRG64f(src, srcOffset, dst, dstOffset, size);
 				break;
 			}
 			case VertexInputFormat::RGB64_SFLOAT:
 			{
-				vec3fToRGB64f(src, dst, size);
+				vec3fToRGB64f(src, srcOffset, dst, dstOffset, size);
 				break;
 			}
 			case VertexInputFormat::RGBA64_SFLOAT:
 			{
-				vec3fToRGBA64f(src, dst, size, w);
+				vec3fToRGBA64f(src, srcOffset, dst, dstOffset, size, w);
 				break;
 			}
 			default:
@@ -373,38 +373,52 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 
 	auto stagingVertexBuffer = std::make_shared<VertexBuffer>(vertexBufferSettings);
 
-	stagingVertexBuffer->map();
+	auto& dstFormat = *vertexBufferSettings.vertexFormat;
+	auto dstData = stagingVertexBuffer->map();
 
-	MemoryMapper srcMemoryMapper(vertices.data(), sizeof(StaticVertex), offsetof(StaticVertex, position));
-	auto dstMemoryMapper = stagingVertexBuffer->mapComponent(VertexComponentType::Position);
-	copyComponent(format.getComponent(VertexComponentType::Position).format, srcMemoryMapper, dstMemoryMapper, vertexCount, 1.0);
+	MemoryMapper srcMemoryMapper(vertices.data(), 0, sizeof(StaticVertex));
+	MemoryMapper dstMemoryMapper(dstData, 0, dstFormat.getByteSize());
+
+	copyComponent(
+		format.getComponent(VertexComponentType::Position).format,
+		srcMemoryMapper, offsetof(StaticVertex, position),
+		dstMemoryMapper, dstFormat.getComponent(VertexComponentType::Position).getByteOffset(),
+		vertexCount, 1.0);
 
 	if (hasTexCoords)
 	{
-		srcMemoryMapper.setElementOffset(offsetof(StaticVertex, texCoords));
-		dstMemoryMapper = stagingVertexBuffer->mapComponent(VertexComponentType::TexCoords);
-		copyComponent(format.getComponent(VertexComponentType::TexCoords).format, srcMemoryMapper, dstMemoryMapper, vertexCount);
+		copyComponent(
+			format.getComponent(VertexComponentType::TexCoords).format,
+			srcMemoryMapper, offsetof(StaticVertex, texCoords),
+			dstMemoryMapper, dstFormat.getComponent(VertexComponentType::TexCoords).getByteOffset(),
+			vertexCount);
 	}
 
 	if (hasNormal)
 	{
-		srcMemoryMapper.setElementOffset(offsetof(StaticVertex, normal));
-		dstMemoryMapper = stagingVertexBuffer->mapComponent(VertexComponentType::Normal);
-		copyComponent(format.getComponent(VertexComponentType::Normal).format, srcMemoryMapper, dstMemoryMapper, vertexCount);
+		copyComponent(
+			format.getComponent(VertexComponentType::Normal).format,
+			srcMemoryMapper, offsetof(StaticVertex, normal),
+			dstMemoryMapper, dstFormat.getComponent(VertexComponentType::Normal).getByteOffset(),
+			vertexCount);
 	}
 
 	if (hasTangent)
 	{
-		srcMemoryMapper.setElementOffset(offsetof(StaticVertex, tangent));
-		dstMemoryMapper = stagingVertexBuffer->mapComponent(VertexComponentType::Tangent);
-		copyComponent(format.getComponent(VertexComponentType::Tangent).format, srcMemoryMapper, dstMemoryMapper, vertexCount);
+		copyComponent(
+			format.getComponent(VertexComponentType::Tangent).format,
+			srcMemoryMapper, offsetof(StaticVertex, tangent),
+			dstMemoryMapper, dstFormat.getComponent(VertexComponentType::Tangent).getByteOffset(),
+			vertexCount);
 	}
 
 	if (hasBitangent)
 	{
-		srcMemoryMapper.setElementOffset(offsetof(StaticVertex, bitangent));
-		dstMemoryMapper = stagingVertexBuffer->mapComponent(VertexComponentType::Bitangent);
-		copyComponent(format.getComponent(VertexComponentType::Bitangent).format, srcMemoryMapper, dstMemoryMapper, vertexCount);
+		copyComponent(
+			format.getComponent(VertexComponentType::Bitangent).format,
+			srcMemoryMapper, offsetof(StaticVertex, bitangent),
+			dstMemoryMapper, dstFormat.getComponent(VertexComponentType::Bitangent).getByteOffset(),
+			vertexCount);
 	}
 
 	stagingVertexBuffer->unmap();
@@ -444,7 +458,7 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 	}
 	else
 	{
-		MemoryMapper mapper(bufferData, sizeof(uint16_t));
+		MemoryMapper mapper(bufferData, 0, sizeof(uint16_t));
 
 		for (size_t i = 0; i < indices.size(); i++)
 			mapper.map<uint16_t>(i) = static_cast<uint16_t>(indices[i]);
