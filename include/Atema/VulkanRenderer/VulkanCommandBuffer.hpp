@@ -60,7 +60,11 @@ namespace at
 		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;
 
 		void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage, ImageLayout dstLayout) override;
-		
+
+		void copyImage(const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, uint32_t layerCount) override;
+
+		void blitImage(const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, SamplerFilter filter, uint32_t layerCount) override;
+
 		void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) override;
 
 		void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) override;
@@ -72,7 +76,7 @@ namespace at
 
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
 
-		void imageBarrier(const Ptr<Image>& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) override;
+		void imageBarrier(const Ptr<Image>& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
 
 		void createMipmaps(const Ptr<Image>& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) override;
 

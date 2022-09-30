@@ -288,6 +288,95 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Ima
 	);
 }
 
+void VulkanCommandBuffer::copyImage(
+	const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
+	const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
+	uint32_t layerCount)
+{
+	//TODO: Ensure src & dst format are compatible
+
+	ATEMA_ASSERT(srcImage, "Invalid source image");
+	ATEMA_ASSERT(dstImage, "Invalid destination image");
+
+	const auto srcFormat = srcImage->getFormat();
+	const auto dstFormat = dstImage->getFormat();
+
+	const auto vkSrcLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(srcFormat));
+	const auto vkDstLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(dstFormat));
+
+	ATEMA_ASSERT(vkSrcLayout == VK_IMAGE_LAYOUT_GENERAL || vkSrcLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "Invalid source image layout");
+	ATEMA_ASSERT(vkDstLayout == VK_IMAGE_LAYOUT_GENERAL || vkDstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid destination image layout");
+
+	const auto& vkSrcImage = static_cast<const VulkanImage&>(*srcImage);
+	const auto& vkDstImage = static_cast<const VulkanImage&>(*dstImage);
+
+	const auto srcSize = srcImage->getSize();
+	const auto dstSize = dstImage->getSize();
+
+	// If layerCount is 0, we'll keep the minimum remaining layer count between src & dst
+	if (layerCount == 0)
+		layerCount = std::min(srcImage->getLayers() - srcLayer, dstImage->getLayers() - dstLayer);
+
+	VkImageCopy region;
+	region.extent.width = std::min(srcSize.x, dstSize.x);
+	region.extent.height = std::min(srcSize.y, dstSize.y);
+	region.extent.depth = 1;
+	region.srcOffset = { 0, 0, 0 };
+	region.srcSubresource.mipLevel = srcMipLevel;
+	region.srcSubresource.baseArrayLayer = srcLayer;
+	region.srcSubresource.layerCount = layerCount;
+	region.srcSubresource.aspectMask = Vulkan::getAspect(srcFormat);
+	region.dstOffset = { 0, 0, 0 };
+	region.dstSubresource.mipLevel = dstMipLevel;
+	region.dstSubresource.baseArrayLayer = dstLayer;
+	region.dstSubresource.layerCount = layerCount;
+	region.dstSubresource.aspectMask = Vulkan::getAspect(dstFormat);
+
+	m_device.vkCmdCopyImage(m_commandBuffer, vkSrcImage.getHandle(), vkSrcLayout, vkDstImage.getHandle(), vkDstLayout, 1, &region);
+}
+
+void VulkanCommandBuffer::blitImage(
+	const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
+	const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
+	SamplerFilter filter, uint32_t layerCount)
+{
+	//TODO: Ensure src & dst format are compatible
+
+	ATEMA_ASSERT(srcImage, "Invalid source image");
+	ATEMA_ASSERT(dstImage, "Invalid destination image");
+
+	const auto srcFormat = srcImage->getFormat();
+	const auto dstFormat = dstImage->getFormat();
+
+	const auto vkSrcLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(srcFormat));
+	const auto vkDstLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(dstFormat));
+
+	ATEMA_ASSERT(vkSrcLayout == VK_IMAGE_LAYOUT_GENERAL || vkSrcLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "Invalid source image layout");
+	ATEMA_ASSERT(vkDstLayout == VK_IMAGE_LAYOUT_GENERAL || vkDstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid destination image layout");
+
+	const auto& vkSrcImage = static_cast<const VulkanImage&>(*srcImage);
+	const auto& vkDstImage = static_cast<const VulkanImage&>(*dstImage);
+
+	const auto srcSize = srcImage->getSize();
+	const auto dstSize = dstImage->getSize();
+
+	// If layerCount is 0, we'll keep the minimum remaining layer count between src & dst
+	if (layerCount == 0)
+		layerCount = std::min(srcImage->getLayers() - srcLayer, dstImage->getLayers() - dstLayer);
+
+	VkImageBlit region;
+	region.srcSubresource.mipLevel = srcMipLevel;
+	region.srcSubresource.baseArrayLayer = srcLayer;
+	region.srcSubresource.layerCount = layerCount;
+	region.srcSubresource.aspectMask = Vulkan::getAspect(srcFormat);
+	region.dstSubresource.mipLevel = dstMipLevel;
+	region.dstSubresource.baseArrayLayer = dstLayer;
+	region.dstSubresource.layerCount = layerCount;
+	region.dstSubresource.aspectMask = Vulkan::getAspect(dstFormat);
+
+	m_device.vkCmdBlitImage(m_commandBuffer, vkSrcImage.getHandle(), vkSrcLayout, vkDstImage.getHandle(), vkDstLayout, 1, &region, Vulkan::getSamplerFilter(filter));
+}
+
 void VulkanCommandBuffer::bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding)
 {
 	ATEMA_ASSERT(buffer, "Invalid buffer");
@@ -342,7 +431,8 @@ void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCoun
 
 void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 	Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout,
-	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
+	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout,
+	uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
 	ATEMA_ASSERT(image, "Invalid image");
 
@@ -372,10 +462,10 @@ void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 
 	// Specify image & subResourceRange (used for mipmaps or arrays)
 	barrier.image = vkImage->getHandle();
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	barrier.subresourceRange.baseMipLevel = baseMipLevel;
+	barrier.subresourceRange.levelCount = mipLevelCount == 0 ? VK_REMAINING_MIP_LEVELS : mipLevelCount;
+	barrier.subresourceRange.baseArrayLayer = baseLayer;
+	barrier.subresourceRange.layerCount = layerCount == 0 ? VK_REMAINING_ARRAY_LAYERS : layerCount;
 	barrier.subresourceRange.aspectMask = Vulkan::getAspect(format);
 
 	// Pipeline barrier

@@ -192,7 +192,7 @@ namespace at
 		TransferDst,
 		Present,
 		
-		All
+		General
 	};
 
 	enum class AttachmentLoading
