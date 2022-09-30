@@ -427,7 +427,7 @@ VkImageLayout Vulkan::getLayout(ImageLayout layout, bool isDepth)
 		case ImageLayout::TransferSrc: return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		case ImageLayout::TransferDst: return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		case ImageLayout::Present: return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		case ImageLayout::All: return VK_IMAGE_LAYOUT_GENERAL;
+		case ImageLayout::General: return VK_IMAGE_LAYOUT_GENERAL;
 		default:
 		{
 			ATEMA_ERROR("Invalid image layout");

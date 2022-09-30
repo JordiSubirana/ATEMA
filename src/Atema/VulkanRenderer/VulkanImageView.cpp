@@ -35,7 +35,7 @@ VulkanImageView::VulkanImageView(const VulkanDevice& device, const VulkanImage& 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image.getHandle();
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.viewType = layerCount == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	viewInfo.format = Vulkan::getFormat(format);
 
 	// Describe what the image's purpose is and which part of the image should be accessed
