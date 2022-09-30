@@ -26,16 +26,16 @@
 
 namespace at
 {
-	// Maps (ptr + byteOffset) to a type
+	// Maps (data + byteOffset) to a type
 	template <typename T>
-	T& mapMemory(void* ptr, size_t byteOffset);
+	T& mapMemory(void* data, size_t byteOffset);
 
-	// Consider the memory as an array of N blocks with similar structure
+	// Consider the memory as an array of blocks with similar structure
 	// Each block :
 	//	- is composed of one or many elements
 	//	- has a byte size of 'blockByteSize'
 	template <typename T>
-	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset = 0);
+	T& mapMemory(void* data, size_t byteOffset, size_t blockByteSize, size_t blockIndex, size_t elementByteOffset = 0);
 }
 
 #include <Atema/Core/Utils.inl>

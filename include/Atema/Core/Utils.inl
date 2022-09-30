@@ -27,15 +27,15 @@
 namespace at
 {
 	template <typename T>
-	T& mapMemory(void* ptr, size_t byteOffset)
+	T& mapMemory(void* data, size_t byteOffset)
 	{
-		return *reinterpret_cast<T*>(static_cast<uint8_t*>(ptr) + byteOffset);
+		return *reinterpret_cast<T*>(static_cast<uint8_t*>(data) + byteOffset);
 	}
 
 	template <typename T>
-	T& mapMemory(void* ptr, size_t blockIndex, size_t blockByteSize, size_t elementByteOffset)
+	T& mapMemory(void* data, size_t byteOffset, size_t blockByteSize, size_t blockIndex, size_t elementByteOffset)
 	{
-		return mapMemory<T>(ptr, blockIndex * blockByteSize + elementByteOffset);
+		return mapMemory<T>(data, byteOffset + blockIndex * blockByteSize + elementByteOffset);
 	}
 }
 

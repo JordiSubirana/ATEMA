@@ -30,29 +30,27 @@ namespace at
 	{
 	public:
 		MemoryMapper();
-		MemoryMapper(void* data, size_t blockByteSize, size_t elementByteOffset = 0);
+		MemoryMapper(void* data, size_t byteOffset, size_t blockByteSize);
 		MemoryMapper(const MemoryMapper& other) = default;
 		MemoryMapper(MemoryMapper&& other) noexcept = default;
 		~MemoryMapper() = default;
 
 		void setData(void* data);
 		void setBlockSize(size_t byteSize);
-		void setElementOffset(size_t byteOffset);
 
 		const void* getData() const noexcept;
 		size_t getBlockSize() const noexcept;
-		size_t getElementOffset() const noexcept;
 
 		template <typename T>
-		T& map(size_t index);
+		T& map(size_t index, size_t elementByteOffset = 0);
 
 		MemoryMapper& operator=(const MemoryMapper& other) = default;
 		MemoryMapper& operator=(MemoryMapper&& other) noexcept = default;
 
 	private:
 		void* m_data;
+		size_t m_byteOffset;
 		size_t m_blockByteSize;
-		size_t m_elementByteOffset;
 	};
 }
 

@@ -25,9 +25,9 @@
 namespace at
 {
 	template <typename T>
-	T& MemoryMapper::map(size_t index)
+	T& MemoryMapper::map(size_t index, size_t elementByteOffset)
 	{
-		return mapMemory<T>(m_data, index, m_blockByteSize, m_elementByteOffset);
+		return mapMemory<T>(m_data, m_byteOffset, m_blockByteSize, index, elementByteOffset);
 	}
 }
 
