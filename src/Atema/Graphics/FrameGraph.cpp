@@ -47,7 +47,7 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 	size_t passIndex = 0;
 	for (auto& pass : m_passes)
 	{
-		FrameGraphContext context(renderFrame, *commandBuffer, pass.textures, pass.renderPass, pass.framebuffer);
+		FrameGraphContext context(renderFrame, *commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
 
 		if (pass.useRenderFrameOutput)
 			commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);

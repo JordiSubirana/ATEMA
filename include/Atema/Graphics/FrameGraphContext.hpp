@@ -32,6 +32,7 @@
 
 namespace at
 {
+	class ImageView;
 	class RenderFrame;
 
 	class ATEMA_GRAPHICS_API FrameGraphContext : public NonCopyable
@@ -42,6 +43,7 @@ namespace at
 			RenderFrame& renderFrame,
 			CommandBuffer& commandBuffer,
 			std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& textureMap,
+			std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& viewMap,
 			Ptr<RenderPass> renderPass,
 			Ptr<Framebuffer> framebuffer);
 		~FrameGraphContext();
@@ -51,6 +53,7 @@ namespace at
 		CommandBuffer& getCommandBuffer() const noexcept;
 
 		Ptr<Image> getTexture(FrameGraphTextureHandle textureHandle) const;
+		Ptr<ImageView> getImageView(FrameGraphTextureHandle textureHandle) const;
 
 		// Creates a secondary command buffer to use within the current pass
 		// This methods calls CommandBuffer::beginSecondaryCommandBuffer
@@ -67,6 +70,7 @@ namespace at
 		RenderFrame& m_renderFrame;
 		CommandBuffer& m_commandBuffer;
 		std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& m_textureMap;
+		std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& m_viewMap;
 		Ptr<RenderPass> m_renderPass;
 		Ptr<Framebuffer> m_framebuffer;
 	};

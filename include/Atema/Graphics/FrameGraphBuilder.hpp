@@ -46,7 +46,7 @@ namespace at
 		~FrameGraphBuilder();
 
 		FrameGraphTextureHandle createTexture(const FrameGraphTextureSettings& settings);
-		FrameGraphTextureHandle importTexture(const Ptr<Image>& image);
+		FrameGraphTextureHandle importTexture(const Ptr<Image>& image, uint32_t layer = 0, uint32_t mipLevel = 0);
 
 		FrameGraphPass& createPass(const std::string& name);
 
@@ -157,6 +157,7 @@ namespace at
 			Image::Settings imageSettings;
 
 			Ptr<Image> image;
+			Ptr<ImageView> imageView;
 
 			std::vector<FrameGraph::TextureBarrier> barriers;
 
@@ -243,6 +244,7 @@ namespace at
 		FrameGraphTextureHandle m_renderFrameDepthTextureHandle;
 
 		std::unordered_map<FrameGraphTextureHandle, Ptr<Image>> m_importedTextures;
+		std::unordered_map<FrameGraphTextureHandle, Ptr<ImageView>> m_importedViews;
 
 		// FrameGraph building parameters (invalidated when calling build())
 		std::vector<TextureData> m_textureDatas;

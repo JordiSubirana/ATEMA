@@ -37,6 +37,7 @@ namespace at
 {
 	class Framebuffer;
 	class Image;
+	class ImageView;
 	class RenderFrame;
 	class RenderPass;
 
@@ -86,6 +87,8 @@ namespace at
 			std::vector<CommandBuffer::ClearValue> clearValues;
 
 			std::unordered_map<FrameGraphTextureHandle, WPtr<Image>> textures;
+
+			std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>> views;
 
 			FrameGraphPass::ExecutionCallback executionCallback;
 

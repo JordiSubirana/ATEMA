@@ -24,6 +24,7 @@
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
 #include <Atema/Renderer/Image.hpp>
+#include <Atema/Renderer/ImageView.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
 
@@ -161,16 +162,34 @@ FrameGraphTextureHandle FrameGraphBuilder::createTexture(const FrameGraphTexture
 	return m_textures.size() - 1;
 }
 
-FrameGraphTextureHandle FrameGraphBuilder::importTexture(const Ptr<Image>& image)
+FrameGraphTextureHandle FrameGraphBuilder::importTexture(const Ptr<Image>& image, uint32_t layer, uint32_t mipLevel)
 {
+	ATEMA_ASSERT(image, "Invalid image");
+	ATEMA_ASSERT(layer < image->getLayers(), "Invalid image layer");
+	ATEMA_ASSERT(mipLevel < image->getMipLevels(), "Invalid image mip level");
+
+	auto imageSize = image->getSize();
+
+	if (mipLevel > 0)
+	{
+		imageSize /= 1 << mipLevel;
+
+		if (imageSize.x < 1)
+			imageSize.x = 1;
+
+		if (imageSize.y < 1)
+			imageSize.y = 1;
+	}
+
 	FrameGraphTextureSettings textureSettings;
-	textureSettings.width = image->getSize().x;
-	textureSettings.height = image->getSize().y;
+	textureSettings.width = static_cast<uint32_t>(imageSize.x);
+	textureSettings.height = static_cast<uint32_t>(imageSize.y);
 	textureSettings.format = image->getFormat();
 
 	const auto textureHandle = createTexture(textureSettings);
 
 	m_importedTextures[textureHandle] = image;
+	m_importedViews[textureHandle] = image->getView(layer, 1, mipLevel, 1);
 
 	return textureHandle;
 }
@@ -218,16 +237,25 @@ Ptr<FrameGraph> FrameGraphBuilder::build()
 		pass.executionCallback = frameGraphPass.getExecutionCallback();
 		pass.useSecondaryCommandBuffers = frameGraphPass.useSecondaryCommandBuffers();
 
+		for (auto& textureHandle : frameGraphPass.getSampledTextures())
+		{
+			const auto& textureData = m_textureDatas[textureHandle];
+			pass.textures[textureHandle] = textureData.physicalTexture->image;
+			pass.views[textureHandle] = textureData.physicalTexture->imageView;
+		}
+
 		for (auto& textureHandle : frameGraphPass.getInputTextures())
 		{
 			const auto& textureData = m_textureDatas[textureHandle];
 			pass.textures[textureHandle] = textureData.physicalTexture->image;
+			pass.views[textureHandle] = textureData.physicalTexture->imageView;
 		}
 
 		for (auto& textureHandle : frameGraphPass.getOutputTextures())
 		{
 			const auto& textureData = m_textureDatas[textureHandle];
 			pass.textures[textureHandle] = textureData.physicalTexture->image;
+			pass.views[textureHandle] = textureData.physicalTexture->imageView;
 		}
 
 		const auto depthTextureHandle = frameGraphPass.getDepthTexture();
@@ -235,6 +263,7 @@ Ptr<FrameGraph> FrameGraphBuilder::build()
 		{
 			const auto& textureData = m_textureDatas[depthTextureHandle];
 			pass.textures[depthTextureHandle] = textureData.physicalTexture->image;
+			pass.views[depthTextureHandle] = textureData.physicalTexture->imageView;
 		}
 	}
 
@@ -735,7 +764,10 @@ void FrameGraphBuilder::createPhysicalTextures()
 
 			// We will use RenderFrame's image when rendering
 			if (!isRenderFrameOutput(textureAlias.textureHandle))
+			{
 				physicalTexture->image = m_importedTextures[textureAlias.textureHandle];
+				physicalTexture->imageView = m_importedViews[textureAlias.textureHandle];
+			}
 
 			m_physicalTextures.emplace_back(physicalTexture);
 		}
@@ -758,6 +790,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 
 				physicalTexture->imageSettings = textureAlias.imageSettings;
 				physicalTexture->image = Image::create(textureAlias.imageSettings);
+				physicalTexture->imageView = physicalTexture->image->getView();
 
 				m_physicalTextures.emplace_back(physicalTexture);
 			}
@@ -959,7 +992,7 @@ void FrameGraphBuilder::createPhysicalPasses()
 			}
 
 			// Add corresponding image to framebuffer and add the corresponding clear value
-			framebufferSettings.imageViews.emplace_back(textureData.physicalTexture->image->getView());
+			framebufferSettings.imageViews.emplace_back(textureData.physicalTexture->imageView);
 
 			if (Renderer::isDepthImageFormat(texture.format) || Renderer::isStencilImageFormat(texture.format))
 			{

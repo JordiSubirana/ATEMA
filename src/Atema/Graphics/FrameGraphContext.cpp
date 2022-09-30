@@ -28,12 +28,14 @@ FrameGraphContext::FrameGraphContext(
 	RenderFrame& renderFrame,
 	CommandBuffer& commandBuffer,
 	std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& textureMap,
+	std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& viewMap,
 	Ptr<RenderPass> renderPass,
 	Ptr<Framebuffer> framebuffer) :
 	NonCopyable(),
 	m_renderFrame(renderFrame),
 	m_commandBuffer(commandBuffer),
 	m_textureMap(textureMap),
+	m_viewMap(viewMap),
 	m_renderPass(renderPass),
 	m_framebuffer(framebuffer)
 {
@@ -56,6 +58,11 @@ CommandBuffer& FrameGraphContext::getCommandBuffer() const noexcept
 Ptr<Image> FrameGraphContext::getTexture(FrameGraphTextureHandle textureHandle) const
 {
 	return m_textureMap.at(textureHandle).lock();
+}
+
+Ptr<ImageView> FrameGraphContext::getImageView(FrameGraphTextureHandle textureHandle) const
+{
+	return m_viewMap.at(textureHandle).lock();
 }
 
 Ptr<CommandBuffer> FrameGraphContext::createSecondaryCommandBuffer()
