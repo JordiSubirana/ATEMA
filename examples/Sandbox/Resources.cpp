@@ -152,7 +152,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	std::vector<MaterialParameter> materialParameters =
 	{
 		{ "Color", &color, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
-		{ "Normal", &normal, ConstantValue(Vector3f(0.0f, 0.0f, 1.0f)) },
+		{ "Normal", &normal, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
 		{ "AO", &ambientOcclusion, ConstantValue(1.0f)},
 		{ "Height", &height, ConstantValue(1.0f) },
 		{ "Emissive", &emissive, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
