@@ -118,7 +118,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 
 	ModelLoader::Settings settings(vertexFormat);
 	settings.flipTexCoords = true;
-	settings.vertexTransformation = Matrix4f::createRotation({ Math::HalfPi<float>, 0.0f, 0.0f });
+	settings.vertexTransformation = modelTransform.getMatrix();
 
 	model = ObjLoader::load(path, settings);
 }
