@@ -52,6 +52,8 @@ private:
 		at::Ptr<at::Buffer> shadowBuffer;
 		at::Ptr<at::DescriptorSet> shadowSet;
 
+		at::Ptr<at::Buffer> shadowCascadesBuffer;
+
 		at::Ptr<at::Buffer> phongBuffer;
 	};
 
@@ -69,6 +71,7 @@ private:
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
 
+	void updateBoundingBoxes();
 	void updateMaterialResources();
 	void updateUniformBuffers(FrameData& frameData);
 
@@ -103,9 +106,15 @@ private:
 	at::Ptr<at::DescriptorSetLayout> m_shadowLayout;
 	at::Ptr<at::DescriptorSetLayout> m_gbufferShadowMapLayout;
 	at::Ptr<at::GraphicsPipeline> m_shadowPipeline;
+	uint32_t m_currentShadowMapSize;
 	uint32_t m_shadowMapSize;
+	uint32_t m_dynamicShadowBufferOffset;
+	uint32_t m_shadowElementByteSize;
 	at::Viewport m_shadowViewport;
+	at::Ptr<at::Image> m_shadowMap;
 	at::Ptr<at::Sampler> m_shadowMapSampler;
+	std::array<float, SHADOW_CASCADE_COUNT> m_shadowCascadeDepths;
+	std::array<float, SHADOW_CASCADE_COUNT> m_shadowCascadeRadii;
 
 	// Phong lighting
 	at::Ptr<at::DescriptorSetLayout> m_phongLayout;
@@ -124,11 +133,10 @@ private:
 	at::Ptr<at::DebugRenderer> m_debugRenderer;
 
 	float m_frustumRotation;
-	at::Frustumf m_cameraFrustum;
 	at::Frustumf m_customfrustum;
 	std::function<bool(const at::AABBf&)> m_cullFunction;
 
-	at::Frustumf m_lightFrustum;
+	std::array<at::Frustumf, SHADOW_CASCADE_COUNT> m_lightFrustums;
 
 	at::Matrix4f m_viewProjection;
 };

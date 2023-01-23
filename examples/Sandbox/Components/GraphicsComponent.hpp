@@ -23,7 +23,6 @@
 #define ATEMA_SANDBOX_GRAPHICSCOMPONENT_HPP
 
 #include <Atema/Atema.hpp>
-#include <Atema/Math/AABB.hpp>
 
 #include "../Resources.hpp"
 
@@ -32,6 +31,10 @@ struct GraphicsComponent
 	at::Ptr<at::Model> model;
 	
 	at::Ptr<MaterialData> material;
+
+	at::AABBf aabb;
+
+	bool castShadows = false;
 };
 
 #endif

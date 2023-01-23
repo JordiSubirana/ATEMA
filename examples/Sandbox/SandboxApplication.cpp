@@ -320,6 +320,7 @@ void SandboxApplication::createCamera()
 	camera.display = true;
 	camera.isAuto = true;
 	camera.useTarget = true;
+	camera.farPlane = 10000.0f;
 }
 
 void SandboxApplication::createPlayer()
@@ -328,13 +329,15 @@ void SandboxApplication::createPlayer()
 
 	// Create default transform
 	auto& transform = m_entityManager.createComponent<Transform>(entity);
-	transform.translate({ 1.0f, 0.0f, 1.0f });
+	//transform.translate({ -220.0f, -220.0f, 20.0f });
+	transform.translate({ 0.0f, 0.0f, 20.0f });
 
 	// Create camera
 	auto& camera = m_entityManager.createComponent<CameraComponent>(entity);
 	camera.display = false;
 	camera.isAuto = false;
 	camera.useTarget = false;
+	camera.farPlane = 10000.0f;
 }
 
 void SandboxApplication::updateScene()
@@ -380,6 +383,7 @@ void SandboxApplication::updateScene()
 
 				graphics.model = m_modelData->model;
 				graphics.material = m_materialData;
+				graphics.castShadows = true;
 
 				// Transform component
 				m_entityManager.createComponent<Transform>(entity);
@@ -433,6 +437,8 @@ void SandboxApplication::updateScene()
 				const auto percent = (newObjectRows == 1) ? 0.0f : distance / maxDistance;
 
 				velocity.speed = percent * 3.14159f * 2.0f;
+				velocity.speed = percent * 3.14159f * 0.25f;
+				velocity.speed = 0.0f;
 			}
 		}
 	}

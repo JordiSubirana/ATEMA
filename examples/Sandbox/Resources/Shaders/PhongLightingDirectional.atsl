@@ -1,3 +1,8 @@
+option
+{
+	uint ShadowMapCascadeCount = 8;
+}
+
 struct PhongDirectionalData
 {
 	vec3f cameraPosition;
@@ -8,7 +13,10 @@ struct PhongDirectionalData
 
 struct ShadowData
 {
-	mat4f shadowViewProj;
+	mat4f view;
+	mat4f cascadeViewProj[8];
+	float cascadeDepth[8];
+	float cascadeDepthBias[8];
 }
 
 external
@@ -21,7 +29,7 @@ external
 	[set(0), binding(5)] sampler2Df gbufferMetalness;
 	[set(0), binding(6)] sampler2Df gbufferRoughness;
 	
-	[set(0), binding(7)] sampler2DShadow shadowMap;
+	[set(0), binding(7)] sampler2DArray shadowMap;
 	
 	[set(1), binding(0)] ShadowData shadowData;
 	
@@ -91,34 +99,105 @@ float random(vec3f seed, int i)
 	return fract(sin(dotProduct) * 43758.5453);
 }
 
-float getVisibility(float bias)
+float sampleVisibility(vec2f uv, uint cascadeIndex, float shadowZ)
+{
+	float shadowMapZ = sample(shadowMap, vec3f(uv, cascadeIndex)).r;
+	
+	if (shadowMapZ < shadowZ)
+		return 0.0;
+	
+	return 1.0;
+}
+
+float sampleVisibilityPCF(vec2f uv, uint cascadeIndex, float shadowZ)
+{
+	float scale = 0.1;
+	
+	vec2i texDim = textureSize(shadowMap, 0).xy;
+	float dx = scale / float(texDim.x);
+	float dy = scale / float(texDim.y);
+
+	float result = 0.0;
+	int count = 0;
+	int range = 8;
+	
+	for (int x = -range; x <= range; x++)
+	{
+		for (int y = -range; y <= range; y++)
+		{
+			result = result + sampleVisibility(uv + vec2(dx*x, dy*y), cascadeIndex, shadowZ);
+			count++;
+		}
+	}
+	
+	return result / count;
+}
+
+float sampleVisibilityPoissonPCF(vec2f uv, uint cascadeIndex, float shadowZ)
+{
+	float scale = 0.4;
+	
+	vec2i texDim = textureSize(shadowMap, 0).xy;
+	float dx = scale / float(texDim.x);
+	float dy = scale / float(texDim.y);
+
+	float result = 0.0;
+	int count = 0;
+	int range = 4;
+	
+	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
+	
+	for (int x = -range; x <= range; x++)
+	{
+		for (int y = -range; y <= range; y++)
+		{
+			int index = int(int(16.0 * random(floor(pos * 1000.0), x + y * 100)) % 16);
+		
+			vec2f offset = poissonDisk[index] / 200;
+			offset = offset * scale * 0.0;
+			
+			result = result + sampleVisibility(uv + vec2(dx*x, dy*y) + offset, cascadeIndex, shadowZ);
+			count++;
+		}
+	}
+	
+	return result / count;
+}
+
+float getVisibility(float angle)
 {
 	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
 	
-	vec4f posLightSpace = (shadowData.shadowViewProj * vec4f(pos, 1.0));
-	posLightSpace.z = clamp(posLightSpace.z, -1.0, 1.0);
+	vec4f posViewSpace = (shadowData.view * vec4f(pos, 1.0));
 	
-	vec2f shadowMapUV = posLightSpace.xy * 0.5 + 0.5;
-	
-	float visibility = 1.0;
-	
-	for (int i = 0; i < 8; i++)
+	uint cascadeIndex = uint(ShadowMapCascadeCount - 1);
+	for(uint i = uint(0); i < uint(ShadowMapCascadeCount); i++)
 	{
-		int index = int(int(16.0 * random(floor(pos * 1000.0), i)) % 16);
-		
-		float shadowMapZ = sample(shadowMap, vec3f(shadowMapUV + poissonDisk[index] / 1500.0, (posLightSpace.z - bias) / posLightSpace.w));
-		
-		visibility = visibility - 0.1 * (1.0 - shadowMapZ);
+		if(-posViewSpace.z < shadowData.cascadeDepth[i])
+		{	
+			cascadeIndex = i;
+			break;
+		}
 	}
 	
-	return visibility;
+	float cascadePoissonStrengths[8] = float[](2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0);
+	
+	float cascadePoissonStrength = cascadePoissonStrengths[cascadeIndex];
+	
+	float cascadeBias = clamp(shadowData.cascadeDepthBias[cascadeIndex] * tan(angle), 0.0, 0.5);
+	
+	vec4f shadowCoord = (shadowData.cascadeViewProj[cascadeIndex] * vec4f(pos, 1.0));
+	shadowCoord.z = clamp(shadowCoord.z, -1.0, 1.0);
+	
+	vec2f shadowMapUV = shadowCoord.xy * 0.5 + 0.5;
+	float shadowZ = shadowCoord.z - cascadeBias;
+	
+	return sampleVisibility(shadowMapUV, cascadeIndex, shadowZ);
 }
 
 [entry(fragment)]
 void main()
 {
-	vec2f p = poissonDisk[0];
-	
 	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
 	vec3f normal = sample(gbufferNormal, inTexCoords).xyz;
 	vec4f color = sample(gbufferColor, inTexCoords);
@@ -145,12 +224,29 @@ void main()
 	
 	vec3f specularColor = specularFactor * metalness * phongData.lightColor;
 	
-	float bias = clamp(0.002 * tan(acos(cosTheta)), 0.0, 0.01);
-	
-	float visibility = getVisibility(bias);
+	float visibility = getVisibility(acos(cosTheta));
 	
 	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * color.rgb;
 	finalColor = finalColor + emissiveColor;
 	
+	outColor = vec4f(finalColor, 1.0);
+	
+	
+	
+	vec3f colors[4] = vec3f[](vec3f(0, 1, 0), vec3f(0, 0, 1), vec3f(1, 1, 0), vec3f(1, 0, 0));
+	
+	vec4f posViewSpace = (shadowData.view * vec4f(pos, 1.0));
+	
+	uint cascadeIndex = uint(ShadowMapCascadeCount - 1);
+	for(uint i = uint(0); i < uint(ShadowMapCascadeCount); i++)
+	{
+		if(-posViewSpace.z < shadowData.cascadeDepth[i])
+		{	
+			cascadeIndex = i;
+			break;
+		}
+	}
+	
+	outColor = vec4f(finalColor + colors[int(cascadeIndex % 4)] * 0.15, 1.0);
 	outColor = vec4f(finalColor, 1.0);
 }

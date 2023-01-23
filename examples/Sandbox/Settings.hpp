@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <vector>
 
+#define SHADOW_CASCADE_COUNT 8
+
 class Settings
 {
 public:
@@ -44,7 +46,14 @@ public:
 		GBufferEmissive,
 		GBufferMetalness,
 		GBufferRoughness,
-		ShadowMap,
+		ShadowCascade1,
+		ShadowCascade2,
+		ShadowCascade3,
+		ShadowCascade4,
+		ShadowCascade5,
+		ShadowCascade6,
+		ShadowCascade7,
+		ShadowCascade8,
 	};
 
 	Settings();
@@ -56,6 +65,9 @@ public:
 	bool enableFpsLimit;
 	uint32_t fpsLimit;
 
+	// Camera
+	float cameraSpeed;
+
 	//Scene
 	uint32_t objectRows;
 
@@ -64,8 +76,7 @@ public:
 
 	// ShadowMap
 	uint32_t shadowMapSize;
-	float shadowBoxMinSize;
-	float shadowBoxMaxSize;
+	float baseDepthBias;
 
 	// Debug views
 	bool enableDebugRenderer;

@@ -22,6 +22,7 @@
 #include "FirstPersonCameraSystem.hpp"
 #include "../Components/CameraComponent.hpp"
 #include "../Resources.hpp"
+#include "../Settings.hpp"
 
 using namespace at;
 
@@ -71,7 +72,6 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 		return;
 
 	// Update components
-	const float metersPerSec = 20.0f;
 	const auto rotationMatrix = Matrix4f::createRotation(transform->getRotation());
 
 	Vector3f frontOffset;
@@ -89,7 +89,7 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 	auto offset = frontOffset + sideOffset;
 	if (offset.getNorm() > 1e-6)
 		offset.normalize();
-	offset *= timeStep.getSeconds() * metersPerSec;
+	offset *= timeStep.getSeconds() * Settings::instance().cameraSpeed;
 	offset = rotationMatrix.transformPosition(offset);
 
 	transform->translate(offset);

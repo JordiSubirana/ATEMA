@@ -236,6 +236,32 @@ void GuiSystem::showSettings()
 			ImGui::EndTable();
 		}
 
+		// Camera
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			// Speed
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Speed (m/s)");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Speed (m/s)", &settings.cameraSpeed, 1.0f, 10.0f, "%.3f");
+				settings.cameraSpeed = std::clamp(settings.cameraSpeed, 0.0f, 1000.0f);
+			}
+
+			ImGui::EndTable();
+		}
+
 		// Scene
 		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
@@ -309,52 +335,32 @@ void GuiSystem::showSettings()
 
 				static const std::vector<const char*> shadowMapSizeItems =
 				{
-					"512",
 					"1024",
 					"2048",
 					"4096",
 					"8192",
-					"16384",
-					"32768"
+					"16384"
 				};
-				static int shadowMapCurrentItem = 2;
+				static int shadowMapCurrentItem = 3;
 				ImGui::Combo("##Size", &shadowMapCurrentItem, shadowMapSizeItems.data(), static_cast<int>(shadowMapSizeItems.size()));
 
 				settings.shadowMapSize = std::stoul(shadowMapSizeItems[shadowMapCurrentItem]);
 			}
 
-			// ShadowMap box size
+			// ShadowMap base depth bias
 			{
-				static float step = 1.0f;
-				static float fastStep = 10.0f;
-
-				// Min
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Min box size");
+				ImGui::Text("Base depth bias");
 
 				ImGui::TableNextColumn();
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
-				ImGui::InputFloat("##Min box size", &settings.shadowBoxMinSize, step, fastStep);
-				settings.shadowBoxMinSize = std::clamp(settings.shadowBoxMinSize, 1.0f, settings.shadowBoxMaxSize);
-
-				// Max
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Max box size");
-
-				ImGui::TableNextColumn();
-
-				ImGui::SetNextItemWidth(-FLT_MIN);
-
-				ImGui::InputFloat("##Max box size", &settings.shadowBoxMaxSize, step, fastStep);
-				settings.shadowBoxMaxSize = std::clamp(settings.shadowBoxMaxSize, settings.shadowBoxMinSize, 10000.0f);
+				ImGui::InputFloat("##Base depth bias", &settings.baseDepthBias, 0.01f, 0.1f, "%.3f");
+				settings.baseDepthBias = std::clamp(settings.baseDepthBias, 0.0f, 1000.0f);
 			}
 
 			ImGui::EndTable();
@@ -371,7 +377,7 @@ void GuiSystem::showSettings()
 
 			static int views[] =
 			{
-				static_cast<int>(Settings::DebugView::ShadowMap),
+				static_cast<int>(Settings::DebugView::ShadowCascade1),
 				static_cast<int>(Settings::DebugView::GBufferNormal),
 				static_cast<int>(Settings::DebugView::GBufferColor),
 				static_cast<int>(Settings::DebugView::GBufferAO)
@@ -386,7 +392,14 @@ void GuiSystem::showSettings()
 				"GBuffer emissive",
 				"GBuffer metalness",
 				"GBuffer roughness",
-				"ShadowMap"
+				"ShadowCascade1",
+				"ShadowCascade2",
+				"ShadowCascade3",
+				"ShadowCascade4",
+				"ShadowCascade5",
+				"ShadowCascade6",
+				"ShadowCascade7",
+				"ShadowCascade8",
 			};
 
 			// Debug Renderer
@@ -448,7 +461,7 @@ void GuiSystem::showSettings()
 
 					ImGui::SetNextItemWidth(-FLT_MIN);
 
-					ImGui::Combo("##View", &views[i], viewItems.data(), static_cast<int>(viewItems.size()));
+					ImGui::Combo("##View", &views[i], viewItems.data(), static_cast<int>(viewItems.size() - (8 - SHADOW_CASCADE_COUNT)));
 
 					settings.debugViews[i] = static_cast<Settings::DebugView>(views[i]);
 

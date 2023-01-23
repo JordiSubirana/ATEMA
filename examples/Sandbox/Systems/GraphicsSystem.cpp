@@ -167,13 +167,14 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_renderWindow(renderWindow),
 	m_totalTime(0.0f),
 	m_updateFrameGraph(true),
+	m_currentShadowMapSize(0),
 	m_shadowMapSize(0),
 	m_enableDebugRenderer(false),
 	m_debugViewMode(Settings::DebugViewMode::Disabled)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
-	//translateShaders();
+	translateShaders();
 
 	auto& renderer = Renderer::instance();
 
@@ -324,17 +325,19 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	frameLayout.addMatrix(BufferElementType::Float, 4, 4);
 	frameLayout.add(BufferElementType::Float3);
 
-	/*struct UniformObjectElement
 	{
-		Matrix4f model;
-	}*/
-	BufferLayout objectLayout(StructLayout::Default);
-	objectLayout.addMatrix(BufferElementType::Float, 4, 4);
+		/*struct UniformObjectElement
+		{
+			Matrix4f model;
+		}*/
+		BufferLayout objectLayout(StructLayout::Default);
+		objectLayout.addMatrix(BufferElementType::Float, 4, 4);
 
-	m_elementByteSize = static_cast<uint32_t>(objectLayout.getSize());
-	const auto minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
+		m_elementByteSize = static_cast<uint32_t>(objectLayout.getSize());
+		const auto minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 
-	m_dynamicObjectBufferOffset = Math::getNextMultiple(m_elementByteSize, minOffset);
+		m_dynamicObjectBufferOffset = Math::getNextMultiple(m_elementByteSize, minOffset);
+	}
 
 	m_frameDatas.resize(maxFramesInFlight);
 	for (auto& frameData : m_frameDatas)
@@ -363,9 +366,14 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		BufferLayout shadowLayout(StructLayout::Default);
 		shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
 
+		m_shadowElementByteSize = static_cast<uint32_t>(shadowLayout.getSize());
+		const auto minOffset = static_cast<uint32_t>(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
+
+		m_dynamicShadowBufferOffset = Math::getNextMultiple(m_shadowElementByteSize, minOffset);
+
 		Buffer::Settings bufferSettings;
 		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-		bufferSettings.byteSize = shadowLayout.getSize();
+		bufferSettings.byteSize = SHADOW_CASCADE_COUNT * m_dynamicShadowBufferOffset;
 
 		for (auto& frameData : m_frameDatas)
 			frameData.shadowBuffer = Buffer::create(bufferSettings);
@@ -376,7 +384,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		descriptorSetLayoutSettings.pageSize = 1;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
+			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
 		};
 
 		m_shadowLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
@@ -385,7 +393,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			frameData.shadowSet = m_shadowLayout->createSet();
 
-			frameData.shadowSet->update(0, frameData.shadowBuffer);
+			frameData.shadowSet->update(0, frameData.shadowBuffer, m_shadowElementByteSize);
 		}
 	}
 
@@ -401,7 +409,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 			{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
 			{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
 			{ 0, 4, VertexInputFormat::RG32_SFLOAT }
-		};;
+		};
+		graphicsPipelineSettings.state.rasterization.depthClamp = true;
 
 		m_shadowPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
 	}
@@ -442,6 +451,28 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		for (auto& frameData : m_frameDatas)
 			frameData.phongBuffer = Buffer::create(bufferSettings);
+	}
+
+	{
+		/*struct ShadowData
+		{
+			mat4f view;
+			mat4f cascadeViewProj[ShadowMapCascadeCount];
+			float cascadeDepth[ShadowMapCascadeCount];
+			float cascadeDepthBias[ShadowMapCascadeCount];
+		}*/
+		BufferLayout shadowLayout(StructLayout::Default);
+		shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
+		shadowLayout.addMatrixArray(BufferElementType::Float, 4, 4, true, SHADOW_CASCADE_COUNT);
+		shadowLayout.addArray(BufferElementType::Float, SHADOW_CASCADE_COUNT);
+		shadowLayout.addArray(BufferElementType::Float, SHADOW_CASCADE_COUNT);
+
+		Buffer::Settings bufferSettings;
+		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+		bufferSettings.byteSize = shadowLayout.getSize();
+
+		for (auto& frameData : m_frameDatas)
+			frameData.shadowCascadesBuffer = Buffer::create(bufferSettings);
 	}
 
 	{
@@ -675,6 +706,20 @@ void GraphicsSystem::createFrameGraph()
 {
 	Renderer::instance().waitForIdle();
 
+	// We are creating the shadowmap here because the size can change
+	if (m_currentShadowMapSize != m_shadowMapSize)
+	{
+		Image::Settings imageSettings;
+		imageSettings.format = ImageFormat::D32F;
+		imageSettings.width = m_shadowMapSize;
+		imageSettings.height = m_shadowMapSize;
+		imageSettings.layers = SHADOW_CASCADE_COUNT;
+
+		m_shadowMap = Image::create(imageSettings);
+
+		m_currentShadowMapSize = m_shadowMapSize;
+	}
+
 	FrameGraphTextureSettings textureSettings;
 	textureSettings.width = m_windowSize.x;
 	textureSettings.height = m_windowSize.y;
@@ -701,10 +746,9 @@ void GraphicsSystem::createFrameGraph()
 	textureSettings.format = gBuffer[0];
 	auto phongOutputTexture = frameGraphBuilder.createTexture(textureSettings);
 
-	textureSettings.format = ImageFormat::D32F;
-	textureSettings.width = m_shadowMapSize;
-	textureSettings.height = m_shadowMapSize;
-	auto shadowMapTexture = frameGraphBuilder.createTexture(textureSettings);
+	std::array<FrameGraphTextureHandle, SHADOW_CASCADE_COUNT> shadowCascades;
+	for (size_t i = 0; i < SHADOW_CASCADE_COUNT; i++)
+		shadowCascades[i] = frameGraphBuilder.importTexture(m_shadowMap, i);
 
 	auto getDebugTexture = [&](Settings::DebugView debugView) -> FrameGraphTextureHandle
 	{
@@ -717,7 +761,14 @@ void GraphicsSystem::createFrameGraph()
 			case Settings::DebugView::GBufferEmissive: return gbufferTextures[4];
 			case Settings::DebugView::GBufferMetalness: return gbufferTextures[5];
 			case Settings::DebugView::GBufferRoughness: return gbufferTextures[6];
-			case Settings::DebugView::ShadowMap: return shadowMapTexture;
+			case Settings::DebugView::ShadowCascade1: return shadowCascades[0];
+			case Settings::DebugView::ShadowCascade2: return shadowCascades[1];
+			case Settings::DebugView::ShadowCascade3: return shadowCascades[2];
+			case Settings::DebugView::ShadowCascade4: return shadowCascades[3];
+			case Settings::DebugView::ShadowCascade5: return shadowCascades[4];
+			case Settings::DebugView::ShadowCascade6: return shadowCascades[5];
+			case Settings::DebugView::ShadowCascade7: return shadowCascades[6];
+			case Settings::DebugView::ShadowCascade8: return shadowCascades[7];
 			default: break;
 		}
 
@@ -788,10 +839,9 @@ void GraphicsSystem::createFrameGraph()
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
-								auto& transform = entities.get<Transform>(*it);
 
 								// Frustum culling
-								if (m_cullFunction(transform.getMatrix() * graphics.model->getAABB()))
+								if (m_cullFunction(graphics.aabb))
 									continue;
 
 								auto materialID = graphics.material.get();
@@ -810,6 +860,10 @@ void GraphicsSystem::createFrameGraph()
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{
+									// Frustum culling
+									/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
+										continue;*/
+
 									const auto& vertexBuffer = mesh->getVertexBuffer();
 									const auto& indexBuffer = mesh->getIndexBuffer();
 
@@ -839,16 +893,17 @@ void GraphicsSystem::createFrameGraph()
 	}
 
 	// Shadow Map
+	for (size_t cascadeIndex = 0; cascadeIndex < SHADOW_CASCADE_COUNT; cascadeIndex++)
 	{
-		auto& pass = frameGraphBuilder.createPass("shadow map");
+		auto& pass = frameGraphBuilder.createPass("shadow cascade #" + std::to_string(cascadeIndex + 1));
 
-		pass.setDepthTexture(shadowMapTexture, DepthStencil(1.0f, 0));
+		pass.setDepthTexture(shadowCascades[cascadeIndex], DepthStencil(1.0f, 0));
 
 		pass.enableSecondaryCommandBuffers(true);
 
-		pass.setExecutionCallback([this](FrameGraphContext& context)
+		pass.setExecutionCallback([this, cascadeIndex](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (shadow map)");
+				ATEMA_BENCHMARK("CommandBuffer (shadow cascade #" + std::to_string(cascadeIndex + 1) + ")");
 
 				const auto frameIndex = context.getFrameIndex();
 				auto& frameData = m_frameDatas[frameIndex];
@@ -881,7 +936,7 @@ void GraphicsSystem::createFrameGraph()
 						lastIndex += remainingSize;
 					}
 
-					auto task = taskManager.createTask([this, &context, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
+					auto task = taskManager.createTask([this, &context, cascadeIndex, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
 						{
 							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
@@ -891,16 +946,18 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), { m_shadowMapSize, m_shadowMapSize });
 
-							commandBuffer->bindDescriptorSet(1, frameData.shadowSet);
+							commandBuffer->bindDescriptorSet(1, frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
 							{
 								auto& graphics = entities.get<GraphicsComponent>(*it);
-								auto& transform = entities.get<Transform>(*it);
+
+								if (!graphics.castShadows)
+									continue;
 
 								// Frustum culling
-								if (!m_lightFrustum.contains(transform.getMatrix() * graphics.model->getAABB()))
+								if (!m_lightFrustums[cascadeIndex].contains(graphics.aabb))
 									continue;
 
 								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
@@ -942,12 +999,13 @@ void GraphicsSystem::createFrameGraph()
 		for (const auto& texture : gbufferTextures)
 			pass.addSampledTexture(texture, ShaderStage::Fragment);
 
-		pass.addSampledTexture(shadowMapTexture, ShaderStage::Fragment);
+		for (const auto& shadowCascade : shadowCascades)
+			pass.addSampledTexture(shadowCascade, ShaderStage::Fragment);
 
 		pass.addOutputTexture(phongOutputTexture, 0, Color::Blue);
 		pass.setDepthTexture(gbufferDepthTexture);
 
-		pass.setExecutionCallback([this, gbufferTextures, shadowMapTexture](FrameGraphContext& context)
+		pass.setExecutionCallback([this, gbufferTextures](FrameGraphContext& context)
 			{
 				ATEMA_BENCHMARK("CommandBuffer (phong lighting)");
 
@@ -960,14 +1018,11 @@ void GraphicsSystem::createFrameGraph()
 				// Write descriptor sets
 				{
 					for (uint32_t i = 0; i < gbufferTextures.size(); i++)
-					{
-						auto gbufferImage = context.getTexture(gbufferTextures[i]);
-						gbufferSMSet->update(i, gbufferImage->getView(), m_ppSampler);
-					}
+						gbufferSMSet->update(i, context.getImageView(gbufferTextures[i]), m_ppSampler);
 
-					gbufferSMSet->update(shadowMapBindingIndex, context.getTexture(shadowMapTexture)->getView(), m_shadowMapSampler);
+					gbufferSMSet->update(shadowMapBindingIndex, m_shadowMap->getView(), m_shadowMapSampler);
 
-					phongSet->update(0, frameData.shadowBuffer);
+					phongSet->update(0, frameData.shadowCascadesBuffer);
 					phongSet->update(1, frameData.phongBuffer);
 				}
 
@@ -1016,7 +1071,10 @@ void GraphicsSystem::createFrameGraph()
 
 				m_debugRenderer->clear();
 
-				m_debugRenderer->draw(m_lightFrustum, Color::Yellow);
+				m_debugRenderer->draw(m_lightFrustums[0], Color(0.0f, 1.0f, 0.0f));
+				m_debugRenderer->draw(m_lightFrustums[1], Color(0.0f, 0.0f, 1.0f));
+				m_debugRenderer->draw(m_lightFrustums[2], Color(1.0f, 1.0f, 0.0f));
+				m_debugRenderer->draw(m_lightFrustums[3], Color(1.0f, 0.0f, 0.0f));
 
 				if (Settings::instance().customFrustumCulling)
 					m_debugRenderer->draw(m_customfrustum, Color::Red);
@@ -1026,7 +1084,15 @@ void GraphicsSystem::createFrameGraph()
 					auto& graphics = entities.get<GraphicsComponent>(entity);
 					auto& transform = entities.get<Transform>(entity);
 
-					m_debugRenderer->draw(transform.getMatrix()* graphics.model->getAABB(), Color::Green);
+					m_debugRenderer->draw(graphics.aabb, Color::Green);
+
+					/*const auto& meshes = graphics.model->getMeshes();
+
+					if (meshes.size() > 1)
+					{
+						for (const auto& mesh : meshes)
+							m_debugRenderer->draw(transform.getMatrix() * mesh->getAABB(), Color::Gray);
+					}*/
 				}
 
 				m_debugRenderer->render(context, commandBuffer, m_viewProjection);
@@ -1050,7 +1116,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto descriptorSet = m_screenLayout->createSet();
 
-				descriptorSet->update(0, context.getTexture(debugTexture)->getView(), m_ppSampler);
+				descriptorSet->update(0, context.getImageView(debugTexture), m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -1120,7 +1186,7 @@ void GraphicsSystem::createFrameGraph()
 
 						auto descriptorSet = m_screenLayout->createSet();
 
-						descriptorSet->update(0, context.getTexture(debugTextures[i])->getView(), m_ppSampler);
+						descriptorSet->update(0, context.getImageView(debugTextures[i]), m_ppSampler);
 
 						commandBuffer.bindDescriptorSet(0, descriptorSet);
 
@@ -1137,19 +1203,16 @@ void GraphicsSystem::createFrameGraph()
 		auto& pass = frameGraphBuilder.createPass("screen");
 
 		pass.addSampledTexture(phongOutputTexture, ShaderStage::Fragment);
-		pass.addSampledTexture(shadowMapTexture, ShaderStage::Fragment);
 
 		pass.enableRenderFrameOutput(true);
 
-		pass.setExecutionCallback([this, phongOutputTexture, shadowMapTexture](FrameGraphContext& context)
+		pass.setExecutionCallback([this, phongOutputTexture](FrameGraphContext& context)
 			{
 				ATEMA_BENCHMARK("CommandBuffer (screen + UI)");
 
 				auto descriptorSet1 = m_screenLayout->createSet();
-				auto descriptorSet2 = m_screenLayout->createSet();
 
-				descriptorSet1->update(0, context.getTexture(phongOutputTexture)->getView(), m_ppSampler);
-				descriptorSet2->update(0, context.getTexture(shadowMapTexture)->getView(), m_ppSampler);
+				descriptorSet1->update(0, context.getImageView(phongOutputTexture), m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -1169,7 +1232,6 @@ void GraphicsSystem::createFrameGraph()
 				UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 				context.destroyAfterUse(std::move(descriptorSet1));
-				context.destroyAfterUse(std::move(descriptorSet2));
 			});
 	}
 
@@ -1200,6 +1262,9 @@ void GraphicsSystem::updateFrame()
 
 	auto& frameData = m_frameDatas[frameIndex];
 
+	// Update bounding boxes
+	updateBoundingBoxes();
+
 	// Update material descriptor sets
 	updateMaterialResources();
 
@@ -1209,6 +1274,51 @@ void GraphicsSystem::updateFrame()
 	benchmark.start("FrameGraph::execute");
 
 	m_frameGraph->execute(renderFrame);
+}
+
+void GraphicsSystem::updateBoundingBoxes()
+{
+	auto& entityManager = getEntityManager();
+
+	auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
+
+	auto& taskManager = TaskManager::instance();
+
+	std::vector<Ptr<Task>> tasks;
+	tasks.reserve(threadCount);
+
+	size_t firstIndex = 0;
+	const size_t size = entities.size() / threadCount;
+
+	for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+	{
+		auto lastIndex = firstIndex + size;
+
+		if (taskIndex == threadCount - 1)
+		{
+			const auto remainingSize = entities.size() - lastIndex;
+
+			lastIndex += remainingSize;
+		}
+
+		auto task = taskManager.createTask([this, &entities, firstIndex, lastIndex](size_t threadIndex)
+			{
+				for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+				{
+					auto& transform = entities.get<Transform>(*it);
+					auto& graphics = entities.get<GraphicsComponent>(*it);
+
+					graphics.aabb = transform.getMatrix()* graphics.model->getAABB();
+				}
+			});
+
+		tasks.push_back(task);
+
+		firstIndex += size;
+	}
+
+	for (auto& task : tasks)
+		task->wait();
 }
 
 void GraphicsSystem::updateMaterialResources()
@@ -1261,6 +1371,10 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 	Vector3f cameraPos;
 	Vector3f cameraTarget;
 
+	Matrix4f viewMatrix;
+	Matrix4f projMatrix;
+	Frustumf cameraFrustum;
+
 	// Update global buffers
 	{
 		auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
@@ -1275,7 +1389,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 				cameraPos = transform.getTranslation();
 				const Vector3f cameraUp(0.0f, 0.0f, 1.0f);
-				
+
 				cameraTarget = camera.target;
 
 				// If the camera doesn't use target, calculate target from transform rotation
@@ -1297,15 +1411,18 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 				void* data = frameData.frameUniformBuffer->map();
 
-				mapMemory<Matrix4f>(data, viewOffset) = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
-				mapMemory<Matrix4f>(data, projOffset) = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
-				mapMemory<Matrix4f>(data, projOffset)[1][1] *= -1;
+				viewMatrix = Matrix4f::createLookAt(cameraPos, cameraTarget, cameraUp);
+				projMatrix = Matrix4f::createPerspective(Math::toRadians(camera.fov), camera.aspectRatio, camera.nearPlane, camera.farPlane);
+				projMatrix[1][1] *= -1;
+
+				mapMemory<Matrix4f>(data, viewOffset) = viewMatrix;
+				mapMemory<Matrix4f>(data, projOffset) = projMatrix;
 				mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
 
 				// Update view projection matrix
 				m_viewProjection = mapMemory<Matrix4f>(data, projOffset) * mapMemory<Matrix4f>(data, viewOffset);
 
-				m_cameraFrustum.set(m_viewProjection);
+				cameraFrustum.set(m_viewProjection);
 
 				// Update custom frustum
 				if (Settings::instance().customFrustumCulling)
@@ -1322,19 +1439,19 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 					auto view = Matrix4f::createLookAt(origin, origin + dir, Vector3f(0, 0, 1));
 					auto proj = Matrix4f::createPerspective(Math::toRadians(70.0f), camera.aspectRatio, nearZ, farZ);
-
+					
 					m_customfrustum.set(proj * view);
 
-					m_cullFunction = [this](const AABBf& aabb)
+					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
-						return !m_cameraFrustum.contains(aabb) || !m_customfrustum.contains(aabb);
+						return !cameraFrustum.contains(aabb) || !m_customfrustum.contains(aabb);
 					};
 				}
 				else
 				{
-					m_cullFunction = [this](const AABBf& aabb)
+					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
-						return !m_cameraFrustum.contains(aabb);
+						return !cameraFrustum.contains(aabb);
 					};
 				}
 
@@ -1413,94 +1530,134 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		frameData.objectsUniformBuffer->unmap();
 	}
 
-	// Update scene AABB
+	// Update shadow data
 	{
-		AABBf sceneAABB = Scene::instance().getAABB();
-
-		auto aabbSize = sceneAABB.getSize();
-		aabbSize.z = 0.0f;
-
-		auto cameraDir = cameraTarget - cameraPos;
-		cameraDir.normalize();
-
-		float cameraDirZ = std::abs(cameraDir.z);
-
-		cameraDir.z = 0.0f;
-		cameraDir.normalize();
-
-		float minDirZ = 0.2f;
-		float maxDirZ = 0.6f;
-
-		if (cameraDirZ < minDirZ)
-			cameraDirZ = minDirZ;
-
-		if (cameraDirZ > maxDirZ)
-			cameraDirZ = maxDirZ;
-
-		auto camDirZPercent = (cameraDirZ - minDirZ) / (maxDirZ - minDirZ);
-
-		float altitude = cameraPos.z;
-
-		float minAlt = 2.0f;
-		float maxAlt = 30.0f;
-
-		if (altitude < minAlt)
-			altitude = minAlt;
-
-		if (altitude > maxAlt)
-			altitude = maxAlt;
-
-		// 0% : minAlt / 100% : maxAlt
-		auto altitudePercent = (altitude - minAlt) / (maxAlt - minAlt);
-
-		float minBoxSize = Settings::instance().shadowBoxMinSize / 2.0f;
-		float maxBoxSize = Settings::instance().shadowBoxMaxSize / 2.0f;
-
-		float boxSize = maxBoxSize * altitudePercent + minBoxSize * (1.0f - altitudePercent);
-		boxSize = std::max(boxSize, minBoxSize * camDirZPercent + maxBoxSize * (1.0f - camDirZPercent));
-
-		auto center = cameraPos;
-		center.z = 0.0f;
-
-		center += cameraDir * boxSize * 0.9f;
-
-		center.x = std::clamp(center.x, sceneAABB.min.x, sceneAABB.max.x);
-		center.y = std::clamp(center.y, sceneAABB.min.y, sceneAABB.max.y);
-
-		AABBf shadowMapAABB;
-		shadowMapAABB.extend(center + Vector3f(boxSize, boxSize, 5.0f));
-		shadowMapAABB.extend(center + Vector3f( -boxSize, -boxSize, -5.0f));
-
-		auto zFar = 200.0f;
-		
-		const auto view = Matrix4f::createLookAt(center - lightDirection * zFar, center, Vector3f(0, 0, 1));
-
-		auto sizeS = shadowMapAABB.getSize();
-
-		const auto viewAABB = view * shadowMapAABB;
-
-		auto sizeB = viewAABB.getSize();
-
-		auto zNear = -viewAABB.max.z;
-		zFar = -viewAABB.min.z;
-
-		auto proj = Matrix4f::createOrtho(viewAABB.min.x, viewAABB.max.x, viewAABB.min.y, viewAABB.max.y, zNear, zFar);
-		proj[1][1] *= -1;
-
-		/*struct UniformShadowMappingData
+		/*struct ShadowData
 		{
-			Matrix4f depthMVP;
+			mat4f view;
+			mat4f cascadeViewProj[ShadowMapCascadeCount];
+			float cascadeDepth[ShadowMapCascadeCount];
+			float cascadeDepthBias[ShadowMapCascadeCount];
 		}*/
+
 		BufferLayout shadowLayout(StructLayout::Default);
-		const auto mvpOffset = shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
+		auto viewOffset = shadowLayout.addMatrix(BufferElementType::Float, 4, 4);
+		auto cascadeMVPOffset = shadowLayout.addMatrixArray(BufferElementType::Float, 4, 4, true, SHADOW_CASCADE_COUNT);
+		auto cascadeDepthOffset = shadowLayout.addArray(BufferElementType::Float, SHADOW_CASCADE_COUNT);
+		auto cascadeDepthBiasOffset = shadowLayout.addArray(BufferElementType::Float, SHADOW_CASCADE_COUNT);
 
-		auto data = frameData.shadowBuffer->map();
+		auto shadowData = frameData.shadowBuffer->map();
+		auto shadowCascadeData = frameData.shadowCascadesBuffer->map();
 
-		mapMemory<Matrix4f>(data, mvpOffset) = proj * view;
+		MemoryMapper shadowMVPMapper(shadowData, 0, m_dynamicShadowBufferOffset);
 
-		m_lightFrustum.set(mapMemory<Matrix4f>(data, mvpOffset));
+		mapMemory<Matrix4f>(shadowCascadeData, viewOffset) = viewMatrix;
+		MemoryMapper cascadeMVPMapper(shadowCascadeData, cascadeMVPOffset, sizeof(Matrix4f));
+		MemoryMapper cascadeDepthMapper(shadowCascadeData, cascadeDepthOffset, shadowLayout.getArrayAlignment(BufferElementType::Float));
+		MemoryMapper cascadeDepthBiasMapper(shadowCascadeData, cascadeDepthBiasOffset, shadowLayout.getArrayAlignment(BufferElementType::Float));
+		
+		const float maxFarDepth = 1000.0f;
+
+		const float depthStep = maxFarDepth / static_cast<float>(std::pow(2, SHADOW_CASCADE_COUNT));
+
+		float previousDepth = 0.01f;
+
+		const auto lightView = Matrix4f::createLookAt(-lightDirection * 1000.0f, Vector3f(0, 0, 0), Vector3f(0, 0, 1));
+
+		const auto view = Matrix4f::createLookAt(Vector3f(0, 0, 0), Vector3f(1, 0, 0), Vector3f(0, 0, 1));
+
+		Frustumf frustumRef(projMatrix * view);
+
+		auto frustumPlanesRef = frustumRef.getPlanes();
+		auto& nearPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Near)];
+		auto& farPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Far)];
+		auto& viewDirRef = nearPlaneRef.getNormal();
+
+		auto frustumPlanes = cameraFrustum.getPlanes();
+		auto& nearPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Near)];
+		auto& farPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Far)];
+		auto& viewDir = nearPlane.getNormal();
+
+		const auto& baseDepthBias = Settings::instance().baseDepthBias;
+
+		float currentFar = 0.0f;
+		for (size_t i = 0; i < SHADOW_CASCADE_COUNT; i++)
+		{
+			currentFar += depthStep * static_cast<float>(std::pow(2, i));
+			cascadeDepthMapper.map<float>(i) = currentFar;
+
+			const auto& depth = cascadeDepthMapper.map<float>(i);
+			auto& depthBias = cascadeDepthBiasMapper.map<float>(i);
+			auto& mvp = cascadeMVPMapper.map<Matrix4f>(i);
+
+			nearPlane.set(nearPlane.getNormal(), cameraPos + viewDir * previousDepth);
+			farPlane.set(farPlane.getNormal(), cameraPos + viewDir * depth);
+
+			nearPlaneRef.set(nearPlaneRef.getNormal(), viewDirRef * previousDepth);
+			farPlaneRef.set(farPlaneRef.getNormal(), viewDirRef * depth);
+
+			Frustumf frustum(frustumPlanes);
+
+			frustumRef.set(frustumPlanesRef);
+
+			// Find the tightest box possible around the frustum
+			Vector3f boundingBoxSize;
+			boundingBoxSize.x = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarTopRight)).getNorm();
+			boundingBoxSize.y = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarBottomLeft)).getNorm();
+			boundingBoxSize.z = depth - previousDepth;
+
+			// Find the bounding sphere of this box (and of the frustum)
+			// This way the shadowmap remains coherent in size no matter the orientation
+			const auto sphereCenter = cameraPos + viewDir * (previousDepth + depth) / 2.0f;
+
+			auto sphereRadius = boundingBoxSize.getNorm() / 2.0f;
+
+			const float texelSizeWorldSpace = sphereRadius / static_cast<float>(m_shadowMapSize / 2);
+
+			const auto factor = static_cast<float>(m_shadowMapSize) / static_cast<float>(m_shadowMapSize - 1);
+			sphereRadius = sphereRadius * factor;
+
+			// We move the center of the shadowmap according to its resolution (avoid shadow shimmering)
+			auto centerOffsetLightSpace = lightView.transformVector(sphereCenter);
+			centerOffsetLightSpace.x = texelSizeWorldSpace * std::round(centerOffsetLightSpace.x / texelSizeWorldSpace);
+			centerOffsetLightSpace.y = texelSizeWorldSpace * std::round(centerOffsetLightSpace.y / texelSizeWorldSpace);
+			centerOffsetLightSpace.z = texelSizeWorldSpace * std::round(centerOffsetLightSpace.z / texelSizeWorldSpace);
+			
+			// Lightspace frustum bounding box
+			AABBf aabb;
+			for (const auto& corner : frustum.getCorners())
+				aabb.extend(lightView.transformPosition(corner));
+
+			auto c = centerOffsetLightSpace;
+			const auto r = sphereRadius;
+
+			// Keep the Z range as tight as possible
+			auto proj = Matrix4f::createOrtho(c.x - r, c.x + r, -c.y - r, -c.y + r, -aabb.max.z, -aabb.min.z);
+			proj[1][1] *= -1;
+
+			mvp = proj * lightView;
+
+			shadowMVPMapper.map<Matrix4f>(i) = mvp;
+
+			// For the culling we use another projection :
+			// - reduced X/Y size to draw less objects
+			// - increased Z size in case a caster is between the view frustum & the light
+			c = aabb.getCenter();
+			const auto s = aabb.getSize() / 2.0f;
+			auto cullingProj = Matrix4f::createOrtho(c.x - s.x, c.x + s.x, -c.y - s.y, -c.y + s.y, 0.0f, -aabb.min.z);
+			cullingProj[1][1] *= -1;
+
+			// Depth bias depends on the base depth bias and the z difference in light space
+			const auto diffZ = aabb.getSize().z;
+			depthBias = baseDepthBias / diffZ;
+
+			m_lightFrustums[i].set(cullingProj * lightView);
+
+			previousDepth = depth;
+		}
 
 		frameData.shadowBuffer->unmap();
+		frameData.shadowCascadesBuffer->unmap();
 	}
 
 	// Update phong buffer
@@ -1524,8 +1681,8 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z };
 		mapMemory<Vector3f>(data, lightDirectionOffset) = { lightDirection.x, lightDirection.y, lightDirection.z };
 		mapMemory<Vector4f>(data, lightColorOffset) = { 1.0f, 1.0f, 1.0f };
-		mapMemory<float>(data, ambientStrengthOffset) = 0.3f;
+		mapMemory<float>(data, ambientStrengthOffset) = 0.35f;
 
-		frameData.shadowBuffer->unmap();
+		frameData.phongBuffer->unmap();
 	}
 }
