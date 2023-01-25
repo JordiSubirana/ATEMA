@@ -228,13 +228,26 @@ void ModelLoader::generateTangents(std::vector<StaticVertex>& vertices, std::vec
 		deltaUVMatrix[0] = { deltaUV1.x, deltaUV2.x };
 		deltaUVMatrix[1] = { deltaUV1.y, deltaUV2.y };
 
-		auto tbMatrix = deltaUVMatrix.inverse() * edgeMatrix;
+		Vector3f tangent;
+		Vector3f bitangent;
 
-		Vector3f tangent = { tbMatrix[0].x, tbMatrix[1].x, tbMatrix[2].x };
-		Vector3f bitangent = { tbMatrix[0].y, tbMatrix[1].y, tbMatrix[2].y };
+		// Deduce tangent space from position & UVs
+		if (deltaUVMatrix.isInvertible())
+		{
+			auto tbMatrix = deltaUVMatrix.inverse() * edgeMatrix;
 
-		tangent.normalize();
-		bitangent.normalize();
+			tangent = { tbMatrix[0].x, tbMatrix[1].x, tbMatrix[2].x };
+			bitangent = { tbMatrix[0].y, tbMatrix[1].y, tbMatrix[2].y };
+
+			tangent.normalize();
+			bitangent.normalize();
+		}
+		// We can't use UVs, take the first edge as the tangent
+		else
+		{
+			tangent = edge1.getNormalized();
+			bitangent = cross(v1.normal, tangent);
+		}
 
 		// Ensure this is a valid orthogonal basis
 		const auto& normalRef = v1.normal;
