@@ -186,7 +186,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(maxFramesInFlight) * 3);
 
 	//m_depthFormat = renderWindow->getDepthFormat();
-	m_depthFormat = ImageFormat::D32F_S8U;
+	m_depthFormat = ImageFormat::D32_SFLOAT_S8_UINT;
 
 	//----- SHADERS -----//
 	std::unordered_map<std::string, Ptr<Shader>> vertexShaders;
@@ -710,7 +710,7 @@ void GraphicsSystem::createFrameGraph()
 	if (m_currentShadowMapSize != m_shadowMapSize)
 	{
 		Image::Settings imageSettings;
-		imageSettings.format = ImageFormat::D32F;
+		imageSettings.format = ImageFormat::D16_UNORM;
 		imageSettings.width = m_shadowMapSize;
 		imageSettings.height = m_shadowMapSize;
 		imageSettings.layers = SHADOW_CASCADE_COUNT;
@@ -1086,13 +1086,16 @@ void GraphicsSystem::createFrameGraph()
 
 					m_debugRenderer->draw(graphics.aabb, Color::Green);
 
-					/*const auto& meshes = graphics.model->getMeshes();
+					// Enable this to show all meshes bounding boxes for a given model
+					/*
+					const auto& meshes = graphics.model->getMeshes();
 
 					if (meshes.size() > 1)
 					{
 						for (const auto& mesh : meshes)
 							m_debugRenderer->draw(transform.getMatrix() * mesh->getAABB(), Color::Gray);
-					}*/
+					}
+					//*/
 				}
 
 				m_debugRenderer->render(context, commandBuffer, m_viewProjection);

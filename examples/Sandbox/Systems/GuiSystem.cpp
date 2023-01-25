@@ -338,10 +338,9 @@ void GuiSystem::showSettings()
 					"1024",
 					"2048",
 					"4096",
-					"8192",
-					"16384"
+					"8192"
 				};
-				static int shadowMapCurrentItem = 3;
+				static int shadowMapCurrentItem = 2;
 				ImGui::Combo("##Size", &shadowMapCurrentItem, shadowMapSizeItems.data(), static_cast<int>(shadowMapSizeItems.size()));
 
 				settings.shadowMapSize = std::stoul(shadowMapSizeItems[shadowMapCurrentItem]);
