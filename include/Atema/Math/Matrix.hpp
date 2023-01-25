@@ -96,6 +96,10 @@ namespace at
 		Matrix2& operator=(Matrix2&& other) noexcept;
 		Matrix2& operator=(Matrix<2, 2, T>&& other) noexcept;
 
+		T getDeterminant() const noexcept;
+
+		bool isInvertible() const noexcept;
+
 		static Matrix2<T> createInverse(const Matrix2<T>& m);
 
 		Matrix2<T> createInverse() const;
@@ -119,6 +123,10 @@ namespace at
 		Matrix3& operator=(const Matrix<3, 3, T>& other);
 		Matrix3& operator=(Matrix3&& other) noexcept;
 		Matrix3& operator=(Matrix<3, 3, T>&& other) noexcept;
+
+		T getDeterminant() const noexcept;
+
+		bool isInvertible() const noexcept;
 
 		static Matrix3<T> createRotation(const Vector3<T>& angles);
 
@@ -148,6 +156,10 @@ namespace at
 
 		Vector3<T> transformPosition(const Vector3<T>& position) const;
 		Vector3<T> transformVector(const Vector3<T>& vector) const;
+
+		T getDeterminant() const noexcept;
+
+		bool isInvertible() const noexcept;
 
 		static Matrix4<T> createTranslation(const Vector3<T>& offset);
 
