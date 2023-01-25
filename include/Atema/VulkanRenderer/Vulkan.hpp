@@ -37,7 +37,7 @@
 		auto result = (functionCall); \
 		if (result != VK_SUCCESS) \
 		{ \
-			ATEMA_ERROR("Vulkan result invalid"); \
+			ATEMA_ERROR(std::string("Vulkan result invalid : ") + std::to_string(result) + " (" #functionCall ")"); \
 		} \
 	}
 
