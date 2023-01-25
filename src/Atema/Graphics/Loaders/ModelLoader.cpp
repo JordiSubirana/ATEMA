@@ -160,7 +160,7 @@ void ModelLoader::Settings::ensureVertexFormatValid() const
 		if (m_vertexFormat->hasComponent(VertexComponentType::TexCoords))
 		{
 			const auto& component = m_vertexFormat->getComponent(VertexComponentType::TexCoords);
-			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() == 3, "TexCoords component must have 2 floating point elements");
+			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() == 2, "TexCoords component must have 2 floating point elements");
 		}
 
 		if (m_vertexFormat->hasComponent(VertexComponentType::Normal))
