@@ -26,14 +26,16 @@
 
 #include <stdexcept>
 
-#define ATEMA_ERROR(desc) throw std::runtime_error(desc)
+#define ATEMA_EXCEPTION(desc) throw std::runtime_error(desc)
+
+#define ATEMA_ERROR(desc) ATEMA_EXCEPTION((std::string("Error : ") + desc + " (" + ATEMA_FUNCTION + ")").c_str())
 
 #ifdef ATEMA_DISABLE_ASSERT
 #define ATEMA_ASSERT_1(condition) (void)(condition)
 #define ATEMA_ASSERT_2(condition, desc) (void)(condition)
 #else
 #define ATEMA_ASSERT_1(condition) ATEMA_ASSERT_2(condition, "Assertion failed")
-#define ATEMA_ASSERT_2(condition, desc) do { if (!(condition)) { ATEMA_ERROR(desc); } } while (false)
+#define ATEMA_ASSERT_2(condition, desc) do { if (!(condition)) { ATEMA_EXCEPTION((std::string("Assertion failed : ") + desc + " (" + ATEMA_FUNCTION + ")").c_str()); } } while (false)
 #endif
 
 #define ATEMA_ASSERT_MACRO(_1,_2,NAME,...) NAME
