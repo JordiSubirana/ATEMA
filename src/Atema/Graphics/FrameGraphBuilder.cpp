@@ -327,7 +327,7 @@ void FrameGraphBuilder::createRenderFrameOutput()
 	m_renderFrameColorTextureHandle = createTexture(textureSettings);
 
 	// Dummy depth texture settings
-	textureSettings.format = ImageFormat::D32F;
+	textureSettings.format = ImageFormat::D32_SFLOAT;
 
 	m_renderFrameDepthTextureHandle = createTexture(textureSettings);
 }

@@ -55,9 +55,11 @@ bool Renderer::isDepthImageFormat(ImageFormat format)
 {
 	switch (format)
 	{
-		case ImageFormat::D32F:
-		case ImageFormat::D32F_S8U:
-		case ImageFormat::D24U_S8U:
+		case ImageFormat::D16_UNORM:
+		case ImageFormat::D32_SFLOAT:
+		case ImageFormat::D16_UNORM_S8_UINT:
+		case ImageFormat::D24_UNORM_S8_UINT:
+		case ImageFormat::D32_SFLOAT_S8_UINT:
 		{
 			return true;
 		}
@@ -74,8 +76,9 @@ bool Renderer::isStencilImageFormat(ImageFormat format)
 {
 	switch (format)
 	{
-		case ImageFormat::D32F_S8U:
-		case ImageFormat::D24U_S8U:
+		case ImageFormat::D16_UNORM_S8_UINT:
+		case ImageFormat::D24_UNORM_S8_UINT:
+		case ImageFormat::D32_SFLOAT_S8_UINT:
 		{
 			return true;
 		}

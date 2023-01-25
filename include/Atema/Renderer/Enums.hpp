@@ -145,9 +145,11 @@ namespace at
 		RGBA64_SFLOAT,
 		
 		// DepthStencil
-		D32F,
-		D32F_S8U,
-		D24U_S8U
+		D16_UNORM,
+		D32_SFLOAT,
+		D16_UNORM_S8_UINT,
+		D24_UNORM_S8_UINT,
+		D32_SFLOAT_S8_UINT
 	};
 
 	enum class ImageSamples

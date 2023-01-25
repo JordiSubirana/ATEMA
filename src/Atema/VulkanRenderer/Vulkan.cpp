@@ -169,9 +169,11 @@ VkFormat Vulkan::getFormat(ImageFormat format)
 		case ImageFormat::RGBA64_SINT: return VK_FORMAT_R64G64B64A64_SINT;
 		case ImageFormat::RGBA64_SFLOAT: return VK_FORMAT_R64G64B64A64_SFLOAT;
 		// DepthStencil
-		case ImageFormat::D32F: return VK_FORMAT_D32_SFLOAT;
-		case ImageFormat::D32F_S8U: return VK_FORMAT_D32_SFLOAT_S8_UINT;
-		case ImageFormat::D24U_S8U: return VK_FORMAT_D24_UNORM_S8_UINT;
+		case ImageFormat::D16_UNORM: return VK_FORMAT_D16_UNORM;
+		case ImageFormat::D32_SFLOAT: return VK_FORMAT_D32_SFLOAT;
+		case ImageFormat::D16_UNORM_S8_UINT: return VK_FORMAT_D16_UNORM_S8_UINT;
+		case ImageFormat::D24_UNORM_S8_UINT: return VK_FORMAT_D24_UNORM_S8_UINT;
+		case ImageFormat::D32_SFLOAT_S8_UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT;
 		default:
 		{
 			ATEMA_ERROR("Invalid image format");
@@ -284,9 +286,11 @@ ImageFormat Vulkan::getFormat(VkFormat format)
 		case VK_FORMAT_R64G64B64A64_SINT: return ImageFormat::RGBA64_SINT;
 		case VK_FORMAT_R64G64B64A64_SFLOAT: return ImageFormat::RGBA64_SFLOAT;
 		// DepthStencil
-		case VK_FORMAT_D32_SFLOAT: return ImageFormat::D32F;
-		case VK_FORMAT_D32_SFLOAT_S8_UINT: return ImageFormat::D32F_S8U;
-		case VK_FORMAT_D24_UNORM_S8_UINT: return ImageFormat::D24U_S8U;
+		case VK_FORMAT_D16_UNORM: return ImageFormat::D16_UNORM;
+		case VK_FORMAT_D32_SFLOAT: return ImageFormat::D32_SFLOAT;
+		case VK_FORMAT_D16_UNORM_S8_UINT: return ImageFormat::D16_UNORM_S8_UINT;
+		case VK_FORMAT_D24_UNORM_S8_UINT: return ImageFormat::D24_UNORM_S8_UINT;
+		case VK_FORMAT_D32_SFLOAT_S8_UINT: return ImageFormat::D32_SFLOAT_S8_UINT;
 		default:
 		{
 			ATEMA_ERROR("Invalid image format");

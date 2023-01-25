@@ -35,7 +35,7 @@ namespace at
 		struct Settings : public Window::Settings
 		{
 			ImageFormat colorFormat = ImageFormat::BGRA8_SRGB;
-			ImageFormat depthFormat = ImageFormat::D32F;
+			ImageFormat depthFormat = ImageFormat::D32_SFLOAT;
 
 			size_t maxFramesInFlight = 2;
 		};
