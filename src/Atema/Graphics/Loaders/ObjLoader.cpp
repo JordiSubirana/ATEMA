@@ -49,13 +49,16 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 
 	auto model = std::make_shared<Model>();
 
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
+	tinyobj::ObjReader objReader;
 
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str()))
-		ATEMA_ERROR(warn + err);
+	objReader.ParseFromFile(path.string());
+
+	if (!objReader.Valid())
+		ATEMA_ERROR(objReader.Warning() + objReader.Error());
+
+	const auto& attrib = objReader.GetAttrib();
+	const auto& shapes = objReader.GetShapes();
+	const auto& materials = objReader.GetMaterials();
 
 	// Settings override
 	ModelLoader::Settings newSettings = settings;
@@ -86,80 +89,113 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 
 	for (const auto& shape : shapes)
 	{
-		const size_t vertexCount = shape.mesh.indices.size();
+		size_t currentVertexCount = 0;
+		int currentMaterialID = shape.mesh.material_ids[0];
 
-		std::vector<ModelLoader::StaticVertex> vertices;
-		vertices.reserve(vertexCount);
+		std::vector<size_t> meshVertexCounts;
+		std::vector<size_t> meshMaterialIDs;
 
-		// Generate identity index data
-		std::vector<uint32_t> indices(vertexCount);
-		for (uint32_t i = 0; i < vertexCount; i++)
-			indices[i] = i;
-
-		// Generate vertex data
-		for (const auto& index : shape.mesh.indices)
+		for (size_t i = 0; i < shape.mesh.material_ids.size(); i++)
 		{
-			auto& vertex = vertices.emplace_back();
+			const auto materialID = shape.mesh.material_ids[i];
 
-			// Get vertex position
-			vertex.position =
+			if (materialID != currentMaterialID)
 			{
-				attrib.vertices[3 * index.vertex_index + 0],
-				attrib.vertices[3 * index.vertex_index + 1],
-				attrib.vertices[3 * index.vertex_index + 2]
-			};
+				meshVertexCounts.emplace_back(currentVertexCount);
+				meshMaterialIDs.emplace_back(currentMaterialID);
 
-			// Get vertex texcoords if it exists
-			if (index.texcoord_index >= 0)
-			{
-				vertex.texCoords =
-				{
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					attrib.texcoords[2 * index.texcoord_index + 1]
-				};
+				currentMaterialID = materialID;
+				currentVertexCount = 0;
 			}
 
-			// Get vertex normal if it exists
-			if (index.normal_index >= 0)
-			{
-				vertex.normal =
-				{
-					attrib.normals[3 * index.normal_index + 0],
-					attrib.normals[3 * index.normal_index + 1],
-					attrib.normals[3 * index.normal_index + 2]
-				};
-			}
+			currentVertexCount += 3;
 		}
 
-		// Transform vertices if needed
-		// We will generate tangents & bitangents from position
-		// So there is no need to make the ModelLoader to transform everything later
-		// Just transform the basic data so everything will be correctly computed
-		if (settings.vertexTransformation.has_value())
+		meshVertexCounts.emplace_back(currentVertexCount);
+		meshMaterialIDs.emplace_back(shape.mesh.material_ids.back());
+
+		size_t firstIndex = 0;
+		for (size_t m = 0; m < meshVertexCounts.size(); m++)
 		{
-			const auto& transform = settings.vertexTransformation.value();
+			const size_t vertexCount = meshVertexCounts[m];
 
-			for (auto& vertex : vertices)
-				vertex.position = transform.transformPosition(vertex.position);
+			std::vector<ModelLoader::StaticVertex> vertices;
+			vertices.reserve(vertexCount);
 
-			if (hasNormal)
+			// Generate identity index data
+			std::vector<uint32_t> indices(vertexCount);
+			for (uint32_t i = 0; i < vertexCount; i++)
+				indices[i] = i;
+
+			// Generate vertex data
+			const auto lastIndex = firstIndex + vertexCount;
+			for (size_t i = firstIndex; i < lastIndex; i++)
 			{
-				for (auto& vertex : vertices)
+				const auto& index = shape.mesh.indices[i];
+				auto& vertex = vertices.emplace_back();
+
+				// Get vertex position
+				vertex.position =
 				{
-					vertex.normal = transform.transformVector(vertex.normal);
-					vertex.normal.normalize();
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+				};
+
+				// Get vertex texcoords if it exists
+				if (index.texcoord_index >= 0)
+				{
+					vertex.texCoords =
+					{
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						attrib.texcoords[2 * index.texcoord_index + 1]
+					};
+				}
+
+				// Get vertex normal if it exists
+				if (index.normal_index >= 0)
+				{
+					vertex.normal =
+					{
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2]
+					};
 				}
 			}
+
+			// Transform vertices if needed
+			// We will generate tangents & bitangents from position
+			// So there is no need to make the ModelLoader to transform everything later
+			// Just transform the basic data so everything will be correctly computed
+			if (settings.vertexTransformation.has_value())
+			{
+				const auto& transform = settings.vertexTransformation.value();
+
+				for (auto& vertex : vertices)
+					vertex.position = transform.transformPosition(vertex.position);
+
+				if (hasNormal)
+				{
+					for (auto& vertex : vertices)
+					{
+						vertex.normal = transform.transformVector(vertex.normal);
+						vertex.normal.normalize();
+					}
+				}
+			}
+			
+			// Generate tangeants & bitangeants if needed
+			if (hasTangent || hasBitangent)
+				ModelLoader::generateTangents(vertices, indices);
+			// Otherwise, just ensure there are no duplicate vertices
+			else
+				ModelLoader::removeDuplicates(vertices, indices);
+			
+			model->addMesh(ModelLoader::loadMesh(vertices, indices, newSettings));
+
+			firstIndex += vertexCount;
 		}
-
-		// Generate tangeants & bitangeants if needed
-		if (hasTangent || hasBitangent)
-			ModelLoader::generateTangents(vertices, indices);
-		// Otherwise, just ensure there are no duplicate vertices
-		else
-			ModelLoader::removeDuplicates(vertices, indices);
-
-		model->addMesh(ModelLoader::loadMesh(vertices, indices, newSettings));
 	}
 
 	if (!settings.commandBuffer)
