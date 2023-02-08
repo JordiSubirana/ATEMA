@@ -25,8 +25,9 @@
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Traits.hpp>
 
-#include <utility>
+#include <memory>
 #include <string>
+#include <utility>
 
 // Use Hasher::hash to generate the hash
 #define ATEMA_DECLARE_STD_HASH(type) \
@@ -212,6 +213,40 @@ namespace at
 		static constexpr auto hash(const std::basic_string_view<CharT, Traits>& str)
 		{
 			return Hasher::hash(str.data(), str.size());
+		}
+	};
+
+	// std::shared_ptr hash overload
+	template<class T>
+	struct HashOverload<std::shared_ptr<T>>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const std::shared_ptr<T>& ptr)
+		{
+			return Hasher::hash(ptr.get());
+		}
+	};
+
+	// std::weak_ptr hash overload
+	// This is here for consistency but weak_ptr should not be used as a key
+	template<class T>
+	struct HashOverload<std::weak_ptr<T>>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const std::weak_ptr<T>& ptr)
+		{
+			return Hasher::hash(ptr.lock().get());
+		}
+	};
+
+	// std::unique_ptr hash overload
+	template<class T>
+	struct HashOverload<std::unique_ptr<T>>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const std::unique_ptr<T>& ptr)
+		{
+			return Hasher::hash(ptr.get());
 		}
 	};
 }
