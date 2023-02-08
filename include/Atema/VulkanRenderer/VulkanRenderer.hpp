@@ -45,6 +45,9 @@ namespace at
 		static VulkanRenderer& instance();
 
 		const Limits& getLimits() const noexcept override;
+
+		Flags<ImageUsage> getImageFormatOptimalUsages(ImageFormat format) const noexcept override;
+		Flags<ImageUsage> getImageFormatLinearUsages(ImageFormat format) const noexcept override;
 		
 		// Renderer methods
 		void initialize() override;

@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <array>
 
 namespace at
 {
@@ -54,13 +55,26 @@ namespace at
 
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
+		Flags<ImageUsage> getImageFormatOptimalUsages(ImageFormat format) const noexcept;
+		Flags<ImageUsage> getImageFormatLinearUsages(ImageFormat format) const noexcept;
+
+
 	private:
+		void initializeImageFormatSupport(const VulkanInstance& instance);
+
+		struct ImageSupportProperties
+		{
+			Flags<ImageUsage> optimal;
+			Flags<ImageUsage> linear;
+		};
+
 		VkPhysicalDevice m_device;
 		VkPhysicalDeviceProperties m_deviceProperties{};
 		VkPhysicalDeviceFeatures m_supportedFeatures{};
 		VkPhysicalDeviceMemoryProperties m_memoryProperties{};
 		std::vector<VkQueueFamilyProperties> m_queueFamilyProperties;
 		std::unordered_set<std::string> m_extensions;
+		std::array<ImageSupportProperties, static_cast<size_t>(ImageFormat::_COUNT)> m_imageSupportProperties;
 	};
 }
 

@@ -24,6 +24,42 @@
 
 using namespace at;
 
+namespace
+{
+	Flags<ImageUsage> getImageFormatUsages(VkFormatFeatureFlags flags)
+	{
+		Flags<ImageUsage> usages;
+
+		const bool blit = flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT && flags & VK_FORMAT_FEATURE_BLIT_DST_BIT;
+		
+		// Sampling
+		if (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT &&
+			flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT &&
+			blit)
+			usages |= ImageUsage::ShaderSampling;
+
+		// Color attachment
+		if (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT &&
+			flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT &&
+			blit)
+			usages |= ImageUsage::RenderTarget | ImageUsage::ShaderInput;
+
+		// Depth attachment
+		if (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			usages |= ImageUsage::RenderTarget | ImageUsage::ShaderInput;
+
+		// Transfer src
+		if (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)
+			usages |= ImageUsage::TransferSrc;
+
+		// Transfer src
+		if (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT)
+			usages |= ImageUsage::TransferDst;
+
+		return usages;
+	}
+}
+
 VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance& instance, VkPhysicalDevice physicalDevice) :
 	m_device(physicalDevice)
 {
@@ -52,6 +88,8 @@ VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance& instance, VkPhy
 
 	for (auto& extension : extensions)
 		m_extensions.emplace(extension.extensionName);
+
+	initializeImageFormatSupport(instance);
 }
 
 VulkanPhysicalDevice::~VulkanPhysicalDevice()
@@ -112,4 +150,29 @@ uint32_t VulkanPhysicalDevice::findMemoryType(uint32_t typeFilter, VkMemoryPrope
 	ATEMA_ERROR("Failed to find suitable memory type");
 
 	return 0;
+}
+
+Flags<ImageUsage> VulkanPhysicalDevice::getImageFormatOptimalUsages(ImageFormat format) const noexcept
+{
+	return m_imageSupportProperties[static_cast<size_t>(format)].optimal;
+}
+
+Flags<ImageUsage> VulkanPhysicalDevice::getImageFormatLinearUsages(ImageFormat format) const noexcept
+{
+	return m_imageSupportProperties[static_cast<size_t>(format)].linear;
+}
+
+void VulkanPhysicalDevice::initializeImageFormatSupport(const VulkanInstance& instance)
+{
+	for (size_t i = 0; i < static_cast<size_t>(ImageFormat::_COUNT); i++)
+	{
+		VkFormat format = Vulkan::getFormat(static_cast<ImageFormat>(i));
+
+		VkFormatProperties formatProperties;
+
+		instance.vkGetPhysicalDeviceFormatProperties(m_device, format, &formatProperties);
+
+		m_imageSupportProperties[i].optimal = getImageFormatUsages(formatProperties.optimalTilingFeatures);
+		m_imageSupportProperties[i].linear = getImageFormatUsages(formatProperties.linearTilingFeatures);
+	}
 }

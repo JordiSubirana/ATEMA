@@ -91,6 +91,16 @@ const Renderer::Limits& VulkanRenderer::getLimits() const noexcept
 	return m_limits;
 }
 
+Flags<ImageUsage> VulkanRenderer::getImageFormatOptimalUsages(ImageFormat format) const noexcept
+{
+	return m_physicalDevice->getImageFormatOptimalUsages(format);
+}
+
+Flags<ImageUsage> VulkanRenderer::getImageFormatLinearUsages(ImageFormat format) const noexcept
+{
+	return m_physicalDevice->getImageFormatLinearUsages(format);
+}
+
 void VulkanRenderer::initialize()
 {
 	createInstance();

@@ -149,7 +149,9 @@ namespace at
 		D32_SFLOAT,
 		D16_UNORM_S8_UINT,
 		D24_UNORM_S8_UINT,
-		D32_SFLOAT_S8_UINT
+		D32_SFLOAT_S8_UINT,
+
+		_COUNT
 	};
 
 	enum class ImageSamples

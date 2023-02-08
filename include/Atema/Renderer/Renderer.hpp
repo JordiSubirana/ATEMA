@@ -181,6 +181,9 @@ namespace at
 
 		virtual const Limits& getLimits() const noexcept = 0;
 
+		virtual Flags<ImageUsage> getImageFormatOptimalUsages(ImageFormat format) const noexcept = 0;
+		virtual Flags<ImageUsage> getImageFormatLinearUsages(ImageFormat format) const noexcept = 0;
+
 		virtual void waitForIdle() = 0;
 
 		// Returns the default command pool for a given queue command type
