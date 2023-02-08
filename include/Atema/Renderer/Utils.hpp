@@ -36,6 +36,8 @@ namespace at
 	ATEMA_RENDERER_API uint32_t getDescriptorBindingCount(const Type& astVariableType);
 
 	ATEMA_RENDERER_API size_t getByteSize(IndexType indexType);
+
+	ATEMA_RENDERER_API size_t getComponentCount(ImageFormat format);
 }
 
 #endif

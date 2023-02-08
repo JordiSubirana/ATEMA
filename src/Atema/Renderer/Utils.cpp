@@ -143,3 +143,120 @@ size_t at::getByteSize(IndexType indexType)
 
 	return 0;
 }
+
+size_t at::getComponentCount(ImageFormat format)
+{
+	switch (format)
+	{
+		// Color (8 bit components)
+		case ImageFormat::R8_UNORM:
+		case ImageFormat::R8_SNORM:
+		case ImageFormat::R8_USCALED:
+		case ImageFormat::R8_SSCALED:
+		case ImageFormat::R8_UINT:
+		case ImageFormat::R8_SINT:
+		case ImageFormat::R8_SRGB:
+		case ImageFormat::R16_UNORM:
+		case ImageFormat::R16_SNORM:
+		case ImageFormat::R16_USCALED:
+		case ImageFormat::R16_SSCALED:
+		case ImageFormat::R16_UINT:
+		case ImageFormat::R16_SINT:
+		case ImageFormat::R16_SFLOAT:
+		case ImageFormat::R32_UINT:
+		case ImageFormat::R32_SINT:
+		case ImageFormat::R32_SFLOAT:
+		case ImageFormat::R64_UINT:
+		case ImageFormat::R64_SINT:
+		case ImageFormat::R64_SFLOAT:
+		case ImageFormat::D16_UNORM:
+		case ImageFormat::D32_SFLOAT:
+			return 1;
+		case ImageFormat::RG8_UNORM:
+		case ImageFormat::RG8_SNORM:
+		case ImageFormat::RG8_USCALED:
+		case ImageFormat::RG8_SSCALED:
+		case ImageFormat::RG8_UINT:
+		case ImageFormat::RG8_SINT:
+		case ImageFormat::RG8_SRGB:
+		case ImageFormat::RG16_UNORM:
+		case ImageFormat::RG16_SNORM:
+		case ImageFormat::RG16_USCALED:
+		case ImageFormat::RG16_SSCALED:
+		case ImageFormat::RG16_UINT:
+		case ImageFormat::RG16_SINT:
+		case ImageFormat::RG16_SFLOAT:
+		case ImageFormat::RG32_UINT:
+		case ImageFormat::RG32_SINT:
+		case ImageFormat::RG32_SFLOAT:
+		case ImageFormat::RG64_UINT:
+		case ImageFormat::RG64_SINT:
+		case ImageFormat::RG64_SFLOAT:
+		case ImageFormat::D16_UNORM_S8_UINT:
+		case ImageFormat::D24_UNORM_S8_UINT:
+		case ImageFormat::D32_SFLOAT_S8_UINT:
+			return 2;
+		case ImageFormat::RGB8_UNORM:
+		case ImageFormat::RGB8_SNORM:
+		case ImageFormat::RGB8_USCALED:
+		case ImageFormat::RGB8_SSCALED:
+		case ImageFormat::RGB8_UINT:
+		case ImageFormat::RGB8_SINT:
+		case ImageFormat::RGB8_SRGB:
+		case ImageFormat::BGR8_UNORM:
+		case ImageFormat::BGR8_SNORM:
+		case ImageFormat::BGR8_USCALED:
+		case ImageFormat::BGR8_SSCALED:
+		case ImageFormat::BGR8_UINT:
+		case ImageFormat::BGR8_SINT:
+		case ImageFormat::BGR8_SRGB:
+		case ImageFormat::RGB16_UNORM:
+		case ImageFormat::RGB16_SNORM:
+		case ImageFormat::RGB16_USCALED:
+		case ImageFormat::RGB16_SSCALED:
+		case ImageFormat::RGB16_UINT:
+		case ImageFormat::RGB16_SINT:
+		case ImageFormat::RGB16_SFLOAT:
+		case ImageFormat::RGB32_UINT:
+		case ImageFormat::RGB32_SINT:
+		case ImageFormat::RGB32_SFLOAT:
+		case ImageFormat::RGB64_UINT:
+		case ImageFormat::RGB64_SINT:
+		case ImageFormat::RGB64_SFLOAT:
+			return 3;
+		case ImageFormat::RGBA8_UNORM:
+		case ImageFormat::RGBA8_SNORM:
+		case ImageFormat::RGBA8_USCALED:
+		case ImageFormat::RGBA8_SSCALED:
+		case ImageFormat::RGBA8_UINT:
+		case ImageFormat::RGBA8_SINT:
+		case ImageFormat::RGBA8_SRGB:
+		case ImageFormat::BGRA8_UNORM:
+		case ImageFormat::BGRA8_SNORM:
+		case ImageFormat::BGRA8_USCALED:
+		case ImageFormat::BGRA8_SSCALED:
+		case ImageFormat::BGRA8_UINT:
+		case ImageFormat::BGRA8_SINT:
+		case ImageFormat::BGRA8_SRGB:
+		case ImageFormat::RGBA16_UNORM:
+		case ImageFormat::RGBA16_SNORM:
+		case ImageFormat::RGBA16_USCALED:
+		case ImageFormat::RGBA16_SSCALED:
+		case ImageFormat::RGBA16_UINT:
+		case ImageFormat::RGBA16_SINT:
+		case ImageFormat::RGBA16_SFLOAT:
+		case ImageFormat::RGBA32_UINT:
+		case ImageFormat::RGBA32_SINT:
+		case ImageFormat::RGBA32_SFLOAT:
+		case ImageFormat::RGBA64_UINT:
+		case ImageFormat::RGBA64_SINT:
+		case ImageFormat::RGBA64_SFLOAT:
+			return 4;
+		default:
+		{
+			ATEMA_ERROR("Invalid image format");
+		}
+	}
+
+	return 0;
+}
