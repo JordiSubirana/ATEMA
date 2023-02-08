@@ -25,9 +25,7 @@
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 
 using namespace at;
 
@@ -173,60 +171,12 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 
 		const auto fullPath = path.string() + "_" + name + "." + extension;
 
-		// Load the texture data
-		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(fullPath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-		// The texture was successfully loaded : create a corresponding GPU texture
-		if (pixels)
+		if (std::filesystem::exists(fullPath))
 		{
 			textureCount++;
 
-			size_t imageSize = texWidth * texHeight * 4;
-
-			// std::max for the largest dimension, std::log2 to find how many times we can divide by 2
-			// std::floor handles the case when the dimension is not power of 2, +1 to add a mip level to the original image
-			auto textureMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-
-			// Fill staging buffer
-			auto stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, imageSize });
-
-			auto bufferData = stagingBuffer->map();
-
-			memcpy(bufferData, pixels, imageSize);
-
-			stagingBuffer->unmap();
-
-			// Free image data
-			stbi_image_free(pixels);
-
-			// Create image
-			Image::Settings imageSettings;
-			//imageSettings.format = ImageFormat::RGBA8_SRGB;
-			imageSettings.format = ImageFormat::RGBA8_UNORM;
-			imageSettings.width = texWidth;
-			imageSettings.height = texHeight;
-			imageSettings.mipLevels = textureMipLevels;
-			imageSettings.usages = ImageUsage::ShaderSampling | ImageUsage::TransferDst | ImageUsage::TransferSrc;
-
-			texture = Image::create(imageSettings);
-
-			// Copy staging buffer to index buffer
-			auto commandBuffer = commandPool->createBuffer({ true });
-
-			commandBuffer->begin();
-
-			commandBuffer->imageBarrier(texture, ImageBarrier::InitializeTransferDst);
-
-			commandBuffer->copyBuffer(stagingBuffer, texture, ImageLayout::TransferDst);
-
-			commandBuffer->createMipmaps(texture, PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
-
-			commandBuffer->end();
-
-			Renderer::instance().submitAndWait({ commandBuffer });
+			texture = DefaultImageLoader::load(fullPath, {});
 		}
-		// The texture does not exist : use the default value instead
 		else
 		{
 			const auto elementOffset = bufferLayout.add(getElementType(materialParameter.defaultValue));
