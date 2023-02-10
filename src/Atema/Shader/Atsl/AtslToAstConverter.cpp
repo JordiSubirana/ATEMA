@@ -1291,6 +1291,11 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 				{
 					return parseReturn();
 				}
+				// - Discard : return statement
+				case AtslKeyword::Discard:
+				{
+					return parseDiscard();
+				}
 				default:
 				{
 					ATEMA_ATSL_TOKEN_ERROR("Unexpected keyword in block sequence");
@@ -1673,6 +1678,17 @@ UPtr<ReturnStatement> AtslToAstConverter::parseReturn()
 
 		expect(iterate(), AtslSymbol::Semicolon);
 	}
+
+	return std::move(statement);
+}
+
+UPtr<DiscardStatement> AtslToAstConverter::parseDiscard()
+{
+	expect(iterate(), AtslKeyword::Discard);
+
+	auto statement = std::make_unique<DiscardStatement>();
+
+	expect(iterate(), AtslSymbol::Semicolon);
 
 	return std::move(statement);
 }

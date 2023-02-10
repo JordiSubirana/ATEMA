@@ -91,6 +91,7 @@ namespace at
 		Break,
 		Continue,
 		Return,
+		Discard,
 	};
 
 	using AtslIdentifier = std::string;

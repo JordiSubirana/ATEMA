@@ -263,6 +263,13 @@ UPtr<ReturnStatement> AstCloner::clone(const ReturnStatement& statement)
 	return std::move(cloneStatement);
 }
 
+UPtr<DiscardStatement> AstCloner::clone(const DiscardStatement& statement)
+{
+	auto cloneStatement = std::make_unique<DiscardStatement>();
+
+	return std::move(cloneStatement);
+}
+
 UPtr<SequenceStatement> AstCloner::clone(const SequenceStatement& statement)
 {
 	auto cloneStatement = std::make_unique<SequenceStatement>();

@@ -441,6 +441,11 @@ UPtr<Statement> AstPreprocessor::process(const ReturnStatement& statement)
 	return m_cloner.clone(statement);
 }
 
+UPtr<Statement> AstPreprocessor::process(const DiscardStatement& statement)
+{
+	return m_cloner.clone(statement);
+}
+
 UPtr<Statement> AstPreprocessor::process(const SequenceStatement& statement)
 {
 	auto newStatement = std::make_unique<SequenceStatement>();

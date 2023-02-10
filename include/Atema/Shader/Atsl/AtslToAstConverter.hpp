@@ -94,6 +94,7 @@ namespace at
 		UPtr<BreakStatement> parseBreak();
 		UPtr<ContinueStatement> parseContinue();
 		UPtr<ReturnStatement> parseReturn();
+		UPtr<DiscardStatement> parseDiscard();
 
 		// Expressions : delimiter is not known, so no parsing
 		Type parseType();

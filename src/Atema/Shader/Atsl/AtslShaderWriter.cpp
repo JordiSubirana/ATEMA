@@ -430,6 +430,13 @@ void AtslShaderWriter::visit(const ReturnStatement& statement)
 	addDelimiter();
 }
 
+void AtslShaderWriter::visit(const DiscardStatement& statement)
+{
+	m_ostream << "discard";
+
+	addDelimiter();
+}
+
 void AtslShaderWriter::visit(const SequenceStatement& statement)
 {
 	for (auto& subStatement : statement.statements)

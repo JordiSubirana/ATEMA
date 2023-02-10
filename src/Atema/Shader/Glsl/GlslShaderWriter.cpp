@@ -431,6 +431,13 @@ void GlslShaderWriter::visit(const ReturnStatement& statement)
 	addDelimiter();
 }
 
+void GlslShaderWriter::visit(const DiscardStatement& statement)
+{
+	m_ostream << "discard";
+
+	addDelimiter();
+}
+
 void GlslShaderWriter::visit(const SequenceStatement& statement)
 {
 	if (!m_isSequenceProcessed)

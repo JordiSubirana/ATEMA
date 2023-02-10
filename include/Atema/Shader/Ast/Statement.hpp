@@ -284,6 +284,14 @@ namespace at
 		UPtr<Expression> expression;
 	};
 
+	struct ATEMA_SHADER_API DiscardStatement : public Statement
+	{
+		Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
+	};
+
 	struct ATEMA_SHADER_API SequenceStatement : public Statement
 	{
 		Statement::Statement::Type getType() const noexcept override;

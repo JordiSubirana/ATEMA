@@ -54,6 +54,7 @@ namespace at
 		void visit(const BreakStatement& statement) override;
 		void visit(const ContinueStatement& statement) override;
 		void visit(const ReturnStatement& statement) override;
+		void visit(const DiscardStatement& statement) override;
 		void visit(const SequenceStatement& statement) override;
 		void visit(const OptionalStatement& statement) override;
 

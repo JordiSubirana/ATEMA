@@ -46,7 +46,8 @@ namespace
 		{ AtslKeyword::Struct, "struct" },
 		{ AtslKeyword::Break, "break" },
 		{ AtslKeyword::Continue, "continue" },
-		{ AtslKeyword::Return, "return" }
+		{ AtslKeyword::Return, "return" },
+		{ AtslKeyword::Discard, "discard" }
 	};
 
 	std::unordered_map<std::string, AtslKeyword> s_strToKeyword =
@@ -65,7 +66,8 @@ namespace
 		{ "struct", AtslKeyword::Struct },
 		{ "break", AtslKeyword::Break },
 		{ "continue", AtslKeyword::Continue },
-		{ "return", AtslKeyword::Return }
+		{ "return", AtslKeyword::Return },
+		{ "discard", AtslKeyword::Discard }
 	};
 
 	std::unordered_map<BuiltInFunction, std::string> s_builtInFunctionToStr =
