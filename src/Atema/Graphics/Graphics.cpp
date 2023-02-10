@@ -20,6 +20,7 @@
 */
 
 #include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 #include <Atema/Shader/Loaders/AtslLoader.hpp>
 #include <Atema/Renderer/Utils.hpp>
 
@@ -66,6 +67,27 @@ Graphics::UberStageSettings::UberStageSettings(const UberShader* uberShader, Ast
 }
 
 //-----
+// ImageSettings
+Graphics::ImageSettings::ImageSettings(const std::filesystem::path& path, const ImageLoader::Settings& settings) :
+	path(path),
+	settings(settings)
+{
+}
+
+StdHash Graphics::ImageSettings::hash(const ImageSettings& settings)
+{
+	StdHash hash = 0;
+
+	DefaultStdHasher::hashCombine(hash, settings.path);
+	DefaultStdHasher::hashCombine(hash, settings.settings.mipLevels);
+	DefaultStdHasher::hashCombine(hash, settings.settings.samples);
+	DefaultStdHasher::hashCombine(hash, settings.settings.tiling);
+	DefaultStdHasher::hashCombine(hash, settings.settings.usages);
+
+	return hash;
+}
+
+//-----
 // Graphics
 Graphics::Graphics()
 {
@@ -99,8 +121,12 @@ Graphics::Graphics()
 
 	m_graphicsPipelineManager.addLoader(&loadGraphicsPipeline);
 
+	m_imageManager.addLoader(&loadImage);
+
 	// Hashers
 	m_uberShaderOptionsManager.setHasher(&UberInstanceSettings::hash);
+
+	m_imageManager.setHasher(&ImageSettings::hash);
 
 	// Before uber managers to properly destroy UberShaders after Shader deletion
 	m_resourceManagers.emplace_back(&m_graphicsPipelineManager);
@@ -110,6 +136,7 @@ Graphics::Graphics()
 	m_resourceManagers.emplace_back(&m_uberShaderManager);
 	m_resourceManagers.emplace_back(&m_uberShaderOptionsManager);
 	m_resourceManagers.emplace_back(&m_uberShaderStageManager);
+	m_resourceManagers.emplace_back(&m_imageManager);
 
 	m_shaderManager.setDeleter([&](Ptr<Shader> shader)
 		{
@@ -203,6 +230,11 @@ Ptr<DescriptorSetLayout> Graphics::getDescriptorSetLayout(const DescriptorSetLay
 Ptr<GraphicsPipeline::Settings> Graphics::getGraphicsPipelineSettings(const UberShader& vertexShader, const UberShader& fragmentShader)
 {
 	return m_graphicsPipelineSettingsManager.get({ &vertexShader, &fragmentShader });
+}
+
+Ptr<Image> Graphics::getImage(const std::filesystem::path& path, const ImageLoader::Settings& settings)
+{
+	return m_imageManager.get({ path, settings });
 }
 
 Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
@@ -341,4 +373,9 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 Ptr<GraphicsPipeline> Graphics::loadGraphicsPipeline(const GraphicsPipeline::Settings& settings)
 {
 	return GraphicsPipeline::create(settings);
+}
+
+Ptr<Image> Graphics::loadImage(const ImageSettings& settings)
+{
+	return DefaultImageLoader::load(settings.path, settings.settings);
 }

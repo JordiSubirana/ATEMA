@@ -26,6 +26,7 @@
 #include <Atema/Shader/UberShader.hpp>
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
+#include <Atema/Graphics/Loaders/ImageLoader.hpp>
 
 namespace at
 {
@@ -82,6 +83,8 @@ namespace at
 
 		Ptr<GraphicsPipeline> getGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		
+		Ptr<Image> getImage(const std::filesystem::path& path, const ImageLoader::Settings& settings = {});
+
 	private:
 		struct UberInstanceSettings
 		{
@@ -109,6 +112,17 @@ namespace at
 			const UberShader* fragmentShader;
 		};
 
+		struct ImageSettings
+		{
+			ImageSettings() = delete;
+			ImageSettings(const std::filesystem::path& path, const ImageLoader::Settings& settings);
+
+			static StdHash hash(const ImageSettings& settings);
+
+			const std::filesystem::path& path;
+			const ImageLoader::Settings& settings;
+		};
+
 		Ptr<UberShader> loadUberShader(const std::filesystem::path& path);
 		Ptr<UberShader> loadUberInstance(const UberInstanceSettings& settings);
 		Ptr<UberShader> loadUberStage(const UberStageSettings& settings);
@@ -116,7 +130,8 @@ namespace at
 		static Ptr<DescriptorSetLayout> loadDescriptorSetLayout(const DescriptorSetLayout::Settings& settings);
 		Ptr<GraphicsPipeline::Settings> loadGraphicsPipelineSettings(const GraphicsPipelineSettings& settings);
 		static Ptr<GraphicsPipeline> loadGraphicsPipeline(const GraphicsPipeline::Settings& settings);
-
+		static Ptr<Image> loadImage(const ImageSettings& settings);
+		
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
 		ResourceManager<UberShader> m_uberShaderManager;
@@ -126,6 +141,7 @@ namespace at
 		ResourceManager<DescriptorSetLayout, DescriptorSetLayout::Settings> m_descriptorSetLayoutManager;
 		ResourceManager<GraphicsPipeline::Settings, GraphicsPipelineSettings> m_graphicsPipelineSettingsManager;
 		ResourceManager<GraphicsPipeline, GraphicsPipeline::Settings> m_graphicsPipelineManager;
+		ResourceManager<Image, ImageSettings> m_imageManager;
 
 		std::unordered_map<const UberShader*, WPtr<UberShader>> m_uberShaders;
 		std::unordered_map<Shader*, Ptr<UberShader>> m_shaderToUber;
