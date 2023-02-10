@@ -20,7 +20,10 @@
 */
 
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
+#include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
+#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
 #include <Atema/Renderer/Renderer.hpp>
@@ -83,6 +86,40 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 		newSettings.stagingBuffers = &stagingBuffers;
 	}
 
+	// Load materials
+	const auto textureDir = settings.textureDir.empty() ? path.parent_path() : settings.textureDir;
+
+	for (const auto& mat : materials)
+	{
+		auto materialData = std::make_shared<SurfaceMaterialData>();
+
+		materialData->color = { mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0f };
+		materialData->emissive = { mat.emission[0], mat.emission[1], mat.emission[2] };
+		materialData->metalness = { mat.metallic };
+		materialData->roughness = { mat.roughness };
+
+		if (!mat.diffuse_texname.empty())
+			materialData->colorMap = Graphics::instance().getImage(textureDir / mat.diffuse_texname);
+
+		if (!mat.normal_texname.empty())
+			materialData->normalMap = Graphics::instance().getImage(textureDir / mat.normal_texname);
+
+		if (!mat.displacement_texname.empty())
+			materialData->heightMap = Graphics::instance().getImage(textureDir / mat.displacement_texname);
+
+		if (!mat.emissive_texname.empty())
+			materialData->emissiveMap = Graphics::instance().getImage(textureDir / mat.emissive_texname);
+
+		if (!mat.metallic_texname.empty())
+			materialData->metalnessMap = Graphics::instance().getImage(textureDir / mat.metallic_texname);
+
+		if (!mat.roughness_texname.empty())
+			materialData->roughnessMap = Graphics::instance().getImage(textureDir / mat.roughness_texname);
+
+		model->addMaterial(materialData);
+	}
+
+	// Load meshes
 	const bool hasNormal = format.hasComponent(VertexComponentType::Normal);
 	const bool hasTangent = format.hasComponent(VertexComponentType::Tangent);
 	const bool hasBitangent = format.hasComponent(VertexComponentType::Bitangent);
@@ -118,6 +155,7 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 		for (size_t m = 0; m < meshVertexCounts.size(); m++)
 		{
 			const size_t vertexCount = meshVertexCounts[m];
+			const auto materialID = meshMaterialIDs[m];
 
 			std::vector<ModelLoader::StaticVertex> vertices;
 			vertices.reserve(vertexCount);
@@ -192,7 +230,10 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 			else
 				ModelLoader::removeDuplicates(vertices, indices);
 			
-			model->addMesh(ModelLoader::loadMesh(vertices, indices, newSettings));
+			auto mesh = ModelLoader::loadMesh(vertices, indices, newSettings);
+			mesh->setMaterialID(materialID);
+
+			model->addMesh(std::move(mesh));
 
 			firstIndex += vertexCount;
 		}

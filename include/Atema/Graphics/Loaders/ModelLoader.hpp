@@ -90,6 +90,9 @@ namespace at
 			// If set, the loader will transform position/normal/tangent/bitangent components
 			std::optional<Matrix4f> vertexTransformation;
 
+			// Optional root for material textures
+			std::filesystem::path textureDir;
+
 			// Optional command buffer
 			// If valid:
 			//	- it will be used if there are staging buffers to copy to final buffers (ie vertex buffer or index buffer is not mappable)
