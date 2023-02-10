@@ -41,6 +41,7 @@ namespace
 		std::string name;
 		Ptr<Image>* imagePtr;
 		ConstantValue defaultValue;
+		bool textureOnly = false;
 		size_t offset = InvalidOffset;
 	};
 
@@ -159,7 +160,8 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		{ "Height", &material.heightMap, ConstantValue(1.0f) },
 		{ "Emissive", &material.emissiveMap, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
 		{ "Metalness", &material.metalnessMap, ConstantValue(0.0f) },
-		{ "Roughness", &material.roughnessMap, ConstantValue(0.0f) }
+		{ "Roughness", &material.roughnessMap, ConstantValue(0.0f) },
+		{ "AlphaMask", &material.alphaMaskMap, ConstantValue(1.0f), true },
 	};
 
 	for (auto& materialParameter : materialParameters)
@@ -183,7 +185,8 @@ MaterialData::MaterialData(const at::SurfaceMaterialData& material) :
 	height(material.heightMap),
 	emissive(material.emissiveMap),
 	metalness(material.metalnessMap),
-	roughness(material.roughnessMap)
+	roughness(material.roughnessMap),
+	alphaMask(material.alphaMaskMap)
 {
 	initialize(material);
 }
@@ -197,6 +200,7 @@ void MaterialData::initialize(const at::SurfaceMaterialData& material)
 	emissive = material.emissiveMap;
 	metalness = material.metalnessMap;
 	roughness = material.roughnessMap;
+	alphaMask = material.alphaMaskMap;
 	
 	std::vector<MaterialParameter> materialParameters =
 	{
@@ -206,7 +210,8 @@ void MaterialData::initialize(const at::SurfaceMaterialData& material)
 		{ "Height", &height, ConstantValue(material.height) },
 		{ "Emissive", &emissive, ConstantValue(material.emissive) },
 		{ "Metalness", &metalness, ConstantValue(material.metalness) },
-		{ "Roughness", &roughness, ConstantValue(material.roughness) }
+		{ "Roughness", &roughness, ConstantValue(material.roughness) },
+		{ "AlphaMask", &alphaMask, ConstantValue(1.0f), true },
 	};
 
 	BufferLayout bufferLayout(StructLayout::Default);
@@ -221,7 +226,7 @@ void MaterialData::initialize(const at::SurfaceMaterialData& material)
 		{
 			textureCount++;
 		}
-		else
+		else if (!materialParameter.textureOnly)
 		{
 			const auto elementOffset = bufferLayout.add(getElementType(materialParameter.defaultValue));
 
@@ -288,7 +293,7 @@ void MaterialData::initialize(const at::SurfaceMaterialData& material)
 
 			descriptorSet->update(bindingIndex++, texture->getView(), sampler);
 		}
-		else
+		else if (!materialParameter.textureOnly)
 		{
 			writeBufferElement(bufferData, bufferOffsets[bufferElementIndex++], materialParameter.defaultValue);
 		}

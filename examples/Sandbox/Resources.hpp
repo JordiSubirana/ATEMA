@@ -114,6 +114,7 @@ public:
 	at::Ptr<at::Image> emissive;
 	at::Ptr<at::Image> metalness;
 	at::Ptr<at::Image> roughness;
+	at::Ptr<at::Image> alphaMask;
 
 	at::Ptr<at::Sampler> sampler;
 

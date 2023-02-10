@@ -7,6 +7,7 @@ option
 	int MaterialEmissiveBinding = -1;
 	int MaterialMetalnessBinding = -1;
 	int MaterialRoughnessBinding = -1;
+	int MaterialAlphaMaskBinding = -1;
 }
 
 struct FrameData
@@ -79,6 +80,9 @@ external
 	
 	[optional (MaterialRoughnessBinding >= 0)]
 	[set(1), binding(MaterialRoughnessBinding)] sampler2Df materialRoughness;
+	
+	[optional (MaterialAlphaMaskBinding >= 0)]
+	[set(1), binding(MaterialAlphaMaskBinding)] sampler2Df materialAlphaMask;
 }
 
 [stage(vertex)]
@@ -256,9 +260,24 @@ float getMaterialRoughness()
 		return sample(materialRoughness, getTexCoords()).r;
 }
 
+float getMaterialAlphaMask()
+{
+	optional (MaterialAlphaMaskBinding < 0)
+		return 1.0;
+	
+	optional (MaterialAlphaMaskBinding >= 0)
+		return sample(materialAlphaMask, getTexCoords()).r;
+}
+
 [entry(fragment)]
 void main()
 {
+	optional (MaterialAlphaMaskBinding >= 0)
+	{
+		if (getMaterialAlphaMask() < 0.5)
+			discard;
+	}
+	
 	vec4f matColor = getMaterialColor();
 	vec3f matNormal = getMaterialNormal();
 	float matAO = getMaterialAO();
