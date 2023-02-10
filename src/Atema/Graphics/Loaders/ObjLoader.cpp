@@ -116,6 +116,9 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 		if (!mat.roughness_texname.empty())
 			materialData->roughnessMap = Graphics::instance().getImage(textureDir / mat.roughness_texname);
 
+		if (!mat.alpha_texname.empty())
+			materialData->alphaMaskMap = Graphics::instance().getImage(textureDir / mat.alpha_texname);
+
 		model->addMaterial(materialData);
 	}
 
