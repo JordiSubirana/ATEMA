@@ -25,6 +25,7 @@
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 
 using namespace at;
@@ -117,6 +118,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 	ModelLoader::Settings settings(vertexFormat);
 	settings.flipTexCoords = true;
 	settings.vertexTransformation = modelTransform.getMatrix();
+	settings.textureDir = rscPath / "Textures";
 
 	model = ObjLoader::load(path, settings);
 }
@@ -147,23 +149,19 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		float roughness;
 	}//*/
 
+	SurfaceMaterialData material;
+
 	std::vector<MaterialParameter> materialParameters =
 	{
-		{ "Color", &color, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
-		{ "Normal", &normal, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
-		{ "AO", &ambientOcclusion, ConstantValue(1.0f)},
-		{ "Height", &height, ConstantValue(1.0f) },
-		{ "Emissive", &emissive, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
-		{ "Metalness", &metalness, ConstantValue(0.0f) },
-		{ "Roughness", &roughness, ConstantValue(0.0f) }
+		{ "Color", &material.colorMap, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
+		{ "Normal", &material.normalMap, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
+		{ "AO", &material.ambientOcclusionMap, ConstantValue(1.0f)},
+		{ "Height", &material.heightMap, ConstantValue(1.0f) },
+		{ "Emissive", &material.emissiveMap, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
+		{ "Metalness", &material.metalnessMap, ConstantValue(0.0f) },
+		{ "Roughness", &material.roughnessMap, ConstantValue(0.0f) }
 	};
 
-	BufferLayout bufferLayout(StructLayout::Default);
-	std::vector<size_t> bufferOffsets;
-
-	auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
-
-	size_t textureCount = 0;
 	for (auto& materialParameter : materialParameters)
 	{
 		const auto& name = materialParameter.name;
@@ -172,10 +170,56 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		const auto fullPath = path.string() + "_" + name + "." + extension;
 
 		if (std::filesystem::exists(fullPath))
+			texture = DefaultImageLoader::load(fullPath, {});
+	}
+
+	initialize(material);
+}
+
+MaterialData::MaterialData(const at::SurfaceMaterialData& material) :
+	color(material.colorMap),
+	normal(material.normalMap),
+	ambientOcclusion(material.ambientOcclusionMap),
+	height(material.heightMap),
+	emissive(material.emissiveMap),
+	metalness(material.metalnessMap),
+	roughness(material.roughnessMap)
+{
+	initialize(material);
+}
+
+void MaterialData::initialize(const at::SurfaceMaterialData& material)
+{
+	color = material.colorMap;
+	normal = material.normalMap;
+	ambientOcclusion = material.ambientOcclusionMap;
+	height = material.heightMap;
+	emissive = material.emissiveMap;
+	metalness = material.metalnessMap;
+	roughness = material.roughnessMap;
+	
+	std::vector<MaterialParameter> materialParameters =
+	{
+		{ "Color", &color, ConstantValue(material.color) },
+		{ "Normal", &normal, ConstantValue(material.normal) },
+		{ "AO", &ambientOcclusion, ConstantValue(material.ambientOcclusion)},
+		{ "Height", &height, ConstantValue(material.height) },
+		{ "Emissive", &emissive, ConstantValue(material.emissive) },
+		{ "Metalness", &metalness, ConstantValue(material.metalness) },
+		{ "Roughness", &roughness, ConstantValue(material.roughness) }
+	};
+
+	BufferLayout bufferLayout(StructLayout::Default);
+	std::vector<size_t> bufferOffsets;
+
+	size_t textureCount = 0;
+	for (auto& materialParameter : materialParameters)
+	{
+		const auto& texture = *materialParameter.imagePtr;
+
+		if (texture)
 		{
 			textureCount++;
-
-			texture = DefaultImageLoader::load(fullPath, {});
 		}
 		else
 		{
@@ -200,7 +244,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	if (bufferLayout.getSize() > 0)
 	{
 		bindingIndex++;
-		
+
 		descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment);
 
 		Buffer::Settings bufferSettings;

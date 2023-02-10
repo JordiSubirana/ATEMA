@@ -100,10 +100,12 @@ struct ModelData
 	at::Ptr<at::Model> model;
 };
 
-struct MaterialData
+class MaterialData
 {
+public:
 	MaterialData() = delete;
 	MaterialData(const std::filesystem::path& path, const std::string& format);
+	MaterialData(const at::SurfaceMaterialData& material);
 
 	at::Ptr<at::Image> color;
 	at::Ptr<at::Image> normal;
@@ -122,6 +124,9 @@ struct MaterialData
 
 	at::Ptr<at::DescriptorSetLayout> descriptorSetLayout;
 	at::Ptr<at::DescriptorSet> descriptorSet;
+
+private:
+	void initialize(const at::SurfaceMaterialData& material);
 };
 
 #endif

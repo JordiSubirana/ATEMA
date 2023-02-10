@@ -26,11 +26,13 @@
 
 #include "../Resources.hpp"
 
+#include <vector>
+
 struct GraphicsComponent
 {
 	at::Ptr<at::Model> model;
 	
-	at::Ptr<MaterialData> material;
+	std::vector<at::Ptr<MaterialData>> materials;
 
 	at::AABBf aabb;
 

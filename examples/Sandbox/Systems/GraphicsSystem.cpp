@@ -495,10 +495,12 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		graphicsPipelineSettings.state.vertexInput.inputs = postProcessVertexInput;
 		graphicsPipelineSettings.state.depth.test = false;
 		graphicsPipelineSettings.state.depth.write = false;
+		//*
 		graphicsPipelineSettings.state.stencil = true;
 		graphicsPipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
 		graphicsPipelineSettings.state.stencilFront.compareMask = 1;
 		graphicsPipelineSettings.state.stencilFront.reference = 1;
+		//*/
 
 		m_phongPipeline = GraphicsPipeline::create(graphicsPipelineSettings);
 	}
@@ -844,7 +846,8 @@ void GraphicsSystem::createFrameGraph()
 								if (m_cullFunction(graphics.aabb))
 									continue;
 
-								auto materialID = graphics.material.get();
+								//*
+								auto materialID = graphics.materials[graphics.model->getMeshes()[0]->getMaterialID()].get();
 
 								if (materialID != currentMaterialID)
 								{
@@ -857,12 +860,27 @@ void GraphicsSystem::createFrameGraph()
 								}
 
 								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
+								//*/
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{
 									// Frustum culling
 									/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
 										continue;*/
+
+									materialID = graphics.materials[mesh->getMaterialID()].get();
+
+									if (materialID != currentMaterialID)
+									{
+										auto& material = m_materials[materialID];
+
+										commandBuffer->bindPipeline(material.pipeline);
+										commandBuffer->bindDescriptorSet(1, material.descriptorSet);
+
+										currentMaterialID = materialID;
+									}
+
+									//commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
 
 									const auto& vertexBuffer = mesh->getVertexBuffer();
 									const auto& indexBuffer = mesh->getIndexBuffer();
@@ -1332,38 +1350,41 @@ void GraphicsSystem::updateMaterialResources()
 	{
 		auto& graphics = entities.get<GraphicsComponent>(entity);
 
-		auto& materialData = *graphics.material;
-
-		auto materialID = graphics.material.get();
-
-		if (m_materials.count(materialID) > 0)
-			continue;
-
-		Material material;
-
-		GraphicsPipeline::Settings pipelineSettings;
-		pipelineSettings.vertexShader = materialData.vertexShader;
-		pipelineSettings.fragmentShader = materialData.fragmentShader;
-		pipelineSettings.descriptorSetLayouts = { m_frameLayout, materialData.descriptorSetLayout };
-		pipelineSettings.state.vertexInput.inputs =
+		for (auto& materialData : graphics.materials)
 		{
-			{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
-			{ 0, 1, VertexInputFormat::RG32_SFLOAT },
-			{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
-			{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
-			{ 0, 4, VertexInputFormat::RGB32_SFLOAT }
-		};
-		pipelineSettings.state.stencil = true;
-		pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
-		pipelineSettings.state.stencilFront.writeMask = 1;
-		pipelineSettings.state.stencilFront.passOperation = StencilOperation::Replace;
-		pipelineSettings.state.stencilFront.reference = 1;
-		pipelineSettings.state.rasterization.cullMode = CullMode::None;
+			auto materialID = materialData.get();
 
-		material.pipeline = GraphicsPipeline::create(pipelineSettings);
-		material.descriptorSet = materialData.descriptorSet;
+			if (m_materials.count(materialID) > 0)
+				continue;
 
-		m_materials[materialID] = material;
+			Material material;
+
+			GraphicsPipeline::Settings pipelineSettings;
+			pipelineSettings.vertexShader = materialData->vertexShader;
+			pipelineSettings.fragmentShader = materialData->fragmentShader;
+			pipelineSettings.descriptorSetLayouts = { m_frameLayout, materialData->descriptorSetLayout };
+			pipelineSettings.state.vertexInput.inputs =
+			{
+				{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
+				{ 0, 1, VertexInputFormat::RG32_SFLOAT },
+				{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
+				{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
+				{ 0, 4, VertexInputFormat::RGB32_SFLOAT }
+			};
+			//*
+			pipelineSettings.state.stencil = true;
+			pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
+			pipelineSettings.state.stencilFront.writeMask = 1;
+			pipelineSettings.state.stencilFront.passOperation = StencilOperation::Replace;
+			pipelineSettings.state.stencilFront.reference = 1;
+			//*/
+			//pipelineSettings.state.rasterization.cullMode = CullMode::None;
+
+			material.pipeline = GraphicsPipeline::create(pipelineSettings);
+			material.descriptorSet = materialData->descriptorSet;
+
+			m_materials[materialID] = material;
+		}
 	}
 }
 

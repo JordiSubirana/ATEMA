@@ -186,7 +186,15 @@ SandboxApplication::SandboxApplication():
 	// Resources
 	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	m_materialData = std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension);
+	if (!m_modelData->model->getMaterials().empty())
+	{
+		for (const auto& material : m_modelData->model->getMaterials())
+			m_materialData.emplace_back(std::make_shared<MaterialData>(*material));
+	}
+	else
+	{
+		m_materialData.emplace_back(std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension));
+	}
 
 	// Create entities
 	createScene();
@@ -203,7 +211,7 @@ SandboxApplication::~SandboxApplication()
 	m_entityManager.clear();
 
 	m_modelData.reset();
-	m_materialData.reset();
+	m_materialData.clear();
 	
 	m_window.reset();
 
@@ -304,7 +312,7 @@ void SandboxApplication::createScene()
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
 		graphics.model = createPlaneModel({ 0, 0, 0 }, planeSize);
-		graphics.material = materialData;
+		graphics.materials.emplace_back(materialData);
 	}
 }
 
@@ -382,7 +390,7 @@ void SandboxApplication::updateScene()
 				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
 				graphics.model = m_modelData->model;
-				graphics.material = m_materialData;
+				graphics.materials = m_materialData;
 				graphics.castShadows = true;
 
 				// Transform component
