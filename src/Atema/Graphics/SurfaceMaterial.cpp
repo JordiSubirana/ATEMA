@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,27 +19,35 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
-
-#include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/DebugRenderer.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ModelLoader.hpp>
-#include <Atema/Graphics/Loaders/ObjLoader.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
 
-#endif
+using namespace at;
+
+SurfaceMaterialData::SurfaceMaterialData()
+{
+
+}
+
+SurfaceMaterialData::SurfaceMaterialData(SurfaceMaterialData&& other) noexcept :
+	colorMap(std::move(other.colorMap)),
+	normalMap(std::move(other.normalMap)),
+	ambientOcclusionMap(std::move(other.ambientOcclusionMap)),
+	heightMap(std::move(other.heightMap)),
+	emissiveMap(std::move(other.emissiveMap)),
+	metalnessMap(std::move(other.metalnessMap)),
+	roughnessMap(std::move(other.roughnessMap)),
+	alphaMaskMap(std::move(other.alphaMaskMap)),
+	color(std::move(other.color)),
+	normal(std::move(other.normal)),
+	ambientOcclusion(other.ambientOcclusion),
+	height(other.height),
+	emissive(std::move(other.emissive)),
+	metalness(other.metalness),
+	roughness(other.roughness)
+{
+
+}
+
+SurfaceMaterialData::~SurfaceMaterialData()
+{
+}
