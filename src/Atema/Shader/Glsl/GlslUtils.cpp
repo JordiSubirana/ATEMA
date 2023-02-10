@@ -131,14 +131,7 @@ namespace
 
 	std::string getTypeStr(const ArrayType& type)
 	{
-		const std::string typeStr = glsl::getTypeStr(type.componentType);
-
-		std::string countStr;
-
-		if (type.size != ArrayType::ImplicitSize)
-			countStr = std::to_string(type.size);
-
-		return typeStr + "[" + countStr + "]";
+		return glsl::getTypeStr(type.componentType) + "[" + glsl::getArraySizeStr(type) + "]";
 	}
 }
 
@@ -180,6 +173,36 @@ std::string glsl::getTypeStr(const ArrayType::ComponentType& type)
 	ATEMA_ERROR("Invalid array type");
 
 	return "";
+}
+
+ATEMA_SHADER_API std::string glsl::getArraySizeStr(const ArrayType& type)
+{
+	std::string sizeStr;
+
+	switch (type.sizeType)
+	{
+		case ArrayType::SizeType::Constant:
+		{
+			sizeStr = std::to_string(type.size);
+			break;
+		}
+		case ArrayType::SizeType::Implicit:
+		{
+			// The size is context dependent, no need to specify it
+			break;
+		}
+		case ArrayType::SizeType::Option:
+		{
+			sizeStr = type.optionName;
+			break;
+		}
+		default:
+		{
+			ATEMA_ERROR("Invalid array size type");
+		}
+	}
+
+	return sizeStr;
 }
 
 std::string glsl::getStructLayoutStr(StructLayout structLayout)

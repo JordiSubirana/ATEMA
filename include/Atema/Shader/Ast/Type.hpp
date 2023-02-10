@@ -80,10 +80,23 @@ namespace at
 	struct ArrayType
 	{
 		using ComponentType = Variant<PrimitiveType, VectorType, MatrixType, SamplerType, StructType>;
-		static constexpr size_t ImplicitSize = std::numeric_limits<size_t>::max();
+
+		enum class SizeType
+		{
+			// The size is a literal constant
+			Constant,
+			// The size is context dependent
+			Implicit,
+			// The size is an optional value and needs preprocessing to be evaluated
+			Option
+		};
 
 		ComponentType componentType;
-		size_t size = ImplicitSize;
+		SizeType sizeType = SizeType::Implicit;
+		// Constant size, valid for SizeType::Constant
+		size_t size = 0;
+		// Option size, valid for SizeType::Option
+		std::string optionName;
 	};
 
 	using Type = Variant<

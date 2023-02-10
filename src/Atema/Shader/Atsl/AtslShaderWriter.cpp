@@ -970,10 +970,10 @@ void AtslShaderWriter::writeVariableDeclaration(Type type, std::string name, Exp
 	{
 		const auto& arrayType = type.get<ArrayType>();
 
-		if (arrayType.size == ArrayType::ImplicitSize)
+		if (arrayType.sizeType == ArrayType::SizeType::Implicit)
 			ATEMA_ERROR("Array size must be specified");
 
-		m_ostream << "[" << arrayType.size << "]";
+		m_ostream << "[" << atsl::getArraySizeStr(arrayType) << "]";
 	}
 
 	if (value)

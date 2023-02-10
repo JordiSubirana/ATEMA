@@ -1091,10 +1091,10 @@ void GlslShaderWriter::writeVariableDeclaration(Type type, std::string name, Exp
 	{
 		const auto& arrayType = type.get<ArrayType>();
 
-		if (arrayType.size == ArrayType::ImplicitSize)
+		if (arrayType.sizeType == ArrayType::SizeType::Implicit)
 			ATEMA_ERROR("Array size must be specified");
 
-		m_ostream << "[" << arrayType.size << "]";
+		m_ostream << "[" << glsl::getArraySizeStr(arrayType) << "]";
 	}
 
 	if (value)

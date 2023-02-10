@@ -976,7 +976,18 @@ AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationDat
 		const auto& type = variable.type;
 
 		ArrayType arrayType;
-		arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+		arrayType.sizeType = ArrayType::SizeType::Implicit;
+
+		if (get().value.is<AtslBasicValue>())
+		{
+			arrayType.sizeType = ArrayType::SizeType::Constant;
+			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+		}
+		else if (get().value.is<AtslIdentifier>())
+		{
+			arrayType.sizeType = ArrayType::SizeType::Option;
+			arrayType.optionName = expectType<AtslIdentifier>(iterate());
+		}
 
 		if (type.is<PrimitiveType>())
 			arrayType.componentType = type.get<PrimitiveType>();
@@ -1678,10 +1689,18 @@ Type AtslToAstConverter::parseType()
 		iterate();
 
 		ArrayType arrayType;
-		arrayType.size = ArrayType::ImplicitSize;
+		arrayType.sizeType = ArrayType::SizeType::Implicit;
 
 		if (get().value.is<AtslBasicValue>())
+		{
+			arrayType.sizeType = ArrayType::SizeType::Constant;
 			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+		}
+		else if (get().value.is<AtslIdentifier>())
+		{
+			arrayType.sizeType = ArrayType::SizeType::Option;
+			arrayType.optionName = expectType<AtslIdentifier>(iterate());
+		}
 
 		if (type.is<PrimitiveType>())
 			arrayType.componentType = type.get<PrimitiveType>();

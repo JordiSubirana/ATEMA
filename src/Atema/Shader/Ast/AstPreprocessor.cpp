@@ -488,13 +488,10 @@ UPtr<Expression> AstPreprocessor::process(const ConstantExpression& expression)
 
 UPtr<Expression> AstPreprocessor::process(const VariableExpression& expression)
 {
-	auto optionIt = m_options.find(expression.identifier);
-	if (optionIt != m_options.end())
-		return createConstantExpression(optionIt->second);
+	const auto optionValue = getOptionValue(expression.identifier);
 
-	optionIt = m_defaultOptions.find(expression.identifier);
-	if (optionIt != m_defaultOptions.end())
-		return createConstantExpression(optionIt->second);
+	if (optionValue.has_value())
+		return createConstantExpression(optionValue.value());
 
 	return m_cloner.clone(expression);
 }
@@ -631,6 +628,55 @@ std::optional<bool> AstPreprocessor::evaluateCondition(Expression& expression)
 	AstEvaluator evaluator;
 
 	return evaluator.evaluateCondition(expression);
+}
+
+std::optional<ConstantValue> at::AstPreprocessor::getOptionValue(const std::string& optionName)
+{
+	// Check for overridden options first
+	auto optionIt = m_options.find(optionName);
+	if (optionIt != m_options.end())
+		return optionIt->second;
+
+	// If none exists, just keep the default option
+	optionIt = m_defaultOptions.find(optionName);
+	if (optionIt != m_defaultOptions.end())
+		return optionIt->second;
+	
+	// The option wasn't defined at all
+	return std::nullopt;
+}
+
+Type AstPreprocessor::process(const Type& type)
+{
+	if (type.is<ArrayType>())
+	{
+		const auto& oldArrayType = type.get<ArrayType>();
+
+		if (oldArrayType.sizeType != ArrayType::SizeType::Option)
+			return oldArrayType;
+		
+		ArrayType newArrayType;
+		newArrayType.componentType = oldArrayType.componentType;
+		newArrayType.sizeType = ArrayType::SizeType::Constant;
+
+		const auto sizeEvaluation = getOptionValue(oldArrayType.optionName);
+
+		if (sizeEvaluation.has_value())
+		{
+			const auto sizeValue = sizeEvaluation.value();
+
+			if (sizeValue.is<int32_t>())
+				newArrayType.size = static_cast<size_t>(sizeValue.get<int32_t>());
+			else if (sizeValue.is<uint32_t>())
+				newArrayType.size = static_cast<size_t>(sizeValue.get<uint32_t>());
+			else
+				return oldArrayType;
+
+			return newArrayType;
+		}
+	}
+
+	return type;
 }
 
 UPtr<Expression> AstPreprocessor::createConstantIfPossible(UPtr<Expression>&& value)

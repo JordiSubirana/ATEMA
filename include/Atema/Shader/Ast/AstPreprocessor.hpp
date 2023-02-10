@@ -56,6 +56,10 @@ namespace at
 		std::optional<ConstantValue> evaluate(Expression& expression);
 		std::optional<bool> evaluateCondition(Expression& expression);
 
+		std::optional<ConstantValue> getOptionValue(const std::string& optionName);
+		
+		Type process(const Type& type);
+
 		UPtr<Expression> createConstantIfPossible(UPtr<Expression>&& value);
 		UPtr<ConstantExpression> createConstantExpression(const ConstantValue& value);
 
