@@ -25,6 +25,7 @@
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Traits.hpp>
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <utility>
@@ -247,6 +248,17 @@ namespace at
 		static constexpr auto hash(const std::unique_ptr<T>& ptr)
 		{
 			return Hasher::hash(ptr.get());
+		}
+	};
+
+	// std::filesystem::path hash overload
+	template<>
+	struct HashOverload<std::filesystem::path>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const std::filesystem::path& path)
+		{
+			return Hasher::hash(std::filesystem::hash_value(path));
 		}
 	};
 }
