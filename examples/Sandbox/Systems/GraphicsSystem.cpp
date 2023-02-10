@@ -61,14 +61,15 @@ namespace
 	{
 		std::filesystem::path path;
 		Flags<AstShaderStage> shaderStages;
+		std::unordered_map<std::string, ConstantValue> options;
 	};
 
 	const std::vector<ShaderData> shaderDatas =
 	{
-		{ shadowMapShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
-		{ postProcessShaderPath, AstShaderStage::Vertex },
-		{ phongLightingDirectionalShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment },
-		{ screenShaderPath, AstShaderStage::Fragment }
+		{ shadowMapShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment, {} },
+		{ postProcessShaderPath, AstShaderStage::Vertex, {} },
+		{ phongLightingDirectionalShaderPath, AstShaderStage::Vertex | AstShaderStage::Fragment, {{"ShadowMapCascadeCount", SHADOW_CASCADE_COUNT}} },
+		{ screenShaderPath, AstShaderStage::Fragment, {} }
 	};
 
 	constexpr size_t targetThreadCount = 8;
@@ -174,7 +175,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
-	translateShaders();
+	//translateShaders();
 
 	auto& renderer = Renderer::instance();
 
@@ -214,6 +215,36 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		AtslToAstConverter converter;
 
 		auto ast = converter.createAst(atslTokens);
+
+		// If some options need to be overridden, use a preprocessor to do the job
+		// If not we just take the AST as it is
+		if (!shaderData.options.empty())
+		{
+			AstPreprocessor preprocessor;
+
+			for (const auto& [optionName, optionValue] : shaderData.options)
+				preprocessor.setOption(optionName, optionValue);
+
+			ast->accept(preprocessor);
+			auto processedAst = preprocessor.process(*ast);
+
+			if (!processedAst)
+				ATEMA_ERROR("An error occurred during shader preprocessing");
+
+			UPtr<SequenceStatement> sequence;
+
+			if (processedAst->getType() == Statement::Type::Sequence)
+			{
+				sequence.reset(static_cast<SequenceStatement*>(processedAst.release()));
+			}
+			else
+			{
+				sequence = std::make_unique<SequenceStatement>();
+				sequence->statements.emplace_back(std::move(processedAst));
+			}
+
+			ast = std::move(sequence);
+		}
 
 		AstReflector reflector;
 

@@ -14,9 +14,9 @@ struct PhongDirectionalData
 struct ShadowData
 {
 	mat4f view;
-	mat4f cascadeViewProj[8];
-	float cascadeDepth[8];
-	float cascadeDepthBias[8];
+	mat4f cascadeViewProj[ShadowMapCascadeCount];
+	float cascadeDepth[ShadowMapCascadeCount];
+	float cascadeDepthBias[ShadowMapCascadeCount];
 }
 
 external
