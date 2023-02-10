@@ -35,7 +35,7 @@ namespace at
 	class ATEMA_GRAPHICS_API Mesh
 	{
 	public:
-		Mesh() = default;
+		Mesh();
 		Mesh(const Mesh& other) = default;
 		Mesh(Mesh&& other) noexcept;
 		~Mesh() = default;
@@ -43,11 +43,14 @@ namespace at
 		void setVertexBuffer(const Ptr<VertexBuffer>& vertexBuffer);
 		void setIndexBuffer(const Ptr<IndexBuffer>& indexBuffer);
 		void setAABB(const AABBf& aabb);
+		// The ID refers to the material index in the parent model
+		void setMaterialID(size_t materialID);
 
-		const VertexFormat& getVertexFormat() const noexcept;
 		const Ptr<VertexBuffer>& getVertexBuffer() const noexcept;
 		const Ptr<IndexBuffer>& getIndexBuffer() const noexcept;
 		const AABBf& getAABB() const noexcept;
+		// The ID refers to the material index in the parent mesh
+		size_t getMaterialID() const noexcept;
 
 		Mesh& operator=(const Mesh& other) = default;
 		Mesh& operator=(Mesh&& other) noexcept;
@@ -57,6 +60,8 @@ namespace at
 		Ptr<IndexBuffer> m_indexBuffer;
 
 		AABBf m_aabb;
+
+		size_t m_materialID;
 	};
 }
 

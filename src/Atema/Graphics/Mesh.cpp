@@ -23,6 +23,11 @@
 
 using namespace at;
 
+Mesh::Mesh() :
+	m_materialID(0)
+{
+}
+
 Mesh::Mesh(Mesh&& other) noexcept
 {
 	operator=(std::move(other));
@@ -43,6 +48,11 @@ void Mesh::setAABB(const AABBf& aabb)
 	m_aabb = aabb;
 }
 
+void Mesh::setMaterialID(size_t materialID)
+{
+	m_materialID = materialID;
+}
+
 const Ptr<VertexBuffer>& Mesh::getVertexBuffer() const noexcept
 {
 	return m_vertexBuffer;
@@ -58,12 +68,19 @@ const AABBf& Mesh::getAABB() const noexcept
 	return m_aabb;
 }
 
+size_t Mesh::getMaterialID() const noexcept
+{
+	return m_materialID;
+}
+
 Mesh& Mesh::operator=(Mesh&& other) noexcept
 {
 	m_vertexBuffer = std::move(other.m_vertexBuffer);
 	m_indexBuffer = std::move(other.m_indexBuffer);
 
 	m_aabb = std::move(other.m_aabb);
+
+	m_materialID = other.m_materialID;
 
 	return *this;
 }
