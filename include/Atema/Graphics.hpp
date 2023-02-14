@@ -38,7 +38,6 @@
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/ShaderLibraryManager.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>

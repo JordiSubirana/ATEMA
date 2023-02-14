@@ -24,6 +24,7 @@
 
 #include <Atema/Shader/Config.hpp>
 #include <Atema/Shader/Enums.hpp>
+#include <Atema/Shader/ShaderLibraryManager.hpp>
 #include <Atema/Shader/ShaderWriter.hpp>
 #include <Atema/Shader/UberShader.hpp>
 #include <Atema/Shader/Utils.hpp>
