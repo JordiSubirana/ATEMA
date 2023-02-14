@@ -27,8 +27,9 @@
 using namespace at;
 
 AstPreprocessor::AstPreprocessor() :
-	AstRecursiveVisitor()
+	AstConstRecursiveVisitor()
 {
+	m_libraryManager = &ShaderLibraryManager::instance();
 }
 
 AstPreprocessor::~AstPreprocessor()
@@ -40,12 +41,17 @@ void AstPreprocessor::setOption(const std::string& optionName, const ConstantVal
 	m_options[optionName] = value;
 }
 
+void AstPreprocessor::setLibraryManager(const ShaderLibraryManager& libraryManager)
+{
+	m_libraryManager = &libraryManager;
+}
+
 void AstPreprocessor::clear()
 {
 	m_options.clear();
 }
 
-void AstPreprocessor::visit(OptionDeclarationStatement& statement)
+void AstPreprocessor::visit(const OptionDeclarationStatement& statement)
 {
 	for (auto& option : statement.variables)
 	{
@@ -484,6 +490,28 @@ UPtr<Statement> AstPreprocessor::process(const OptionalStatement& statement)
 	optional->statement = process(*statement.statement);
 
 	return std::move(optional);
+}
+
+UPtr<Statement> AstPreprocessor::process(const IncludeStatement& statement)
+{
+	if (statement.libraries.empty())
+		return nullptr;
+
+	auto sequence = std::make_unique<SequenceStatement>();
+
+	for (const auto& libraryName : statement.libraries)
+	{
+		const auto& libStatement = m_libraryManager->getLibrary(libraryName);
+
+		libStatement->accept(*this);
+
+		sequence->statements.emplace_back(process(*libStatement));
+	}
+
+	if (sequence->statements.size() == 1)
+		return std::move(sequence->statements[0]);
+
+	return std::move(sequence);
 }
 
 UPtr<Expression> AstPreprocessor::process(const ConstantExpression& expression)

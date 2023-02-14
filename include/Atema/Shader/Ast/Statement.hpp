@@ -312,6 +312,16 @@ namespace at
 		UPtr<Expression> condition;
 		UPtr<Statement> statement;
 	};
+
+	struct ATEMA_SHADER_API IncludeStatement : public Statement
+	{
+		Statement::Statement::Type getType() const noexcept override;
+
+		void accept(AstVisitor& visitor) override;
+		void accept(AstConstVisitor& visitor) const override;
+
+		std::vector<std::string> libraries;
+	};
 }
 
 #endif

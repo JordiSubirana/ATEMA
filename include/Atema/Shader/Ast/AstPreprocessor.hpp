@@ -25,13 +25,14 @@
 #include <Atema/Shader/Config.hpp>
 #include <Atema/Shader/Ast/AstRecursiveVisitor.hpp>
 #include <Atema/Shader/Ast/AstCloner.hpp>
+#include <Atema/Shader/ShaderLibraryManager.hpp>
 
 #include <unordered_map>
 #include <optional>
 
 namespace at
 {
-	class ATEMA_SHADER_API AstPreprocessor : public AstRecursiveVisitor
+	class ATEMA_SHADER_API AstPreprocessor : public AstConstRecursiveVisitor
 	{
 	public:
 		AstPreprocessor();
@@ -39,9 +40,13 @@ namespace at
 
 		void setOption(const std::string& optionName, const ConstantValue& value);
 
+		// If no library manager is used, ShaderLibraryManager::instance() will be used
+		// The user is reponsible to keep the library manager alive
+		void setLibraryManager(const ShaderLibraryManager& libraryManager);
+
 		void clear();
 
-		void visit(OptionDeclarationStatement& statement) override;
+		void visit(const OptionDeclarationStatement& statement) override;
 
 		UPtr<Statement> process(const Statement& statement);
 		UPtr<Expression> process(const Expression& expression);
@@ -67,6 +72,8 @@ namespace at
 		std::unordered_map<std::string, ConstantValue> m_defaultOptions;
 
 		AstCloner m_cloner;
+
+		const ShaderLibraryManager* m_libraryManager;
 	};
 }
 

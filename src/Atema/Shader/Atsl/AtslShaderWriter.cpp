@@ -480,6 +480,34 @@ void AtslShaderWriter::visit(const OptionalStatement& statement)
 	}
 }
 
+void AtslShaderWriter::visit(const IncludeStatement& statement)
+{
+	m_ostream << "include";
+
+	if (statement.libraries.size() == 1)
+	{
+		m_ostream << " " << statement.libraries[0];
+
+		addDelimiter();
+	}
+	else
+	{
+		beginBlock();
+
+		for (size_t i = 0; i < statement.libraries.size(); i++)
+		{
+			m_ostream << statement.libraries[i];
+
+			addDelimiter();
+
+			if (i != statement.libraries.size() - 1)
+				newLine();
+		}
+
+		endBlock();
+	}
+}
+
 void AtslShaderWriter::visit(const ConstantExpression& expression)
 {
 	const auto& value = expression.value;

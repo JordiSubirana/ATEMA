@@ -292,6 +292,15 @@ UPtr<OptionalStatement> AstCloner::clone(const OptionalStatement& statement)
 	return std::move(cloneStatement);
 }
 
+UPtr<IncludeStatement> AstCloner::clone(const IncludeStatement& statement)
+{
+	auto cloneStatement = std::make_unique<IncludeStatement>();
+
+	cloneStatement->libraries = statement.libraries;
+
+	return std::move(cloneStatement);
+}
+
 UPtr<ConstantExpression> AstCloner::clone(const ConstantExpression& expression)
 {
 	auto cloneExpression = std::make_unique<ConstantExpression>();

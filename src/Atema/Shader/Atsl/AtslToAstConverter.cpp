@@ -160,6 +160,7 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 			}
 			// Keyword
 			// - input / output / external / option blocks
+			// - include blocks
 			// - global constants
 			// - struct definition
 			case AtslTokenType::Keyword:
@@ -215,6 +216,71 @@ UPtr<SequenceStatement> AtslToAstConverter::createAst(const std::vector<AtslToke
 
 						// Append the next statement(s) to the optional statement
 						addStatementFunctions.emplace(std::move(callback));
+
+						break;
+					}
+					case AtslKeyword::Include:
+					{
+						expect(iterate(), AtslKeyword::Include);
+
+						auto includeStatement = std::make_unique<IncludeStatement>();
+
+						AddStatementFunction callback;
+
+						bool multipleLibraries = false;
+
+						// Wait for a full sequence
+						if (get().is(AtslSymbol::LeftBrace))
+						{
+							iterate();
+
+							multipleLibraries = true;
+						}
+
+						std::string library;
+
+						while (true)
+						{
+							auto& includeToken = get();
+								
+							if (includeToken.type == AtslTokenType::Identifier)
+							{
+								library += expectType<AtslIdentifier>(iterate());
+							}
+							else if (includeToken.is(AtslSymbol::Dot))
+							{
+								iterate();
+
+								library += '.';
+							}
+							else if (includeToken.is(AtslSymbol::Semicolon))
+							{
+								iterate();
+
+								if (!library.empty())
+								{
+									includeStatement->libraries.emplace_back(library);
+									library.clear();
+								}
+
+								if (!multipleLibraries)
+									break;
+							}
+							else if (includeToken.is(AtslSymbol::RightBrace))
+							{
+								break;
+							}
+							else
+							{
+								ATEMA_ERROR("Invalid token in include statement");
+							}
+						}
+
+						if (multipleLibraries)
+							expect(iterate(), AtslSymbol::RightBrace);
+
+						if (!includeStatement->libraries.empty())
+							addStatement(std::move(includeStatement));
 
 						break;
 					}

@@ -77,6 +77,8 @@ namespace at
 		Option,
 		Optional,
 
+		Include,
+
 		Const,
 
 		If,

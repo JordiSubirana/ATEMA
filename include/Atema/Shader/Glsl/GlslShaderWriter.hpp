@@ -68,6 +68,7 @@ namespace at
 		void visit(const DiscardStatement& statement) override;
 		void visit(const SequenceStatement& statement) override;
 		void visit(const OptionalStatement& statement) override;
+		void visit(const IncludeStatement& statement) override;
 
 		void visit(const ConstantExpression& expression) override;
 		void visit(const VariableExpression& expression) override;

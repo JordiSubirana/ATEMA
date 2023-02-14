@@ -497,6 +497,11 @@ void GlslShaderWriter::visit(const OptionalStatement& statement)
 	preprocessorEndif();
 }
 
+void GlslShaderWriter::visit(const IncludeStatement& statement)
+{
+	ATEMA_ERROR("GLSL writer does not support include statements, AST should have been preprocessed");
+}
+
 void GlslShaderWriter::visit(const ConstantExpression& expression)
 {
 	const auto& value = expression.value;
