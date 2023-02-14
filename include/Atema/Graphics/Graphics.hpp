@@ -27,6 +27,7 @@
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
+#include <Atema/Shader/ShaderLibraryManager.hpp>
 
 namespace at
 {
@@ -51,6 +52,9 @@ namespace at
 		// Forces the deletion of every resource no matter it is in use or not
 		// If the user owns a resource at this time (saving a Ptr to the resource) it will not be deleted
 		void clear();
+
+		// Initializes ShaderLibraryManager with built-in shader libraries
+		void initializeShaderLibraries(ShaderLibraryManager& libraryManager);
 
 		// Returns a UberShader loaded from a file
 		// The UberShader won't pass through a preprocessor stage, use another overload with empty options to get a preprocessed shader
