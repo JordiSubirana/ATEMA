@@ -78,19 +78,13 @@ namespace
 
 	const std::vector<ImageFormat> gBuffer =
 	{
-		// Position
+		// Position (RGB) + Metalness (A)
 		ImageFormat::RGBA32_SFLOAT,
-		// Normal
+		// Normal (RGB) + Roughness (A)
 		ImageFormat::RGBA32_SFLOAT,
-		// Color
-		ImageFormat::RGBA8_UNORM,
-		// Ambient occlusion
+		// Albedo (RGB) + AO (A)
 		ImageFormat::RGBA8_UNORM,
 		// Emissive
-		ImageFormat::RGBA8_UNORM,
-		// Metalness
-		ImageFormat::RGBA8_UNORM,
-		// Roughness
 		ImageFormat::RGBA8_UNORM,
 	};
 
@@ -176,6 +170,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
 	//translateShaders();
+	Graphics::instance().initializeShaderLibraries(ShaderLibraryManager::instance());
 
 	auto& renderer = Renderer::instance();
 
@@ -785,6 +780,8 @@ void GraphicsSystem::createFrameGraph()
 
 	auto getDebugTexture = [&](Settings::DebugView debugView) -> FrameGraphTextureHandle
 	{
+		return gbufferTextures[0];
+		
 		switch (debugView)
 		{
 			case Settings::DebugView::GBufferPosition: return gbufferTextures[0];

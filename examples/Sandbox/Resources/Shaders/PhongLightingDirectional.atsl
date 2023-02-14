@@ -3,6 +3,8 @@ option
 	uint ShadowMapCascadeCount = 8;
 }
 
+include Atema.GBufferRead;
+
 struct PhongDirectionalData
 {
 	vec3f cameraPosition;
@@ -21,15 +23,7 @@ struct ShadowData
 
 external
 {
-	[set(0), binding(0)] sampler2Df gbufferPosition;
-	[set(0), binding(1)] sampler2Df gbufferNormal;
-	[set(0), binding(2)] sampler2Df gbufferColor;
-	[set(0), binding(3)] sampler2Df gbufferAO;
-	[set(0), binding(4)] sampler2Df gbufferEmissive;
-	[set(0), binding(5)] sampler2Df gbufferMetalness;
-	[set(0), binding(6)] sampler2Df gbufferRoughness;
-	
-	[set(0), binding(7)] sampler2DArray shadowMap;
+	[set(0), binding(4)] sampler2DArray shadowMap;
 	
 	[set(1), binding(0)] ShadowData shadowData;
 	
@@ -145,7 +139,7 @@ float sampleVisibilityPoissonPCF(vec2f uv, uint cascadeIndex, float shadowZ)
 	int count = 0;
 	int range = 4;
 	
-	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
+	vec3f pos = atGBufferReadPosition(inTexCoords);
 	
 	for (int x = -range; x <= range; x++)
 	{
@@ -166,7 +160,7 @@ float sampleVisibilityPoissonPCF(vec2f uv, uint cascadeIndex, float shadowZ)
 
 float getVisibility(float angle)
 {
-	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
+	vec3f pos = atGBufferReadPosition(inTexCoords);
 	
 	vec4f posViewSpace = (shadowData.view * vec4f(pos, 1.0));
 	
@@ -198,13 +192,13 @@ float getVisibility(float angle)
 [entry(fragment)]
 void main()
 {
-	vec3f pos = sample(gbufferPosition, inTexCoords).xyz;
-	vec3f normal = sample(gbufferNormal, inTexCoords).xyz;
-	vec4f color = sample(gbufferColor, inTexCoords);
-	float ao = sample(gbufferAO, inTexCoords).r;
-	float metalness = sample(gbufferMetalness, inTexCoords).r;
-	int roughness = int(sample(gbufferRoughness, inTexCoords).r * 255.0);
-	vec3f emissiveColor = sample(gbufferEmissive, inTexCoords).rgb;
+	vec3f pos = atGBufferReadPosition(inTexCoords);
+	vec3f normal = atGBufferReadNormal(inTexCoords);
+	vec3f color = atGBufferReadAlbedo(inTexCoords);
+	float ao = atGBufferReadAO(inTexCoords);
+	float metalness = atGBufferReadMetalness(inTexCoords);
+	int roughness = int(atGBufferReadRoughness(inTexCoords) * 255.0);
+	vec3f emissiveColor = atGBufferReadEmissive(inTexCoords);
 	
 	vec3f inverseLightDir = -normalize(phongData.lightDirection);
 	
