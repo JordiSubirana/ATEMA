@@ -53,6 +53,7 @@ namespace at
 		void clear();
 
 		// Returns a UberShader loaded from a file
+		// The UberShader won't pass through a preprocessor stage, use another overload with empty options to get a preprocessed shader
 		Ptr<UberShader> getUberShader(const std::filesystem::path& path);
 		// Returns a UberShader instance created from a base UberShader and some options
 		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options);

@@ -209,11 +209,13 @@ Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, AstSha
 
 Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options)
 {
+	// Get the raw shader
 	auto baseUberShader = getUberShader(path);
 
-	if (!options.empty())
-		baseUberShader = getUberShader(*baseUberShader, options);
+	// Preprocess the shader
+	baseUberShader = getUberShader(*baseUberShader, options);
 
+	// Extract the desired stage
 	return getUberShader(*baseUberShader, shaderStage);
 }
 
