@@ -73,7 +73,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		{
 			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RG32_SFLOAT),
-					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
+				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XY_RGBA:
@@ -100,25 +100,25 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		{
 			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
+				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XYZ_RGB_Normal:
 		{
 			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT)
+				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
+				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XYZ_RGB_Normal_Tangent_Bitangent:
 		{
 			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Tangent, 0, 3, VertexInputFormat::RGB32_SFLOAT),
-					VertexComponent(VertexComponentType::Bitangent, 0, 4, VertexInputFormat::RGB32_SFLOAT)
+				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
+				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
+				VertexComponent(VertexComponentType::Tangent, 0, 3, VertexInputFormat::RGB32_SFLOAT),
+				VertexComponent(VertexComponentType::Bitangent, 0, 4, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XYZ_RGBA:

@@ -71,7 +71,6 @@ namespace at
 		template <typename Hasher>
 		static constexpr auto hash(const DescriptorSetLayout::Settings& settings)
 		{
-			// For example here we are combining 2 members
 			typename Hasher::HashType hash = 0;
 
 			Hasher::hashCombine(hash, settings.pageSize);
