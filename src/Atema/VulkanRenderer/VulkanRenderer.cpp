@@ -651,6 +651,7 @@ void VulkanRenderer::createDevice()
 	//TODO: Make options
 	VkPhysicalDeviceFeatures deviceFeatures{};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.depthClamp = VK_TRUE;
 	// Sample shading : set a number of samples for fragment shading
 	deviceFeatures.sampleRateShading = getSettings().sampleShading ? VK_TRUE : VK_FALSE;
 
