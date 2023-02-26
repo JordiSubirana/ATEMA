@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,33 +19,37 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_IDMANAGER_INL
+#define ATEMA_CORE_IDMANAGER_INL
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/Benchmark.hpp>
-#include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/EventDispatcher.hpp>
-#include <Atema/Core/Flags.hpp>
-#include <Atema/Core/Hash.hpp>
 #include <Atema/Core/IdManager.hpp>
-#include <Atema/Core/MemoryMapper.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ResourceManager.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/Signal.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/TaskManager.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Utils.hpp>
-#include <Atema/Core/Variant.hpp>
+
+namespace at
+{
+	template <typename T>
+	IdManager<T>::IdManager() :
+		m_nextId(0)
+	{
+
+	}
+
+	template <typename T>
+	T IdManager<T>::get()
+	{
+		// Recycle an ID if possible
+		if (!m_availableIds.empty())
+			return m_availableIds.extract(m_availableIds.begin()).value();
+		
+		return m_nextId++;
+	}
+	
+	template <typename T>
+	void IdManager<T>::release(T id)
+	{
+		// Ensure the ID was previously allocated (m_nextId is the max ID possible)
+		if (id < m_nextId)
+			m_availableIds.emplace(id);
+	}
+}
 
 #endif

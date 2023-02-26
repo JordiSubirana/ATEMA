@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,33 +19,41 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_CORE_HPP
-#define ATEMA_GLOBAL_CORE_HPP
+#ifndef ATEMA_CORE_IDMANAGER_HPP
+#define ATEMA_CORE_IDMANAGER_HPP
 
-#include <Atema/Core/Application.hpp>
-#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Core/Config.hpp>
-#include <Atema/Core/EntityManager.hpp>
-#include <Atema/Core/Error.hpp>
-#include <Atema/Core/Event.hpp>
-#include <Atema/Core/EventDispatcher.hpp>
-#include <Atema/Core/Flags.hpp>
-#include <Atema/Core/Hash.hpp>
-#include <Atema/Core/IdManager.hpp>
-#include <Atema/Core/MemoryMapper.hpp>
-#include <Atema/Core/NonCopyable.hpp>
-#include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/ResourceManager.hpp>
-#include <Atema/Core/ScopedTimer.hpp>
-#include <Atema/Core/Signal.hpp>
-#include <Atema/Core/SparseSet.hpp>
-#include <Atema/Core/SparseSetUnion.hpp>
-#include <Atema/Core/TaskManager.hpp>
-#include <Atema/Core/Timer.hpp>
-#include <Atema/Core/TimeStep.hpp>
-#include <Atema/Core/Traits.hpp>
-#include <Atema/Core/TypeInfo.hpp>
-#include <Atema/Core/Utils.hpp>
-#include <Atema/Core/Variant.hpp>
+
+#include <numeric>
+#include <set>
+
+namespace at
+{
+	template <typename T>
+	class IdManager
+	{
+	public:
+		static_assert(std::numeric_limits<T>::is_integer, "T must be an integer type");
+
+		IdManager();
+		IdManager(const IdManager& other) = default;
+		IdManager(IdManager&& other) noexcept = default;
+		~IdManager() = default;
+
+		// Get a new ID
+		T get();
+		// Release an existing ID to make it available again
+		void release(T id);
+
+		IdManager& operator=(const IdManager& other) = default;
+		IdManager& operator=(IdManager&& other) noexcept = default;
+
+	private:
+		T m_nextId;
+		std::set<T> m_availableIds;
+	};
+}
+
+#include <Atema/Core/IdManager.inl>
 
 #endif
