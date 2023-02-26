@@ -21,7 +21,10 @@
 
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
+#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Shader/Loaders/AtslLoader.hpp>
+#include <Atema/Renderer/Buffer.hpp>
+#include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Renderer/Utils.hpp>
 #include <Atema/Shader/Atsl/AtslParser.hpp>
 #include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
@@ -29,6 +32,7 @@
 #include <filesystem>
 #include <functional>
 #include <map>
+#include <optional>
 
 using namespace at;
 
@@ -141,6 +145,46 @@ float atGBufferReadRoughness(vec2f uv)
 		{ "Atema.GBufferWrite", atGBufferWrite },
 		{ "Atema.GBufferRead", atGBufferRead },
 	};
+
+	struct SurfaceMaterialParameter
+	{
+		const Ptr<Image>& image;
+		std::optional<ConstantValue> value;
+	};
+
+	BufferElementType getElementType(const ConstantValue& constantValue)
+	{
+		if (constantValue.is<bool>())
+			return BufferElementType::Bool;
+		else if (constantValue.is<int32_t>())
+			return BufferElementType::Int;
+		else if (constantValue.is<uint32_t>())
+			return BufferElementType::UInt;
+		else if (constantValue.is<float>())
+			return BufferElementType::Float;
+		else if (constantValue.is<Vector2i>())
+			return BufferElementType::Int2;
+		else if (constantValue.is<Vector2u>())
+			return BufferElementType::UInt2;
+		else if (constantValue.is<Vector2f>())
+			return BufferElementType::Float2;
+		else if (constantValue.is<Vector3i>())
+			return BufferElementType::Int3;
+		else if (constantValue.is<Vector3u>())
+			return BufferElementType::UInt3;
+		else if (constantValue.is<Vector3f>())
+			return BufferElementType::Float3;
+		else if (constantValue.is<Vector4i>())
+			return BufferElementType::Int4;
+		else if (constantValue.is<Vector4u>())
+			return BufferElementType::UInt4;
+		else if (constantValue.is<Vector4f>())
+			return BufferElementType::Float4;
+
+		ATEMA_ERROR("Invalid type");
+
+		return BufferElementType::Int;
+	}
 }
 
 //-----
@@ -201,6 +245,24 @@ StdHash Graphics::ImageSettings::hash(const ImageSettings& settings)
 }
 
 //-----
+// DefaultSurfaceMaterialSettings
+Graphics::DefaultSurfaceMaterialSettings::DefaultSurfaceMaterialSettings(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize) :
+		materialData(materialData),
+		instanceLayoutPageSize(instanceLayoutPageSize)
+{
+
+}
+
+//-----
+// DefaultSurfaceInstanceSettings
+Graphics::DefaultSurfaceInstanceSettings::DefaultSurfaceInstanceSettings(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData) :
+	material(material),
+	materialData(materialData)
+{
+
+}
+
+//-----
 // Graphics
 Graphics::Graphics()
 {
@@ -236,6 +298,18 @@ Graphics::Graphics()
 
 	m_imageManager.addLoader(&loadImage);
 
+	m_samplerManager.addLoader(&loadSampler);
+
+	m_defaultSurfaceMaterialSettingsManager.addLoader([this](const DefaultSurfaceMaterialSettings& settings)
+		{
+			return loadSurfaceMaterial(settings);
+		});
+
+	m_defaultSurfaceInstanceSettingsManager.addLoader([this](const DefaultSurfaceInstanceSettings& settings)
+		{
+			return loadSurfaceMaterialInstance(settings);
+		});
+
 	// Hashers
 	m_uberShaderOptionsManager.setHasher(&UberInstanceSettings::hash);
 
@@ -246,10 +320,14 @@ Graphics::Graphics()
 	m_resourceManagers.emplace_back(&m_descriptorSetLayoutManager);
 	m_resourceManagers.emplace_back(&m_graphicsPipelineSettingsManager);
 	m_resourceManagers.emplace_back(&m_shaderManager);
+	m_resourceManagers.emplace_back(&m_uberShaderIdManager);
 	m_resourceManagers.emplace_back(&m_uberShaderManager);
 	m_resourceManagers.emplace_back(&m_uberShaderOptionsManager);
 	m_resourceManagers.emplace_back(&m_uberShaderStageManager);
 	m_resourceManagers.emplace_back(&m_imageManager);
+	m_resourceManagers.emplace_back(&m_samplerManager);
+	m_resourceManagers.emplace_back(&m_defaultSurfaceMaterialSettingsManager);
+	m_resourceManagers.emplace_back(&m_defaultSurfaceInstanceSettingsManager);
 
 	m_shaderManager.setDeleter([&](Ptr<Shader> shader)
 		{
@@ -319,6 +397,27 @@ void Graphics::initializeShaderLibraries(ShaderLibraryManager& libraryManager)
 	}
 }
 
+void Graphics::setUberShader(const std::string& identifier, const std::string& shaderCode)
+{
+	AtslParser parser;
+
+	AtslToAstConverter converter;
+
+	auto ast = converter.createAst(parser.createTokens(shaderCode));
+
+	m_uberShaderIdManager.set(identifier, std::make_shared<UberShader>(std::move(ast)));
+}
+
+bool Graphics::uberShaderExists(const std::string& identifier) const
+{
+	return m_uberShaderIdManager.contains(identifier);
+}
+
+Ptr<UberShader> Graphics::getUberShader(const std::string& identifier)
+{
+	return m_uberShaderIdManager.get(identifier);
+}
+
 Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path)
 {
 	return m_uberShaderManager.get(path);
@@ -364,6 +463,21 @@ Ptr<GraphicsPipeline::Settings> Graphics::getGraphicsPipelineSettings(const Uber
 Ptr<Image> Graphics::getImage(const std::filesystem::path& path, const ImageLoader::Settings& settings)
 {
 	return m_imageManager.get({ path, settings });
+}
+
+Ptr<Sampler> Graphics::getSampler(const Sampler::Settings& settings)
+{
+	return m_samplerManager.get(settings);
+}
+
+Ptr<SurfaceMaterial> Graphics::getSurfaceMaterial(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize)
+{
+	return m_defaultSurfaceMaterialSettingsManager.get({ materialData, instanceLayoutPageSize });
+}
+
+Ptr<SurfaceMaterialInstance> Graphics::getSurfaceMaterialInstance(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData)
+{
+	return m_defaultSurfaceInstanceSettingsManager.get({ material, materialData });
 }
 
 Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
@@ -507,4 +621,19 @@ Ptr<GraphicsPipeline> Graphics::loadGraphicsPipeline(const GraphicsPipeline::Set
 Ptr<Image> Graphics::loadImage(const ImageSettings& settings)
 {
 	return DefaultImageLoader::load(settings.path, settings.settings);
+}
+
+Ptr<Sampler> Graphics::loadSampler(const Sampler::Settings& settings)
+{
+	return Sampler::create(settings);
+}
+
+Ptr<SurfaceMaterial> Graphics::loadSurfaceMaterial(const DefaultSurfaceMaterialSettings& settings)
+{
+	return SurfaceMaterial::createDefault(settings.materialData, settings.instanceLayoutPageSize, *this);
+}
+
+Ptr<SurfaceMaterialInstance> Graphics::loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings)
+{
+	return SurfaceMaterialInstance::createDefault(settings.material, settings.materialData, *this);
 }

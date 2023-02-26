@@ -24,6 +24,7 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Shader/UberShader.hpp>
+#include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
@@ -31,6 +32,10 @@
 
 namespace at
 {
+	struct SurfaceMaterialData;
+	struct SurfaceMaterial;
+	struct SurfaceMaterialInstance;
+	
 	// Class managing all resources needed to do rendering
 	class ATEMA_GRAPHICS_API Graphics
 	{
@@ -56,6 +61,12 @@ namespace at
 		// Initializes ShaderLibraryManager with built-in shader libraries
 		void initializeShaderLibraries(ShaderLibraryManager& libraryManager);
 
+		// Saves a UberShader an associates it to an identifier
+		void setUberShader(const std::string& identifier, const std::string& shaderCode);
+		bool uberShaderExists(const std::string& identifier) const;
+		// Returns a UberShader previously saved
+		// See setUberShader
+		Ptr<UberShader> getUberShader(const std::string& identifier);
 		// Returns a UberShader loaded from a file
 		// The UberShader won't pass through a preprocessor stage, use another overload with empty options to get a preprocessed shader
 		Ptr<UberShader> getUberShader(const std::filesystem::path& path);
@@ -89,6 +100,13 @@ namespace at
 		Ptr<GraphicsPipeline> getGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		
 		Ptr<Image> getImage(const std::filesystem::path& path, const ImageLoader::Settings& settings = {});
+
+		Ptr<Sampler> getSampler(const Sampler::Settings& settings);
+
+		// instanceLayoutPageSize is an hint of which descriptor set layout to use for instance set allocation
+		Ptr<SurfaceMaterial> getSurfaceMaterial(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize = 0);
+
+		Ptr<SurfaceMaterialInstance> getSurfaceMaterialInstance(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData);
 
 	private:
 		struct UberInstanceSettings
@@ -128,6 +146,24 @@ namespace at
 			const ImageLoader::Settings& settings;
 		};
 
+		struct DefaultSurfaceMaterialSettings
+		{
+			DefaultSurfaceMaterialSettings() = delete;
+			DefaultSurfaceMaterialSettings(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize);
+
+			const SurfaceMaterialData& materialData;
+			uint32_t instanceLayoutPageSize;
+		};
+
+		struct DefaultSurfaceInstanceSettings
+		{
+			DefaultSurfaceInstanceSettings() = delete;
+			DefaultSurfaceInstanceSettings(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData);
+
+			const Ptr<SurfaceMaterial>& material;
+			const SurfaceMaterialData& materialData;
+		};
+
 		Ptr<UberShader> loadUberShader(const std::filesystem::path& path);
 		Ptr<UberShader> loadUberInstance(const UberInstanceSettings& settings);
 		Ptr<UberShader> loadUberStage(const UberStageSettings& settings);
@@ -136,9 +172,13 @@ namespace at
 		Ptr<GraphicsPipeline::Settings> loadGraphicsPipelineSettings(const GraphicsPipelineSettings& settings);
 		static Ptr<GraphicsPipeline> loadGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		static Ptr<Image> loadImage(const ImageSettings& settings);
+		static Ptr<Sampler> loadSampler(const Sampler::Settings& settings);
+		Ptr<SurfaceMaterial> loadSurfaceMaterial(const DefaultSurfaceMaterialSettings& settings);
+		Ptr<SurfaceMaterialInstance> loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings);
 		
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
+		ResourceManager<UberShader, std::string> m_uberShaderIdManager;
 		ResourceManager<UberShader> m_uberShaderManager;
 		ResourceManager<UberShader, UberInstanceSettings> m_uberShaderOptionsManager;
 		ResourceManager<UberShader, UberStageSettings> m_uberShaderStageManager;
@@ -147,6 +187,9 @@ namespace at
 		ResourceManager<GraphicsPipeline::Settings, GraphicsPipelineSettings> m_graphicsPipelineSettingsManager;
 		ResourceManager<GraphicsPipeline, GraphicsPipeline::Settings> m_graphicsPipelineManager;
 		ResourceManager<Image, ImageSettings> m_imageManager;
+		ResourceManager<Sampler, Sampler::Settings> m_samplerManager;
+		ResourceManager<SurfaceMaterial, DefaultSurfaceMaterialSettings> m_defaultSurfaceMaterialSettingsManager;
+		ResourceManager<SurfaceMaterialInstance, DefaultSurfaceInstanceSettings> m_defaultSurfaceInstanceSettingsManager;
 
 		std::unordered_map<const UberShader*, WPtr<UberShader>> m_uberShaders;
 		std::unordered_map<Shader*, Ptr<UberShader>> m_shaderToUber;
