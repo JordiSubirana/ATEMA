@@ -36,6 +36,7 @@
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
+#include <Atema/Graphics/MaterialParameters.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
