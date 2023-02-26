@@ -107,24 +107,7 @@ public:
 	MaterialData(const std::filesystem::path& path, const std::string& format);
 	MaterialData(const at::SurfaceMaterialData& material);
 
-	at::Ptr<at::Image> color;
-	at::Ptr<at::Image> normal;
-	at::Ptr<at::Image> ambientOcclusion;
-	at::Ptr<at::Image> height;
-	at::Ptr<at::Image> emissive;
-	at::Ptr<at::Image> metalness;
-	at::Ptr<at::Image> roughness;
-	at::Ptr<at::Image> alphaMask;
-
-	at::Ptr<at::Sampler> sampler;
-
-	at::Ptr<at::Buffer> uniformBuffer;
-
-	at::Ptr<at::Shader> vertexShader;
-	at::Ptr<at::Shader> fragmentShader;
-
-	at::Ptr<at::DescriptorSetLayout> descriptorSetLayout;
-	at::Ptr<at::DescriptorSet> descriptorSet;
+	at::Ptr<at::SurfaceMaterialInstance> materialInstance;
 
 private:
 	void initialize(const at::SurfaceMaterialData& material);

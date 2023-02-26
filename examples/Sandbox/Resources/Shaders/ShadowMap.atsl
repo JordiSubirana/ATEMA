@@ -5,22 +5,23 @@ struct FrameData
 	vec3f cameraPosition;
 }
 
-struct PassData
-{
-	mat4f shadowViewProj;
-}
-
 struct ObjectData
 {
 	mat4f model;
 }
 
+struct PassData
+{
+	mat4f shadowViewProj;
+}
+
 external
 {
 	[set(0), binding(0)] FrameData frameData;
-	[set(0), binding(1)] ObjectData objectData;
 	
-	[set(1), binding(0)] PassData passData;
+	[set(1), binding(0)] ObjectData objectData;
+	
+	[set(2), binding(0)] PassData passData;
 }
 
 [stage(vertex)]

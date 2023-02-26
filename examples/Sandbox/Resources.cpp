@@ -34,7 +34,7 @@ namespace
 {
 	const auto materialShaderPath = shaderPath / "GBufferOptions.atsl";
 
-	struct MaterialParameter
+	struct MaterialParam
 	{
 		static constexpr size_t InvalidOffset = std::numeric_limits<size_t>::max();
 
@@ -152,7 +152,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 
 	SurfaceMaterialData material;
 
-	std::vector<MaterialParameter> materialParameters =
+	std::vector<MaterialParam> materialParameters =
 	{
 		{ "Color", &material.colorMap, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
 		{ "Normal", &material.normalMap, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
@@ -178,132 +178,13 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 	initialize(material);
 }
 
-MaterialData::MaterialData(const at::SurfaceMaterialData& material) :
-	color(material.colorMap),
-	normal(material.normalMap),
-	ambientOcclusion(material.ambientOcclusionMap),
-	height(material.heightMap),
-	emissive(material.emissiveMap),
-	metalness(material.metalnessMap),
-	roughness(material.roughnessMap),
-	alphaMask(material.alphaMaskMap)
+MaterialData::MaterialData(const at::SurfaceMaterialData& material)
 {
 	initialize(material);
 }
 
 void MaterialData::initialize(const at::SurfaceMaterialData& material)
 {
-	color = material.colorMap;
-	normal = material.normalMap;
-	ambientOcclusion = material.ambientOcclusionMap;
-	height = material.heightMap;
-	emissive = material.emissiveMap;
-	metalness = material.metalnessMap;
-	roughness = material.roughnessMap;
-	alphaMask = material.alphaMaskMap;
-	
-	std::vector<MaterialParameter> materialParameters =
-	{
-		{ "Color", &color, ConstantValue(material.color) },
-		{ "Normal", &normal, ConstantValue(material.normal) },
-		{ "AO", &ambientOcclusion, ConstantValue(material.ambientOcclusion)},
-		{ "Height", &height, ConstantValue(material.height) },
-		{ "Emissive", &emissive, ConstantValue(material.emissive) },
-		{ "Metalness", &metalness, ConstantValue(material.metalness) },
-		{ "Roughness", &roughness, ConstantValue(material.roughness) },
-		{ "AlphaMask", &alphaMask, ConstantValue(1.0f), true },
-	};
-
-	BufferLayout bufferLayout(StructLayout::Default);
-	std::vector<size_t> bufferOffsets;
-
-	size_t textureCount = 0;
-	for (auto& materialParameter : materialParameters)
-	{
-		const auto& texture = *materialParameter.imagePtr;
-
-		if (texture)
-		{
-			textureCount++;
-		}
-		else if (!materialParameter.textureOnly)
-		{
-			const auto elementOffset = bufferLayout.add(getElementType(materialParameter.defaultValue));
-
-			bufferOffsets.emplace_back(elementOffset);
-		}
-	}
-
-	// Create sampler
-	Sampler::Settings samplerSettings(SamplerFilter::Linear, true);
-
-	sampler = Sampler::create(samplerSettings);
-
-	// Create bindings
-	DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-	descriptorSetLayoutSettings.pageSize = 1;
-
-	uint32_t bindingIndex = 0;
-
-	// Check if we have some elements in the buffer
-	if (bufferLayout.getSize() > 0)
-	{
-		bindingIndex++;
-
-		descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment);
-
-		Buffer::Settings bufferSettings;
-		bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-		bufferSettings.byteSize = bufferLayout.getSize();
-
-		uniformBuffer = Buffer::create(bufferSettings);
-	}
-
-	for (size_t i = 0; i < textureCount; i++)
-		descriptorSetLayoutSettings.bindings.emplace_back(DescriptorType::CombinedImageSampler, bindingIndex++, 1, ShaderStage::Fragment);
-
-	descriptorSetLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-
-	// Create descriptor set
-	descriptorSet = descriptorSetLayout->createSet();
-
-	bindingIndex = 0;
-
-	void* bufferData = nullptr;
-
-	if (uniformBuffer)
-	{
-		descriptorSet->update(bindingIndex++, uniformBuffer);
-
-		bufferData = uniformBuffer->map();
-	}
-
-	// Initialize AST
-	std::vector<UberShader::Option> shaderOptions;
-
-	size_t bufferElementIndex = 0;
-
-	for (auto& materialParameter : materialParameters)
-	{
-		auto& texture = *materialParameter.imagePtr;
-
-		if (texture)
-		{
-			shaderOptions.emplace_back("Material" + materialParameter.name + "Binding", bindingIndex);
-
-			descriptorSet->update(bindingIndex++, texture->getView(), sampler);
-		}
-		else if (!materialParameter.textureOnly)
-		{
-			writeBufferElement(bufferData, bufferOffsets[bufferElementIndex++], materialParameter.defaultValue);
-		}
-	}
-
-	if (uniformBuffer)
-		uniformBuffer->unmap();
-
-	auto& graphics = Graphics::instance();
-
-	vertexShader = graphics.getShader(*graphics.getUberShader(materialShaderPath, AstShaderStage::Vertex, shaderOptions));
-	fragmentShader = graphics.getShader(*graphics.getUberShader(materialShaderPath, AstShaderStage::Fragment, shaderOptions));
+	const auto surfaceMaterial = Graphics::instance().getSurfaceMaterial(material);
+	materialInstance = Graphics::instance().getSurfaceMaterialInstance(surfaceMaterial, material);
 }

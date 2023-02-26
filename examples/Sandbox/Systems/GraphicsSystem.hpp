@@ -45,9 +45,10 @@ private:
 	{
 		size_t objectCount;
 		at::Ptr<at::Buffer> objectsUniformBuffer;
+		at::Ptr<at::DescriptorSet> objectDescriptorSet;
 
 		at::Ptr<at::Buffer> frameUniformBuffer;
-		at::Ptr<at::DescriptorSet> descriptorSet;
+		at::Ptr<at::DescriptorSet> frameDescriptorSet;
 
 		at::Ptr<at::Buffer> shadowBuffer;
 		at::Ptr<at::DescriptorSet> shadowSet;
@@ -72,7 +73,6 @@ private:
 	void updateFrame();
 
 	void updateBoundingBoxes();
-	void updateMaterialResources();
 	void updateUniformBuffers(FrameData& frameData);
 
 	at::WPtr<at::RenderWindow> m_renderWindow;
@@ -98,6 +98,7 @@ private:
 
 	// Frame resources
 	at::Ptr<at::DescriptorSetLayout> m_frameLayout;
+	at::Ptr<at::DescriptorSetLayout> m_objectLayout;
 	uint32_t m_elementByteSize;
 	uint32_t m_dynamicObjectBufferOffset;
 	std::vector<FrameData> m_frameDatas;

@@ -331,12 +331,22 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex },
-			{ DescriptorType::UniformBufferDynamic, 1, 1, ShaderStage::Vertex }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
 		};
 		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
 
 		m_frameLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
+	}
+
+	{
+		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
+		descriptorSetLayoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
+		};
+		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
+
+		m_objectLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
 	// Uniform buffers & descriptor sets
@@ -376,9 +386,10 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(1 * m_dynamicObjectBufferOffset) });
 
 		// Add descriptor set
-		frameData.descriptorSet = m_frameLayout->createSet();
-		frameData.descriptorSet->update(0, frameData.frameUniformBuffer);
-		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.frameDescriptorSet = m_frameLayout->createSet();
+		frameData.frameDescriptorSet->update(0, frameData.frameUniformBuffer);
+		frameData.objectDescriptorSet = m_objectLayout->createSet();
+		frameData.objectDescriptorSet->update(0, frameData.objectsUniformBuffer, m_elementByteSize);
 	}
 
 	//----- SHADOW MAPPING -----//
@@ -427,7 +438,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		GraphicsPipeline::Settings graphicsPipelineSettings;
 		graphicsPipelineSettings.vertexShader = vertexShaders[shadowMapShaderPath.string()];
 		graphicsPipelineSettings.fragmentShader = fragmentShaders[shadowMapShaderPath.string()];
-		graphicsPipelineSettings.descriptorSetLayouts = { m_frameLayout, m_shadowLayout };
+		graphicsPipelineSettings.descriptorSetLayouts = { m_frameLayout, m_objectLayout, m_shadowLayout };
 		graphicsPipelineSettings.state.vertexInput.inputs =
 		{
 			{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
@@ -564,6 +575,7 @@ GraphicsSystem::~GraphicsSystem()
 	m_frameDatas.clear();
 
 	// Object resources
+	m_objectLayout.reset();
 	m_materials.clear();
 }
 
@@ -863,7 +875,24 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), m_windowSize);
 
-							MaterialData* currentMaterialID = nullptr;
+							auto currentMaterialID = SurfaceMaterial::InvalidID;
+							auto currentMaterialInstanceID = SurfaceMaterial::InvalidID;
+
+							// Initialize material to the first one and bind global frame data shared across all pipelines
+							{
+								auto& graphics = entities.get<GraphicsComponent>(firstIndex);
+
+								auto& materialInstance = graphics.materials[graphics.model->getMeshes()[0]->getMaterialID()]->materialInstance;
+								auto& material = materialInstance->getMaterial();
+
+								material->bindTo(*commandBuffer);
+								materialInstance->bindTo(*commandBuffer);
+
+								currentMaterialID = material->getID();
+								currentMaterialInstanceID = materialInstance->getID();
+							}
+
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, frameData.frameDescriptorSet);
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
@@ -874,21 +903,7 @@ void GraphicsSystem::createFrameGraph()
 								if (m_cullFunction(graphics.aabb))
 									continue;
 
-								//*
-								auto materialID = graphics.materials[graphics.model->getMeshes()[0]->getMaterialID()].get();
-
-								if (materialID != currentMaterialID)
-								{
-									auto& material = m_materials[materialID];
-
-									commandBuffer->bindPipeline(material.pipeline);
-									commandBuffer->bindDescriptorSet(1, material.descriptorSet);
-
-									currentMaterialID = materialID;
-								}
-
-								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
-								//*/
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{
@@ -896,19 +911,27 @@ void GraphicsSystem::createFrameGraph()
 									/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
 										continue;*/
 
-									materialID = graphics.materials[mesh->getMaterialID()].get();
+									auto& materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance;
+									auto& material = materialInstance->getMaterial();
+
+									auto materialID = material->getID();
+									auto materialInstanceID = materialInstance->getID();
 
 									if (materialID != currentMaterialID)
 									{
-										auto& material = m_materials[materialID];
-
-										commandBuffer->bindPipeline(material.pipeline);
-										commandBuffer->bindDescriptorSet(1, material.descriptorSet);
+										material->bindTo(*commandBuffer);
 
 										currentMaterialID = materialID;
+
+										currentMaterialInstanceID = SurfaceMaterial::InvalidID;
 									}
 
-									//commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
+									if (materialInstanceID != currentMaterialInstanceID)
+									{
+										materialInstance->bindTo(*commandBuffer);
+
+										currentMaterialInstanceID = materialInstanceID;
+									}
 
 									const auto& vertexBuffer = mesh->getVertexBuffer();
 									const auto& indexBuffer = mesh->getIndexBuffer();
@@ -992,8 +1015,10 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), { m_shadowMapSize, m_shadowMapSize });
 
-							commandBuffer->bindDescriptorSet(1, frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
 
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, frameData.frameDescriptorSet);
+							
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
 							{
@@ -1006,7 +1031,7 @@ void GraphicsSystem::createFrameGraph()
 								if (!m_lightFrustums[cascadeIndex].contains(graphics.aabb))
 									continue;
 
-								commandBuffer->bindDescriptorSet(0, frameData.descriptorSet, { i * m_dynamicObjectBufferOffset });
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{
@@ -1314,9 +1339,6 @@ void GraphicsSystem::updateFrame()
 	// Update bounding boxes
 	updateBoundingBoxes();
 
-	// Update material descriptor sets
-	updateMaterialResources();
-
 	// Update scene data
 	updateUniformBuffers(frameData);
 
@@ -1368,52 +1390,6 @@ void GraphicsSystem::updateBoundingBoxes()
 
 	for (auto& task : tasks)
 		task->wait();
-}
-
-void GraphicsSystem::updateMaterialResources()
-{
-	auto entities = getEntityManager().getUnion<GraphicsComponent>();
-
-	for (const auto& entity : entities)
-	{
-		auto& graphics = entities.get<GraphicsComponent>(entity);
-
-		for (auto& materialData : graphics.materials)
-		{
-			auto materialID = materialData.get();
-
-			if (m_materials.count(materialID) > 0)
-				continue;
-
-			Material material;
-
-			GraphicsPipeline::Settings pipelineSettings;
-			pipelineSettings.vertexShader = materialData->vertexShader;
-			pipelineSettings.fragmentShader = materialData->fragmentShader;
-			pipelineSettings.descriptorSetLayouts = { m_frameLayout, materialData->descriptorSetLayout };
-			pipelineSettings.state.vertexInput.inputs =
-			{
-				{ 0, 0, VertexInputFormat::RGB32_SFLOAT },
-				{ 0, 1, VertexInputFormat::RG32_SFLOAT },
-				{ 0, 2, VertexInputFormat::RGB32_SFLOAT },
-				{ 0, 3, VertexInputFormat::RGB32_SFLOAT },
-				{ 0, 4, VertexInputFormat::RGB32_SFLOAT }
-			};
-			//*
-			pipelineSettings.state.stencil = true;
-			pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
-			pipelineSettings.state.stencilFront.writeMask = 1;
-			pipelineSettings.state.stencilFront.passOperation = StencilOperation::Replace;
-			pipelineSettings.state.stencilFront.reference = 1;
-			//*/
-			//pipelineSettings.state.rasterization.cullMode = CullMode::None;
-
-			material.pipeline = GraphicsPipeline::create(pipelineSettings);
-			material.descriptorSet = materialData->descriptorSet;
-
-			m_materials[materialID] = material;
-		}
-	}
 }
 
 void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
@@ -1524,7 +1500,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset) });
 
 		// Update descriptor set
-		frameData.descriptorSet->update(1, frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.objectDescriptorSet->update(0, frameData.objectsUniformBuffer, m_elementByteSize);
 	}
 
 	{
