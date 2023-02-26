@@ -130,14 +130,16 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 	for (const auto& shape : shapes)
 	{
 		size_t currentVertexCount = 0;
-		int currentMaterialID = shape.mesh.material_ids[0];
+		// If the material is not defined we'll consider the first one by default
+		int currentMaterialID = shape.mesh.material_ids[0] == -1 ? 0 : shape.mesh.material_ids[0];
 
 		std::vector<size_t> meshVertexCounts;
 		std::vector<size_t> meshMaterialIDs;
 
 		for (size_t i = 0; i < shape.mesh.material_ids.size(); i++)
 		{
-			const auto materialID = shape.mesh.material_ids[i];
+			// If the material is not defined we'll consider the first one by default
+			const auto materialID = shape.mesh.material_ids[i] == -1 ? 0 : shape.mesh.material_ids[i];
 
 			if (materialID != currentMaterialID)
 			{
@@ -152,7 +154,7 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 		}
 
 		meshVertexCounts.emplace_back(currentVertexCount);
-		meshMaterialIDs.emplace_back(shape.mesh.material_ids.back());
+		meshMaterialIDs.emplace_back(currentMaterialID);
 
 		size_t firstIndex = 0;
 		for (size_t m = 0; m < meshVertexCounts.size(); m++)
