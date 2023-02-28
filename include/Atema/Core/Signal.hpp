@@ -27,6 +27,8 @@
 #include <Atema/Core/NonCopyable.hpp>
 
 #include <functional>
+#include <shared_mutex>
+#include <atomic>
 
 namespace at
 {
@@ -61,12 +63,14 @@ namespace at
 		Connection connect(const O& object, void(O::* method)(Args...) const);
 
 		void disconnect(const Connection& connection) override;
+		void disconnect(const std::vector<Connection>& connection);
 
 		Signal& operator=(const Signal& signal);
 		Signal& operator=(Signal&& signal) noexcept;
 		
 	private:
 		void deletePendingConnections();
+		void disconnect(const Connection* connections, size_t size);
 
 		struct SlotData
 		{
@@ -75,9 +79,12 @@ namespace at
 			Callback callback;
 		};
 
+		std::shared_mutex m_slotMutex;
 		std::vector<Ptr<SlotData>> m_slotDatas;
+		std::shared_mutex m_pendingMutex;
 		std::vector<Connection> m_pendingConnections;
-		bool m_deleteLater;
+
+		std::atomic_bool m_deleteLater;
 	};
 
 	class ATEMA_CORE_API Connection final

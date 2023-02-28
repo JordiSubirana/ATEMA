@@ -55,12 +55,16 @@ namespace at
 	template <typename ... Args>
 	void Signal<Args...>::operator()(Args... args)
 	{
-		m_deleteLater = true;
+		{
+			std::shared_lock readLock(m_slotMutex);
 
-		for (auto& slotData : m_slotDatas)
-			slotData->callback(std::forward<Args>(args)...);
+			m_deleteLater = true;
 
-		m_deleteLater = false;
+			for (auto& slotData : m_slotDatas)
+				slotData->callback(std::forward<Args>(args)...);
+
+			m_deleteLater = false;
+		}
 
 		deletePendingConnections();
 	}
@@ -68,6 +72,8 @@ namespace at
 	template <typename ... Args>
 	Connection Signal<Args...>::connect(const Callback& callback)
 	{
+		std::unique_lock writeLock(m_slotMutex);
+		
 		auto slotData = std::make_shared<SlotData>();
 		slotData->signal = std::make_shared<AbstractSignal*>(this);
 		slotData->index = std::make_shared<size_t>(m_slotDatas.size());
@@ -101,35 +107,13 @@ namespace at
 	template <typename ... Args>
 	void Signal<Args...>::disconnect(const Connection& connection)
 	{
-		if (!connection.isConnected())
-			return;
+		disconnect(&connection, 1);
+	}
 
-		if (m_deleteLater)
-		{
-			m_pendingConnections.emplace_back(connection);
-		}
-		else
-		{
-			size_t index = *connection.m_index.lock();
-
-			if (index == 0 && m_slotDatas.size() == 1)
-			{
-				m_slotDatas.clear();
-			}
-			else if (index == m_slotDatas.size() - 1)
-			{
-				m_slotDatas.resize(m_slotDatas.size() - 1);
-			}
-			else
-			{
-				auto& lastSlot = m_slotDatas.back();
-				*(lastSlot->index) = index;
-
-				lastSlot.swap(m_slotDatas[index]);
-
-				m_slotDatas.resize(m_slotDatas.size() - 1);
-			}
-		}
+	template <typename ... Args>
+	void Signal<Args...>::disconnect(const std::vector<Connection>& connection)
+	{
+		disconnect(connection.data(), connection.size());
 	}
 
 	template <typename ... Args>
@@ -141,6 +125,9 @@ namespace at
 	template <typename ... Args>
 	Signal<Args...>& Signal<Args...>::operator=(Signal&& signal) noexcept
 	{
+		std::unique_lock writeLock(m_slotMutex);
+		std::unique_lock otherWriteLock(signal.m_slotMutex);
+
 		m_slotDatas = std::move(signal.m_slotDatas);
 
 		for (auto& slotData : m_slotDatas)
@@ -148,7 +135,7 @@ namespace at
 
 		m_pendingConnections = std::move(signal.m_pendingConnections);
 
-		m_deleteLater = m_deleteLater;
+		m_deleteLater = signal.m_deleteLater;
 
 		return *this;
 	}
@@ -159,10 +146,77 @@ namespace at
 		if (m_deleteLater)
 			return;
 
-		for (auto& connection : m_pendingConnections)
-			disconnect(connection);
+		bool clearPending = false;
 
-		m_pendingConnections.clear();
+		{
+			std::shared_lock readLock(m_pendingMutex);
+
+			clearPending = !m_pendingConnections.empty();
+		}
+
+		if (clearPending)
+		{
+			std::vector<Connection> pendingConnections;
+			
+			{
+				std::unique_lock writeLock(m_pendingMutex);
+
+				std::swap(pendingConnections, m_pendingConnections);
+			}
+			
+			disconnect(pendingConnections);
+		}
+	}
+
+	template<typename ...Args>
+	void Signal<Args...>::disconnect(const Connection* connections, size_t size)
+	{
+		if (m_deleteLater)
+		{
+			std::unique_lock writeLock(m_pendingMutex);
+
+			for (size_t i = 0; i < size; i++)
+			{
+				const auto& connection = connections[i];
+
+				if (!connection.isConnected())
+					continue;
+
+				m_pendingConnections.emplace_back(connection);
+			}
+		}
+		else
+		{
+			std::unique_lock writeLock(m_slotMutex);
+			
+			for (size_t i = 0; i < size; i++)
+			{
+				const auto& connection = connections[i];
+
+				if (!connection.isConnected())
+					continue;
+
+				size_t index = *connection.m_index.lock();
+
+				if (index == 0 && m_slotDatas.size() == 1)
+				{
+					m_slotDatas.clear();
+				}
+				else if (index == m_slotDatas.size() - 1)
+				{
+					m_slotDatas.resize(m_slotDatas.size() - 1);
+				}
+				else
+				{
+					auto& lastSlot = m_slotDatas.back();
+					*(lastSlot->index) = index;
+
+					lastSlot.swap(m_slotDatas[index]);
+
+					m_slotDatas.resize(m_slotDatas.size() - 1);
+				}
+			}
+		}
 	}
 
 	// ConnectionGuard
