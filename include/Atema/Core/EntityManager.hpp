@@ -34,6 +34,7 @@
 namespace at
 {
 	using EntityHandle = std::uint32_t;
+	static constexpr EntityHandle InvalidEntityHandle = std::numeric_limits<EntityHandle>::max() - 1;
 
 	namespace detail
 	{
