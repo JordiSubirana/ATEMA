@@ -880,7 +880,7 @@ void GraphicsSystem::createFrameGraph()
 
 							// Initialize material to the first one and bind global frame data shared across all pipelines
 							{
-								auto& graphics = entities.get<GraphicsComponent>(firstIndex);
+								auto& graphics = entities.get<GraphicsComponent>(*std::next(entities.begin(), firstIndex));
 
 								auto& materialInstance = graphics.materials[graphics.model->getMeshes()[0]->getMaterialID()]->materialInstance;
 								auto& material = materialInstance->getMaterial();
