@@ -253,6 +253,24 @@ Graphics::DefaultSurfaceMaterialSettings::DefaultSurfaceMaterialSettings(const S
 
 }
 
+StdHash at::Graphics::DefaultSurfaceMaterialSettings::hash(const DefaultSurfaceMaterialSettings& settings)
+{
+	// We just want to know how many textures there are, to have a valid descriptor set layout
+	StdHash hash = 0;
+
+	DefaultStdHasher::hashCombine(hash, settings.materialData.colorMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.normalMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.ambientOcclusionMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.heightMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.emissiveMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.metalnessMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.roughnessMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.materialData.alphaMaskMap ? 1 : 0);
+	DefaultStdHasher::hashCombine(hash, settings.instanceLayoutPageSize);
+
+	return hash;
+}
+
 //-----
 // DefaultSurfaceInstanceSettings
 Graphics::DefaultSurfaceInstanceSettings::DefaultSurfaceInstanceSettings(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData) :
@@ -314,6 +332,8 @@ Graphics::Graphics()
 	m_uberShaderOptionsManager.setHasher(&UberInstanceSettings::hash);
 
 	m_imageManager.setHasher(&ImageSettings::hash);
+
+	m_defaultSurfaceMaterialSettingsManager.setHasher(&DefaultSurfaceMaterialSettings::hash);
 
 	// Before uber managers to properly destroy UberShaders after Shader deletion
 	m_resourceManagers.emplace_back(&m_graphicsPipelineManager);

@@ -151,6 +151,8 @@ namespace at
 			DefaultSurfaceMaterialSettings() = delete;
 			DefaultSurfaceMaterialSettings(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize);
 
+			static StdHash hash(const DefaultSurfaceMaterialSettings& settings);
+
 			const SurfaceMaterialData& materialData;
 			uint32_t instanceLayoutPageSize;
 		};
