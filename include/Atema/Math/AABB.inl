@@ -201,9 +201,7 @@ namespace at
 	template <typename T>
 	AABB<T> operator*(const Matrix4<T>& matrix, const AABB<T>& aabb)
 	{
-		AABB<T> newAABB;
-
-		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.min.z }));
+		AABB<T> newAABB(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.min.z }));
 		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.max.z }));
 		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.min.z }));
 		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.max.z }));
