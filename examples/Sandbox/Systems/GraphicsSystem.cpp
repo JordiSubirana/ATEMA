@@ -155,6 +155,45 @@ namespace
 
 		return vertexBuffer;
 	}
+
+	struct MeshDrawData
+	{
+		MeshDrawData() = default;
+		MeshDrawData(const MeshDrawData& other) = default;
+		MeshDrawData(MeshDrawData&& other) noexcept = default;
+		~MeshDrawData() = default;
+
+		Ptr<VertexBuffer> vertexBuffer;
+		Ptr<IndexBuffer> indexBuffer;
+		Ptr<SurfaceMaterialInstance> materialInstance;
+		EntityHandle entityHandle = InvalidEntityHandle;
+		uint32_t index = 0;
+
+		MeshDrawData& operator=(const MeshDrawData& other) = default;
+		MeshDrawData& operator=(MeshDrawData&& other) noexcept = default;
+
+		bool operator<(const MeshDrawData& other) const
+		{
+			return getRenderPriority() < other.getRenderPriority();
+		}
+
+		bool operator>(const MeshDrawData& other) const
+		{
+			return getRenderPriority() > other.getRenderPriority();
+		}
+
+		uint64_t getRenderPriority() const
+		{
+			if (!materialInstance || !materialInstance->getMaterial())
+				return 0;
+
+			uint64_t renderPriority = 0;
+			renderPriority |= static_cast<uint64_t>(materialInstance->getMaterial()->getID() & 0xFFFF) << 16;
+			renderPriority |= static_cast<uint64_t>(materialInstance->getID() & 0xFFFF) << 0;
+
+			return renderPriority;
+		}
+	};
 }
 
 GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
@@ -845,7 +884,85 @@ void GraphicsSystem::createFrameGraph()
 
 				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
-				auto& taskManager = TaskManager::instance();
+				std::map<uint64_t, std::vector<MeshDrawData>> materialBatches;
+				std::map<uint64_t, size_t> materialBatchSizes;
+				std::vector<size_t> visibleEntities;
+				visibleEntities.reserve(entities.size());
+				std::vector<size_t> entityIndices;
+				entityIndices.reserve(entities.size());
+				std::vector<MeshDrawData> drawDatas;
+
+				size_t visibleMeshCount = 0;
+				{
+					ATEMA_BENCHMARK_TAG(btest, "Cull models");
+					size_t entityIndex = 0;
+
+					for (const auto& entity : entities)
+					{
+						const auto& graphics = entities.get<GraphicsComponent>(entity);
+
+						if (m_cullFunction(graphics.aabb))
+						{
+							entityIndex++;
+							continue;
+						}
+
+						visibleEntities.emplace_back(entity);
+						entityIndices.emplace_back(entityIndex++);
+
+						visibleMeshCount += graphics.model->getMeshes().size();
+					}
+				}
+
+				{
+					ATEMA_BENCHMARK_TAG(btest, "Prepare renderables");
+					drawDatas.reserve(visibleMeshCount);
+
+					size_t entityIndex = 0;
+					for (const auto& entity : visibleEntities)
+					{
+						const auto& graphics = entities.get<GraphicsComponent>(entity);
+						const auto& transform = entities.get<Transform>(entity);
+
+						for (const auto& mesh : graphics.model->getMeshes())
+						{
+							auto& drawData = drawDatas.emplace_back();
+
+							drawData.vertexBuffer = mesh->getVertexBuffer();
+							drawData.indexBuffer = mesh->getIndexBuffer();
+							drawData.materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance;
+							drawData.entityHandle = entity;
+							drawData.index = entityIndices[entityIndex];
+
+							materialBatchSizes[drawData.getRenderPriority()]++;
+						}
+
+						entityIndex++;
+					}
+				}
+
+				{
+					ATEMA_BENCHMARK_TAG(btest, "Sort draw data");
+					
+					for (const auto& [batchID, batchSize] : materialBatchSizes)
+						materialBatches[batchID].reserve(batchSize);
+
+					for (auto& drawData : drawDatas)
+					{
+						materialBatches[drawData.getRenderPriority()].emplace_back(std::move(drawData));
+					}
+
+					drawDatas.clear();
+
+					for (auto& batch : materialBatches)
+					{
+						auto& elements = batch.second;
+						drawDatas.insert(drawDatas.end(), std::make_move_iterator(elements.begin()), std::make_move_iterator(elements.end()));
+					}
+				}
+
+				if (drawDatas.empty())
+					return;
 
 				std::vector<Ptr<Task>> tasks;
 				tasks.reserve(threadCount);
@@ -853,8 +970,10 @@ void GraphicsSystem::createFrameGraph()
 				std::vector<Ptr<CommandBuffer>> commandBuffers;
 				commandBuffers.resize(threadCount);
 
+				auto& taskManager = TaskManager::instance();
+
 				size_t firstIndex = 0;
-				const size_t size = entities.size() / threadCount;
+				const size_t size = drawDatas.size() / threadCount;
 
 				for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
 				{
@@ -862,12 +981,12 @@ void GraphicsSystem::createFrameGraph()
 
 					if (taskIndex == threadCount - 1)
 					{
-						const auto remainingSize = entities.size() - lastIndex;
+						const auto remainingSize = drawDatas.size() - lastIndex;
 
 						lastIndex += remainingSize;
 					}
 
-					auto task = taskManager.createTask([this, &context, taskIndex, firstIndex, lastIndex, &entities, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
+					auto task = taskManager.createTask([this, &context, taskIndex, firstIndex, lastIndex, &drawDatas, &commandBuffers, &frameData, frameIndex](size_t threadIndex)
 						{
 							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
@@ -880,9 +999,7 @@ void GraphicsSystem::createFrameGraph()
 
 							// Initialize material to the first one and bind global frame data shared across all pipelines
 							{
-								auto& graphics = entities.get<GraphicsComponent>(*std::next(entities.begin(), firstIndex));
-
-								auto& materialInstance = graphics.materials[graphics.model->getMeshes()[0]->getMaterialID()]->materialInstance;
+								auto& materialInstance = drawDatas[firstIndex].materialInstance;
 								auto& material = materialInstance->getMaterial();
 
 								material->bindTo(*commandBuffer);
@@ -895,53 +1012,42 @@ void GraphicsSystem::createFrameGraph()
 							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, frameData.frameDescriptorSet);
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
-							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
+							for (auto it = std::next(drawDatas.begin(), firstIndex); it != std::next(drawDatas.begin(), lastIndex); it++, i++)
 							{
-								auto& graphics = entities.get<GraphicsComponent>(*it);
+								auto& drawData = *it;
 
-								// Frustum culling
-								if (m_cullFunction(graphics.aabb))
-									continue;
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { drawData.index * m_dynamicObjectBufferOffset });
 
-								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
+								auto& materialInstance = drawData.materialInstance;
+								auto& material = materialInstance->getMaterial();
 
-								for (const auto& mesh : graphics.model->getMeshes())
+								auto materialID = material->getID();
+								auto materialInstanceID = materialInstance->getID();
+
+								if (materialID != currentMaterialID)
 								{
-									// Frustum culling
-									/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
-										continue;*/
+									material->bindTo(*commandBuffer);
 
-									auto& materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance;
-									auto& material = materialInstance->getMaterial();
+									currentMaterialID = materialID;
 
-									auto materialID = material->getID();
-									auto materialInstanceID = materialInstance->getID();
-
-									if (materialID != currentMaterialID)
-									{
-										material->bindTo(*commandBuffer);
-
-										currentMaterialID = materialID;
-
-										currentMaterialInstanceID = SurfaceMaterial::InvalidID;
-									}
-
-									if (materialInstanceID != currentMaterialInstanceID)
-									{
-										materialInstance->bindTo(*commandBuffer);
-
-										currentMaterialInstanceID = materialInstanceID;
-									}
-
-									const auto& vertexBuffer = mesh->getVertexBuffer();
-									const auto& indexBuffer = mesh->getIndexBuffer();
-
-									commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
-
-									commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
-
-									commandBuffer->drawIndexed(indexBuffer->getSize());
+									currentMaterialInstanceID = SurfaceMaterial::InvalidID;
 								}
+
+								if (materialInstanceID != currentMaterialInstanceID)
+								{
+									materialInstance->bindTo(*commandBuffer);
+
+									currentMaterialInstanceID = materialInstanceID;
+								}
+
+								const auto& vertexBuffer = drawData.vertexBuffer;
+								const auto& indexBuffer = drawData.indexBuffer;
+
+								commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+
+								commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
+
+								commandBuffer->drawIndexed(indexBuffer->getSize());
 							}
 
 							commandBuffer->end();
@@ -954,8 +1060,12 @@ void GraphicsSystem::createFrameGraph()
 					firstIndex += size;
 				}
 
-				for (auto& task : tasks)
-					task->wait();
+				{
+					ATEMA_BENCHMARK_TAG(executeTasks, "Execute tasks")
+			
+					for (auto& task : tasks)
+						task->wait();
+				}
 
 				commandBuffer.executeSecondaryCommands(commandBuffers);
 			});
@@ -1349,6 +1459,8 @@ void GraphicsSystem::updateFrame()
 
 void GraphicsSystem::updateBoundingBoxes()
 {
+	ATEMA_BENCHMARK("Update AABBs");
+	
 	auto& entityManager = getEntityManager();
 
 	auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
@@ -1379,7 +1491,7 @@ void GraphicsSystem::updateBoundingBoxes()
 					auto& transform = entities.get<Transform>(*it);
 					auto& graphics = entities.get<GraphicsComponent>(*it);
 
-					graphics.aabb = transform.getMatrix()* graphics.model->getAABB();
+					graphics.aabb = transform.getMatrix() * graphics.model->getAABB();
 				}
 			});
 
