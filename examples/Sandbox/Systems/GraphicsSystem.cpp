@@ -426,9 +426,9 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		// Add descriptor set
 		frameData.frameDescriptorSet = m_frameLayout->createSet();
-		frameData.frameDescriptorSet->update(0, frameData.frameUniformBuffer);
+		frameData.frameDescriptorSet->update(0, *frameData.frameUniformBuffer);
 		frameData.objectDescriptorSet = m_objectLayout->createSet();
-		frameData.objectDescriptorSet->update(0, frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, m_elementByteSize);
 	}
 
 	//----- SHADOW MAPPING -----//
@@ -469,7 +469,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			frameData.shadowSet = m_shadowLayout->createSet();
 
-			frameData.shadowSet->update(0, frameData.shadowBuffer, m_shadowElementByteSize);
+			frameData.shadowSet->update(0, *frameData.shadowBuffer, m_shadowElementByteSize);
 		}
 	}
 
@@ -1199,12 +1199,12 @@ void GraphicsSystem::createFrameGraph()
 				// Write descriptor sets
 				{
 					for (uint32_t i = 0; i < gbufferTextures.size(); i++)
-						gbufferSMSet->update(i, context.getImageView(gbufferTextures[i]), m_ppSampler);
+						gbufferSMSet->update(i, *context.getImageView(gbufferTextures[i]), *m_ppSampler);
 
-					gbufferSMSet->update(shadowMapBindingIndex, m_shadowMap->getView(), m_shadowMapSampler);
+					gbufferSMSet->update(shadowMapBindingIndex, *m_shadowMap->getView(), *m_shadowMapSampler);
 
-					phongSet->update(0, frameData.shadowCascadesBuffer);
-					phongSet->update(1, frameData.phongBuffer);
+					phongSet->update(0, *frameData.shadowCascadesBuffer);
+					phongSet->update(1, *frameData.phongBuffer);
 				}
 
 				auto& commandBuffer = context.getCommandBuffer();
@@ -1300,7 +1300,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto descriptorSet = m_screenLayout->createSet();
 
-				descriptorSet->update(0, context.getImageView(debugTexture), m_ppSampler);
+				descriptorSet->update(0, *context.getImageView(debugTexture), *m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -1370,7 +1370,7 @@ void GraphicsSystem::createFrameGraph()
 
 						auto descriptorSet = m_screenLayout->createSet();
 
-						descriptorSet->update(0, context.getImageView(debugTextures[i]), m_ppSampler);
+						descriptorSet->update(0, *context.getImageView(debugTextures[i]), *m_ppSampler);
 
 						commandBuffer.bindDescriptorSet(0, *descriptorSet);
 
@@ -1396,7 +1396,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto descriptorSet1 = m_screenLayout->createSet();
 
-				descriptorSet1->update(0, context.getImageView(phongOutputTexture), m_ppSampler);
+				descriptorSet1->update(0, *context.getImageView(phongOutputTexture), *m_ppSampler);
 
 				auto& commandBuffer = context.getCommandBuffer();
 
@@ -1612,7 +1612,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset) });
 
 		// Update descriptor set
-		frameData.objectDescriptorSet->update(0, frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, m_elementByteSize);
 	}
 
 	{

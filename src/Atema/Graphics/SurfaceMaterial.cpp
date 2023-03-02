@@ -713,7 +713,7 @@ Ptr<SurfaceMaterialInstance> SurfaceMaterialInstance::createDefault(const Ptr<Su
 
 		uniformBuffer = Buffer::create(bufferSettings);
 
-		descriptorSet->update(bindingIndex++, uniformBuffer);
+		descriptorSet->update(bindingIndex++, *uniformBuffer);
 
 		bufferData = uniformBuffer->map();
 
@@ -732,7 +732,7 @@ Ptr<SurfaceMaterialInstance> SurfaceMaterialInstance::createDefault(const Ptr<Su
 	{
 		if (materialParameter.image)
 		{
-			descriptorSet->update(bindingIndex++, materialParameter.image->getView(), sampler);
+			descriptorSet->update(bindingIndex++, *materialParameter.image->getView(), *sampler);
 
 			parameters.set(materialParameter.name, materialParameter.image, sampler);
 		}

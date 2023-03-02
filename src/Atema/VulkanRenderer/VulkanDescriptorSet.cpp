@@ -50,12 +50,12 @@ VkDescriptorSet VulkanDescriptorSet::getHandle() const noexcept
 void VulkanDescriptorSet::update(
 	const std::vector<uint32_t>& bufferBindings,
 	const std::vector<uint32_t>& bufferIndices,
-	const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+	const std::vector<std::vector<const Buffer*>>& buffers,
 	const std::vector<std::vector<size_t>>& bufferRanges,
 	const std::vector<uint32_t>& imageSamplerBindings,
 	const std::vector<uint32_t>& imageSamplerIndices,
-	const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
-	const std::vector<std::vector<Ptr<Sampler>>>& samplers)
+	const std::vector<std::vector<const ImageView*>>& imageViews,
+	const std::vector<std::vector<const Sampler*>>& samplers)
 {
 	ATEMA_ASSERT(bufferBindings.size() == bufferIndices.size(), "Inconsistent buffer sizes");
 	ATEMA_ASSERT(bufferBindings.size() == buffers.size(), "Inconsistent buffer sizes");
@@ -82,7 +82,7 @@ void VulkanDescriptorSet::update(
 			for (auto& buffer : buffers[i])
 			{
 				VkDescriptorBufferInfo descriptor{};
-				descriptor.buffer = std::static_pointer_cast<VulkanBuffer>(buffer)->getHandle();
+				descriptor.buffer = static_cast<const VulkanBuffer*>(buffer)->getHandle();
 				descriptor.offset = 0;
 				descriptor.range = VK_WHOLE_SIZE;
 
@@ -99,7 +99,7 @@ void VulkanDescriptorSet::update(
 				const auto range = ranges[i];
 
 				VkDescriptorBufferInfo descriptor{};
-				descriptor.buffer = std::static_pointer_cast<VulkanBuffer>(buffer)->getHandle();
+				descriptor.buffer = static_cast<const VulkanBuffer*>(buffer)->getHandle();
 				descriptor.offset = 0;
 				descriptor.range = range ? static_cast<VkDeviceSize>(range) : VK_WHOLE_SIZE;
 
@@ -132,8 +132,8 @@ void VulkanDescriptorSet::update(
 
 		for (size_t j = 0; j < descriptors.size(); j++)
 		{
-			const auto imageView = std::static_pointer_cast<VulkanImageView>(imageViews[i][j]);
-			const auto sampler = std::static_pointer_cast<VulkanSampler>(samplers[i][j]);
+			const auto imageView = static_cast<const VulkanImageView*>(imageViews[i][j]);
+			const auto sampler = static_cast<const VulkanSampler*>(samplers[i][j]);
 
 			descriptors[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			descriptors[j].imageView = imageView->getHandle();

@@ -44,12 +44,12 @@ namespace at
 		void update(
 			const std::vector<uint32_t>& bufferBindings,
 			const std::vector<uint32_t>& bufferIndices,
-			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<std::vector<const Buffer*>>& buffers,
 			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
-			const std::vector<std::vector<Ptr<Sampler>>>& samplers) override;
+			const std::vector<std::vector<const ImageView*>>& imageViews,
+			const std::vector<std::vector<const Sampler*>>& samplers) override;
 		
 	private:
 		const VulkanDevice& m_device;

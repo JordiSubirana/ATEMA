@@ -40,22 +40,22 @@ namespace at
 	public:
 		virtual ~DescriptorSet();
 
-		void update(uint32_t binding, const Ptr<Buffer>& buffer);
-		void update(uint32_t binding, const Ptr<Buffer>& buffer, size_t bufferRange);
-		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers);
-		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers, const std::vector<size_t>& bufferRanges);
-		void update(uint32_t binding, const Ptr<ImageView>& imageView, const Ptr<Sampler>& sampler);
-		void update(uint32_t binding, uint32_t index, const std::vector<Ptr<ImageView>>& imageViews, const std::vector<Ptr<Sampler>>& samplers);
+		void update(uint32_t binding, const Buffer& buffer);
+		void update(uint32_t binding, const Buffer& buffer, size_t bufferRange);
+		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers);
+		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferRanges);
+		void update(uint32_t binding, const ImageView& imageView, const Sampler& sampler);
+		void update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers);
 
 		virtual void update(
 			const std::vector<uint32_t>& bufferBindings,
 			const std::vector<uint32_t>& bufferIndices,
-			const std::vector<std::vector<Ptr<Buffer>>>& buffers,
+			const std::vector<std::vector<const Buffer*>>& buffers,
 			const std::vector<std::vector<size_t>>& bufferRanges,
 			const std::vector<uint32_t>& imageSamplerBindings,
 			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<Ptr<ImageView>>>& imageViews,
-			const std::vector<std::vector<Ptr<Sampler>>>& samplers) = 0;
+			const std::vector<std::vector<const ImageView*>>& imageViews,
+			const std::vector<std::vector<const Sampler*>>& samplers) = 0;
 		
 	protected:
 		DescriptorSet();

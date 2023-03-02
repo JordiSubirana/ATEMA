@@ -135,7 +135,7 @@ DebugRenderer::DebugRenderer()
 
 	// Descriptor set
 	m_descriptorSet = m_descriptorSetLayout->createSet();
-	m_descriptorSet->update(0, m_uniformBuffer);
+	m_descriptorSet->update(0, *m_uniformBuffer);
 
 	// Load shaders
 	Shader::Settings shaderSettings;

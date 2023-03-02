@@ -32,32 +32,32 @@ DescriptorSet::~DescriptorSet()
 {
 }
 
-void DescriptorSet::update(uint32_t binding, const Ptr<Buffer>& buffer)
+void DescriptorSet::update(uint32_t binding, const Buffer& buffer)
 {
 	update(binding, buffer, 0);
 }
 
-void DescriptorSet::update(uint32_t binding, const Ptr<Buffer>& buffer, size_t bufferRange)
+void DescriptorSet::update(uint32_t binding, const Buffer& buffer, size_t bufferRange)
 {
-	update({ binding }, { 0 }, { { buffer } }, { { bufferRange } }, {}, {}, {}, {});
+	update({ binding }, { 0 }, { { &buffer } }, { { bufferRange } }, {}, {}, {}, {});
 }
 
-void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers)
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers)
 {
 	update(binding, index, buffers, {});
 }
 
-void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<Buffer>>& buffers, const std::vector<size_t>& bufferRanges)
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferRanges)
 {
 	update({ binding }, { index }, { buffers }, { bufferRanges }, {}, {}, {}, {});
 }
 
-void DescriptorSet::update(uint32_t binding, const Ptr<ImageView>& imageView, const Ptr<Sampler>& sampler)
+void DescriptorSet::update(uint32_t binding, const ImageView& imageView, const Sampler& sampler)
 {
-	update({}, {}, {}, {}, { binding }, { 0 }, { { imageView } }, { { sampler } });
+	update({}, {}, {}, {}, { binding }, { 0 }, { { &imageView } }, { { &sampler } });
 }
 
-void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<Ptr<ImageView>>& imageViews, const std::vector<Ptr<Sampler>>& samplers)
+void DescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers)
 {
 	update({}, {}, {}, {}, { binding }, { index }, { imageViews }, { samplers });
 }
