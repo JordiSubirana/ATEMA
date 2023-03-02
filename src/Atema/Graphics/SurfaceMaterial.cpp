@@ -593,10 +593,10 @@ Ptr<SurfaceMaterial> SurfaceMaterial::createDefault(const SurfaceMaterialData& m
 
 void SurfaceMaterial::bindTo(CommandBuffer& commandBuffer)
 {
-	commandBuffer.bindPipeline(m_graphicsPipeline);
+	commandBuffer.bindPipeline(*m_graphicsPipeline);
 	
 	if (m_descriptorSet)
-		commandBuffer.bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, m_descriptorSet);
+		commandBuffer.bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, *m_descriptorSet);
 }
 
 const Ptr<GraphicsPipeline>& SurfaceMaterial::getGraphicsPipeline() const noexcept
@@ -753,7 +753,7 @@ Ptr<SurfaceMaterialInstance> SurfaceMaterialInstance::createDefault(const Ptr<Su
 void SurfaceMaterialInstance::bindTo(CommandBuffer& commandBuffer)
 {
 	if (m_descriptorSet)
-		commandBuffer.bindDescriptorSet(SurfaceMaterial::InstanceSetIndex, m_descriptorSet);
+		commandBuffer.bindDescriptorSet(SurfaceMaterial::InstanceSetIndex, *m_descriptorSet);
 }
 
 const Ptr<SurfaceMaterial>& SurfaceMaterialInstance::getMaterial() const noexcept

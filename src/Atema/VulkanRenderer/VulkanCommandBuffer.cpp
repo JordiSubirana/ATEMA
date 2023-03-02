@@ -89,26 +89,23 @@ void VulkanCommandBuffer::begin()
 	}
 }
 
-void VulkanCommandBuffer::beginSecondary(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer)
+void VulkanCommandBuffer::beginSecondary(const RenderPass& renderPass, const Framebuffer& framebuffer)
 {
-	auto vkRenderPass = std::static_pointer_cast<VulkanRenderPass>(renderPass);
-	auto vkFramebuffer = std::static_pointer_cast<VulkanFramebuffer>(framebuffer);
+	const auto& vkRenderPass = static_cast<const VulkanRenderPass&>(renderPass);
+	const auto& vkFramebuffer = static_cast<const VulkanFramebuffer&>(framebuffer);
 
-	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
-	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
-
-	m_currentRenderPass = vkRenderPass.get();
+	m_currentRenderPass = &vkRenderPass;
 	m_currentSubpassIndex = 0;
 
-	auto framebufferSize = vkFramebuffer->getSize();
+	auto framebufferSize = vkFramebuffer.getSize();
 
 	// Inheritance info for the secondary command buffers
 	VkCommandBufferInheritanceInfo inheritanceInfo{};
 	inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-	inheritanceInfo.renderPass = vkRenderPass->getHandle();
+	inheritanceInfo.renderPass = vkRenderPass.getHandle();
 	inheritanceInfo.subpass = 0;
 	// Secondary command buffer also use the currently active framebuffer
-	inheritanceInfo.framebuffer = vkFramebuffer->getHandle();
+	inheritanceInfo.framebuffer = vkFramebuffer.getHandle();
 	// Misc
 	inheritanceInfo.occlusionQueryEnable = VK_FALSE;
 
@@ -124,19 +121,16 @@ void VulkanCommandBuffer::beginSecondary(const Ptr<RenderPass>& renderPass, cons
 	ATEMA_VK_CHECK(m_device.vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
 }
 
-void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands)
+void VulkanCommandBuffer::beginRenderPass(const RenderPass& renderPass, const Framebuffer& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands)
 {
-	auto vkRenderPass = std::static_pointer_cast<VulkanRenderPass>(renderPass);
-	auto vkFramebuffer = std::static_pointer_cast<VulkanFramebuffer>(framebuffer);
+	const auto& vkRenderPass = static_cast<const VulkanRenderPass&>(renderPass);
+	const auto& vkFramebuffer = static_cast<const VulkanFramebuffer&>(framebuffer);
 
-	ATEMA_ASSERT(vkRenderPass, "Invalid RenderPass");
-	ATEMA_ASSERT(vkFramebuffer, "Invalid Framebuffer");
-
-	m_currentRenderPass = vkRenderPass.get();
+	m_currentRenderPass = &vkRenderPass;
 	m_currentSubpassIndex = 0;
 	
-	auto framebufferSize = vkFramebuffer->getSize();
-	auto& attachments = vkRenderPass->getAttachments();
+	auto framebufferSize = vkFramebuffer.getSize();
+	auto& attachments = vkRenderPass.getAttachments();
 	
 	// Start render pass
 	std::vector<VkClearValue> vkClearValues(clearValues.size());
@@ -166,8 +160,8 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = vkRenderPass->getHandle();
-	renderPassInfo.framebuffer = vkFramebuffer->getHandle();
+	renderPassInfo.renderPass = vkRenderPass.getHandle();
+	renderPassInfo.framebuffer = vkFramebuffer.getHandle();
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = { framebufferSize.x, framebufferSize.y };
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(vkClearValues.size());
@@ -181,14 +175,14 @@ void VulkanCommandBuffer::beginRenderPass(const Ptr<RenderPass>& renderPass, con
 		useSecondaryCommands ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void VulkanCommandBuffer::bindPipeline(const Ptr<GraphicsPipeline>& pipeline)
+void VulkanCommandBuffer::bindPipeline(const GraphicsPipeline& pipeline)
 {
 	if (!m_currentRenderPass)
 	{
 		ATEMA_ERROR("No RenderPass is active");
 	}
 
-	auto& vkPipeline = static_cast<VulkanGraphicsPipeline&>(*pipeline);
+	const auto& vkPipeline = static_cast<const VulkanGraphicsPipeline&>(pipeline);
 	auto pipelineHandle = vkPipeline.getHandle(*m_currentRenderPass, m_currentSubpassIndex);
 
 	m_device.vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineHandle);
@@ -235,42 +229,36 @@ void VulkanCommandBuffer::endRenderPass()
 	m_currentSubpassIndex = 0;
 }
 
-void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset)
+void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Buffer& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset)
 {
-	ATEMA_ASSERT(srcBuffer, "Invalid source buffer");
-	ATEMA_ASSERT(dstBuffer, "Invalid destination buffer");
-
-	const auto vkSrcBuffer = std::static_pointer_cast<VulkanBuffer>(srcBuffer);
-	const auto vkDstBuffer = std::static_pointer_cast<VulkanBuffer>(dstBuffer);
+	const auto& vkSrcBuffer = static_cast<const VulkanBuffer&>(srcBuffer);
+	const auto& vkDstBuffer = static_cast<const VulkanBuffer&>(dstBuffer);
 
 	VkBufferCopy copyRegion{};
 	copyRegion.srcOffset = static_cast<VkDeviceSize>(srcOffset);
 	copyRegion.dstOffset = static_cast<VkDeviceSize>(dstOffset);
 	copyRegion.size = static_cast<VkDeviceSize>(size);
 	
-	m_device.vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer->getHandle(), vkDstBuffer->getHandle(), 1, &copyRegion);
+	m_device.vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer.getHandle(), vkDstBuffer.getHandle(), 1, &copyRegion);
 }
 
-void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage, ImageLayout dstLayout)
+void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout)
 {
-	ATEMA_ASSERT(srcBuffer, "Invalid source buffer");
-	ATEMA_ASSERT(dstImage, "Invalid destination image");
-
-	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(srcBuffer);
-	const auto vkImage = std::static_pointer_cast<VulkanImage>(dstImage);
-	const auto format = vkImage->getFormat();
+	const auto& vkBuffer = static_cast<const VulkanBuffer&>(srcBuffer);
+	const auto& vkImage = static_cast<const VulkanImage&>(dstImage);
+	const auto format = vkImage.getFormat();
 	const auto layout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
 	
 	ATEMA_ASSERT(layout == VK_IMAGE_LAYOUT_GENERAL || layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid image layout");
 
-	const auto size = vkImage->getSize();
+	const auto size = vkImage.getSize();
 	
 	VkBufferImageCopy region{};
 	region.bufferOffset = 0;
 	region.bufferRowLength = 0;
 	region.bufferImageHeight = 0;
 
-	region.imageSubresource.aspectMask = Vulkan::getAspect(vkImage->getFormat());
+	region.imageSubresource.aspectMask = Vulkan::getAspect(vkImage.getFormat());
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
@@ -280,8 +268,8 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Ima
 
 	m_device.vkCmdCopyBufferToImage(
 		m_commandBuffer,
-		vkBuffer->getHandle(),
-		vkImage->getHandle(),
+		vkBuffer.getHandle(),
+		vkImage.getHandle(),
 		layout,
 		1,
 		&region
@@ -289,17 +277,14 @@ void VulkanCommandBuffer::copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Ima
 }
 
 void VulkanCommandBuffer::copyImage(
-	const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
-	const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
+	const Image& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
+	Image& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
 	uint32_t layerCount)
 {
 	//TODO: Ensure src & dst format are compatible
 
-	ATEMA_ASSERT(srcImage, "Invalid source image");
-	ATEMA_ASSERT(dstImage, "Invalid destination image");
-
-	const auto srcFormat = srcImage->getFormat();
-	const auto dstFormat = dstImage->getFormat();
+	const auto srcFormat = srcImage.getFormat();
+	const auto dstFormat = dstImage.getFormat();
 
 	const auto vkSrcLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(srcFormat));
 	const auto vkDstLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(dstFormat));
@@ -307,15 +292,15 @@ void VulkanCommandBuffer::copyImage(
 	ATEMA_ASSERT(vkSrcLayout == VK_IMAGE_LAYOUT_GENERAL || vkSrcLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "Invalid source image layout");
 	ATEMA_ASSERT(vkDstLayout == VK_IMAGE_LAYOUT_GENERAL || vkDstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid destination image layout");
 
-	const auto& vkSrcImage = static_cast<const VulkanImage&>(*srcImage);
-	const auto& vkDstImage = static_cast<const VulkanImage&>(*dstImage);
+	const auto& vkSrcImage = static_cast<const VulkanImage&>(srcImage);
+	const auto& vkDstImage = static_cast<const VulkanImage&>(dstImage);
 
-	const auto srcSize = srcImage->getSize();
-	const auto dstSize = dstImage->getSize();
+	const auto srcSize = srcImage.getSize();
+	const auto dstSize = dstImage.getSize();
 
 	// If layerCount is 0, we'll keep the minimum remaining layer count between src & dst
 	if (layerCount == 0)
-		layerCount = std::min(srcImage->getLayers() - srcLayer, dstImage->getLayers() - dstLayer);
+		layerCount = std::min(srcImage.getLayers() - srcLayer, dstImage.getLayers() - dstLayer);
 
 	VkImageCopy region;
 	region.extent.width = std::min(srcSize.x, dstSize.x);
@@ -336,17 +321,14 @@ void VulkanCommandBuffer::copyImage(
 }
 
 void VulkanCommandBuffer::blitImage(
-	const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
-	const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
+	const Image& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel,
+	Image& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel,
 	SamplerFilter filter, uint32_t layerCount)
 {
 	//TODO: Ensure src & dst format are compatible
 
-	ATEMA_ASSERT(srcImage, "Invalid source image");
-	ATEMA_ASSERT(dstImage, "Invalid destination image");
-
-	const auto srcFormat = srcImage->getFormat();
-	const auto dstFormat = dstImage->getFormat();
+	const auto srcFormat = srcImage.getFormat();
+	const auto dstFormat = dstImage.getFormat();
 
 	const auto vkSrcLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(srcFormat));
 	const auto vkDstLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(dstFormat));
@@ -354,15 +336,15 @@ void VulkanCommandBuffer::blitImage(
 	ATEMA_ASSERT(vkSrcLayout == VK_IMAGE_LAYOUT_GENERAL || vkSrcLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "Invalid source image layout");
 	ATEMA_ASSERT(vkDstLayout == VK_IMAGE_LAYOUT_GENERAL || vkDstLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid destination image layout");
 
-	const auto& vkSrcImage = static_cast<const VulkanImage&>(*srcImage);
-	const auto& vkDstImage = static_cast<const VulkanImage&>(*dstImage);
+	const auto& vkSrcImage = static_cast<const VulkanImage&>(srcImage);
+	const auto& vkDstImage = static_cast<const VulkanImage&>(dstImage);
 
-	const auto srcSize = srcImage->getSize();
-	const auto dstSize = dstImage->getSize();
+	const auto srcSize = srcImage.getSize();
+	const auto dstSize = dstImage.getSize();
 
 	// If layerCount is 0, we'll keep the minimum remaining layer count between src & dst
 	if (layerCount == 0)
-		layerCount = std::min(srcImage->getLayers() - srcLayer, dstImage->getLayers() - dstLayer);
+		layerCount = std::min(srcImage.getLayers() - srcLayer, dstImage.getLayers() - dstLayer);
 
 	VkImageBlit region;
 	region.srcSubresource.mipLevel = srcMipLevel;
@@ -377,36 +359,30 @@ void VulkanCommandBuffer::blitImage(
 	m_device.vkCmdBlitImage(m_commandBuffer, vkSrcImage.getHandle(), vkSrcLayout, vkDstImage.getHandle(), vkDstLayout, 1, &region, Vulkan::getSamplerFilter(filter));
 }
 
-void VulkanCommandBuffer::bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding)
+void VulkanCommandBuffer::bindVertexBuffer(const Buffer& buffer, uint32_t binding)
 {
-	ATEMA_ASSERT(buffer, "Invalid buffer");
-
-	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(buffer)->getHandle();
+	const auto vkBuffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
 	
 	const VkDeviceSize offset = 0;
 	
 	m_device.vkCmdBindVertexBuffers(m_commandBuffer, binding, 1, &vkBuffer, &offset);
 }
 
-void VulkanCommandBuffer::bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType)
+void VulkanCommandBuffer::bindIndexBuffer(const Buffer& buffer, IndexType indexType)
 {
-	ATEMA_ASSERT(buffer, "Invalid buffer");
-
-	const auto vkBuffer = std::static_pointer_cast<VulkanBuffer>(buffer)->getHandle();
+	const auto vkBuffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
 
 	m_device.vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet)
+void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet)
 {
 	bindDescriptorSet(index, descriptorSet, {});
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
+void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
 {
-	ATEMA_ASSERT(descriptorSet, "Invalid descriptor set");
-
-	const auto vkDescriptorSet = std::static_pointer_cast<VulkanDescriptorSet>(descriptorSet)->getHandle();
+	const auto vkDescriptorSet = static_cast<const VulkanDescriptorSet&>(descriptorSet).getHandle();
 
 	m_device.vkCmdBindDescriptorSets(
 		m_commandBuffer,
@@ -429,15 +405,13 @@ void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCoun
 	m_device.vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
+void VulkanCommandBuffer::imageBarrier(const Image& image,
 	Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout,
 	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout,
 	uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
-	ATEMA_ASSERT(image, "Invalid image");
-
-	const auto vkImage = std::static_pointer_cast<VulkanImage>(image);
-	const auto format = vkImage->getFormat();
+	const auto& vkImage = static_cast<const VulkanImage&>(image);
+	const auto format = vkImage.getFormat();
 
 	// Pipeline stages
 	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
@@ -461,7 +435,7 @@ void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
 	// Specify image & subResourceRange (used for mipmaps or arrays)
-	barrier.image = vkImage->getHandle();
+	barrier.image = vkImage.getHandle();
 	barrier.subresourceRange.baseMipLevel = baseMipLevel;
 	barrier.subresourceRange.levelCount = mipLevelCount == 0 ? VK_REMAINING_MIP_LEVELS : mipLevelCount;
 	barrier.subresourceRange.baseArrayLayer = baseLayer;
@@ -485,21 +459,19 @@ void VulkanCommandBuffer::imageBarrier(const Ptr<Image>& image,
 	);
 }
 
-void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
+void VulkanCommandBuffer::createMipmaps(Image& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
 {
 	//TODO: Use mipmaps in different files, to avoid generating it a runtime
 
-	ATEMA_ASSERT(image, "Invalid image");
-
-	const auto vkImage = std::static_pointer_cast<VulkanImage>(image);
-	const auto mipLevels = vkImage->getMipLevels();
-	const auto format = Vulkan::getFormat(vkImage->getFormat());
-	const auto size = vkImage->getSize();
-	const auto imageHandle = vkImage->getHandle();
+	const auto& vkImage = static_cast<const VulkanImage&>(image);
+	const auto mipLevels = vkImage.getMipLevels();
+	const auto format = Vulkan::getFormat(vkImage.getFormat());
+	const auto size = vkImage.getSize();
+	const auto imageHandle = vkImage.getHandle();
 
 	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
 	const auto dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
-	const auto newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(vkImage->getFormat()));
+	const auto newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(vkImage.getFormat()));
 
 	// Check if image format supports linear blitting (needed for vkCmdBlitImage)
 	auto& renderer = VulkanRenderer::instance();
@@ -521,7 +493,7 @@ void VulkanCommandBuffer::createMipmaps(const Ptr<Image>& image, Flags<PipelineS
 	barrier.image = imageHandle;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage->getFormat());
+	barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage.getFormat());
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
 	barrier.subresourceRange.levelCount = 1;

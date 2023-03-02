@@ -69,7 +69,7 @@ Ptr<CommandBuffer> FrameGraphContext::createSecondaryCommandBuffer()
 {
 	auto commandBuffer = m_renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics);
 
-	commandBuffer->beginSecondary(m_renderPass, m_framebuffer);
+	commandBuffer->beginSecondary(*m_renderPass, *m_framebuffer);
 
 	auto commandBufferResource = commandBuffer;
 
@@ -82,7 +82,7 @@ Ptr<CommandBuffer> FrameGraphContext::createSecondaryCommandBuffer(size_t thread
 {
 	auto commandBuffer = m_renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
 
-	commandBuffer->beginSecondary(m_renderPass, m_framebuffer);
+	commandBuffer->beginSecondary(*m_renderPass, *m_framebuffer);
 
 	auto commandBufferResource = commandBuffer;
 

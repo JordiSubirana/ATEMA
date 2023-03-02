@@ -526,7 +526,7 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 
 			vertexBuffer = std::make_shared<VertexBuffer>(vertexBufferSettings);
 
-			commandBuffer->copyBuffer(stagingVertexBuffer->getBuffer(), vertexBuffer->getBuffer(), vertexBuffer->getByteSize());
+			commandBuffer->copyBuffer(*stagingVertexBuffer->getBuffer(), *vertexBuffer->getBuffer(), vertexBuffer->getByteSize());
 		}
 
 		// Index buffer
@@ -541,7 +541,7 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 
 			indexBuffer = std::make_shared<IndexBuffer>(indexBufferSettings);
 
-			commandBuffer->copyBuffer(stagingIndexBuffer->getBuffer(), indexBuffer->getBuffer(), indexBuffer->getByteSize());
+			commandBuffer->copyBuffer(*stagingIndexBuffer->getBuffer(), *indexBuffer->getBuffer(), indexBuffer->getByteSize());
 		}
 
 		// We created our own command buffer, execute it right now, so we can delete staging buffers

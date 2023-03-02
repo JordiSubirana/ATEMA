@@ -50,9 +50,9 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 		FrameGraphContext context(renderFrame, *commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
 
 		if (pass.useRenderFrameOutput)
-			commandBuffer->beginRenderPass(renderFrame.getRenderPass(), renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
+			commandBuffer->beginRenderPass(*renderFrame.getRenderPass(), *renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
 		else
-			commandBuffer->beginRenderPass(pass.renderPass, pass.framebuffer, pass.clearValues, pass.useSecondaryCommandBuffers);
+			commandBuffer->beginRenderPass(*pass.renderPass, *pass.framebuffer, pass.clearValues, pass.useSecondaryCommandBuffers);
 
 		pass.executionCallback(context);
 
@@ -65,7 +65,7 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 			if (barrier.valid)
 			{
 				commandBuffer->imageBarrier(
-					texture.image,
+					*texture.image,
 					barrier.srcPipelineStages, barrier.srcMemoryAccesses, barrier.srcLayout,
 					barrier.dstPipelineStages, barrier.dstMemoryAccesses, barrier.dstLayout);
 			}

@@ -147,17 +147,17 @@ Ptr<Image> at::ImageLoader::loadImage(const uint8_t* data, uint32_t width, uint3
 
 	// Copy staging buffer to index buffer
 
-	commandBuffer->imageBarrier(image, ImageBarrier::InitializeTransferDst);
+	commandBuffer->imageBarrier(*image, ImageBarrier::InitializeTransferDst);
 
 	if (mipLevels == 1)
 	{
-		commandBuffer->copyBuffer(stagingBuffer, image, ImageLayout::ShaderRead);
+		commandBuffer->copyBuffer(*stagingBuffer, *image, ImageLayout::ShaderRead);
 	}
 	else
 	{
-		commandBuffer->copyBuffer(stagingBuffer, image, ImageLayout::TransferDst);
+		commandBuffer->copyBuffer(*stagingBuffer, *image, ImageLayout::TransferDst);
 
-		commandBuffer->createMipmaps(image, PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
+		commandBuffer->createMipmaps(*image, PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
 	}
 
 	// We created our own command buffer, execute it right now, so we can delete staging buffers

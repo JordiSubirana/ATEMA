@@ -147,7 +147,7 @@ namespace
 
 		commandBuffer->begin();
 
-		commandBuffer->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+		commandBuffer->copyBuffer(*stagingBuffer, *vertexBuffer, bufferSize);
 
 		commandBuffer->end();
 
@@ -1009,14 +1009,14 @@ void GraphicsSystem::createFrameGraph()
 								currentMaterialInstanceID = materialInstance->getID();
 							}
 
-							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, frameData.frameDescriptorSet);
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameData.frameDescriptorSet);
 
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = std::next(drawDatas.begin(), firstIndex); it != std::next(drawDatas.begin(), lastIndex); it++, i++)
 							{
 								auto& drawData = *it;
 
-								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { drawData.index * m_dynamicObjectBufferOffset });
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, { drawData.index * m_dynamicObjectBufferOffset });
 
 								auto& materialInstance = drawData.materialInstance;
 								auto& material = materialInstance->getMaterial();
@@ -1043,9 +1043,9 @@ void GraphicsSystem::createFrameGraph()
 								const auto& vertexBuffer = drawData.vertexBuffer;
 								const auto& indexBuffer = drawData.indexBuffer;
 
-								commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+								commandBuffer->bindVertexBuffer(*vertexBuffer->getBuffer(), 0);
 
-								commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
+								commandBuffer->bindIndexBuffer(*indexBuffer->getBuffer(), indexBuffer->getIndexType());
 
 								commandBuffer->drawIndexed(indexBuffer->getSize());
 							}
@@ -1119,15 +1119,15 @@ void GraphicsSystem::createFrameGraph()
 						{
 							auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-							commandBuffer->bindPipeline(m_shadowPipeline);
+							commandBuffer->bindPipeline(*m_shadowPipeline);
 
 							commandBuffer->setViewport(m_shadowViewport);
 
 							commandBuffer->setScissor(Vector2i(), { m_shadowMapSize, m_shadowMapSize });
 
-							commandBuffer->bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, *frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
 
-							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, frameData.frameDescriptorSet);
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameData.frameDescriptorSet);
 							
 							uint32_t i = static_cast<uint32_t>(firstIndex);
 							for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++, i++)
@@ -1141,16 +1141,16 @@ void GraphicsSystem::createFrameGraph()
 								if (!m_lightFrustums[cascadeIndex].contains(graphics.aabb))
 									continue;
 
-								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{
 									const auto& vertexBuffer = mesh->getVertexBuffer();
 									const auto& indexBuffer = mesh->getIndexBuffer();
 
-									commandBuffer->bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+									commandBuffer->bindVertexBuffer(*vertexBuffer->getBuffer(), 0);
 
-									commandBuffer->bindIndexBuffer(indexBuffer->getBuffer(), indexBuffer->getIndexType());
+									commandBuffer->bindIndexBuffer(*indexBuffer->getBuffer(), indexBuffer->getIndexType());
 
 									commandBuffer->drawIndexed(indexBuffer->getSize());
 								}
@@ -1209,16 +1209,16 @@ void GraphicsSystem::createFrameGraph()
 
 				auto& commandBuffer = context.getCommandBuffer();
 
-				commandBuffer.bindPipeline(m_phongPipeline);
+				commandBuffer.bindPipeline(*m_phongPipeline);
 
 				commandBuffer.setViewport(m_viewport);
 
 				commandBuffer.setScissor(Vector2i(), m_windowSize);
 
-				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+				commandBuffer.bindVertexBuffer(*m_ppQuad, 0);
 
-				commandBuffer.bindDescriptorSet(0, gbufferSMSet);
-				commandBuffer.bindDescriptorSet(1, phongSet);
+				commandBuffer.bindDescriptorSet(0, *gbufferSMSet);
+				commandBuffer.bindDescriptorSet(1, *phongSet);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
@@ -1304,7 +1304,7 @@ void GraphicsSystem::createFrameGraph()
 
 				auto& commandBuffer = context.getCommandBuffer();
 
-				commandBuffer.bindPipeline(m_screenPipeline);
+				commandBuffer.bindPipeline(*m_screenPipeline);
 
 				commandBuffer.setScissor(Vector2i(), m_windowSize);
 
@@ -1315,9 +1315,9 @@ void GraphicsSystem::createFrameGraph()
 
 				commandBuffer.setViewport(viewport);
 
-				commandBuffer.bindDescriptorSet(0, descriptorSet);
+				commandBuffer.bindDescriptorSet(0, *descriptorSet);
 
-				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+				commandBuffer.bindVertexBuffer(*m_ppQuad, 0);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
@@ -1349,11 +1349,11 @@ void GraphicsSystem::createFrameGraph()
 
 				auto& commandBuffer = context.getCommandBuffer();
 
-				commandBuffer.bindPipeline(m_screenPipeline);
+				commandBuffer.bindPipeline(*m_screenPipeline);
 
 				commandBuffer.setScissor(Vector2i(), m_windowSize);
 
-				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+				commandBuffer.bindVertexBuffer(*m_ppQuad, 0);
 
 				for (size_t x = 0; x < 2; x++)
 				{
@@ -1372,7 +1372,7 @@ void GraphicsSystem::createFrameGraph()
 
 						descriptorSet->update(0, context.getImageView(debugTextures[i]), m_ppSampler);
 
-						commandBuffer.bindDescriptorSet(0, descriptorSet);
+						commandBuffer.bindDescriptorSet(0, *descriptorSet);
 
 						commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
@@ -1400,15 +1400,15 @@ void GraphicsSystem::createFrameGraph()
 
 				auto& commandBuffer = context.getCommandBuffer();
 
-				commandBuffer.bindPipeline(m_screenPipeline);
+				commandBuffer.bindPipeline(*m_screenPipeline);
 
 				commandBuffer.setViewport(m_viewport);
 
 				commandBuffer.setScissor(Vector2i(), m_windowSize);
 
-				commandBuffer.bindDescriptorSet(0, descriptorSet1);
+				commandBuffer.bindDescriptorSet(0, *descriptorSet1);
 
-				commandBuffer.bindVertexBuffer(m_ppQuad, 0);
+				commandBuffer.bindVertexBuffer(*m_ppQuad, 0);
 
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 

@@ -39,13 +39,13 @@ namespace at
 		VulkanGraphicsPipeline(const VulkanDevice& device, const GraphicsPipeline::Settings& settings);
 		virtual ~VulkanGraphicsPipeline();
 
-		VkPipeline getHandle(VulkanRenderPass& renderPass, uint32_t subpassIndex);
+		VkPipeline getHandle(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const;
 
 		VkPipelineLayout getLayoutHandle() const noexcept;
 		
 	private:
-		VkPipeline readPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex);
-		VkPipeline createPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex);
+		VkPipeline readPipeline(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const;
+		VkPipeline createPipeline(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const;
 
 		struct RenderPassData
 		{
@@ -74,9 +74,9 @@ namespace at
 
 		VkPipelineColorBlendAttachmentState m_colorBlendAttachment;
 
-		std::vector<VkPipelineColorBlendAttachmentState> m_colorBlendAttachments;
+		mutable std::vector<VkPipelineColorBlendAttachmentState> m_colorBlendAttachments;
 
-		VkPipelineColorBlendStateCreateInfo m_colorBlending;
+		mutable VkPipelineColorBlendStateCreateInfo m_colorBlending;
 
 		VkPipelineDepthStencilStateCreateInfo m_depthStencil;
 
@@ -86,8 +86,8 @@ namespace at
 
 		VkPipelineLayout m_pipelineLayout;
 
-		std::unordered_map<VkRenderPass, Ptr<RenderPassData>> m_renderPassDatas;
-		std::shared_mutex m_pipelineMutex;
+		mutable std::unordered_map<VkRenderPass, Ptr<RenderPassData>> m_renderPassDatas;
+		mutable std::shared_mutex m_pipelineMutex;
 	};
 }
 

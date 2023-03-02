@@ -38,7 +38,7 @@ QueueType CommandBuffer::getQueueType() const noexcept
 	return m_queueType;
 }
 
-void CommandBuffer::imageBarrier(const Ptr<Image>& image, ImageBarrier barrier)
+void CommandBuffer::imageBarrier(const Image& image, ImageBarrier barrier)
 {
 	Flags<PipelineStage> srcPipelineStages;
 	Flags<MemoryAccess> srcMemoryAccesses;

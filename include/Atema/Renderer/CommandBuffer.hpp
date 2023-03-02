@@ -62,11 +62,11 @@ namespace at
 
 		virtual void begin() = 0;
 
-		virtual void beginSecondary(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer) = 0;
+		virtual void beginSecondary(const RenderPass& renderPass, const Framebuffer& framebuffer) = 0;
 
-		virtual void beginRenderPass(const Ptr<RenderPass>& renderPass, const Ptr<Framebuffer>& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands = false) = 0;
+		virtual void beginRenderPass(const RenderPass& renderPass, const Framebuffer& framebuffer, const std::vector<ClearValue>& clearValues, bool useSecondaryCommands = false) = 0;
 
-		virtual void bindPipeline(const Ptr<GraphicsPipeline>& pipeline) = 0;
+		virtual void bindPipeline(const GraphicsPipeline& pipeline) = 0;
 
 		virtual void setViewport(const Viewport& viewport) = 0;
 		
@@ -76,38 +76,38 @@ namespace at
 
 		virtual void endRenderPass() = 0;
 
-		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Buffer>& dstBuffer, size_t size, size_t srcOffset = 0, size_t dstOffset = 0) = 0;
+		virtual void copyBuffer(const Buffer& srcBuffer, Buffer& dstBuffer, size_t size, size_t srcOffset = 0, size_t dstOffset = 0) = 0;
 
 		// Copy buffer data to an image
 		// dstLayout must either be ImageLayout::TransferDst or ImageLayout::General
-		virtual void copyBuffer(const Ptr<Buffer>& srcBuffer, const Ptr<Image>& dstImage, ImageLayout dstLayout) = 0;
+		virtual void copyBuffer(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout) = 0;
 
 		// Copy some image layers to another image layers
 		// srcLayout must either be ImageLayout::TransferSrc or ImageLayout::General
 		// dstLayout must either be ImageLayout::TransferDst or ImageLayout::General
-		virtual void copyImage(const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, uint32_t layerCount = 1) = 0;
+		virtual void copyImage(const Image& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, Image& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, uint32_t layerCount = 1) = 0;
 
 		// Blit some image layers to another image layers
 		// srcLayout must either be ImageLayout::TransferSrc or ImageLayout::General
 		// dstLayout must either be ImageLayout::TransferDst or ImageLayout::General
-		virtual void blitImage(const Ptr<Image>& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, const Ptr<Image>& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, SamplerFilter filter, uint32_t layerCount = 1) = 0;
+		virtual void blitImage(const Image& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, Image& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, SamplerFilter filter, uint32_t layerCount = 1) = 0;
 
-		virtual void bindVertexBuffer(const Ptr<Buffer>& buffer, uint32_t binding) = 0;
+		virtual void bindVertexBuffer(const Buffer& buffer, uint32_t binding) = 0;
 
-		virtual void bindIndexBuffer(const Ptr<Buffer>& buffer, IndexType indexType) = 0;
+		virtual void bindIndexBuffer(const Buffer& buffer, IndexType indexType) = 0;
 
-		virtual void bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet) = 0;
-		virtual void bindDescriptorSet(uint32_t index, const Ptr<DescriptorSet>& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets) = 0;
+		virtual void bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet) = 0;
+		virtual void bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets) = 0;
 
 		virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 
 		virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
 
-		void imageBarrier(const Ptr<Image>& image, ImageBarrier barrier);
-		virtual void imageBarrier(const Ptr<Image>& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+		void imageBarrier(const Image& image, ImageBarrier barrier);
+		virtual void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
 
 		// ImageLayout::TransferDst needed
-		virtual void createMipmaps(const Ptr<Image>& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) = 0;
+		virtual void createMipmaps(Image& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) = 0;
 
 		virtual void executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers) = 0;
 		

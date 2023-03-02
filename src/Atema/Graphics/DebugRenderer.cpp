@@ -279,13 +279,13 @@ void DebugRenderer::render(FrameGraphContext& frameGraphContext, CommandBuffer& 
 
 	m_uniformBuffer->unmap();
 
-	commandBuffer.bindPipeline(m_graphicsPipeline);
+	commandBuffer.bindPipeline(*m_graphicsPipeline);
 
-	commandBuffer.bindDescriptorSet(0, m_descriptorSet);
+	commandBuffer.bindDescriptorSet(0, *m_descriptorSet);
 
 	for (const auto& vertexBuffer : m_vertexBuffers)
 	{
-		commandBuffer.bindVertexBuffer(vertexBuffer->getBuffer(), 0);
+		commandBuffer.bindVertexBuffer(*vertexBuffer->getBuffer(), 0);
 
 		commandBuffer.draw(static_cast<uint32_t>(vertexBuffer->getSize()));
 	}

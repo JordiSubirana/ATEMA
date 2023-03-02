@@ -295,7 +295,7 @@ VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
 	ATEMA_VK_DESTROY(m_device, vkDestroyPipelineLayout, m_pipelineLayout);
 }
 
-VkPipeline VulkanGraphicsPipeline::getHandle(VulkanRenderPass& renderPass, uint32_t subpassIndex)
+VkPipeline VulkanGraphicsPipeline::getHandle(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const
 {
 	const auto pipeline = readPipeline(renderPass, subpassIndex);
 
@@ -310,7 +310,7 @@ VkPipelineLayout VulkanGraphicsPipeline::getLayoutHandle() const noexcept
 	return m_pipelineLayout;
 }
 
-VkPipeline VulkanGraphicsPipeline::readPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex)
+VkPipeline VulkanGraphicsPipeline::readPipeline(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const
 {
 	std::shared_lock readLock(m_pipelineMutex);
 
@@ -329,7 +329,7 @@ VkPipeline VulkanGraphicsPipeline::readPipeline(VulkanRenderPass& renderPass, ui
 	return VK_NULL_HANDLE;
 }
 
-VkPipeline VulkanGraphicsPipeline::createPipeline(VulkanRenderPass& renderPass, uint32_t subpassIndex)
+VkPipeline VulkanGraphicsPipeline::createPipeline(const VulkanRenderPass& renderPass, uint32_t subpassIndex) const
 {
 	std::unique_lock writeLock(m_pipelineMutex);
 
@@ -350,7 +350,7 @@ VkPipeline VulkanGraphicsPipeline::createPipeline(VulkanRenderPass& renderPass, 
 	else
 	{
 		auto data = std::make_shared<RenderPassData>();
-		data->connectionGuard.connect(renderPass.onDestroy, [this, renderPassHandle]()
+		data->connectionGuard.connect(const_cast<Signal<>&>(renderPass.onDestroy), [this, renderPassHandle]()
 			{
 				std::unique_lock writeLock(m_pipelineMutex);
 
