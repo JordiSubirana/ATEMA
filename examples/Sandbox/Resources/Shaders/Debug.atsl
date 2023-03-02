@@ -1,0 +1,52 @@
+struct FrameData
+{
+	mat4f proj;
+	mat4f view;
+}
+
+external
+{
+	[set(0), binding(0)] FrameData frameData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec3f inColor;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec3f outColor;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f screenPosition = frameData.proj * frameData.view * vec4f(inPosition, 1.0);
+	
+	setVertexPosition(screenPosition);
+	
+	outColor = inColor;
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec3f inColor;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+[entry(fragment)]
+void main()
+{
+	outColor = vec4f(inColor, 1.0);
+}
+
