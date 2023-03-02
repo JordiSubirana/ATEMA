@@ -38,6 +38,7 @@ const float cameraScale = 0.001f;
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
 const std::string modelTextureExtension = "png";
+const at::Transform modelTransform({ 0.0f, 0.0f, -2.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 0.1f, 0.1f, 0.1f });
 //*/
 
 // Tardis
@@ -56,17 +57,8 @@ const std::string modelTextureExtension = "png";
 const at::Transform modelTransform({ 0.0f, 0.0f, -1.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 0.01f, 0.01f, 0.01f });
 //*/
 
-// Building store
-/*
-const std::filesystem::path modelMeshPath = rscPath / "Models/building-store.obj";
-const std::filesystem::path modelTexturePath = rscPath / "Textures/z";
-const std::string modelTextureExtension = "png";
-const at::Transform modelTransform({ 0.0f, 0.0f, 0.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
-//*/
-
 // Ground
 const std::filesystem::path groundTexturePath = rscPath / "Textures/Rocks";
-//const std::filesystem::path groundTexturePath = rscPath / "Textures/forest_floor";
 const std::string groundTextureExtension = "png";
 
 inline at::Vector2f toPolar(const at::Vector2f& cartesian)
