@@ -331,23 +331,46 @@ namespace at
 
 	ATEMA_DECLARE_FLAGS(ShaderStage);
 
+	// Pipeline Stages sorted by category & time occurence :
+	// Transfer : TopOfPipe -> Transfer -> BottomOfPipe
+	// Compute : TopOfPipe -> DrawIndirect -> ComputeShader -> BottomOfPipe
+	// Geometry : TopOfPipe -> DrawIndirect -> VertexInput -> VertexShader -> TessellationControl -> TessellationEvaluation -> GeometryShader -> BottomOfPipe
+	// Fragment : TopOfPipe -> EarlyFragmentTests -> FragmentShader -> LateFragmentTests -> ColorAttachmentOutput -> BottomOfPipe
 	enum class PipelineStage
 	{
-		TopOfPipe = 0x0001,
-		DrawIndirect = 0x0002,
-		VertexInput = 0x0004,
-		VertexShader = 0x0008,
-		TessellationControl = 0x0010,
-		TessellationEvaluation = 0x0020,
-		GeometryShader = 0x0040,
-		FragmentShader = 0x0080,
-		EarlyFragmentTests = 0x0100,
-		LateFragmentTests = 0x0200,
-		ColorAttachmentOutput = 0x0400,
-		ComputeShader = 0x0800,
-		Transfer = 0x1000,
-		BottomOfPipe = 0x2000,
-		Host = 0x4000
+		// Compute/Transfer/Geometry/Fragment
+		// Virtual initial stage, used to wait on nothing
+		TopOfPipe = 1 << 0,
+		// Compute/Transfer : indirect compute only
+		// Geometry : indirect buffers parsing
+		DrawIndirect = 1 << 1,
+		// Geometry : consumes fixed function VBOs and IBOs
+		VertexInput = 1 << 2,
+		// Geometry : vertex shader
+		VertexShader = 1 << 3,
+		// Geometry : tessellation control
+		TessellationControl = 1 << 4,
+		// Geometry : tessellation evaluation
+		TessellationEvaluation = 1 << 5,
+		// Geometry : geometry shader
+		GeometryShader = 1 << 6,
+		// Fragment : fragment shader
+		FragmentShader = 1 << 7,
+		// Fragment : early depth/stencil tests + render pass loadOp of depth/stencil attachment
+		EarlyFragmentTests = 1 << 8,
+		// Fragment : late depth/stencil tests + depth/stencil attachments are stored with storeOp when a render pass is done
+		LateFragmentTests = 1 << 9,
+		// Fragment : loadOp, storeOp, MSAA resolves and frame buffer blend stage
+		ColorAttachmentOutput = 1 << 10,
+		// Compute : compute shader
+		ComputeShader = 1 << 11,
+		// Transfer : transfer operations
+		Transfer = 1 << 12,
+		// Compute/Transfer/Geometry/Fragment
+		// Virtual final stage
+		BottomOfPipe = 1 << 13,
+		// Used to make memory available CPU side
+		Host = 1 << 14
 	};
 
 	ATEMA_DECLARE_FLAGS(PipelineStage);

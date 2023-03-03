@@ -405,6 +405,75 @@ void VulkanCommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCoun
 	m_device.vkCmdDrawIndexed(m_commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
+void VulkanCommandBuffer::memoryBarrier(Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses)
+{
+	// Pipeline stages
+	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
+	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
+
+	VkMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+
+	// Access mask
+	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
+	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+
+	// Pipeline barrier
+	m_device.vkCmdPipelineBarrier(
+		m_commandBuffer,
+
+		// Depends on what happens before and after the barrier
+		srcStages, // In which pipeline stage the operations occur (before the barrier)
+		dstStages, // The pipeline stage in which operations will wait on the barrier
+
+		0,
+
+		// All types of pipeline barriers can be used
+		1, &barrier,
+		0, nullptr,
+		0, nullptr
+	);
+}
+
+void VulkanCommandBuffer::bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset, size_t size)
+{
+	// Pipeline stages
+	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
+	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
+
+	VkBufferMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+
+	// Access mask
+	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
+	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+
+	// Change queue ownership (indices of the queue families if we want to use it)
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	// Buffer resource & range
+	barrier.buffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
+	barrier.offset = static_cast<VkDeviceSize>(offset);
+	barrier.size = static_cast<VkDeviceSize>(size);
+
+	// Pipeline barrier
+	m_device.vkCmdPipelineBarrier(
+		m_commandBuffer,
+
+		// Depends on what happens before and after the barrier
+		srcStages, // In which pipeline stage the operations occur (before the barrier)
+		dstStages, // The pipeline stage in which operations will wait on the barrier
+
+		0,
+
+		// All types of pipeline barriers can be used
+		0, nullptr,
+		1, &barrier,
+		0, nullptr
+	);
+}
+
 void VulkanCommandBuffer::imageBarrier(const Image& image,
 	Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout,
 	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout,
