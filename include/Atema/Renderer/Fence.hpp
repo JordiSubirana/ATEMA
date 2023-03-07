@@ -43,6 +43,8 @@ namespace at
 		// Waits to be in signaled state
 		virtual void wait() = 0;
 
+		virtual bool isSignaled() const = 0;
+
 		// Resets to unsignaled state
 		virtual void reset() = 0;
 

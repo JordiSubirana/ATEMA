@@ -39,6 +39,8 @@ namespace at
 		
 		void wait() override;
 
+		bool isSignaled() const override;
+
 		void reset() override;
 
 	private:

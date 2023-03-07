@@ -51,6 +51,18 @@ void VulkanFence::wait()
 	m_device.vkWaitForFences(m_device, 1, &m_fence, VK_TRUE, UINT64_MAX);
 }
 
+bool VulkanFence::isSignaled() const
+{
+	const auto result = m_device.vkGetFenceStatus(m_device, m_fence);
+
+	if (result != VK_SUCCESS && result != VK_NOT_READY)
+	{
+		ATEMA_VK_ERROR(vkGetFenceStatus, result);
+	}
+
+	return result == VK_SUCCESS;
+}
+
 void VulkanFence::reset()
 {
 	m_device.vkResetFences(m_device, 1, &m_fence);
