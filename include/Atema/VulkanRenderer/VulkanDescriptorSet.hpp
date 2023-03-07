@@ -41,17 +41,15 @@ namespace at
 
 		VkDescriptorSet getHandle() const noexcept;
 
-		void update(
-			const std::vector<uint32_t>& bufferBindings,
-			const std::vector<uint32_t>& bufferIndices,
-			const std::vector<std::vector<const Buffer*>>& buffers,
-			const std::vector<std::vector<size_t>>& bufferRanges,
-			const std::vector<uint32_t>& imageSamplerBindings,
-			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<const ImageView*>>& imageViews,
-			const std::vector<std::vector<const Sampler*>>& samplers) override;
+		void update(uint32_t binding, const Buffer& buffer, size_t offset, size_t size) override;
+		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers) override;
+		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferOffsets, const std::vector<size_t>& bufferSizes) override;
+		void update(uint32_t binding, const ImageView& imageView, const Sampler& sampler) override;
+		void update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers) override;
 		
 	private:
+		void update(uint32_t binding, uint32_t index, uint32_t descriptorCount, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo, const VkBufferView* texelBufferView);
+
 		const VulkanDevice& m_device;
 		VkDescriptorSet m_descriptorSet;
 		std::function<void()> m_destroyCallback;

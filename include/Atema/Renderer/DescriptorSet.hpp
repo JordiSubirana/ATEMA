@@ -40,22 +40,15 @@ namespace at
 	public:
 		virtual ~DescriptorSet();
 
-		void update(uint32_t binding, const Buffer& buffer);
-		void update(uint32_t binding, const Buffer& buffer, size_t bufferRange);
-		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers);
-		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferRanges);
-		void update(uint32_t binding, const ImageView& imageView, const Sampler& sampler);
-		void update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers);
-
-		virtual void update(
-			const std::vector<uint32_t>& bufferBindings,
-			const std::vector<uint32_t>& bufferIndices,
-			const std::vector<std::vector<const Buffer*>>& buffers,
-			const std::vector<std::vector<size_t>>& bufferRanges,
-			const std::vector<uint32_t>& imageSamplerBindings,
-			const std::vector<uint32_t>& imageSamplerIndices,
-			const std::vector<std::vector<const ImageView*>>& imageViews,
-			const std::vector<std::vector<const Sampler*>>& samplers) = 0;
+		// Default size of 0 means remaining size
+		virtual void update(uint32_t binding, const Buffer& buffer, size_t offset = 0, size_t size = 0) = 0;
+		// Updates an array of buffers, starting at index
+		virtual void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers) = 0;
+		// Updates an array of buffer ranges, starting at index
+		virtual void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferOffsets, const std::vector<size_t>& bufferSizes) = 0;
+		virtual void update(uint32_t binding, const ImageView& imageView, const Sampler& sampler) = 0;
+		// Updates an array of sampled images, starting at index
+		virtual void update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers) = 0;
 		
 	protected:
 		DescriptorSet();

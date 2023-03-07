@@ -428,7 +428,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		frameData.frameDescriptorSet = m_frameLayout->createSet();
 		frameData.frameDescriptorSet->update(0, *frameData.frameUniformBuffer);
 		frameData.objectDescriptorSet = m_objectLayout->createSet();
-		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, 0, m_elementByteSize);
 	}
 
 	//----- SHADOW MAPPING -----//
@@ -469,7 +469,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			frameData.shadowSet = m_shadowLayout->createSet();
 
-			frameData.shadowSet->update(0, *frameData.shadowBuffer, m_shadowElementByteSize);
+			frameData.shadowSet->update(0, *frameData.shadowBuffer, 0, m_shadowElementByteSize);
 		}
 	}
 
@@ -1612,7 +1612,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 		frameData.objectsUniformBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::Map, static_cast<size_t>(frameData.objectCount * m_dynamicObjectBufferOffset) });
 
 		// Update descriptor set
-		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, m_elementByteSize);
+		frameData.objectDescriptorSet->update(0, *frameData.objectsUniformBuffer, 0, m_elementByteSize);
 	}
 
 	{

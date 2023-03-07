@@ -47,112 +47,108 @@ VkDescriptorSet VulkanDescriptorSet::getHandle() const noexcept
 	return m_descriptorSet;
 }
 
-void VulkanDescriptorSet::update(
-	const std::vector<uint32_t>& bufferBindings,
-	const std::vector<uint32_t>& bufferIndices,
-	const std::vector<std::vector<const Buffer*>>& buffers,
-	const std::vector<std::vector<size_t>>& bufferRanges,
-	const std::vector<uint32_t>& imageSamplerBindings,
-	const std::vector<uint32_t>& imageSamplerIndices,
-	const std::vector<std::vector<const ImageView*>>& imageViews,
-	const std::vector<std::vector<const Sampler*>>& samplers)
+void VulkanDescriptorSet::update(uint32_t binding, const Buffer& buffer, size_t offset, size_t size)
 {
-	ATEMA_ASSERT(bufferBindings.size() == bufferIndices.size(), "Inconsistent buffer sizes");
-	ATEMA_ASSERT(bufferBindings.size() == buffers.size(), "Inconsistent buffer sizes");
-	ATEMA_ASSERT(bufferBindings.size() == bufferRanges.size(), "Inconsistent buffer sizes");
-	ATEMA_ASSERT(imageSamplerBindings.size() == imageSamplerIndices.size(), "Inconsistent image sampler sizes");
-	ATEMA_ASSERT(imageSamplerBindings.size() == imageViews.size(), "Inconsistent image sampler sizes");
-	ATEMA_ASSERT(imageSamplerBindings.size() == samplers.size(), "Inconsistent image sampler sizes");
+	VkDescriptorBufferInfo descriptor{};
+	descriptor.buffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
+	descriptor.offset = static_cast<VkDeviceSize>(offset);
+	descriptor.range = size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size);
 
-	std::vector<std::vector<VkDescriptorBufferInfo>> descriptorBuffers;
-	std::vector<std::vector<VkDescriptorImageInfo>> descriptorImages;
-	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	
-	for (size_t i = 0; i < bufferBindings.size(); i++)
+	update(binding, 0, 1, nullptr, &descriptor, nullptr);
+}
+
+void VulkanDescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers)
+{
+	std::vector<VkDescriptorBufferInfo> descriptors;
+	descriptors.reserve(buffers.size());
+
+	for (const auto& buffer : buffers)
 	{
-		descriptorBuffers.resize(descriptorBuffers.size() + 1);
-
-		auto& descriptors = descriptorBuffers.back();
-		descriptors.reserve(buffers[i].size());
-
-		const auto& ranges = bufferRanges[i];
+		ATEMA_ASSERT(buffer, "Invalid buffer");
 		
-		if (ranges.empty())
-		{
-			for (auto& buffer : buffers[i])
-			{
-				VkDescriptorBufferInfo descriptor{};
-				descriptor.buffer = static_cast<const VulkanBuffer*>(buffer)->getHandle();
-				descriptor.offset = 0;
-				descriptor.range = VK_WHOLE_SIZE;
+		auto& descriptor = descriptors.emplace_back();
 
-				descriptors.push_back(descriptor);
-			}
-		}
-		else
-		{
-			ATEMA_ASSERT(buffers[i].size() == ranges.size(), "Each buffer must have a range");
-			
-			for (size_t j = 0; j < buffers[i].size(); j++)
-			{
-				auto& buffer = buffers[i][j];
-				const auto range = ranges[i];
-
-				VkDescriptorBufferInfo descriptor{};
-				descriptor.buffer = static_cast<const VulkanBuffer*>(buffer)->getHandle();
-				descriptor.offset = 0;
-				descriptor.range = range ? static_cast<VkDeviceSize>(range) : VK_WHOLE_SIZE;
-
-				descriptors.push_back(descriptor);
-			}
-		}
-
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = m_descriptorSet;
-		descriptorWrite.dstBinding = bufferBindings[i]; // Binding in the shader
-		descriptorWrite.dstArrayElement = 0; // First index we want to update (descriptors can be arrays)
-		descriptorWrite.descriptorType = m_bindingTypes[bufferBindings[i]]; // Type of descriptor
-		descriptorWrite.descriptorCount = static_cast<uint32_t>(descriptors.size()); // How many elements we want to update
-		descriptorWrite.pBufferInfo = descriptors.data(); // Used for descriptors that refer to buffer data
-		descriptorWrite.pImageInfo = nullptr; // Used for descriptors that refer to image data
-		descriptorWrite.pTexelBufferView = nullptr; // Used for descriptors that refer to buffer views
-
-		descriptorWrites.push_back(descriptorWrite);
+		descriptor.buffer = static_cast<const VulkanBuffer&>(*buffer).getHandle();
+		descriptor.offset = 0;
+		descriptor.range = VK_WHOLE_SIZE;
 	}
 
-	for (size_t i = 0; i < imageSamplerBindings.size(); i++)
+	update(binding, index, descriptors.size(), nullptr, descriptors.data(), nullptr);
+}
+
+void VulkanDescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferOffsets, const std::vector<size_t>& bufferSizes)
+{
+	ATEMA_ASSERT(buffers.size() == bufferOffsets.size(), "buffers & bufferOffsets sizes must be equal");
+	ATEMA_ASSERT(buffers.size() == bufferSizes.size(), "buffers & bufferSizes sizes must be equal");
+	
+	std::vector<VkDescriptorBufferInfo> descriptors;
+	descriptors.reserve(buffers.size());
+
+	for (size_t i = 0; i < buffers.size(); i++)
 	{
-		ATEMA_ASSERT(imageViews[i].size() == samplers[i].size(), "Each image must be associated with a sampler");
+		const auto& buffer = buffers[i];
+		const auto& offset = bufferOffsets[i];
+		const auto& size = bufferSizes[i];
+		
+		ATEMA_ASSERT(buffer, "Invalid buffer");
 
-		descriptorImages.resize(descriptorImages.size() + 1);
+		auto& descriptor = descriptors.emplace_back();
 
-		auto& descriptors = descriptorImages.back();
-		descriptors.resize(imageViews[i].size());
-
-		for (size_t j = 0; j < descriptors.size(); j++)
-		{
-			const auto imageView = static_cast<const VulkanImageView*>(imageViews[i][j]);
-			const auto sampler = static_cast<const VulkanSampler*>(samplers[i][j]);
-
-			descriptors[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptors[j].imageView = imageView->getHandle();
-			descriptors[j].sampler = sampler->getHandle();
-		}
-
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = m_descriptorSet;
-		descriptorWrite.dstBinding = imageSamplerBindings[i]; // Binding in the shader
-		descriptorWrite.dstArrayElement = 0; // First index we want to update (descriptors can be arrays)
-		descriptorWrite.descriptorType = m_bindingTypes[imageSamplerBindings[i]]; // Type of descriptor
-		descriptorWrite.descriptorCount = static_cast<uint32_t>(descriptors.size()); // How many elements we want to update
-		descriptorWrite.pBufferInfo = nullptr; // Used for descriptors that refer to buffer data
-		descriptorWrite.pImageInfo = descriptors.data(); // Used for descriptors that refer to image data
-		descriptorWrite.pTexelBufferView = nullptr; // Used for descriptors that refer to buffer views
-
-		descriptorWrites.push_back(descriptorWrite);
+		descriptor.buffer = static_cast<const VulkanBuffer&>(*buffer).getHandle();
+		descriptor.offset = offset;
+		descriptor.range = size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size);
 	}
 
-	m_device.vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	update(binding, index, descriptors.size(), nullptr, descriptors.data(), nullptr);
+}
+
+void VulkanDescriptorSet::update(uint32_t binding, const ImageView& imageView, const Sampler& sampler)
+{
+	VkDescriptorImageInfo descriptor{};
+	descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	descriptor.imageView = static_cast<const VulkanImageView&>(imageView).getHandle();
+	descriptor.sampler = static_cast<const VulkanSampler&>(sampler).getHandle();
+
+	update(binding, 0, 1, &descriptor, nullptr, nullptr);
+}
+
+void VulkanDescriptorSet::update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers)
+{
+	ATEMA_ASSERT(imageViews.size() == samplers.size(), "imageViews & samplers sizes must be equal");
+	
+	std::vector<VkDescriptorImageInfo> descriptors;
+	descriptors.reserve(imageViews.size());
+
+	for (size_t i = 0; i < imageViews.size(); i++)
+	{
+		const auto& imageView = imageViews[i];
+		const auto& sampler = samplers[i];
+
+		ATEMA_ASSERT(imageView, "Invalid image view");
+		ATEMA_ASSERT(sampler, "Invalid sampler");
+
+		auto& descriptor = descriptors.emplace_back();
+
+		descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		descriptor.imageView = static_cast<const VulkanImageView&>(*imageView).getHandle();
+		descriptor.sampler = static_cast<const VulkanSampler&>(*sampler).getHandle();
+	}
+
+	update(binding, index, descriptors.size(), descriptors.data(), nullptr, nullptr);
+}
+
+void VulkanDescriptorSet::update(uint32_t binding, uint32_t index, uint32_t descriptorCount, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo, const VkBufferView* texelBufferView)
+{
+	VkWriteDescriptorSet descriptorWrite{};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstSet = m_descriptorSet;
+	descriptorWrite.dstBinding = binding;
+	descriptorWrite.dstArrayElement = index;
+	descriptorWrite.descriptorType = m_bindingTypes[binding];
+	descriptorWrite.descriptorCount = descriptorCount;
+	descriptorWrite.pImageInfo = imageInfo;
+	descriptorWrite.pBufferInfo = bufferInfo;
+	descriptorWrite.pTexelBufferView = texelBufferView;
+
+	m_device.vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
 }
