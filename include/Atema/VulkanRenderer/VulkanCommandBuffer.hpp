@@ -78,9 +78,15 @@ namespace at
 
 		void memoryBarrier(Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses) override;
 
-		void bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset, size_t size) override;
+		void bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, size_t offset = 0, size_t size = 0) override;
 
-		void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
+		void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
+
+		void releaseOwnership(const Buffer& buffer, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, size_t offset = 0, size_t size = 0) override;
+		void releaseOwnership(const Image& image, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
+
+		void acquireOwnership(const Buffer& buffer, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset = 0, size_t size = 0) override;
+		void acquireOwnership(const Image& image, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
 
 		void createMipmaps(Image& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) override;
 
@@ -89,6 +95,9 @@ namespace at
 		void end() override;
 		
 	private:
+		void bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex, size_t offset, size_t size);
+		void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount);
+
 		const VulkanDevice& m_device;
 		VkCommandBuffer m_commandBuffer;
 		VkCommandPool m_commandPool;

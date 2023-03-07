@@ -66,8 +66,9 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 			{
 				commandBuffer->imageBarrier(
 					*texture.image,
-					barrier.srcPipelineStages, barrier.srcMemoryAccesses, barrier.srcLayout,
-					barrier.dstPipelineStages, barrier.dstMemoryAccesses, barrier.dstLayout);
+					barrier.srcPipelineStages, barrier.dstPipelineStages,
+					barrier.srcMemoryAccesses, barrier.dstMemoryAccesses,
+					barrier.srcLayout, barrier.dstLayout);
 			}
 		}
 

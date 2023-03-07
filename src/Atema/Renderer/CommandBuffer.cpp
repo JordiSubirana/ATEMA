@@ -40,51 +40,29 @@ QueueType CommandBuffer::getQueueType() const noexcept
 
 void CommandBuffer::imageBarrier(const Image& image, ImageBarrier barrier)
 {
-	Flags<PipelineStage> srcPipelineStages;
-	Flags<MemoryAccess> srcMemoryAccesses;
-	ImageLayout srcLayout = ImageLayout::Undefined;
-
-	Flags<PipelineStage> dstPipelineStages;
-	Flags<MemoryAccess> dstMemoryAccesses;
-	ImageLayout dstLayout = ImageLayout::Undefined;
-
 	switch (barrier)
 	{
 		case ImageBarrier::InitializeTransferDst:
 		{
-			srcLayout = ImageLayout::Undefined;
-			dstLayout = ImageLayout::TransferDst;
+			imageBarrier(image,
+				PipelineStage::TopOfPipe, PipelineStage::Transfer,
+				0, MemoryAccess::TransferWrite,
+				ImageLayout::Undefined, ImageLayout::TransferDst);
 
-			// We don't need to wait : earliest possible pipeline stage
-			srcPipelineStages = PipelineStage::TopOfPipe;
-			// Not a real stage for graphics & compute pipelines
-			dstPipelineStages = PipelineStage::Transfer;
-
-			// We don't need to wait : empty access mask
-			srcMemoryAccesses = 0;
-			dstMemoryAccesses = MemoryAccess::TransferWrite;
-
-			break;
+			return;
 		}
 		case ImageBarrier::TransferDstToFragmentShaderRead:
 		{
-			srcLayout = ImageLayout::TransferDst;
-			dstLayout = ImageLayout::ShaderRead;
+			imageBarrier(image,
+				PipelineStage::Transfer, PipelineStage::FragmentShader,
+				MemoryAccess::TransferWrite, MemoryAccess::ShaderRead,
+				ImageLayout::TransferDst, ImageLayout::ShaderRead);
 
-			srcPipelineStages = PipelineStage::Transfer;
-			dstPipelineStages = PipelineStage::FragmentShader;
-
-			srcMemoryAccesses = MemoryAccess::TransferWrite;
-			dstMemoryAccesses = MemoryAccess::ShaderRead;
-
-			break;
+			return;
 		}
 		default:
 		{
 			ATEMA_ERROR("Invalid ImageBarrier");
-			return;
 		}
 	}
-
-	this->imageBarrier(image, srcPipelineStages, srcMemoryAccesses, srcLayout, dstPipelineStages, dstMemoryAccesses, dstLayout);
 }

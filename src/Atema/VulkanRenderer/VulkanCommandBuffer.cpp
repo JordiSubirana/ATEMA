@@ -435,97 +435,68 @@ void VulkanCommandBuffer::memoryBarrier(Flags<PipelineStage> srcPipelineStages, 
 	);
 }
 
-void VulkanCommandBuffer::bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset, size_t size)
+void VulkanCommandBuffer::bufferBarrier(const Buffer& buffer,
+	Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages,
+	Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses,
+	size_t offset, size_t size)
 {
-	// Pipeline stages
-	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
-	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
-
-	VkBufferMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-
-	// Access mask
-	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
-	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
-
-	// Change queue ownership (indices of the queue families if we want to use it)
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-	// Buffer resource & range
-	barrier.buffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
-	barrier.offset = static_cast<VkDeviceSize>(offset);
-	barrier.size = static_cast<VkDeviceSize>(size);
-
-	// Pipeline barrier
-	m_device.vkCmdPipelineBarrier(
-		m_commandBuffer,
-
-		// Depends on what happens before and after the barrier
-		srcStages, // In which pipeline stage the operations occur (before the barrier)
-		dstStages, // The pipeline stage in which operations will wait on the barrier
-
-		0,
-
-		// All types of pipeline barriers can be used
-		0, nullptr,
-		1, &barrier,
-		0, nullptr
-	);
+	bufferBarrier(buffer,
+		srcPipelineStages, dstPipelineStages,
+		srcMemoryAccesses, dstMemoryAccesses,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		offset, size);
 }
 
 void VulkanCommandBuffer::imageBarrier(const Image& image,
-	Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout,
-	Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout,
+	Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages,
+	Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses,
+	ImageLayout srcLayout, ImageLayout dstLayout,
 	uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
-	const auto& vkImage = static_cast<const VulkanImage&>(image);
-	const auto format = vkImage.getFormat();
+	imageBarrier(image,
+		srcPipelineStages, dstPipelineStages,
+		srcMemoryAccesses, dstMemoryAccesses,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		srcLayout, dstLayout,
+		baseLayer, layerCount, baseMipLevel, mipLevelCount);
+}
 
-	// Pipeline stages
-	const auto srcStages = Vulkan::getPipelineStages(srcPipelineStages);
-	const auto dstStages = Vulkan::getPipelineStages(dstPipelineStages);
+void VulkanCommandBuffer::releaseOwnership(const Buffer& buffer, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, size_t offset, size_t size)
+{
+	bufferBarrier(buffer,
+		srcPipelineStages, dstPipelineStages,
+		srcMemoryAccesses, 0,
+		m_queueFamilyIndex, m_device.getQueueFamilyIndex(dstQueueType),
+		offset, size);
+}
 
-	// Pipeline barriers are used to synchronize resources (ensure we are not writing & reading at the same time)
-	// We can also change layout or change queue family ownership for a resource (when VK_SHARING_MODE_EXCLUSIVE is used)
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+void VulkanCommandBuffer::releaseOwnership(const Image& image, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
+{
+	imageBarrier(image,
+		srcPipelineStages, dstPipelineStages,
+		srcMemoryAccesses, 0,
+		m_queueFamilyIndex, m_device.getQueueFamilyIndex(dstQueueType),
+		srcLayout, dstLayout,
+		baseLayer, layerCount, baseMipLevel, mipLevelCount);
+}
 
-	// Access mask
-	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
-	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+void VulkanCommandBuffer::acquireOwnership(const Buffer& buffer, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset, size_t size)
+{
+	bufferBarrier(buffer,
+		srcPipelineStages, dstPipelineStages,
+		0, dstMemoryAccesses,
+		m_device.getQueueFamilyIndex(srcQueueType), m_queueFamilyIndex,
+		offset, size);
+}
 
-	// Change layout
-	barrier.oldLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(format)); // or VK_IMAGE_LAYOUT_UNDEFINED if we don't care about previous content
-	barrier.newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
-
-	// Change queue ownership (indices of the queue families if we want to use it)
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-	// Specify image & subResourceRange (used for mipmaps or arrays)
-	barrier.image = vkImage.getHandle();
-	barrier.subresourceRange.baseMipLevel = baseMipLevel;
-	barrier.subresourceRange.levelCount = mipLevelCount == 0 ? VK_REMAINING_MIP_LEVELS : mipLevelCount;
-	barrier.subresourceRange.baseArrayLayer = baseLayer;
-	barrier.subresourceRange.layerCount = layerCount == 0 ? VK_REMAINING_ARRAY_LAYERS : layerCount;
-	barrier.subresourceRange.aspectMask = Vulkan::getAspect(format);
-
-	// Pipeline barrier
-	m_device.vkCmdPipelineBarrier(
-		m_commandBuffer,
-
-		// Depends on what happens before and after the barrier
-		srcStages, // In which pipeline stage the operations occur (before the barrier)
-		dstStages, // The pipeline stage in which operations will wait on the barrier
-
-		0,
-
-		// All types of pipeline barriers can be used
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
+void VulkanCommandBuffer::acquireOwnership(const Image& image, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
+{
+	imageBarrier(image,
+		srcPipelineStages, dstPipelineStages,
+		0, dstMemoryAccesses,
+		m_device.getQueueFamilyIndex(srcQueueType), m_queueFamilyIndex,
+		srcLayout, dstLayout,
+		baseLayer, layerCount, baseMipLevel, mipLevelCount);
 }
 
 void VulkanCommandBuffer::createMipmaps(Image& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout)
@@ -668,4 +639,95 @@ void VulkanCommandBuffer::end()
 		m_secondaryBegan = false;
 
 	ATEMA_VK_CHECK(m_device.vkEndCommandBuffer(m_commandBuffer));
+}
+
+void VulkanCommandBuffer::bufferBarrier(const Buffer& buffer,
+	Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages,
+	Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses,
+	uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+	size_t offset, size_t size)
+{
+	VkBufferMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+
+	// Access mask
+	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
+	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+
+	// Change queue ownership (indices of the queue families if we want to use it)
+	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+
+	// Buffer resource & range
+	barrier.buffer = static_cast<const VulkanBuffer&>(buffer).getHandle();
+	barrier.offset = static_cast<VkDeviceSize>(offset);
+	barrier.size = size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size);
+
+	// Pipeline barrier
+	m_device.vkCmdPipelineBarrier(
+		m_commandBuffer,
+
+		// Depends on what happens before and after the barrier
+		Vulkan::getPipelineStages(srcPipelineStages), // In which pipeline stage the operations occur (before the barrier)
+		Vulkan::getPipelineStages(dstPipelineStages), // The pipeline stage in which operations will wait on the barrier
+
+		0,
+
+		// All types of pipeline barriers can be used
+		0, nullptr,
+		1, &barrier,
+		0, nullptr
+	);
+}
+
+void VulkanCommandBuffer::imageBarrier(const Image& image,
+	Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages,
+	Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses,
+	uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex,
+	ImageLayout srcLayout, ImageLayout dstLayout,
+	uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
+{
+	const auto& vkImage = static_cast<const VulkanImage&>(image);
+	const auto format = vkImage.getFormat();
+
+	// Pipeline barriers are used to synchronize resources (ensure we are not writing & reading at the same time)
+	// We can also change layout or change queue family ownership for a resource (when VK_SHARING_MODE_EXCLUSIVE is used)
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+
+	// Access mask
+	barrier.srcAccessMask = Vulkan::getMemoryAccesses(srcMemoryAccesses);
+	barrier.dstAccessMask = Vulkan::getMemoryAccesses(dstMemoryAccesses);
+
+	// Change layout
+	barrier.oldLayout = Vulkan::getLayout(srcLayout, Renderer::isDepthImageFormat(format)); // or VK_IMAGE_LAYOUT_UNDEFINED if we don't care about previous content
+	barrier.newLayout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
+
+	// Change queue ownership (indices of the queue families if we want to use it)
+	barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+	barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
+
+	// Specify image & subResourceRange (used for mipmaps or arrays)
+	barrier.image = vkImage.getHandle();
+	barrier.subresourceRange.baseMipLevel = baseMipLevel;
+	barrier.subresourceRange.levelCount = mipLevelCount == 0 ? VK_REMAINING_MIP_LEVELS : mipLevelCount;
+	barrier.subresourceRange.baseArrayLayer = baseLayer;
+	barrier.subresourceRange.layerCount = layerCount == 0 ? VK_REMAINING_ARRAY_LAYERS : layerCount;
+	barrier.subresourceRange.aspectMask = Vulkan::getAspect(format);
+
+	// Pipeline barrier
+	m_device.vkCmdPipelineBarrier(
+		m_commandBuffer,
+
+		// Depends on what happens before and after the barrier
+		Vulkan::getPipelineStages(srcPipelineStages), // In which pipeline stage the operations occur (before the barrier)
+		Vulkan::getPipelineStages(dstPipelineStages), // The pipeline stage in which operations will wait on the barrier
+
+		0,
+
+		// All types of pipeline barriers can be used
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
 }

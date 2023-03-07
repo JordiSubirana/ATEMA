@@ -106,10 +106,32 @@ namespace at
 		virtual void memoryBarrier(Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses) = 0;
 
 		// Default size of 0 means remaining size
-		virtual void bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset = 0, size_t size = 0) = 0;
+		virtual void bufferBarrier(const Buffer& buffer, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, size_t offset = 0, size_t size = 0) = 0;
 
 		void imageBarrier(const Image& image, ImageBarrier barrier);
-		virtual void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+		virtual void imageBarrier(const Image& image, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+
+		// Initialize queue ownership transfer for a given buffer range
+		// acquireOwnership must be called on the destination queue
+		// Both calls must be synchronized (using semaphores on submit for example) to ensure release happens before acquire
+		// Default size of 0 means remaining size
+		virtual void releaseOwnership(const Buffer& buffer, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, size_t offset = 0, size_t size = 0) = 0;
+		
+		// Initialize queue ownership transfer for a given image subresource range
+		// acquireOwnership must be called on the destination queue
+		// Both calls must be synchronized (using semaphores on submit for example) to ensure release happens before acquire
+		virtual void releaseOwnership(const Image& image, QueueType dstQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+
+		// Finalize queue ownership transfer for a given buffer range
+		// releaseOwnership must have been called on the source queue
+		// Both calls must be synchronized (using semaphores on submit for example) to ensure release happens before acquire
+		// Default size of 0 means remaining size
+		virtual void acquireOwnership(const Buffer& buffer, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, size_t offset = 0, size_t size = 0) = 0;
+
+		// Finalize queue ownership transfer for a given image subresource range
+		// releaseOwnership must have been called on the source queue
+		// Both calls must be synchronized (using semaphores on submit for example) to ensure release happens before acquire
+		virtual void acquireOwnership(const Image& image, QueueType srcQueueType, Flags<PipelineStage> srcPipelineStages, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout srcLayout, ImageLayout dstLayout, uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
 
 		// ImageLayout::TransferDst needed
 		virtual void createMipmaps(Image& image, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses, ImageLayout dstLayout) = 0;
