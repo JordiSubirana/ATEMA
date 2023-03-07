@@ -32,12 +32,14 @@
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
 
+#define ATEMA_VK_ERROR(functionCall, vkResult) ATEMA_ERROR(std::string("Vulkan result invalid : ") + std::to_string(vkResult) + " (" #functionCall ")");
+
 #define ATEMA_VK_CHECK(functionCall) \
 	{ \
 		auto result = (functionCall); \
 		if (result != VK_SUCCESS) \
 		{ \
-			ATEMA_ERROR(std::string("Vulkan result invalid : ") + std::to_string(result) + " (" #functionCall ")"); \
+			ATEMA_VK_ERROR(functionCall, result); \
 		} \
 	}
 
