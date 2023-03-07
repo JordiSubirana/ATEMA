@@ -831,17 +831,15 @@ void GraphicsSystem::createFrameGraph()
 
 	auto getDebugTexture = [&](Settings::DebugView debugView) -> FrameGraphTextureHandle
 	{
-		return gbufferTextures[0];
-		
 		switch (debugView)
 		{
 			case Settings::DebugView::GBufferPosition: return gbufferTextures[0];
 			case Settings::DebugView::GBufferNormal: return gbufferTextures[1];
 			case Settings::DebugView::GBufferColor: return gbufferTextures[2];
-			case Settings::DebugView::GBufferAO: return gbufferTextures[3];
-			case Settings::DebugView::GBufferEmissive: return gbufferTextures[4];
-			case Settings::DebugView::GBufferMetalness: return gbufferTextures[5];
-			case Settings::DebugView::GBufferRoughness: return gbufferTextures[6];
+			case Settings::DebugView::GBufferAO: return gbufferTextures[2];
+			case Settings::DebugView::GBufferEmissive: return gbufferTextures[3];
+			case Settings::DebugView::GBufferMetalness: return gbufferTextures[0];
+			case Settings::DebugView::GBufferRoughness: return gbufferTextures[1];
 			case Settings::DebugView::ShadowCascade1: return shadowCascades[0];
 			case Settings::DebugView::ShadowCascade2: return shadowCascades[1];
 			case Settings::DebugView::ShadowCascade3: return shadowCascades[2];
