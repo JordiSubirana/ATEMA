@@ -168,18 +168,19 @@ namespace
 		Ptr<SurfaceMaterialInstance> materialInstance;
 		EntityHandle entityHandle = InvalidEntityHandle;
 		uint32_t index = 0;
+		uint64_t renderPriority = 0;
 
 		MeshDrawData& operator=(const MeshDrawData& other) = default;
 		MeshDrawData& operator=(MeshDrawData&& other) noexcept = default;
 
 		bool operator<(const MeshDrawData& other) const
 		{
-			return getRenderPriority() < other.getRenderPriority();
+			return renderPriority < other.renderPriority;
 		}
 
 		bool operator>(const MeshDrawData& other) const
 		{
-			return getRenderPriority() > other.getRenderPriority();
+			return renderPriority > other.renderPriority;
 		}
 
 		uint64_t getRenderPriority() const
@@ -882,8 +883,6 @@ void GraphicsSystem::createFrameGraph()
 
 				auto entities = entityManager.getUnion<Transform, GraphicsComponent>();
 
-				std::map<uint64_t, std::vector<MeshDrawData>> materialBatches;
-				std::map<uint64_t, size_t> materialBatchSizes;
 				std::vector<size_t> visibleEntities;
 				visibleEntities.reserve(entities.size());
 				std::vector<size_t> entityIndices;
@@ -931,8 +930,7 @@ void GraphicsSystem::createFrameGraph()
 							drawData.materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance;
 							drawData.entityHandle = entity;
 							drawData.index = entityIndices[entityIndex];
-
-							materialBatchSizes[drawData.getRenderPriority()]++;
+							drawData.renderPriority = drawData.getRenderPriority();
 						}
 
 						entityIndex++;
@@ -942,21 +940,7 @@ void GraphicsSystem::createFrameGraph()
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Sort draw data");
 					
-					for (const auto& [batchID, batchSize] : materialBatchSizes)
-						materialBatches[batchID].reserve(batchSize);
-
-					for (auto& drawData : drawDatas)
-					{
-						materialBatches[drawData.getRenderPriority()].emplace_back(std::move(drawData));
-					}
-
-					drawDatas.clear();
-
-					for (auto& batch : materialBatches)
-					{
-						auto& elements = batch.second;
-						drawDatas.insert(drawDatas.end(), std::make_move_iterator(elements.begin()), std::make_move_iterator(elements.end()));
-					}
+					std::sort(drawDatas.begin(), drawDatas.end());
 				}
 
 				if (drawDatas.empty())
@@ -1080,7 +1064,8 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, cascadeIndex](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (shadow cascade #" + std::to_string(cascadeIndex + 1) + ")");
+				ATEMA_BENCHMARK("CommandBuffer (shadows)");
+				ATEMA_BENCHMARK_TAG(cascadeBenchmark, "Shadow cascade #" + std::to_string(cascadeIndex + 1) + ")");
 
 				const auto frameIndex = context.getFrameIndex();
 				auto& frameData = m_frameDatas[frameIndex];
