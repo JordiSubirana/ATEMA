@@ -25,6 +25,7 @@
 
 #include "../Resources.hpp"
 #include "../Settings.hpp"
+#include "../Stats.hpp"
 
 #include <imgui/imgui_internal.h>
 
@@ -153,6 +154,17 @@ void GuiSystem::updateBenchmarks(int elapsedFrames)
 	m_elapsedTime = 0.0f;
 	for (const auto& benchmark : m_benchmarks)
 		m_elapsedTime += benchmark->timeStep.getSeconds();
+}
+
+void GuiSystem::updateStats(int elapsedFrames)
+{
+	auto& stats = Stats::instance();
+	m_stats = stats;
+
+	for (auto& stat : m_stats)
+		stat.second /= elapsedFrames;
+
+	stats.clear();
 }
 
 void GuiSystem::updateUI()
@@ -551,6 +563,20 @@ void GuiSystem::showOverlay()
 
 		ImGui::Text("%u fps", fps);
 		ImGui::Text("%.03f ms", frameTime * 1000.0f);
+
+		if (m_stats.size() > 0)
+		{
+			ImGui::Separator();
+
+			for (const auto& stat : m_stats)
+			{
+				ImGui::Text("%s :", stat.first.c_str());
+
+				ImGui::SameLine();
+
+				ImGui::Text("%i", stat.second);
+			}
+		}
 
 		if (Settings::instance().enableBenchmarks)
 		{

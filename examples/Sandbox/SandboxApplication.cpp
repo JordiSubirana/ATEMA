@@ -266,6 +266,7 @@ void SandboxApplication::update(at::TimeStep ms)
 		auto& guiSystem = static_cast<GuiSystem&>(*m_systems[3]);
 
 		guiSystem.updateBenchmarks(m_frameCount);
+		guiSystem.updateStats(m_frameCount);
 
 		BenchmarkManager::instance().reset();
 

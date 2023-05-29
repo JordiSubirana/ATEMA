@@ -23,6 +23,7 @@
 #define ATEMA_SANDBOX_GUISYSTEM_HPP
 
 #include "System.hpp"
+#include "../Stats.hpp"
 
 #include <Atema/UI/ImGui.hpp>
 
@@ -37,6 +38,7 @@ public:
 	void onEvent(at::Event& event) override;
 
 	void updateBenchmarks(int elapsedFrames);
+	void updateStats(int elapsedFrames);
 
 private:
 	struct WidgetState
@@ -67,6 +69,7 @@ private:
 	std::unordered_map<ImGuiID, WidgetState> m_widgetStates;
 
 	std::vector<at::Ptr<at::BenchmarkData>> m_benchmarks;
+	Stats m_stats;
 	int m_elapsedFrames;
 	float m_elapsedTime;
 };
