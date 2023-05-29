@@ -39,6 +39,7 @@
 #include "../Resources.hpp"
 #include "../Scene.hpp"
 #include "../Settings.hpp"
+#include "../Stats.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Components/CameraComponent.hpp"
 
@@ -163,9 +164,9 @@ namespace
 		MeshDrawData(MeshDrawData&& other) noexcept = default;
 		~MeshDrawData() = default;
 
-		Ptr<VertexBuffer> vertexBuffer;
-		Ptr<IndexBuffer> indexBuffer;
-		Ptr<SurfaceMaterialInstance> materialInstance;
+		VertexBuffer* vertexBuffer = nullptr;
+		IndexBuffer* indexBuffer = nullptr;
+		SurfaceMaterialInstance* materialInstance = nullptr;
 		EntityHandle entityHandle = InvalidEntityHandle;
 		uint32_t index = 0;
 		uint64_t renderPriority = 0;
@@ -889,7 +890,10 @@ void GraphicsSystem::createFrameGraph()
 				entityIndices.reserve(entities.size());
 				std::vector<MeshDrawData> drawDatas;
 
+				size_t totalMeshCount = 0;
+				size_t totalTriangleCount = 0;
 				size_t visibleMeshCount = 0;
+				size_t visibleTriangleCount = 0;
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Cull models");
 					size_t entityIndex = 0;
@@ -897,6 +901,12 @@ void GraphicsSystem::createFrameGraph()
 					for (const auto& entity : entities)
 					{
 						const auto& graphics = entities.get<GraphicsComponent>(entity);
+
+						const auto meshCount = graphics.model->getMeshes().size();
+						const auto triangleCount = graphics.model->getTriangleCount();
+
+						totalMeshCount += meshCount;
+						totalTriangleCount += triangleCount;
 
 						if (m_cullFunction(graphics.aabb))
 						{
@@ -907,9 +917,21 @@ void GraphicsSystem::createFrameGraph()
 						visibleEntities.emplace_back(entity);
 						entityIndices.emplace_back(entityIndex++);
 
-						visibleMeshCount += graphics.model->getMeshes().size();
+						visibleMeshCount += meshCount;
+						visibleTriangleCount += triangleCount;
 					}
 				}
+
+				auto& stats = Stats::instance();
+
+				//stats["Models"] += visibleEntities.size();
+				//stats["Models (culled)"] += entities.size() - visibleEntities.size();
+				//stats["Meshes"] += visibleMeshCount;
+				//stats["Meshes (culled)"] += totalMeshCount - visibleMeshCount;
+				stats["Triangles"] += visibleTriangleCount;
+				//stats["Triangles (culled)"] += totalTriangleCount - visibleTriangleCount;
+
+				visibleTriangleCount = 0;
 
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Prepare renderables");
@@ -923,19 +945,28 @@ void GraphicsSystem::createFrameGraph()
 
 						for (const auto& mesh : graphics.model->getMeshes())
 						{
+							/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
+							{
+								continue;
+							}*/
+							
 							auto& drawData = drawDatas.emplace_back();
 
-							drawData.vertexBuffer = mesh->getVertexBuffer();
-							drawData.indexBuffer = mesh->getIndexBuffer();
-							drawData.materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance;
+							drawData.vertexBuffer = mesh->getVertexBuffer().get();
+							drawData.indexBuffer = mesh->getIndexBuffer().get();
+							drawData.materialInstance = graphics.materials[mesh->getMaterialID()]->materialInstance.get();
 							drawData.entityHandle = entity;
 							drawData.index = entityIndices[entityIndex];
 							drawData.renderPriority = drawData.getRenderPriority();
+
+							//visibleTriangleCount += mesh->getTriangleCount();
 						}
 
 						entityIndex++;
 					}
 				}
+
+				//stats["Triangles"] += visibleTriangleCount;
 
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Sort draw data");
