@@ -25,13 +25,16 @@
 using namespace at;
 
 Model::Model() :
-	m_aabbValid(false)
+	m_aabbValid(false),
+	m_triangleCount(0)
 {
 }
 
 void Model::addMesh(const Ptr<Mesh>& mesh)
 {
 	m_meshes.emplace_back(mesh);
+
+	m_triangleCount += mesh->getTriangleCount();
 
 	m_aabbValid = false;
 }
@@ -71,4 +74,9 @@ const AABBf& Model::getAABB() const
 	}
 
 	return m_aabb;
+}
+
+size_t Model::getTriangleCount() const noexcept
+{
+    return m_triangleCount;
 }

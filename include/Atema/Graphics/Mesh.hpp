@@ -51,6 +51,7 @@ namespace at
 		const AABBf& getAABB() const noexcept;
 		// The ID refers to the material index in the parent mesh
 		size_t getMaterialID() const noexcept;
+		size_t getTriangleCount() const noexcept;
 
 		Mesh& operator=(const Mesh& other) = default;
 		Mesh& operator=(Mesh&& other) noexcept;
@@ -62,6 +63,8 @@ namespace at
 		AABBf m_aabb;
 
 		size_t m_materialID;
+
+		size_t m_triangleCount;
 	};
 }
 

@@ -20,11 +20,14 @@
 */
 
 #include <Atema/Graphics/Mesh.hpp>
+#include <Atema/Graphics/VertexBuffer.hpp>
+#include <Atema/Graphics/IndexBuffer.hpp>
 
 using namespace at;
 
 Mesh::Mesh() :
-	m_materialID(0)
+	m_materialID(0),
+	m_triangleCount(0)
 {
 }
 
@@ -36,11 +39,15 @@ Mesh::Mesh(Mesh&& other) noexcept
 void Mesh::setVertexBuffer(const Ptr<VertexBuffer>& buffer)
 {
 	m_vertexBuffer = buffer;
+
+	if (!m_indexBuffer)
+		m_triangleCount = buffer->getSize() / 3;
 }
 
 void Mesh::setIndexBuffer(const Ptr<IndexBuffer>& buffer)
 {
 	m_indexBuffer = buffer;
+	m_triangleCount = buffer->getSize() / 3;
 }
 
 void Mesh::setAABB(const AABBf& aabb)
@@ -71,6 +78,11 @@ const AABBf& Mesh::getAABB() const noexcept
 size_t Mesh::getMaterialID() const noexcept
 {
 	return m_materialID;
+}
+
+size_t Mesh::getTriangleCount() const noexcept
+{
+	return m_triangleCount;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept

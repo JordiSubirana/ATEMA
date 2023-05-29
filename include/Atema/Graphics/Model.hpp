@@ -49,6 +49,7 @@ namespace at
 		const std::vector<Ptr<Mesh>>& getMeshes() const noexcept;
 		const std::vector<Ptr<SurfaceMaterialData>>& getMaterials() const noexcept;
 		const AABBf& getAABB() const;
+		size_t getTriangleCount() const noexcept;
 
 		Model& operator=(const Model& other) = default;
 		Model& operator=(Model&& other) noexcept = default;
@@ -56,6 +57,8 @@ namespace at
 	private:
 		std::vector<Ptr<Mesh>> m_meshes;
 		std::vector<Ptr<SurfaceMaterialData>> m_materials;
+
+		size_t m_triangleCount;
 
 		mutable bool m_aabbValid;
 		mutable AABBf m_aabb;
