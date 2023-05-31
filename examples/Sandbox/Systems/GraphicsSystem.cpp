@@ -206,7 +206,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_currentShadowMapSize(0),
 	m_shadowMapSize(0),
 	m_enableDebugRenderer(false),
-	m_debugViewMode(Settings::DebugViewMode::Disabled)
+	m_debugViewMode(Settings::DebugViewMode::Disabled),
+	m_frustumRotation(0.0f)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
@@ -886,6 +887,8 @@ void GraphicsSystem::createFrameGraph()
 
 				std::vector<size_t> visibleEntities;
 				visibleEntities.reserve(entities.size());
+				std::vector<IntersectionType> intersectionTypes;
+				intersectionTypes.reserve(entities.size());
 				std::vector<size_t> entityIndices;
 				entityIndices.reserve(entities.size());
 				std::vector<MeshDrawData> drawDatas;
@@ -893,7 +896,6 @@ void GraphicsSystem::createFrameGraph()
 				size_t totalMeshCount = 0;
 				size_t totalTriangleCount = 0;
 				size_t visibleMeshCount = 0;
-				size_t visibleTriangleCount = 0;
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Cull models");
 					size_t entityIndex = 0;
@@ -908,17 +910,18 @@ void GraphicsSystem::createFrameGraph()
 						totalMeshCount += meshCount;
 						totalTriangleCount += triangleCount;
 
-						if (m_cullFunction(graphics.aabb))
+						const auto intersectionType = m_cullFunction(graphics.aabb);
+						if (intersectionType == IntersectionType::Outside)
 						{
 							entityIndex++;
 							continue;
 						}
 
 						visibleEntities.emplace_back(entity);
+						intersectionTypes.emplace_back(intersectionType);
 						entityIndices.emplace_back(entityIndex++);
 
 						visibleMeshCount += meshCount;
-						visibleTriangleCount += triangleCount;
 					}
 				}
 
@@ -926,12 +929,8 @@ void GraphicsSystem::createFrameGraph()
 
 				//stats["Models"] += visibleEntities.size();
 				//stats["Models (culled)"] += entities.size() - visibleEntities.size();
-				//stats["Meshes"] += visibleMeshCount;
-				//stats["Meshes (culled)"] += totalMeshCount - visibleMeshCount;
-				stats["Triangles"] += visibleTriangleCount;
-				//stats["Triangles (culled)"] += totalTriangleCount - visibleTriangleCount;
 
-				visibleTriangleCount = 0;
+				size_t visibleTriangleCount = 0;
 
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Prepare renderables");
@@ -945,12 +944,11 @@ void GraphicsSystem::createFrameGraph()
 
 						for (const auto& mesh : graphics.model->getMeshes())
 						{
-							// Enable this to cull individual meshes
-							/*
-							if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
+							if (intersectionTypes[entityIndex] == IntersectionType::Intersection &&
+								m_cullFunction(transform.getMatrix() * mesh->getAABB()) == IntersectionType::Outside)
 							{
 								continue;
-							}//*/
+							}
 							
 							auto& drawData = drawDatas.emplace_back();
 
@@ -961,14 +959,17 @@ void GraphicsSystem::createFrameGraph()
 							drawData.index = entityIndices[entityIndex];
 							drawData.renderPriority = drawData.getRenderPriority();
 
-							//visibleTriangleCount += mesh->getTriangleCount();
+							visibleTriangleCount += mesh->getTriangleCount();
 						}
 
 						entityIndex++;
 					}
 				}
 
-				//stats["Triangles"] += visibleTriangleCount;
+				//stats["Meshes"] += visibleMeshCount;
+				stats["Meshes (culled)"] += totalMeshCount - visibleMeshCount;
+				stats["Triangles"] += visibleTriangleCount;
+				//stats["Triangles (culled)"] += totalTriangleCount - visibleTriangleCount;
 
 				{
 					ATEMA_BENCHMARK_TAG(btest, "Sort draw data");
@@ -1154,7 +1155,7 @@ void GraphicsSystem::createFrameGraph()
 									continue;
 
 								// Frustum culling
-								if (!m_lightFrustums[cascadeIndex].contains(graphics.aabb))
+								if (!m_lightFrustums[cascadeIndex].intersects(graphics.aabb))
 									continue;
 
 								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
@@ -1600,14 +1601,17 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
-						return !cameraFrustum.contains(aabb) || !m_customfrustum.contains(aabb);
+						if (!cameraFrustum.intersects(aabb))
+							return IntersectionType::Outside;
+						
+						return m_customfrustum.getIntersectionType(aabb);
 					};
 				}
 				else
 				{
 					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
-						return !cameraFrustum.contains(aabb);
+						return cameraFrustum.getIntersectionType(aabb);
 					};
 				}
 

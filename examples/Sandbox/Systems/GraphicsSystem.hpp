@@ -24,6 +24,7 @@
 
 #include <Atema/Graphics/DebugRenderer.hpp>
 #include <Atema/Math/AABB.hpp>
+#include <Atema/Math/Enums.hpp>
 
 #include "System.hpp"
 #include "../Settings.hpp"
@@ -135,7 +136,7 @@ private:
 
 	float m_frustumRotation;
 	at::Frustumf m_customfrustum;
-	std::function<bool(const at::AABBf&)> m_cullFunction;
+	std::function<at::IntersectionType(const at::AABBf&)> m_cullFunction;
 
 	std::array<at::Frustumf, SHADOW_CASCADE_COUNT> m_lightFrustums;
 
