@@ -119,7 +119,7 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 		if (!mat.alpha_texname.empty())
 			materialData->alphaMaskMap = Graphics::instance().getImage(textureDir / mat.alpha_texname);
 
-		model->addMaterial(materialData);
+		model->addMaterialData(materialData);
 	}
 
 	// Load meshes

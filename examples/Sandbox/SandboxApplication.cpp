@@ -186,10 +186,10 @@ SandboxApplication::SandboxApplication():
 	// Resources
 	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	if (!m_modelData->model->getMaterials().empty())
+	if (!m_modelData->model->getMaterialData().empty())
 	{
-		for (const auto& material : m_modelData->model->getMaterials())
-			m_materialData.emplace_back(std::make_shared<MaterialData>(*material));
+		for (const auto& materialData : m_modelData->model->getMaterialData())
+			m_materialData.emplace_back(std::make_shared<MaterialData>(*materialData));
 	}
 	else
 	{

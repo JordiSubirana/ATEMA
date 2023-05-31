@@ -39,9 +39,9 @@ void Model::addMesh(const Ptr<Mesh>& mesh)
 	m_aabbValid = false;
 }
 
-void Model::addMaterial(const Ptr<SurfaceMaterialData>& material)
+void Model::addMaterialData(const Ptr<SurfaceMaterialData>& material)
 {
-	m_materials.emplace_back(material);
+	m_materialData.emplace_back(material);
 }
 
 const AABBf& Model::updateAABB()
@@ -56,9 +56,9 @@ const std::vector<Ptr<Mesh>>& Model::getMeshes() const noexcept
 	return m_meshes;
 }
 
-const std::vector<Ptr<SurfaceMaterialData>>& Model::getMaterials() const noexcept
+const std::vector<Ptr<SurfaceMaterialData>>& Model::getMaterialData() const noexcept
 {
-	return m_materials;
+	return m_materialData;
 }
 
 const AABBf& Model::getAABB() const

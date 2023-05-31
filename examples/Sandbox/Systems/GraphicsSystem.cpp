@@ -945,10 +945,12 @@ void GraphicsSystem::createFrameGraph()
 
 						for (const auto& mesh : graphics.model->getMeshes())
 						{
-							/*if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
+							// Enable this to cull individual meshes
+							/*
+							if (m_cullFunction(transform.getMatrix() * mesh->getAABB()))
 							{
 								continue;
-							}*/
+							}//*/
 							
 							auto& drawData = drawDatas.emplace_back();
 

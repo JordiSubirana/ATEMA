@@ -42,12 +42,12 @@ namespace at
 		~Model() = default;
 
 		void addMesh(const Ptr<Mesh>& mesh);
-		void addMaterial(const Ptr<SurfaceMaterialData>& material);
+		void addMaterialData(const Ptr<SurfaceMaterialData>& materialData);
 
 		const AABBf& updateAABB();
 
 		const std::vector<Ptr<Mesh>>& getMeshes() const noexcept;
-		const std::vector<Ptr<SurfaceMaterialData>>& getMaterials() const noexcept;
+		const std::vector<Ptr<SurfaceMaterialData>>& getMaterialData() const noexcept;
 		const AABBf& getAABB() const;
 		size_t getTriangleCount() const noexcept;
 
@@ -56,7 +56,7 @@ namespace at
 		
 	private:
 		std::vector<Ptr<Mesh>> m_meshes;
-		std::vector<Ptr<SurfaceMaterialData>> m_materials;
+		std::vector<Ptr<SurfaceMaterialData>> m_materialData;
 
 		size_t m_triangleCount;
 
