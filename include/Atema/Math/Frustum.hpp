@@ -23,6 +23,7 @@
 #define ATEMA_MATH_FRUSTUM_HPP
 
 #include <Atema/Math/Config.hpp>
+#include <Atema/Math/Enums.hpp>
 #include <Atema/Math/Plane.hpp>
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/AABB.hpp>
@@ -66,7 +67,13 @@ namespace at
 		void set(const Matrix4<T>& viewProjection);
 
 		bool contains(const Vector3<T>& point) const noexcept;
+		// Returns true if the frustum fully contains the AABB (slower than intersects method)
 		bool contains(const AABB<T>& aabb) const noexcept;
+
+		// Returns true if the frustum contains or intersects the AABB (faster than contains method)
+		bool intersects(const AABB<T>& aabb) const noexcept;
+
+		IntersectionType getIntersectionType(const AABB<T>& aabb) const noexcept;
 
 		const std::array<Plane<T>, 6>& getPlanes() const noexcept;
 		const std::array<Vector3<T>, 8>& getCorners() const noexcept;
@@ -79,10 +86,11 @@ namespace at
 
 	private:
 		void updateCorners();
-		void updatePositiveVertexIndices();
+		void updateVertexIndices();
 
 		std::array<Plane<T>, 6> m_planes;
 		std::array<Vector3u, 6> m_aabbPositiveVertexIndices;
+		std::array<Vector3u, 6> m_aabbNegativeVertexIndices;
 		std::array<Vector3<T>, 8> m_corners;
 	};
 

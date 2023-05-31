@@ -81,7 +81,7 @@ namespace at
 	{
 		m_planes = planes;
 
-		updatePositiveVertexIndices();
+		updateVertexIndices();
 
 		updateCorners();
 	}
@@ -174,7 +174,7 @@ namespace at
 
 		m_planes[static_cast<size_t>(FrustumPlane::Far)].set(normal, -distance);
 
-		updatePositiveVertexIndices();
+		updateVertexIndices();
 
 		updateCorners();
 	}
@@ -194,24 +194,53 @@ namespace at
 	template <typename T>
 	bool Frustum<T>::contains(const AABB<T>& aabb) const noexcept
 	{
+		return getIntersectionType(aabb) == IntersectionType::Inside;
+	}
+
+    template<typename T>
+    bool Frustum<T>::intersects(const AABB<T>& aabb) const noexcept
+    {
 		// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
 		for (size_t i = 0; i < m_planes.size(); i++)
 		{
 			const auto& plane = m_planes[i];
-			const auto& indices = m_aabbPositiveVertexIndices[i];
+			const auto& positiveIndices = m_aabbPositiveVertexIndices[i];
 			const auto values = reinterpret_cast<const T*>(&aabb.min);
 
 			// See updatePositiveVertexIndices() for details on this optimization
-			Vector3<T> positiveVertex;
-			positiveVertex.x = values[indices.x];
-			positiveVertex.y = values[indices.y];
-			positiveVertex.z = values[indices.z];
+			const Vector3<T> positiveVertex(values[positiveIndices.x], values[positiveIndices.y], values[positiveIndices.z]);
 
 			if (plane.getSignedDistance(positiveVertex) < static_cast<T>(0))
 				return false;
 		}
 
 		return true;
+    }
+
+	template<typename T>
+	IntersectionType Frustum<T>::getIntersectionType(const AABB<T>& aabb) const noexcept
+	{
+		IntersectionType intersectionType = IntersectionType::Inside;
+		
+		// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
+		for (size_t i = 0; i < m_planes.size(); i++)
+		{
+			const auto& plane = m_planes[i];
+			const auto& positiveIndices = m_aabbPositiveVertexIndices[i];
+			const auto& negativeIndices = m_aabbNegativeVertexIndices[i];
+			const auto values = reinterpret_cast<const T*>(&aabb.min);
+
+			// See updatePositiveVertexIndices() for details on this optimization
+			const Vector3<T> positiveVertex(values[positiveIndices.x], values[positiveIndices.y], values[positiveIndices.z]);
+			const Vector3<T> negativeVertex(values[negativeIndices.x], values[negativeIndices.y], values[negativeIndices.z]);
+
+			if (plane.getSignedDistance(positiveVertex) < static_cast<T>(0))
+				return IntersectionType::Outside;
+			else if (plane.getSignedDistance(negativeVertex) < static_cast<T>(0))
+				intersectionType = IntersectionType::Intersection;
+		}
+
+		return intersectionType;
 	}
 
 	template <typename T>
@@ -257,27 +286,26 @@ namespace at
 	}
 
 	template <typename T>
-	void Frustum<T>::updatePositiveVertexIndices()
+	void Frustum<T>::updateVertexIndices()
 	{
 		// We will consider the AABB to be an array of floats :
 		// [min.x, min.y, min.z, max.x, max.y, max.z]
 		// Here we precompute positive vertex indices for each plane from its normal
 		// So when we test multiple AABBs with this frustum, we already have the correct positive vertex
-		for (size_t i = 0; i < m_planes.size(); i++)
+		for (size_t planeIndex = 0; planeIndex < m_planes.size(); planeIndex++)
 		{
-			const auto& normal = m_planes[i].getNormal();
-			auto& indices = m_aabbPositiveVertexIndices[i];
+			const auto& normal = m_planes[planeIndex].getNormal();
+			auto& positiveIndices = m_aabbPositiveVertexIndices[planeIndex];
+			auto& negativeIndices = m_aabbNegativeVertexIndices[planeIndex];
 
-			indices = { 0, 1, 2 };
+			positiveIndices = { 0, 1, 2 };
+			negativeIndices = { 3, 4, 5 };
 
-			if (normal.x >= static_cast<T>(0))
-				indices.x = 3;
-
-			if (normal.y >= static_cast<T>(0))
-				indices.y = 4;
-
-			if (normal.z >= static_cast<T>(0))
-				indices.z = 5;
+			for (size_t i = 0; i < 3; i++)
+			{
+				if (normal.data[i] >= static_cast<T>(0))
+					std::swap(positiveIndices.data[i], negativeIndices.data[i]);
+			}
 		}
 	}
 }

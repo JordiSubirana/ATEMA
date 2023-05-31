@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,17 +19,19 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_ENUMS_HPP
+#define ATEMA_MATH_ENUMS_HPP
 
-#include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Config.hpp>
-#include <Atema/Math/Enums.hpp>
-#include <Atema/Math/Frustum.hpp>
-#include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
-#include <Atema/Math/Plane.hpp>
-#include <Atema/Math/Transform.hpp>
-#include <Atema/Math/Vector.hpp>
+
+namespace at
+{
+	enum class IntersectionType
+	{
+		Inside,
+		Outside,
+		Intersection
+	};
+}
 
 #endif
