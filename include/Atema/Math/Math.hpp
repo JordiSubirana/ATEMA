@@ -52,6 +52,9 @@ namespace at
 		constexpr T pow(T base, T exponent);
 
 		template <typename T>
+		constexpr T squared(T value);
+
+		template <typename T>
 		constexpr T mod(T num, T den);
 
 		template <typename T>

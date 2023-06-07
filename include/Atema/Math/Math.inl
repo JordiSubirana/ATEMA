@@ -77,6 +77,12 @@ namespace at
 		}
 
 		template <typename T>
+		constexpr T squared(T value)
+		{
+			return value * value;
+		}
+
+		template <typename T>
 		constexpr T mod(T num, T den)
 		{
 			static_assert(std::is_floating_point_v<T> || std::is_integral_v<T>, "Math::mod only takes integral and floating points");
