@@ -1621,6 +1621,13 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 				{
 					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
+						const auto sphere = aabb.getBoundingSphere();
+
+						const auto sphereIntersection = cameraFrustum.getIntersectionType(sphere);
+
+						if (sphereIntersection != IntersectionType::Intersection)
+							return sphereIntersection;
+
 						return cameraFrustum.getIntersectionType(aabb);
 					};
 				}
