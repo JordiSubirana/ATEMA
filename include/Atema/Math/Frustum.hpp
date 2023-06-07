@@ -27,6 +27,7 @@
 #include <Atema/Math/Plane.hpp>
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/AABB.hpp>
+#include <Atema/Math/Sphere.hpp>
 
 namespace at
 {
@@ -69,11 +70,16 @@ namespace at
 		bool contains(const Vector3<T>& point) const noexcept;
 		// Returns true if the frustum fully contains the AABB (slower than intersects method)
 		bool contains(const AABB<T>& aabb) const noexcept;
+		// Returns true if the frustum fully contains the sphere
+		bool contains(const Sphere<T>& sphere) const noexcept;
 
 		// Returns true if the frustum contains or intersects the AABB (faster than contains method)
 		bool intersects(const AABB<T>& aabb) const noexcept;
+		// Returns true if the frustum contains or intersects the sphere
+		bool intersects(const Sphere<T>& sphere) const noexcept;
 
 		IntersectionType getIntersectionType(const AABB<T>& aabb) const noexcept;
+		IntersectionType getIntersectionType(const Sphere<T>& sphere) const noexcept;
 
 		const std::array<Plane<T>, 6>& getPlanes() const noexcept;
 		const std::array<Vector3<T>, 8>& getCorners() const noexcept;

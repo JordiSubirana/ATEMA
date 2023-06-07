@@ -197,7 +197,19 @@ namespace at
 		return getIntersectionType(aabb) == IntersectionType::Inside;
 	}
 
-    template<typename T>
+    template <typename T>
+    bool Frustum<T>::contains(const Sphere<T>& sphere) const noexcept
+    {
+		for (const auto& plane : m_planes)
+		{
+			if (plane.getSignedDistance(sphere.center) < sphere.radius)
+				return false;
+		}
+
+		return true;
+    }
+
+    template <typename T>
     bool Frustum<T>::intersects(const AABB<T>& aabb) const noexcept
     {
 		// http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
@@ -211,6 +223,18 @@ namespace at
 			const Vector3<T> positiveVertex(values[positiveIndices.x], values[positiveIndices.y], values[positiveIndices.z]);
 
 			if (plane.getSignedDistance(positiveVertex) < static_cast<T>(0))
+				return false;
+		}
+
+		return true;
+    }
+
+    template <typename T>
+    bool Frustum<T>::intersects(const Sphere<T>& sphere) const noexcept
+    {
+		for (const auto& plane : m_planes)
+		{
+			if (plane.getSignedDistance(sphere.center) < -sphere.radius)
 				return false;
 		}
 
@@ -237,6 +261,24 @@ namespace at
 			if (plane.getSignedDistance(positiveVertex) < static_cast<T>(0))
 				return IntersectionType::Outside;
 			else if (plane.getSignedDistance(negativeVertex) < static_cast<T>(0))
+				intersectionType = IntersectionType::Intersection;
+		}
+
+		return intersectionType;
+	}
+
+	template <typename T>
+	IntersectionType Frustum<T>::getIntersectionType(const Sphere<T>& sphere) const noexcept
+	{
+		IntersectionType intersectionType = IntersectionType::Inside;
+
+		for (const auto& plane : m_planes)
+		{
+			const auto signedDistance = plane.getSignedDistance(sphere.center);
+			
+			if (signedDistance < -sphere.radius)
+				return IntersectionType::Outside;
+			else if (signedDistance < sphere.radius)
 				intersectionType = IntersectionType::Intersection;
 		}
 
