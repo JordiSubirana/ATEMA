@@ -135,7 +135,7 @@ private:
 	at::Ptr<at::DebugRenderer> m_debugRenderer;
 
 	float m_frustumRotation;
-	at::Frustumf m_customfrustum;
+	at::Frustumf m_customFrustum;
 	std::function<at::IntersectionType(const at::AABBf&)> m_cullFunction;
 
 	std::array<at::Frustumf, SHADOW_CASCADE_COUNT> m_lightFrustums;

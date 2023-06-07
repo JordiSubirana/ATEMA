@@ -1269,13 +1269,16 @@ void GraphicsSystem::createFrameGraph()
 
 				m_debugRenderer->clear();
 
+				// Enable this to draw light frustums
+				/*
 				m_debugRenderer->draw(m_lightFrustums[0], Color(0.0f, 1.0f, 0.0f));
 				m_debugRenderer->draw(m_lightFrustums[1], Color(0.0f, 0.0f, 1.0f));
 				m_debugRenderer->draw(m_lightFrustums[2], Color(1.0f, 1.0f, 0.0f));
 				m_debugRenderer->draw(m_lightFrustums[3], Color(1.0f, 0.0f, 0.0f));
+				//*/
 
 				if (Settings::instance().customFrustumCulling)
-					m_debugRenderer->draw(m_customfrustum, Color::Red);
+					m_debugRenderer->draw(m_customFrustum, Color::Red);
 
 				for (auto& entity : entities)
 				{
@@ -1597,14 +1600,21 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 					auto view = Matrix4f::createLookAt(origin, origin + dir, Vector3f(0, 0, 1));
 					auto proj = Matrix4f::createPerspective(Math::toRadians(70.0f), camera.aspectRatio, nearZ, farZ);
 					
-					m_customfrustum.set(proj * view);
+					m_customFrustum.set(proj * view);
 
 					m_cullFunction = [this, cameraFrustum](const AABBf& aabb)
 					{
-						if (!cameraFrustum.intersects(aabb))
-							return IntersectionType::Outside;
+						const auto sphere = aabb.getBoundingSphere();
 						
-						return m_customfrustum.getIntersectionType(aabb);
+						if (!cameraFrustum.intersects(sphere))
+							return IntersectionType::Outside;
+
+						const auto sphereIntersection = m_customFrustum.getIntersectionType(sphere);
+
+						if (sphereIntersection != IntersectionType::Intersection)
+							return sphereIntersection;
+
+						return m_customFrustum.getIntersectionType(aabb);
 					};
 				}
 				else
