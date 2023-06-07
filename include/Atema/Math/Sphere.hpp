@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,18 +19,48 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_SPHERE_HPP
+#define ATEMA_MATH_SPHERE_HPP
 
-#include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Config.hpp>
-#include <Atema/Math/Enums.hpp>
-#include <Atema/Math/Frustum.hpp>
-#include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
-#include <Atema/Math/Plane.hpp>
-#include <Atema/Math/Sphere.hpp>
-#include <Atema/Math/Transform.hpp>
 #include <Atema/Math/Vector.hpp>
+
+namespace at
+{
+	template <typename T>
+	class AABB;
+
+	template <typename T>
+	class Sphere
+	{
+	public:
+		Sphere();
+		Sphere(const Vector3<T>& center, T radius);
+		Sphere(const Sphere& other) = default;
+		Sphere(Sphere&& other) noexcept = default;
+		~Sphere() = default;
+
+		void set(const Vector3<T>& center, T radius);
+
+		bool contains(const Vector3<T>& point) const noexcept;
+		bool contains(const AABB<T>& aabb) const noexcept;
+		bool contains(const Sphere<T>& sphere) const noexcept;
+
+		AABB<T> getAABB() const noexcept;
+
+		Sphere& operator=(const Sphere& other) = default;
+		Sphere& operator=(Sphere&& other) noexcept = default;
+
+		Vector3<T> center;
+		T radius;
+	};
+
+	using Spherei = Sphere<int>;
+	using Sphereu = Sphere<unsigned>;
+	using Spheref = Sphere<float>;
+	using Sphered = Sphere<double>;
+}
+
+#include <Atema/Math/Sphere.inl>
 
 #endif
