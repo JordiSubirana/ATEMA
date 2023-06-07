@@ -31,6 +31,9 @@
 namespace at
 {
 	template <typename T>
+	class Sphere;
+	
+	template <typename T>
 	class AABB
 	{
 	public:
@@ -53,6 +56,7 @@ namespace at
 		Vector3<T> getSize() const noexcept;
 		Vector3<T> getPositiveVertex(const Vector3<T>& normal) const noexcept;
 		Vector3<T> getNegativeVertex(const Vector3<T>& normal) const noexcept;
+		Sphere<T> getBoundingSphere() const noexcept;
 
 		AABB& operator=(const AABB& other);
 		AABB& operator=(AABB&& other) noexcept;

@@ -24,6 +24,7 @@
 
 #include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Math.hpp>
+#include <Atema/Math/Sphere.hpp>
 
 namespace at
 {
@@ -155,6 +156,17 @@ namespace at
 			vertex.z = min.z;
 
 		return vertex;
+	}
+
+	template <typename T>
+	Sphere<T> AABB<T>::getBoundingSphere() const noexcept
+	{
+		Sphere<T> sphere;
+
+		sphere.center = getCenter();
+		sphere.radius = (max - min).getNorm() / static_cast<T>(2);
+
+		return sphere;
 	}
 
 	template <typename T>
