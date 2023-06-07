@@ -110,7 +110,14 @@ const Matrix4f& Transform::getMatrix() const noexcept
 {
 	if (!m_transformValid)
 	{
-		m_transform = Matrix4f::createTranslation(m_translation) * Matrix4f::createRotation(m_rotation) * Matrix4f::createScale(m_scale);
+		m_transform = Matrix4f::createRotation(m_rotation);
+		
+		for (size_t i = 0; i < 3; i++)
+		{
+			m_transform[i] *= m_scale[i];
+			m_transform[3][i] = m_translation[i];
+		}
+		
 		m_transformValid = true;
 	}
 
