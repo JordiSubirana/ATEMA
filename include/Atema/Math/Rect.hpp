@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,19 +19,40 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_MATH_HPP
-#define ATEMA_GLOBAL_MATH_HPP
+#ifndef ATEMA_MATH_RECT_HPP
+#define ATEMA_MATH_RECT_HPP
 
-#include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Config.hpp>
-#include <Atema/Math/Enums.hpp>
-#include <Atema/Math/Frustum.hpp>
-#include <Atema/Math/Math.hpp>
-#include <Atema/Math/Matrix.hpp>
-#include <Atema/Math/Plane.hpp>
-#include <Atema/Math/Rect.hpp>
-#include <Atema/Math/Sphere.hpp>
-#include <Atema/Math/Transform.hpp>
 #include <Atema/Math/Vector.hpp>
+
+namespace at
+{
+	template <typename T>
+	class Rect
+	{
+	public:
+		Rect();
+		Rect(T x, T y, T width, T height);
+		Rect(const Vector2<T>& pos, const Vector2<T>& size);
+		Rect(T width, T height);
+		Rect(const Vector2<T>& size);
+		Rect(const Rect& other) = default;
+		Rect(Rect&& other) noexcept = default;
+		~Rect() = default;
+
+		Rect& operator=(const Rect& other) = default;
+		Rect& operator=(Rect&& other) noexcept = default;
+
+		Vector2<T> pos;
+		Vector2<T> size;
+	};
+
+	using Recti = Rect<int>;
+	using Rectu = Rect<unsigned>;
+	using Rectf = Rect<float>;
+	using Rectd = Rect<double>;
+}
+
+#include <Atema/Math/Rect.inl>
 
 #endif
