@@ -27,6 +27,162 @@
 
 namespace at
 {
+	namespace detail
+	{
+		template <size_t N, typename T>
+		void VectorBase<N, T>::set(T value)
+		{
+			for (size_t i = 0; i < N; i++)
+				data[i] = value;
+		}
+		
+		// VectorBase<2, T>
+		template <typename T>
+		void VectorBase<2, T>::set(T value)
+		{
+			this->x = value;
+			this->y = value;
+		}
+
+		template <typename T>
+		void VectorBase<2, T>::set(T x, T y)
+		{
+			this->x = x;
+			this->y = y;
+		}
+
+		template <typename T>
+		void VectorBase<2, T>::set(const Vector<2, T>& xy)
+		{
+			this->x = xy.x;
+			this->y = xy.y;
+		}
+
+		// VectorBase<3, T>
+		template <typename T>
+		void VectorBase<3, T>::set(T value)
+		{
+			this->x = value;
+			this->y = value;
+			this->z = value;
+		}
+
+
+		template <typename T>
+		void VectorBase<3, T>::set(T x, T y, T z)
+		{
+			this->x = x;
+			this->y = y;
+			this->z = z;
+		}
+
+		template <typename T>
+		void VectorBase<3, T>::set(T x, const Vector<2, T>& yz)
+		{
+			this->x = x;
+			this->y = yz.x;
+			this->z = yz.y;
+		}
+
+		template <typename T>
+		void VectorBase<3, T>::set(const Vector<2, T>& xy, T z)
+		{
+			this->x = xy.x;
+			this->y = xy.y;
+			this->z = z;
+		}
+
+		template <typename T>
+		void VectorBase<3, T>::set(const Vector<3, T>& xyz)
+		{
+			this->x = xyz.x;
+			this->y = xyz.y;
+			this->z = xyz.z;
+		}
+
+		// VectorBase<4, T>
+		template <typename T>
+		void VectorBase<4, T>::set(T value)
+		{
+			this->x = value;
+			this->y = value;
+			this->z = value;
+			this->w = value;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(T x, T y, T z, T w)
+		{
+			this->x = x;
+			this->y = y;
+			this->z = z;
+			this->w = w;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(const Vector<2, T>& xy, const Vector<2, T>& zw)
+		{
+			this->x = xy.x;
+			this->y = xy.y;
+			this->z = zw.x;
+			this->w = zw.y;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(T x, T y, const Vector<2, T>& zw)
+		{
+			this->x = x;
+			this->y = y;
+			this->z = zw.x;
+			this->w = zw.y;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(T x, const Vector<2, T>& yz, T w)
+		{
+			this->x = x;
+			this->y = yz.x;
+			this->z = yz.y;
+			this->w = w;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(const Vector<2, T>& xy, T z, T w)
+		{
+			this->x = xy.x;
+			this->y = xy.y;
+			this->z = z;
+			this->w = w;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(const Vector<3, T>& xyz, T w)
+		{
+			this->x = xyz.x;
+			this->y = xyz.y;
+			this->z = xyz.z;
+			this->w = w;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(T x, const Vector<3, T>& yzw)
+		{
+			this->x = x;
+			this->y = yzw.x;
+			this->z = yzw.y;
+			this->w = yzw.z;
+		}
+
+		template <typename T>
+		void VectorBase<4, T>::set(const Vector<4, T>& xyzw)
+		{
+			this->x = xyzw.x;
+			this->y = xyzw.y;
+			this->z = xyzw.z;
+			this->w = xyzw.w;
+		}
+	}
+	
 	template <size_t N, typename T>
 	Vector<N, T>::Vector()
 	{
@@ -48,33 +204,14 @@ namespace at
 
 	template <size_t N, typename T>
 	template <typename ... Args>
-	Vector<N, T>::Vector(Args... args): Vector()
+	Vector<N, T>::Vector(Args&&... args): Vector()
 	{
-		auto tmp = { static_cast<T>(args)... };
-
-		size_t size = tmp.size();
-		if (size == 1)
+		if constexpr (sizeof...(args) == 1)
 		{
-			auto el = *tmp.begin();
-
-			for (size_t i = 0; i < N; i++)
-				data[i] = el;
+			int i = 3;
 		}
-		else
-		{
-			size_t i = 0;
-			for (auto t : tmp)
-			{
-				if (i >= N)
-					break;
-
-				data[i++] = t;
-			}
-			for (; i < N; i++)
-			{
-				data[i] = static_cast<T>(0);
-			}
-		}
+		
+		set(std::forward<Args>(args)...);
 	}
 
 	template <size_t N, typename T>

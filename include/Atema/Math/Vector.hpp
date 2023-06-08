@@ -27,14 +27,118 @@
 
 #include <array>
 
+#define ATEMA_VECTOR_SWIZZLE_FUNC_2(a, b) Vector<2, T> a##b() const noexcept { return Vector<2, T>(a, b); }
+#define ATEMA_VECTOR_SWIZZLE_FUNC_3(a, b, c) Vector<3, T> a##b##c() const noexcept { return Vector<3, T>(a, b, c); }
+#define ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, c, d) Vector<4, T> a##b##c##d() const noexcept { return Vector<4, T>(a, b, c, d); }
+#define ATEMA_VECTOR_SWIZZLE_FUNCS_1(a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_2(a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(a, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, a, a)
+#define ATEMA_VECTOR_SWIZZLE_FUNCS_2(a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_2(a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_2(b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(a, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(a, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(b, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(b, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, b, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, b, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, b, b, a)
+#define ATEMA_VECTOR_SWIZZLE_FUNCS_3(a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(a, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(b, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(b, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(c, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_3(c, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, a, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, c, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, c, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, b, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, b, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, b, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, a, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, c, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, c, b, a)
+#define ATEMA_VECTOR_SWIZZLE_FUNCS_4(a, b, c, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, c, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, b, d, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, b, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, c, d, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, d, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(a, d, c, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, c, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, a, d, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, a, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, c, d, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, d, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(b, d, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, a, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, b, d, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, b, d) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, a, d, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, d, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(c, d, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, b, c, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, b, a, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, c, b, a) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, c, a, b) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, a, b, c) \
+	ATEMA_VECTOR_SWIZZLE_FUNC_4(d, a, c, b)
+
+
+
 namespace at
 {
+	template <size_t N, typename T>
+	struct Vector;
+	
 	namespace detail
 	{
 		template <size_t N, typename T>
 		struct VectorBase
 		{
 			std::array<T, N> data;
+
+			void set(T value);
 		};
 
 		template <typename T>
@@ -45,6 +149,14 @@ namespace at
 				struct { T x, y; };
 				std::array<T, 2> data;
 			};
+
+			void set(T value);
+			void set(T x, T y);
+			void set(const Vector<2, T>& xy);
+
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(x, y)
 		};
 
 		template <typename T>
@@ -55,6 +167,20 @@ namespace at
 				struct { T x, y, z; };
 				std::array<T, 3> data;
 			};
+
+			void set(T value);
+			void set(T x, T y, T z);
+			void set(T x, const Vector<2, T>& yz);
+			void set(const Vector<2, T>& xy, T z);
+			void set(const Vector<3, T>& xyz);
+
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(z)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(x, y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(y, z)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(z, x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_3(x, y, z)
 		};
 
 		template <typename T>
@@ -65,6 +191,32 @@ namespace at
 				struct { T x, y, z, w; };
 				std::array<T, 4> data;
 			};
+
+			void set(T value);
+			void set(T x, T y, T z, T w);
+			void set(const Vector<2, T>& xy, const Vector<2, T>& zw);
+			void set(T x, T y, const Vector<2, T>& zw);
+			void set(T x, const Vector<2, T>& yz, T w);
+			void set(const Vector<2, T>& xy, T z, T w);
+			void set(const Vector<3, T>& xyz, T w);
+			void set(T x, const Vector<3, T>& yzw);
+			void set(const Vector<4, T>& xyzw);
+
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(z)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_1(w)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(x, y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(y, z)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(z, w)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(w, x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(z, x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_2(w, y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_3(x, y, z)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_3(y, z, w)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_3(z, w, x)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_3(w, x, y)
+			ATEMA_VECTOR_SWIZZLE_FUNCS_4(x, y, z, w)
 		};
 	}
 	
@@ -75,7 +227,7 @@ namespace at
 		Vector(const Vector& other);
 		Vector(Vector&& other) noexcept;
 		template <typename...Args>
-		Vector(Args...args);
+		Vector(Args&&... args);
 		~Vector() noexcept;
 
 		Vector<N, T>& normalize() noexcept;
