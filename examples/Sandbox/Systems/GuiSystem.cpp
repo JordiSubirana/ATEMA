@@ -29,6 +29,9 @@
 
 #include <imgui/imgui_internal.h>
 
+#include <sstream>
+#include <locale>
+
 #define IMGUI_LEFT_LABEL(func, label, ...) (ImGui::AlignTextToFramePadding(), ImGui::TextUnformatted(label), ImGui::SameLine(50), func("##" label, __VA_ARGS__))
 
 using namespace at;
@@ -574,7 +577,13 @@ void GuiSystem::showOverlay()
 
 				ImGui::SameLine();
 
-				ImGui::Text("%i", stat.second);
+				std::ostringstream ss;
+
+				ss.imbue(std::locale(""));
+				
+				ss << stat.second;
+
+				ImGui::Text("%s", ss.str().c_str());
 			}
 		}
 

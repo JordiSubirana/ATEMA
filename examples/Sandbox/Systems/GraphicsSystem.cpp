@@ -1099,7 +1099,7 @@ void GraphicsSystem::createFrameGraph()
 		pass.setExecutionCallback([this, cascadeIndex](FrameGraphContext& context)
 			{
 				ATEMA_BENCHMARK("CommandBuffer (shadows)");
-				ATEMA_BENCHMARK_TAG(cascadeBenchmark, "Shadow cascade #" + std::to_string(cascadeIndex + 1) + ")");
+				ATEMA_BENCHMARK_TAG(cascadeBenchmark, "Shadow cascade #" + std::to_string(cascadeIndex + 1));
 
 				const auto frameIndex = context.getFrameIndex();
 				auto& frameData = m_frameDatas[frameIndex];
@@ -1286,6 +1286,33 @@ void GraphicsSystem::createFrameGraph()
 					auto& transform = entities.get<Transform>(entity);
 
 					m_debugRenderer->draw(graphics.aabb, Color::Green);
+
+					// Enable this to show model oriented bounding boxes
+					/*
+					const auto& aabb = graphics.model->getAABB();
+
+					std::vector<Vector3f> corners =
+					{
+						{ aabb.min.x, aabb.min.y, aabb.min.z },
+						{ aabb.min.x, aabb.min.y, aabb.max.z },
+						{ aabb.min.x, aabb.max.y, aabb.max.z },
+						{ aabb.min.x, aabb.max.y, aabb.min.z },
+						{ aabb.max.x, aabb.max.y, aabb.min.z },
+						{ aabb.max.x, aabb.max.y, aabb.max.z },
+						{ aabb.max.x, aabb.min.y, aabb.max.z },
+						{ aabb.max.x, aabb.min.y, aabb.min.z },
+					};
+
+					for (auto& corner : corners)
+						corner = transform.getMatrix().transformPosition(corner);
+
+					for (size_t c = 0; c < corners.size(); c++)
+						m_debugRenderer->drawLine(corners[c], corners[(c + 1) % corners.size()], Color::Cyan);
+					m_debugRenderer->drawLine(corners[0], corners[3], Color::Cyan);
+					m_debugRenderer->drawLine(corners[1], corners[6], Color::Cyan);
+					m_debugRenderer->drawLine(corners[2], corners[5], Color::Cyan);
+					m_debugRenderer->drawLine(corners[4], corners[7], Color::Cyan);
+					//*/
 
 					// Enable this to show all meshes bounding boxes for a given model
 					/*
@@ -1577,7 +1604,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 				mapMemory<Matrix4f>(data, viewOffset) = viewMatrix;
 				mapMemory<Matrix4f>(data, projOffset) = projMatrix;
-				mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
+				mapMemory<Vector3f>(data, cameraPositionOffset) = cameraPos;
 
 				// Update view projection matrix
 				m_viewProjection = mapMemory<Matrix4f>(data, projOffset) * mapMemory<Matrix4f>(data, viewOffset);
@@ -1857,7 +1884,7 @@ void GraphicsSystem::updateUniformBuffers(FrameData& frameData)
 
 		mapMemory<Vector3f>(data, cameraPositionOffset) = { cameraPos.x, cameraPos.y, cameraPos.z };
 		mapMemory<Vector3f>(data, lightDirectionOffset) = { lightDirection.x, lightDirection.y, lightDirection.z };
-		mapMemory<Vector4f>(data, lightColorOffset) = { 1.0f, 1.0f, 1.0f };
+		mapMemory<Vector3f>(data, lightColorOffset) = { 1.0f, 1.0f, 1.0f };
 		mapMemory<float>(data, ambientStrengthOffset) = 0.35f;
 
 		frameData.phongBuffer->unmap();
