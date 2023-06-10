@@ -39,8 +39,7 @@ VulkanRenderWindow::VulkanRenderWindow(VulkanDevice& device, const RenderWindow:
 	m_surface(VK_NULL_HANDLE),
 	m_currentSwapChainImage(0),
 	m_recreateSwapChain(false),
-	m_currentFrameIndex(0),
-	m_frameCount(settings.maxFramesInFlight)
+	m_currentFrameIndex(0)
 {
 	createSurface();
 
@@ -71,11 +70,6 @@ ImageFormat VulkanRenderWindow::getColorFormat() const noexcept
 ImageFormat VulkanRenderWindow::getDepthFormat() const noexcept
 {
 	return m_depthFormat;
-}
-
-size_t VulkanRenderWindow::getMaxFramesInFlight() const noexcept
-{
-	return m_frameCount;
 }
 
 RenderFrame& VulkanRenderWindow::acquireFrame()
@@ -122,7 +116,7 @@ RenderFrame& VulkanRenderWindow::acquireFrame()
 
 	renderFrame.setImageIndex(m_currentSwapChainImage);
 
-	m_currentFrameIndex = (m_currentFrameIndex + 1) % m_frameCount;
+	m_currentFrameIndex = (m_currentFrameIndex + 1) % Renderer::FramesInFlight;
 
 	destroyResources(renderFrame);
 
@@ -346,8 +340,6 @@ void VulkanRenderWindow::createSwapChainResources()
 	}
 
 	// RenderFrames
-	m_renderFrames.resize(m_frameCount);
-
 	size_t frameIndex = 0;
 	for (auto& renderFrame : m_renderFrames)
 	{
@@ -368,7 +360,8 @@ void VulkanRenderWindow::destroySwapChainResources()
 
 	m_imageFences.clear();
 
-	m_renderFrames.clear();
+	for (auto& renderFrame : m_renderFrames)
+		renderFrame.reset();
 
 	m_framebuffers.clear();
 

@@ -23,9 +23,12 @@
 #define ATEMA_VULKANRENDERER_VULKANRENDERWINDOW_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/RenderWindow.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Core/SparseSet.hpp>
+
+#include <array>
 
 namespace at
 {
@@ -48,7 +51,6 @@ namespace at
 		ImageFormat getColorFormat() const noexcept override;
 		ImageFormat getDepthFormat() const noexcept override;
 
-		size_t getMaxFramesInFlight() const noexcept override;
 		RenderFrame& acquireFrame() override;
 
 		VkSurfaceKHR getSurface() const noexcept;
@@ -95,9 +97,8 @@ namespace at
 		Ptr<Image> m_depthImage;
 		std::vector<Ptr<Fence>> m_imageFences;
 
-		size_t m_frameCount;
 		size_t m_currentFrameIndex;
-		std::vector<Ptr<VulkanRenderFrame>> m_renderFrames;
+		std::array<Ptr<VulkanRenderFrame>, Renderer::FramesInFlight> m_renderFrames;
 	};
 }
 

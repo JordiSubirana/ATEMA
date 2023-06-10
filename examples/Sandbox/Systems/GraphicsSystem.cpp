@@ -218,10 +218,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	m_debugRenderer = std::make_shared<DebugRenderer>();
 
-	const auto maxFramesInFlight = renderWindow->getMaxFramesInFlight();
-
 	// Remove unused resources if they are not used during 3 cycles (arbitrary)
-	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(maxFramesInFlight) * 3);
+	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(Renderer::FramesInFlight) * 3);
 
 	//m_depthFormat = renderWindow->getDepthFormat();
 	m_depthFormat = ImageFormat::D32_SFLOAT_S8_UINT;
@@ -375,7 +373,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
 		};
-		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
+		descriptorSetLayoutSettings.pageSize = Renderer::FramesInFlight;
 
 		m_frameLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
@@ -386,7 +384,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		{
 			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
 		};
-		descriptorSetLayoutSettings.pageSize = maxFramesInFlight;
+		descriptorSetLayoutSettings.pageSize = Renderer::FramesInFlight;
 
 		m_objectLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
@@ -417,7 +415,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 		m_dynamicObjectBufferOffset = Math::getNextMultiple(m_elementByteSize, minOffset);
 	}
 
-	m_frameDatas.resize(maxFramesInFlight);
+	m_frameDatas.resize(Renderer::FramesInFlight);
 	for (auto& frameData : m_frameDatas)
 	{
 		// Frame uniform buffers

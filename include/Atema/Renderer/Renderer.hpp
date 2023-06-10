@@ -44,6 +44,8 @@ namespace at
 	class ATEMA_RENDERER_API Renderer
 	{
 	public:
+		static constexpr size_t FramesInFlight = 2;
+
 		struct Settings
 		{
 			bool sampleShading = true;

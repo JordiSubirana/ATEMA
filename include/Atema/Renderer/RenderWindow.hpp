@@ -36,8 +36,6 @@ namespace at
 		{
 			ImageFormat colorFormat = ImageFormat::BGRA8_SRGB;
 			ImageFormat depthFormat = ImageFormat::D32_SFLOAT;
-
-			size_t maxFramesInFlight = 2;
 		};
 
 		RenderWindow() = delete;
@@ -48,7 +46,6 @@ namespace at
 		virtual ImageFormat getColorFormat() const noexcept = 0;
 		virtual ImageFormat getDepthFormat() const noexcept = 0;
 
-		virtual size_t getMaxFramesInFlight() const noexcept = 0;
 		virtual RenderFrame& acquireFrame() = 0;
 
 		virtual Ptr<RenderPass> getRenderPass() const noexcept = 0;

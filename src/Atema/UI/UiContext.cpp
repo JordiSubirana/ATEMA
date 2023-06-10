@@ -99,7 +99,7 @@ namespace
 			init_info.PipelineCache = nullptr;
 			init_info.DescriptorPool = vkDescriptorSetLayout.getDescriptorPool().getHandle();
 			init_info.Subpass = 0;
-			init_info.MinImageCount = static_cast<uint32_t>(window.getMaxFramesInFlight());
+			init_info.MinImageCount = static_cast<uint32_t>(Renderer::FramesInFlight);
 			init_info.ImageCount = static_cast<uint32_t>(window.getSwapChain().getImages().size());
 			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 			init_info.Allocator = nullptr;
