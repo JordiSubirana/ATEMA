@@ -54,6 +54,11 @@ namespace at
 		//TODO: Add skeletal relative components
 	};
 
+	// Default vertex formats already set up to use
+	// See Graphics/VertexTypes.hpp for the corresponding vertex types
+	// XYZ : position
+	// UV : texture coordinates
+	// NTB : normal / tangent / bitangent
 	enum class DefaultVertexFormat
 	{
 		XY,
@@ -62,14 +67,17 @@ namespace at
 		XY_UV,
 		XYZ,
 		XYZ_RGB,
-		XYZ_RGB_Normal,
-		XYZ_RGB_Normal_Tangent_Bitangent,
+		XYZ_RGB_N,
+		XYZ_RGB_NT,
+		XYZ_RGB_NTB,
 		XYZ_RGBA,
-		XYZ_RGBA_Normal,
-		XYZ_RGBA_Normal_Tangent_Bitangent,
+		XYZ_RGBA_N,
+		XYZ_RGBA_NT,
+		XYZ_RGBA_NTB,
 		XYZ_UV,
-		XYZ_UV_Normal,
-		XYZ_UV_Normal_Tangent_Bitangent
+		XYZ_UV_N,
+		XYZ_UV_NT,
+		XYZ_UV_NTB
 	};
 }
 

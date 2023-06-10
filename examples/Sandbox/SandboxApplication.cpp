@@ -84,7 +84,7 @@ namespace
 			vertex.texCoords.y *= size.y;
 		}
 
-		const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_Normal_Tangent_Bitangent);
+		const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB);
 
 		ModelLoader::Settings settings(vertexFormat);
 

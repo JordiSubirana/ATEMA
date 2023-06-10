@@ -114,7 +114,7 @@ namespace
 
 ModelData::ModelData(const std::filesystem::path& path)
 {
-	const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_Normal_Tangent_Bitangent);
+	const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB);
 
 	ModelLoader::Settings settings(vertexFormat);
 	settings.flipTexCoords = true;

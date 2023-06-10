@@ -42,5 +42,6 @@
 #include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Graphics/VertexTypes.hpp>
 
 #endif
