@@ -52,6 +52,8 @@ namespace at
 		VertexBuffer(const Settings& settings);
 		~VertexBuffer() = default;
 
+		static Ptr<VertexBuffer> create(const Settings& settings);
+
 		VertexBuffer& operator=(const VertexBuffer& other) = default;
 		VertexBuffer& operator=(VertexBuffer&& other) noexcept = default;
 

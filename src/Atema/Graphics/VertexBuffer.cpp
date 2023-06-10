@@ -39,6 +39,11 @@ VertexBuffer::VertexBuffer(const Settings& settings) :
 	m_buffer = Buffer::create(bufferSettings);
 }
 
+Ptr<VertexBuffer> VertexBuffer::create(const Settings& settings)
+{
+	return std::make_shared<VertexBuffer>(settings);
+}
+
 const Ptr<const VertexFormat>& VertexBuffer::getFormat() const noexcept
 {
 	return m_format;

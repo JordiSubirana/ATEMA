@@ -51,6 +51,8 @@ namespace at
 		IndexBuffer(const Settings& settings);
 		~IndexBuffer() = default;
 
+		static Ptr<IndexBuffer> create(const Settings& settings);
+
 		IndexBuffer& operator=(const IndexBuffer& other) = default;
 		IndexBuffer& operator=(IndexBuffer&& other) noexcept = default;
 

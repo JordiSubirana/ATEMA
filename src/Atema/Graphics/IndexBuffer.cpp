@@ -38,6 +38,11 @@ IndexBuffer::IndexBuffer(const Settings& settings) :
 	m_buffer = Buffer::create(bufferSettings);
 }
 
+Ptr<IndexBuffer> IndexBuffer::create(const Settings& settings)
+{
+    return std::make_shared<IndexBuffer>(settings);
+}
+
 IndexType IndexBuffer::getIndexType() const noexcept
 {
 	return m_indexType;
