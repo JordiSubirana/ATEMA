@@ -26,8 +26,7 @@ using namespace at;
 
 #ifdef ATEMA_SYSTEM_WINDOWS
 
-#define NOMINMAX
-#include <windows.h>
+#include <Atema/Core/Windows.hpp>
 
 class Library::Implementation
 {

@@ -30,7 +30,7 @@
 // We need to explicitly set timer precision with timeBeginPeriod
 // https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/
 #ifdef ATEMA_SYSTEM_WINDOWS
-#include <windows.h>
+#include <Atema/Core/Windows.hpp>
 #include <mmsystem.h>
 #include <timeapi.h>
 #endif

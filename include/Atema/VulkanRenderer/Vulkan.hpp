@@ -53,8 +53,8 @@
 	}
 
 #ifdef ATEMA_SYSTEM_WINDOWS
-#define NOMINMAX
-#include <windows.h>
+
+#include <Atema/Core/Windows.hpp>
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan_win32.h>
