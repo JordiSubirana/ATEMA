@@ -52,10 +52,11 @@ namespace at
 		}
 
 		template <typename T>
-		void VectorBase<2, T>::set(const Vector<2, T>& xy)
+		template <typename U>
+		void VectorBase<2, T>::set(const Vector<2, U>& xy)
 		{
-			this->x = xy.x;
-			this->y = xy.y;
+			this->x = static_cast<T>(xy.x);
+			this->y = static_cast<T>(xy.y);
 		}
 
 		// VectorBase<3, T>
@@ -93,11 +94,12 @@ namespace at
 		}
 
 		template <typename T>
-		void VectorBase<3, T>::set(const Vector<3, T>& xyz)
+		template <typename U>
+		void VectorBase<3, T>::set(const Vector<3, U>& xyz)
 		{
-			this->x = xyz.x;
-			this->y = xyz.y;
-			this->z = xyz.z;
+			this->x = static_cast<T>(xyz.x);
+			this->y = static_cast<T>(xyz.y);
+			this->z = static_cast<T>(xyz.z);
 		}
 
 		// VectorBase<4, T>
@@ -174,12 +176,13 @@ namespace at
 		}
 
 		template <typename T>
-		void VectorBase<4, T>::set(const Vector<4, T>& xyzw)
+		template <typename U>
+		void VectorBase<4, T>::set(const Vector<4, U>& xyzw)
 		{
-			this->x = xyzw.x;
-			this->y = xyzw.y;
-			this->z = xyzw.z;
-			this->w = xyzw.w;
+			this->x = static_cast<T>(xyzw.x);
+			this->y = static_cast<T>(xyzw.y);
+			this->z = static_cast<T>(xyzw.z);
+			this->w = static_cast<T>(xyzw.w);
 		}
 	}
 	
@@ -206,11 +209,6 @@ namespace at
 	template <typename ... Args>
 	Vector<N, T>::Vector(Args&&... args): Vector()
 	{
-		if constexpr (sizeof...(args) == 1)
-		{
-			int i = 3;
-		}
-		
 		set(std::forward<Args>(args)...);
 	}
 

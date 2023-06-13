@@ -152,7 +152,8 @@ namespace at
 
 			void set(T value);
 			void set(T x, T y);
-			void set(const Vector<2, T>& xy);
+			template <typename U>
+			void set(const Vector<2, U>& xy);
 
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
@@ -172,7 +173,8 @@ namespace at
 			void set(T x, T y, T z);
 			void set(T x, const Vector<2, T>& yz);
 			void set(const Vector<2, T>& xy, T z);
-			void set(const Vector<3, T>& xyz);
+			template <typename U>
+			void set(const Vector<3, U>& xyz);
 
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
@@ -200,7 +202,8 @@ namespace at
 			void set(const Vector<2, T>& xy, T z, T w);
 			void set(const Vector<3, T>& xyz, T w);
 			void set(T x, const Vector<3, T>& yzw);
-			void set(const Vector<4, T>& xyzw);
+			template <typename U>
+			void set(const Vector<4, U>& xyzw);
 
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(x)
 			ATEMA_VECTOR_SWIZZLE_FUNCS_1(y)
