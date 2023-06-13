@@ -38,6 +38,31 @@ QueueType CommandBuffer::getQueueType() const noexcept
 	return m_queueType;
 }
 
+void CommandBuffer::memoryBarrier(MemoryBarrier barrier)
+{
+	switch (barrier)
+	{
+		case MemoryBarrier::TransferBegin:
+		{
+			memoryBarrier(PipelineStage::BottomOfPipe, 0,
+				PipelineStage::Transfer, MemoryAccess::TransferRead);
+			
+			return;
+		}
+		case MemoryBarrier::TransferEnd:
+		{
+			memoryBarrier(PipelineStage::Transfer, MemoryAccess::TransferWrite,
+				PipelineStage::VertexShader | PipelineStage::FragmentShader, MemoryAccess::UniformBufferRead);
+
+			return;
+		}
+		default:
+		{
+			ATEMA_ERROR("Invalid MemoryBarrier");
+		}
+	}
+}
+
 void CommandBuffer::imageBarrier(const Image& image, ImageBarrier barrier)
 {
 	switch (barrier)

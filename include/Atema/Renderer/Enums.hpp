@@ -446,6 +446,12 @@ namespace at
 
 	ATEMA_DECLARE_FLAGS(MemoryAccess);
 
+	enum class MemoryBarrier
+	{
+		TransferBegin,
+		TransferEnd
+	};
+
 	enum class ImageBarrier
 	{
 		InitializeTransferDst,

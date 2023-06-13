@@ -22,10 +22,10 @@
 #ifndef ATEMA_RENDERER_COMMANDBUFFER_HPP
 #define ATEMA_RENDERER_COMMANDBUFFER_HPP
 
+#include <Atema/Renderer/Enums.hpp>
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Renderer/Enums.hpp>
 #include <Atema/Math/Vector.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Core/Variant.hpp>
@@ -103,6 +103,7 @@ namespace at
 
 		virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
 
+		void memoryBarrier(MemoryBarrier barrier);
 		virtual void memoryBarrier(Flags<PipelineStage> srcPipelineStages, Flags<MemoryAccess> srcMemoryAccesses, Flags<PipelineStage> dstPipelineStages, Flags<MemoryAccess> dstMemoryAccesses) = 0;
 
 		// Default size of 0 means remaining size
