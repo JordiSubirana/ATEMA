@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,60 +19,50 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#ifndef ATEMA_RENDERER_BUFFERPOOL_HPP
+#define ATEMA_RENDERER_BUFFERPOOL_HPP
+
+#include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Buffer.hpp>
-#include <Atema/Renderer/Renderer.hpp>
 
-using namespace at;
+#include <vector>
+#include <map>
+#include <unordered_map>
 
-// Buffer
-Buffer::Buffer()
+namespace at
 {
+	class ATEMA_RENDERER_API BufferPool
+	{
+	public:
+		BufferPool() = delete;
+		BufferPool(Flags<BufferUsage> usages, size_t blockSize);
+		BufferPool(const BufferPool& other) = default;
+		BufferPool(BufferPool&& other) noexcept = default;
+		~BufferPool() = default;
+
+		BufferRange create(size_t byteSize);
+
+		void release(const BufferRange& range);
+
+		void clear();
+
+		BufferPool& operator=(const BufferPool& other) = default;
+		BufferPool& operator=(BufferPool&& other) noexcept = default;
+
+	private:
+		struct Block
+		{
+			Ptr<Buffer> buffer;
+			// Key is the range last address
+			std::map<size_t, BufferRange> freeRanges;
+		};
+
+		Flags<BufferUsage> m_usages;
+		size_t m_blockSize;
+
+		std::vector<Block> m_blocks;
+		std::unordered_map<Buffer*, size_t> m_bufferToBlock;
+	};
 }
 
-Buffer::~Buffer()
-{
-}
-
-Ptr<Buffer> Buffer::create(const Settings& settings)
-{
-	return Renderer::instance().createBuffer(settings);
-}
-
-// BufferRange
-BufferRange::BufferRange() :
-	buffer(nullptr),
-	offset(0),
-	size(0)
-{
-}
-
-BufferRange::BufferRange(Buffer& buffer) :
-	buffer(&buffer),
-	offset(0),
-	size(buffer.getByteSize())
-{
-
-}
-
-BufferRange::BufferRange(Buffer& buffer, size_t offset, size_t size) :
-	buffer(&buffer),
-	offset(offset),
-	size(size)
-{
-}
-
-void* BufferRange::map()
-{
-	if (!buffer || !size)
-		return nullptr;
-	
-	return buffer->map(offset, size);
-}
-
-void BufferRange::unmap()
-{
-	if (!buffer || !size)
-		return;
-
-	buffer->unmap();
-}
+#endif

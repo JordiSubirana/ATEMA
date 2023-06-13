@@ -52,6 +52,32 @@ namespace at
 	protected:
 		Buffer();
 	};
+
+	struct ATEMA_RENDERER_API BufferRange
+	{
+		BufferRange();
+		BufferRange(Buffer& buffer);
+		BufferRange(Buffer& buffer, size_t offset, size_t size);
+		BufferRange(const BufferRange& other) = default;
+		BufferRange(BufferRange&& other) noexcept = default;
+		~BufferRange() = default;
+
+		// Requires BufferUsage::Map
+		void* map();
+		// Requires BufferUsage::Map
+		void unmap();
+
+		BufferRange& operator=(const BufferRange& other) = default;
+		BufferRange& operator=(BufferRange&& other) noexcept = default;
+
+		Buffer* buffer;
+		// Byte offset
+		size_t offset;
+		// Byte size
+		size_t size;
+	};
+
+
 }
 
 #endif

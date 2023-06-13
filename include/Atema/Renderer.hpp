@@ -23,6 +23,8 @@
 #define ATEMA_GLOBAL_RENDERER_HPP
 
 #include <Atema/Renderer/Buffer.hpp>
+#include <Atema/Renderer/BufferLayout.hpp>
+#include <Atema/Renderer/BufferPool.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
