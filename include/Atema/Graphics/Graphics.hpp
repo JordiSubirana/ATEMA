@@ -183,6 +183,8 @@ namespace at
 		
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
+		Ptr<VertexBuffer> m_quadMesh;
+
 		ResourceManager<UberShader, std::string> m_uberShaderIdManager;
 		ResourceManager<UberShader> m_uberShaderManager;
 		ResourceManager<UberShader, UberInstanceSettings> m_uberShaderOptionsManager;
