@@ -42,6 +42,9 @@
 #include <Atema/Graphics/Model.hpp>
 #include <Atema/Graphics/OrthographicCamera.hpp>
 #include <Atema/Graphics/PerspectiveCamera.hpp>
+#include <Atema/Graphics/Renderable.hpp>
+#include <Atema/Graphics/RenderElement.hpp>
+#include <Atema/Graphics/ShaderBinding.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
