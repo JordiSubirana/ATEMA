@@ -28,6 +28,7 @@
 #include <Atema/Renderer/Enums.hpp>
 #include <Atema/Renderer/Fence.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
+#include <Atema/Renderer/BufferPool.hpp>
 
 #include <shared_mutex>
 
@@ -45,6 +46,9 @@ namespace at
 
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType) = 0;
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType, size_t threadIndex) = 0;
+
+		// Create transient staging buffer that will be destroyed when the frame ends
+		BufferRange createStagingBuffer(size_t byteSize);
 
 		virtual Ptr<RenderPass> getRenderPass() const noexcept = 0;
 		virtual Ptr<Framebuffer> getFramebuffer() const noexcept = 0;
@@ -69,6 +73,7 @@ namespace at
 
 	protected:
 		void destroyResources();
+		virtual void initializeFrame();
 
 	private:
 		class AbstractResourceHandler
@@ -92,6 +97,7 @@ namespace at
 
 		std::vector<Ptr<AbstractResourceHandler>> m_resources;
 		std::shared_mutex m_resourceMutex;
+		BufferPool m_stagingBufferPool;
 	};
 }
 

@@ -21,9 +21,16 @@
 
 #include <Atema/Renderer/RenderFrame.hpp>
 
+namespace
+{
+	// 1MB by default
+	constexpr size_t StagingBufferBlockSize = 1048576;
+}
+
 using namespace at;
 
-RenderFrame::RenderFrame()
+RenderFrame::RenderFrame() :
+	m_stagingBufferPool(BufferUsage::TransferSrc | BufferUsage::Map, StagingBufferBlockSize)
 {
 }
 
@@ -46,4 +53,14 @@ void RenderFrame::destroyResources()
 	std::lock_guard lockGuard(m_resourceMutex);
 
 	m_resources.clear();
+}
+
+void RenderFrame::initializeFrame()
+{
+	m_stagingBufferPool.clear();
+}
+
+BufferRange RenderFrame::createStagingBuffer(size_t byteSize)
+{
+	return m_stagingBufferPool.create(byteSize);
 }

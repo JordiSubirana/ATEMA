@@ -34,6 +34,11 @@ void RenderWindow::destroyResources(RenderFrame& renderFrame)
 	renderFrame.destroyResources();
 }
 
+void RenderWindow::initializeFrame(RenderFrame& renderFrame)
+{
+	renderFrame.initializeFrame();
+}
+
 RenderWindow::~RenderWindow()
 {
 }
