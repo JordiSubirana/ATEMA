@@ -77,7 +77,7 @@ void* VulkanBuffer::map(size_t byteOffset, size_t byteSize)
 {
 	ATEMA_ASSERT(m_mappable, "BufferUsage::Map must be set to map a buffer");
 	
-	return m_mappedData;
+	return reinterpret_cast<void*>(static_cast<uint8_t*>(m_mappedData) + byteOffset);
 }
 
 void VulkanBuffer::unmap()
