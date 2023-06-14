@@ -23,6 +23,8 @@
 #define ATEMA_GLOBAL_GRAPHICS_HPP
 
 #include <Atema/Graphics/Config.hpp>
+#include <Atema/Graphics/AbstractFrameRenderer.hpp>
+#include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Graphics/Camera.hpp>
 #include <Atema/Graphics/DebugRenderer.hpp>
 #include <Atema/Graphics/Enums.hpp>
