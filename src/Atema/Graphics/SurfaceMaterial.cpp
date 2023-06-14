@@ -392,6 +392,80 @@ namespace
 		else
 			ATEMA_ERROR("Invalid type");
 	}
+
+	struct FrameLayoutData
+	{
+		FrameLayoutData(StructLayout structLayout) : bufferLayout(structLayout)
+		{
+			/*struct FrameData
+			{
+				mat4f proj;
+				mat4f view;
+				vec3f cameraPosition;
+			}*/
+			
+			projectionOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
+			viewOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
+			cameraPositionOffset = bufferLayout.add(BufferElementType::Float3);
+		}
+		
+		BufferLayout bufferLayout;
+
+		size_t projectionOffset;
+		size_t viewOffset;
+		size_t cameraPositionOffset;
+	};
+
+	struct ObjectLayoutData
+	{
+		ObjectLayoutData(StructLayout structLayout) : bufferLayout(structLayout)
+		{
+			/*struct ObjectData
+			{
+				mat4f model;
+			}*/
+
+			modelOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
+		}
+
+		BufferLayout bufferLayout;
+
+		size_t modelOffset;
+	};
+}
+
+//-----
+// SurfaceMaterial::FrameData
+BufferLayout SurfaceMaterial::FrameData::getBufferLayout(StructLayout structLayout)
+{
+	FrameLayoutData layoutData(structLayout);
+
+	return layoutData.bufferLayout;
+}
+
+void SurfaceMaterial::FrameData::copyTo(void* destData, StructLayout structLayout)
+{
+	FrameLayoutData layoutData(structLayout);
+	
+	mapMemory<Matrix4f>(destData, layoutData.viewOffset) = view;
+	mapMemory<Matrix4f>(destData, layoutData.projectionOffset) = projection;
+	mapMemory<Vector3f>(destData, layoutData.cameraPositionOffset) = cameraPosition;
+}
+
+//-----
+// SurfaceMaterial::Object
+BufferLayout SurfaceMaterial::ObjectData::getBufferLayout(StructLayout structLayout)
+{
+	ObjectLayoutData layoutData(structLayout);
+
+	return layoutData.bufferLayout;
+}
+
+void SurfaceMaterial::ObjectData::copyTo(void* destData, StructLayout structLayout)
+{
+	ObjectLayoutData layoutData(structLayout);
+
+	mapMemory<Matrix4f>(destData, layoutData.modelOffset) = model;
 }
 
 //-----
@@ -425,38 +499,14 @@ SurfaceMaterialData::~SurfaceMaterialData()
 //-----
 // SurfaceMaterial
 SurfaceMaterial::SurfaceMaterial(const SurfaceMaterial::Settings& settings) :
-	m_layout(settings.layout),
+	m_materialLayout(settings.materialLayout),
 	m_instanceLayout(settings.instanceLayout),
 	m_id(s_surfaceIdManager.get())
 {
-	Ptr<DescriptorSetLayout> frameLayout;
-	{
-		DescriptorSetLayout::Settings layoutSettings;
-		layoutSettings.bindings =
-		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
-		};
-		layoutSettings.pageSize = 1;
-
-		frameLayout = settings.graphics.getDescriptorSetLayout(layoutSettings);
-	}
-
-	Ptr<DescriptorSetLayout> objectLayout;
-	{
-		DescriptorSetLayout::Settings layoutSettings;
-		layoutSettings.bindings =
-		{
-			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
-		};
-		layoutSettings.pageSize = 1;
-
-		objectLayout = settings.graphics.getDescriptorSetLayout(layoutSettings);
-	}
-
 	// If a material layout is used, allocate a new set (and let the user fill it)
-	if (m_layout)
+	if (m_materialLayout)
 	{
-		m_descriptorSet = m_layout->createSet();
+		m_descriptorSet = m_materialLayout->createSet();
 	}
 	// If no layout is used, create a empty one to match with different set indices
 	else
@@ -465,7 +515,7 @@ SurfaceMaterial::SurfaceMaterial(const SurfaceMaterial::Settings& settings) :
 		layoutSettings.bindings = {};
 		layoutSettings.pageSize = 1;
 
-		m_layout = settings.graphics.getDescriptorSetLayout(layoutSettings);
+		m_materialLayout = settings.graphics.getDescriptorSetLayout(layoutSettings);
 	}
 
 	GraphicsPipeline::Settings pipelineSettings;
@@ -474,9 +524,9 @@ SurfaceMaterial::SurfaceMaterial(const SurfaceMaterial::Settings& settings) :
 	pipelineSettings.fragmentShader = settings.fragmentShader;
 	pipelineSettings.descriptorSetLayouts =
 	{
-		frameLayout,
-		objectLayout,
-		m_layout,
+		getFrameLayout(),
+		getObjectLayout(),
+		m_materialLayout,
 		m_instanceLayout
 	};
 
@@ -492,7 +542,7 @@ SurfaceMaterial::SurfaceMaterial(const SurfaceMaterial::Settings& settings) :
 SurfaceMaterial::~SurfaceMaterial()
 {
 	m_descriptorSet.reset();
-	m_layout.reset();
+	m_materialLayout.reset();
 	m_instanceLayout.reset();
 	m_graphicsPipeline.reset();
 
@@ -591,7 +641,30 @@ Ptr<SurfaceMaterial> SurfaceMaterial::createDefault(const SurfaceMaterialData& m
 	return std::make_shared<SurfaceMaterial>(settings);
 }
 
-void SurfaceMaterial::bindTo(CommandBuffer& commandBuffer)
+Ptr<DescriptorSetLayout> SurfaceMaterial::getFrameLayout()
+{
+	DescriptorSetLayout::Settings layoutSettings;
+	layoutSettings.bindings =
+	{
+		{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
+	};
+	
+	return Graphics::instance().getDescriptorSetLayout(layoutSettings);
+}
+
+Ptr<DescriptorSetLayout> SurfaceMaterial::getObjectLayout()
+{
+	DescriptorSetLayout::Settings layoutSettings;
+	layoutSettings.bindings =
+	{
+		{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
+	};
+
+	//return DescriptorSetLayout::create(layoutSettings);
+	return Graphics::instance().getDescriptorSetLayout(layoutSettings);
+}
+
+void SurfaceMaterial::bindTo(CommandBuffer& commandBuffer) const
 {
 	commandBuffer.bindPipeline(*m_graphicsPipeline);
 	
@@ -604,9 +677,9 @@ const Ptr<GraphicsPipeline>& SurfaceMaterial::getGraphicsPipeline() const noexce
 	return m_graphicsPipeline;
 }
 
-const Ptr<DescriptorSetLayout>& SurfaceMaterial::getLayout() const noexcept
+const Ptr<DescriptorSetLayout>& SurfaceMaterial::getMaterialLayout() const noexcept
 {
-	return m_layout;
+	return m_materialLayout;
 }
 
 const Ptr<DescriptorSetLayout>& SurfaceMaterial::getInstanceLayout() const noexcept
@@ -750,7 +823,7 @@ Ptr<SurfaceMaterialInstance> SurfaceMaterialInstance::createDefault(const Ptr<Su
 	return materialInstance;
 }
 
-void SurfaceMaterialInstance::bindTo(CommandBuffer& commandBuffer)
+void SurfaceMaterialInstance::bindTo(CommandBuffer& commandBuffer) const
 {
 	if (m_descriptorSet)
 		commandBuffer.bindDescriptorSet(SurfaceMaterial::InstanceSetIndex, *m_descriptorSet);

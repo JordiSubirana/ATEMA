@@ -28,6 +28,8 @@
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/MaterialParameters.hpp>
 #include <Atema/Renderer/Image.hpp>
+#include <Atema/Renderer/BufferLayout.hpp>
+#include <Atema/Math/Matrix.hpp>
 
 namespace at
 {
@@ -121,9 +123,29 @@ namespace at
 			Ptr<Shader> fragmentShader;
 
 			// Global material layout used across all material instances
-			Ptr<DescriptorSetLayout> layout;
+			Ptr<DescriptorSetLayout> materialLayout;
 			// Material instance layout
 			Ptr<DescriptorSetLayout> instanceLayout;
+		};
+
+		struct FrameData
+		{
+			Matrix4f projection;
+			Matrix4f view;
+			Vector3f cameraPosition;
+
+			static BufferLayout getBufferLayout(StructLayout structLayout = StructLayout::Default);
+
+			void copyTo(void* destData, StructLayout structLayout = StructLayout::Default);
+		};
+
+		struct ObjectData
+		{
+			Matrix4f model;
+
+			static BufferLayout getBufferLayout(StructLayout structLayout = StructLayout::Default);
+
+			void copyTo(void* destData, StructLayout structLayout = StructLayout::Default);
 		};
 
 		SurfaceMaterial() = delete;
@@ -139,13 +161,16 @@ namespace at
 		// instanceLayoutPageSize is an hint of which descriptor set layout to use for instance set allocation
 		// graphics is the Graphics instance used to store & retrieve resources
 		static Ptr<SurfaceMaterial> createDefault(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize = 0, Graphics& graphics = Graphics::instance());
+		
+		static Ptr<DescriptorSetLayout> getFrameLayout();
+		static Ptr<DescriptorSetLayout> getObjectLayout();
 
 		// Binds the graphics pipeline and the descriptor set (if any) to a command buffer
 		// The user is reponsible for binding per-frame & per-object descriptor sets
-		void bindTo(CommandBuffer& commandBuffer);
+		void bindTo(CommandBuffer& commandBuffer) const;
 
 		const Ptr<GraphicsPipeline>& getGraphicsPipeline() const noexcept;
-		const Ptr<DescriptorSetLayout>& getLayout() const noexcept;
+		const Ptr<DescriptorSetLayout>& getMaterialLayout() const noexcept;
 		const Ptr<DescriptorSetLayout>& getInstanceLayout() const noexcept;
 		// Returns the set containing material global bindings
 		const Ptr<DescriptorSet>& getDescriptorSet() const noexcept;
@@ -166,7 +191,7 @@ namespace at
 		void releaseInstanceId(ID id);
 
 		Ptr<GraphicsPipeline> m_graphicsPipeline;
-		Ptr<DescriptorSetLayout> m_layout;
+		Ptr<DescriptorSetLayout> m_materialLayout;
 		Ptr<DescriptorSetLayout> m_instanceLayout;
 		Ptr<DescriptorSet> m_descriptorSet;
 		MaterialParameters m_parameters;
@@ -191,7 +216,7 @@ namespace at
 
 		// Binds the descriptor set (if any) to a command buffer
 		// The user is reponsible for binding surface material, per-frame & per-object descriptor sets
-		void bindTo(CommandBuffer& commandBuffer);
+		void bindTo(CommandBuffer& commandBuffer) const;
 
 		const Ptr<SurfaceMaterial>& getMaterial() const noexcept;
 		// Returns the set containing material instance bindings
