@@ -48,6 +48,7 @@
 #include <Atema/Graphics/RenderData.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
+#include <Atema/Graphics/StaticModel.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
