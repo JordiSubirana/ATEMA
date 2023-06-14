@@ -143,10 +143,62 @@ float atGBufferReadRoughness(vec2f uv)
 }
 )";
 
+	const char atPostProcess[] = R"(
+option
+{
+	int AtPostProcessTexCoordsLocation = 0;
+	int AtPostProcessOutColorLocation = 0;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f _atPostProcessInPosition;
+	[location(1)] vec2f _atPostProcessInTexCoords;
+}
+
+[stage(vertex)]
+output
+{
+	[location(AtPostProcessTexCoordsLocation)] vec2f _atPostProcessOutTexCoords;
+}
+
+[entry(vertex)]
+void main()
+{
+	_atPostProcessOutTexCoords = _atPostProcessInTexCoords;
+	
+	setVertexPosition(vec4f(_atPostProcessInPosition, 1.0));
+}
+
+[stage(fragment)]
+input
+{
+	[location(AtPostProcessTexCoordsLocation)] vec2f _atPostProcessInTexCoords;
+}
+
+[stage(fragment)]
+output
+{
+	[location(AtPostProcessOutColorLocation)] vec4f _atPostProcessOutColor;
+}
+
+vec2f atPostProcessGetTexCoords()
+{
+	return _atPostProcessInTexCoords;
+}
+
+void atPostProcessWriteOutColor(vec4f value)
+{
+	_atPostProcessOutColor = value;
+}
+)";
+
 	const std::unordered_map<std::string, const char*> s_shaderLibraries =
 	{
 		{ "Atema.GBufferWrite", atGBufferWrite },
 		{ "Atema.GBufferRead", atGBufferRead },
+		{ "Atema.PostProcess", atPostProcess },
 	};
 
 	struct SurfaceMaterialParameter
