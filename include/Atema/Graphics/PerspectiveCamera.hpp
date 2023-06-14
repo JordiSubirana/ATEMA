@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,32 +19,46 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_PERSPECTIVECAMERA_HPP
+#define ATEMA_GRAPHICS_PERSPECTIVECAMERA_HPP
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/Camera.hpp>
-#include <Atema/Graphics/DebugRenderer.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ModelLoader.hpp>
-#include <Atema/Graphics/Loaders/ObjLoader.hpp>
-#include <Atema/Graphics/MaterialParameters.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/OrthographicCamera.hpp>
-#include <Atema/Graphics/PerspectiveCamera.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
-#include <Atema/Graphics/VertexTypes.hpp>
+
+namespace at
+{
+	class ATEMA_GRAPHICS_API PerspectiveCamera : public Camera
+	{
+	public:
+		PerspectiveCamera();
+		PerspectiveCamera(const PerspectiveCamera& other) = default;
+		PerspectiveCamera(PerspectiveCamera&& other) noexcept = default;
+		~PerspectiveCamera() = default;
+
+		// Sets the field of view (degrees)
+		// Default : 70°
+		void setFOV(float fov);
+		// Width divided by height
+		// Default : 1.0
+		void setAspectRatio(float aspectRatio);
+
+		float getFOV() const noexcept;
+		float getAspectRatio() const noexcept;
+
+		const Matrix4f& getProjectionMatrix() const noexcept override;
+
+		PerspectiveCamera& operator=(const PerspectiveCamera& other) = default;
+		PerspectiveCamera& operator=(PerspectiveCamera&& other) noexcept = default;
+
+	protected:
+		void updateProjectionMatrix() override;
+
+	private:
+		float m_fov;
+		float m_aspectRatio;
+
+		Matrix4f m_projectionMatrix;
+	};
+}
 
 #endif

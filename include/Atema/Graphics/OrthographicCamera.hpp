@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,32 +19,39 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_GRAPHICS_HPP
-#define ATEMA_GLOBAL_GRAPHICS_HPP
+#ifndef ATEMA_GRAPHICS_ORTHOGRAPHICCAMERA_HPP
+#define ATEMA_GRAPHICS_ORTHOGRAPHICCAMERA_HPP
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/Camera.hpp>
-#include <Atema/Graphics/DebugRenderer.hpp>
-#include <Atema/Graphics/Enums.hpp>
-#include <Atema/Graphics/FrameGraph.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/FrameGraphPass.hpp>
-#include <Atema/Graphics/FrameGraphTexture.hpp>
-#include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ImageLoader.hpp>
-#include <Atema/Graphics/Loaders/ModelLoader.hpp>
-#include <Atema/Graphics/Loaders/ObjLoader.hpp>
-#include <Atema/Graphics/MaterialParameters.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/OrthographicCamera.hpp>
-#include <Atema/Graphics/PerspectiveCamera.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/VertexFormat.hpp>
-#include <Atema/Graphics/VertexTypes.hpp>
+
+namespace at
+{
+	class ATEMA_GRAPHICS_API OrthographicCamera : public Camera
+	{
+	public:
+		OrthographicCamera();
+		OrthographicCamera(const OrthographicCamera& other) = default;
+		OrthographicCamera(OrthographicCamera&& other) noexcept = default;
+		~OrthographicCamera() = default;
+
+		void setSize(const Vector2f& size);
+
+		const Vector2f& getSize() const noexcept;
+
+		const Matrix4f& getProjectionMatrix() const noexcept override;
+
+		OrthographicCamera& operator=(const OrthographicCamera& other) = default;
+		OrthographicCamera& operator=(OrthographicCamera&& other) noexcept = default;
+
+	protected:
+		void updateProjectionMatrix() override;
+
+	private:
+		Vector2f m_size;
+
+		Matrix4f m_projectionMatrix;
+	};
+}
 
 #endif
