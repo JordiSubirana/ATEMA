@@ -33,8 +33,9 @@
 namespace at
 {
 	struct SurfaceMaterialData;
-	struct SurfaceMaterial;
-	struct SurfaceMaterialInstance;
+	class SurfaceMaterial;
+	class SurfaceMaterialInstance;
+	class VertexBuffer;
 	
 	// Class managing all resources needed to do rendering
 	class ATEMA_GRAPHICS_API Graphics
@@ -79,6 +80,7 @@ namespace at
 		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, AstShaderStage shaderStage);
 		// Convenience method to get a specific UberShader using other overloads
 		Ptr<UberShader> getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {});
+		Ptr<UberShader> getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {});
 
 		// Returns a Shader module created from a UberShader
 		Ptr<Shader> getShader(const UberShader& uberShader);

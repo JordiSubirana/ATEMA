@@ -518,6 +518,18 @@ Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstSh
 	return getUberShader(*baseUberShader, shaderStage);
 }
 
+Ptr<UberShader> Graphics::getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options)
+{
+	// Get the raw shader
+	auto baseUberShader = getUberShader(identifier);
+
+	// Preprocess the shader
+	baseUberShader = getUberShader(*baseUberShader, options);
+
+	// Extract the desired stage
+	return getUberShader(*baseUberShader, shaderStage);
+}
+
 Ptr<Shader> Graphics::getShader(const UberShader& uberShader)
 {
 	return m_shaderManager.get(&uberShader);
