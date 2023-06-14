@@ -28,82 +28,8 @@
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Core/TaskManager.hpp>
-#include <Atema/Graphics/VertexTypes.hpp>
 
 using namespace at;
-
-namespace
-{
-	constexpr char* _ShaderName = "AtemaTest";
-
-	const char _ShaderCode[] = R"(
-struct FrameData
-{
-	mat4f proj;
-	mat4f view;
-	vec3f cameraPosition;
-}
-
-external
-{
-	[set(0), binding(0)] FrameData frameData;
-}
-
-[stage(vertex)]
-input
-{
-	[location(0)] vec3f inPosition;
-	[location(1)] vec2f inTexCoords;
-}
-
-[stage(vertex)]
-output
-{
-	[location(0)] vec2f outTexCoords;
-	[location(1)] vec4f outColor;
-}
-
-[entry(vertex)]
-void main()
-{
-	outTexCoords = inTexCoords;
-
-	outColor = vec4f(frameData.cameraPosition.x, 0, 0, 1);
-	
-	vec4f pos = frameData.proj * frameData.view * vec4f(inPosition, 1.0);
-
-	setVertexPosition(pos);
-}
-
-[stage(fragment)]
-input
-{
-	[location(0)] vec2f inTexCoords;
-	[location(1)] vec4f inColor;
-}
-
-[stage(fragment)]
-output
-{
-	[location(0)] vec4f out0;
-	[location(1)] vec4f out1;
-	[location(2)] vec4f out2;
-	[location(3)] vec4f out3;
-}
-
-[entry(fragment)]
-void main()
-{
-	vec2f uv = inTexCoords;	
-
-	out0 = vec4f(uv.x, uv.y, 1, 1);
-	out1 = vec4f(uv.x, uv.y, 1, 1);
-	out2 = inColor;
-	out2 = vec4f(uv.x, uv.y, 1, 1);
-	out3 = vec4f(uv.x, uv.y, 1, 1);
-}
-)";
-}
 
 namespace
 {
