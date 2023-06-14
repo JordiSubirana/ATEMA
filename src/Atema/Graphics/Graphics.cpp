@@ -23,11 +23,14 @@
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Shader/Loaders/AtslLoader.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Renderer/Utils.hpp>
 #include <Atema/Shader/Atsl/AtslParser.hpp>
 #include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
+#include <Atema/Graphics/VertexBuffer.hpp>
+#include <Atema/Graphics/VertexTypes.hpp>
 
 #include <filesystem>
 #include <functional>
@@ -185,6 +188,17 @@ float atGBufferReadRoughness(vec2f uv)
 
 		return BufferElementType::Int;
 	}
+
+	std::vector<Vertex_XYZ_UV> quadVertices =
+	{
+		{{ -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }},
+		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 1.0f }},
+		{{ +1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }},
+
+		{{ +1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }},
+		{{ -1.0f, +1.0f, 0.0f }, { 0.0f, 1.0f }},
+		{{ +1.0f, +1.0f, 0.0f }, { 1.0f, 1.0f }}
+	};
 }
 
 //-----
@@ -399,6 +413,8 @@ void Graphics::clearUnused()
 
 void Graphics::clear()
 {
+	m_quadMesh.reset();
+	
 	for (auto& resourceManager : m_resourceManagers)
 		resourceManager->clear();
 }
@@ -415,6 +431,43 @@ void Graphics::initializeShaderLibraries(ShaderLibraryManager& libraryManager)
 
 		libraryManager.setLibrary(libName, std::move(ast));
 	}
+}
+
+Ptr<VertexBuffer> Graphics::getQuadMesh()
+{
+	if (!m_quadMesh)
+	{
+		// Create vertex buffer
+		VertexBuffer::Settings vertexBufferSettings;
+		vertexBufferSettings.vertexFormat = VertexFormat::create(Vertex_XYZ_UV::VertexFormat);
+		vertexBufferSettings.usages = BufferUsage::Vertex | BufferUsage::TransferDst;
+		vertexBufferSettings.size = quadVertices.size();
+		m_quadMesh = VertexBuffer::create(vertexBufferSettings);
+
+		// Fill staging buffer
+		const size_t bufferSize = m_quadMesh->getByteSize();
+
+		auto stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, bufferSize });
+
+		auto bufferData = stagingBuffer->map();
+
+		memcpy(bufferData, static_cast<void*>(quadVertices.data()), static_cast<size_t>(bufferSize));
+
+		stagingBuffer->unmap();
+
+		// Copy staging buffer to vertex buffer
+		auto commandBuffer = Renderer::instance().getCommandPool(QueueType::Graphics)->createBuffer({true});
+
+		commandBuffer->begin();
+
+		commandBuffer->copyBuffer(*stagingBuffer, *m_quadMesh->getBuffer(), bufferSize);
+
+		commandBuffer->end();
+
+		Renderer::instance().submitAndWait({ commandBuffer });
+	}
+
+	return m_quadMesh;
 }
 
 void Graphics::setUberShader(const std::string& identifier, const std::string& shaderCode)

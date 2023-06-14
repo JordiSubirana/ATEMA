@@ -61,6 +61,9 @@ namespace at
 		// Initializes ShaderLibraryManager with built-in shader libraries
 		void initializeShaderLibraries(ShaderLibraryManager& libraryManager);
 
+		// Default quad mesh (x & y : [-1,1], z : 0)
+		Ptr<VertexBuffer> getQuadMesh();
+
 		// Saves a UberShader an associates it to an identifier
 		void setUberShader(const std::string& identifier, const std::string& shaderCode);
 		bool uberShaderExists(const std::string& identifier) const;
