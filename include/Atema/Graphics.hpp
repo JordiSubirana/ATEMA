@@ -43,6 +43,8 @@
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
 #include <Atema/Graphics/OrthographicCamera.hpp>
+#include <Atema/Graphics/Passes/GBufferPass.hpp>
+#include <Atema/Graphics/Passes/ScreenPass.hpp>
 #include <Atema/Graphics/PerspectiveCamera.hpp>
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Graphics/RenderData.hpp>
