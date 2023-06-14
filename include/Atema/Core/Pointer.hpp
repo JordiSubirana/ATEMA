@@ -36,6 +36,18 @@ namespace at
 
 	template <typename T>
 	using UPtr = std::unique_ptr<T>;
+
+	template <typename T, typename ... Args>
+	Ptr<T> newPtr(Args&&... args)
+	{
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
+
+	template <typename T, typename ... Args>
+	UPtr<T> newUPtr(Args&&... args)
+	{
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
 }
 
 #endif
