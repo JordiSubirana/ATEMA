@@ -221,11 +221,11 @@ Ptr<FrameGraph> FrameGraphBuilder::build()
 
 	// Initialize passes
 	auto& passes = frameGraph->m_passes;
-	passes.resize(m_passes.size());
+	passes.resize(m_passDatas.size());
 
-	for (size_t passIndex = 0; passIndex < m_passes.size(); passIndex++)
+	for (size_t passIndex = 0; passIndex < m_passDatas.size(); passIndex++)
 	{
-		const auto& frameGraphPass = *m_passes[passIndex];
+		const auto& frameGraphPass = *m_passDatas[passIndex].pass;
 		auto& physicalPass = m_physicalPasses[passIndex];
 		
 		auto& pass = passes[passIndex];
@@ -599,10 +599,11 @@ void FrameGraphBuilder::updateTextureDatas()
 		textureData.input.clear();
 		textureData.output.clear();
 		textureData.depth.clear();
-		textureData.usages.resize(m_passes.size());
+		textureData.clear.clear();
+		textureData.usages.resize(m_passDatas.size());
 	}
 
-	for (size_t newPassIndex = 0; newPassIndex < m_passes.size(); newPassIndex++)
+	for (size_t newPassIndex = 0; newPassIndex < m_passDatas.size(); newPassIndex++)
 	{
 		const auto& passData = m_passDatas[newPassIndex];
 
@@ -808,7 +809,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 	{
 		auto& physicalTexture = *physicalTexturePtr;
 		auto& barriers = physicalTexture.barriers;
-		barriers.resize(m_passes.size());
+		barriers.resize(m_passDatas.size());
 
 		const auto& firstTextureData = m_textureDatas[physicalTexture.textureHandles[0]];
 		auto currentPassIndex = firstTextureData.useRange.first;
@@ -895,6 +896,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 					const auto shaderStages = newPass->getSamplingStages(textureHandle);
 
 					barrier.dstPipelineStages |= getShaderPipelineStages(shaderStages);
+					barrier.dstMemoryAccesses |= MemoryAccess::ShaderRead;
 					barrier.dstLayout = ImageLayout::ShaderRead;
 				}
 				else
