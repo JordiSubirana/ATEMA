@@ -28,7 +28,6 @@
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
-#include <Atema/Renderer/DepthStencil.hpp>
 #include <Atema/Math/Enums.hpp>
 
 #include <vector>

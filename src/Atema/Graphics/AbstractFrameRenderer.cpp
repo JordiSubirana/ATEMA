@@ -51,6 +51,8 @@ void AbstractFrameRenderer::beginFrame()
 		m_updateFrameGraph = false;
 	}
 	
+	doBeginFrame();
+
 	for (auto& renderPass : getRenderPasses())
 		renderPass->beginFrame(m_renderData);
 }
@@ -102,5 +104,9 @@ Vector2u AbstractFrameRenderer::getSize() const noexcept
 }
 
 void AbstractFrameRenderer::destroyResources(RenderFrame& renderFrame)
+{
+}
+
+void AbstractFrameRenderer::doBeginFrame()
 {
 }

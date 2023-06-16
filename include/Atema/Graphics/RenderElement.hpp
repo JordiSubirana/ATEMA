@@ -23,17 +23,16 @@
 #define ATEMA_GRAPHICS_RENDERELEMENT_HPP
 
 #include <Atema/Graphics/Config.hpp>
+#include <Atema/Graphics/VertexBuffer.hpp>
+#include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
+#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Math/AABB.hpp>
 
 #include <vector>
 
 namespace at
 {
-	class VertexBuffer;
-	class IndexBuffer;
-	class SurfaceMaterialInstance;
-
 	class ATEMA_GRAPHICS_API RenderElement
 	{
 	public:

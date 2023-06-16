@@ -66,6 +66,8 @@ namespace at
 		virtual FrameGraph& getFrameGraph() = 0;
 		virtual std::vector<UPtr<AbstractRenderPass>>& getRenderPasses() = 0;
 		virtual void destroyResources(RenderFrame& renderFrame);
+		// Called before every AbstractRenderPass::doBeginFrame
+		virtual void doBeginFrame();
 
 	private:
 		RenderData m_renderData;
