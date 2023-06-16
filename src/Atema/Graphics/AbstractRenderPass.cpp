@@ -47,6 +47,11 @@ void AbstractRenderPass::doBeginFrame()
 	// Does nothing by default
 }
 
+void AbstractRenderPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+{
+	// Does nothing by default
+}
+
 void AbstractRenderPass::doEndFrame()
 {
 	// Does nothing by default

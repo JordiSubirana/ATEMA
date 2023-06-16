@@ -39,6 +39,7 @@ namespace at
 		virtual const char* getName() const noexcept = 0;
 
 		void beginFrame(const RenderData& renderData);
+		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
 		void endFrame();
 
 		AbstractRenderPass& operator=(const AbstractRenderPass& other) = default;

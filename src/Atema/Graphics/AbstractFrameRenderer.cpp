@@ -73,6 +73,9 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 	for (auto& renderable : m_renderData.getRenderables())
 		renderable->updateResources(renderFrame, *commandBuffer);
 
+	for (auto& renderPass : getRenderPasses())
+		renderPass->updateResources(renderFrame, *commandBuffer);
+
 	commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
 
 	commandBuffer->end();
