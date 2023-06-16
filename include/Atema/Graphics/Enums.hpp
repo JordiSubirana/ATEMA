@@ -32,9 +32,9 @@ namespace at
 		None = 0,
 		Sampled = 1 << 0,
 		Input = 1 << 1,
-		Output = 1 << 3,
-		Depth = 1 << 4,
-		Clear = 1 << 5,
+		Output = 1 << 2,
+		Depth = 1 << 3,
+		Clear = 1 << 4,
 
 		Read = Sampled | Input,
 		Write = Output | Depth | Clear,
