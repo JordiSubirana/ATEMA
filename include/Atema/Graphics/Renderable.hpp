@@ -50,6 +50,8 @@ namespace at
 
 		virtual const AABBf& getAABB() const noexcept = 0;
 
+		virtual bool castsShadows() const noexcept = 0;
+
 		Renderable& operator=(const Renderable& other) = default;
 		Renderable& operator=(Renderable&& other) noexcept = default;
 

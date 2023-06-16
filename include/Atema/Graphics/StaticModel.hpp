@@ -48,6 +48,8 @@ namespace at
 		const Transform& getTransform() const noexcept override;
 		const AABBf& getAABB() const noexcept override;
 
+		bool castsShadows() const noexcept override;
+
 		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
 
 		void getRenderElements(std::vector<RenderElement>& renderElements) const override;

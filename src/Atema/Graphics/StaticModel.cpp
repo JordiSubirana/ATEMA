@@ -76,6 +76,11 @@ const AABBf& StaticModel::getAABB() const noexcept
 	return m_aabb;
 }
 
+bool StaticModel::castsShadows() const noexcept
+{
+    return true;
+}
+
 void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
 	if (m_updateTransform)
