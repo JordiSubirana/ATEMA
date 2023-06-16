@@ -44,6 +44,7 @@
 #include <Atema/Graphics/Model.hpp>
 #include <Atema/Graphics/OrthographicCamera.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
+#include <Atema/Graphics/Passes/PhongLightingPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
 #include <Atema/Graphics/PerspectiveCamera.hpp>
