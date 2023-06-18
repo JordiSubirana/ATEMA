@@ -43,6 +43,8 @@
 #include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
+#include <Atema/Renderer/UI/ImGui.hpp>
+#include <Atema/Renderer/UI/UiContext.hpp>
 #include <Atema/Renderer/Utils.hpp>
 #include <Atema/Renderer/VertexInput.hpp>
 #include <Atema/Renderer/Viewport.hpp>

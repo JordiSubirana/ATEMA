@@ -23,6 +23,7 @@
 #define ATEMA_GLOBAL_VULKAN_RENDERER_HPP
 
 #include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/VulkanRenderer/UI/VulkanUiContext.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandPool.hpp>

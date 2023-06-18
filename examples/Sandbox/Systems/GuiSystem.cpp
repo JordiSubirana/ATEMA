@@ -21,7 +21,7 @@
 
 #include "GuiSystem.hpp"
 
-#include <Atema/UI/UiContext.hpp>
+#include <Atema/Renderer/UI/UiContext.hpp>
 
 #include "../Resources.hpp"
 #include "../Settings.hpp"
@@ -114,11 +114,12 @@ GuiSystem::GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 	m_elapsedTime(0.0f)
 {
 	UiContext::Settings uiSettings;
-	uiSettings.renderWindow = renderWindow;
+	uiSettings.renderWindow = renderWindow.get();
 	uiSettings.defaultFont = fontPath / "Roboto-Medium.ttf";
 	uiSettings.defaultFontSize = 16.0f;
 
-	UiContext::instance().initialize(uiSettings);
+	m_uiContext = UiContext::create(uiSettings);
+	m_uiContext->setActive();
 
 	// Setup Dear ImGui style
 	//ImGui::StyleColorsDark();
@@ -127,20 +128,20 @@ GuiSystem::GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 
 GuiSystem::~GuiSystem()
 {
-	UiContext::instance().shutdown();
+	m_uiContext->shutdown();
 }
 
 void GuiSystem::update(at::TimeStep timeStep)
 {
 	m_timeStep = timeStep;
 
-	UiContext::instance().newFrame();
+	m_uiContext->newFrame();
 
 	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
 	updateUI();
 
-	UiContext::instance().renderFrame();
+	m_uiContext->renderFrame();
 }
 
 void GuiSystem::onEvent(at::Event& event)

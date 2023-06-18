@@ -34,6 +34,7 @@
 #include <Atema/VulkanRenderer/VulkanSemaphore.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanRenderWindow.hpp>
+#include <Atema/VulkanRenderer/UI/VulkanUiContext.hpp>
 #include <Atema/Core/TaskManager.hpp>
 
 #include <set>
@@ -207,6 +208,13 @@ Ptr<RenderWindow> VulkanRenderer::createRenderWindow(const RenderWindow::Setting
 	auto object = std::make_shared<VulkanRenderWindow>(*m_device, settings);
 
 	return std::static_pointer_cast<RenderWindow>(object);
+}
+
+Ptr<UiContext> VulkanRenderer::createUiContext(const UiContext::Settings& settings)
+{
+	auto object = std::make_shared<VulkanUiContext>(settings);
+
+	return std::static_pointer_cast<UiContext>(object);
 }
 
 void VulkanRenderer::submit(

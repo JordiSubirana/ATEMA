@@ -25,7 +25,7 @@
 #include "System.hpp"
 #include "../Stats.hpp"
 
-#include <Atema/UI/ImGui.hpp>
+#include <Atema/Renderer/UI/ImGui.hpp>
 
 class GuiSystem : public System
 {
@@ -63,6 +63,8 @@ private:
 
 	void pushState(WidgetState& state);
 	void popState(WidgetState& state);
+
+	at::Ptr<at::UiContext> m_uiContext;
 
 	at::TimeStep m_timeStep;
 

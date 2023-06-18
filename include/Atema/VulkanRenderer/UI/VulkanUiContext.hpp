@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,11 +19,37 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GLOBAL_UI_HPP
-#define ATEMA_GLOBAL_UI_HPP
+#ifndef ATEMA_VULKANRENDERER_VULKANUICONTEXT_HPP
+#define ATEMA_VULKANRENDERER_VULKANUICONTEXT_HPP
 
-#include <Atema/UI/Config.hpp>
-#include <Atema/UI/ImGui.hpp>
-#include <Atema/UI/UiContext.hpp>
+#include <Atema/VulkanRenderer/Config.hpp>
+#include <Atema/Renderer/Ui/UiContext.hpp>
+
+namespace at
+{
+	class DescriptorSetLayout;
+
+	class ATEMA_VULKANRENDERER_API VulkanUiContext : public UiContext
+	{
+	public:
+		VulkanUiContext() = delete;
+		VulkanUiContext(const UiContext::Settings& settings);
+		VulkanUiContext(const VulkanUiContext& other) = delete;
+		VulkanUiContext(VulkanUiContext&& other) noexcept = delete;
+		~VulkanUiContext();
+
+		void draw(ImDrawData* drawData, CommandBuffer& commandBuffer) override;
+
+		VulkanUiContext& operator=(const VulkanUiContext& other) = delete;
+		VulkanUiContext& operator=(VulkanUiContext&& other) noexcept = delete;
+
+	protected:
+		void shutdownPlatform() override;
+		void newPlatformFrame() override;
+
+	private:
+		Ptr<DescriptorSetLayout> m_descriptorSetLayout;
+	};
+}
 
 #endif

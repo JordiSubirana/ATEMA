@@ -69,6 +69,7 @@ namespace at
 		Ptr<Semaphore> createSemaphore() override;
 		Ptr<Buffer> createBuffer(const Buffer::Settings& settings) override;
 		Ptr<RenderWindow> createRenderWindow(const RenderWindow::Settings& settings) override;
+		Ptr<UiContext> createUiContext(const UiContext::Settings& settings) override;
 
 		void submit(const std::vector<Ptr<CommandBuffer>>& commandBuffers, const std::vector<WaitCondition>& waitConditions, const std::vector<Ptr<Semaphore>>& signalSemaphores, Ptr<Fence> fence = nullptr) override;
 		

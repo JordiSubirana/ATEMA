@@ -33,18 +33,14 @@ local modules =
 	},
 	Renderer =
 	{
-		dependencies = {"AtemaCore", "AtemaMath", "AtemaShader", "AtemaWindow"}
+		dependencies = {"AtemaCore", "AtemaMath", "AtemaShader", "AtemaWindow"},
+		packages = {"glfw"},
+		windowsDependencies = {"gdi32"}
 	},
 	Shader =
 	{
 		dependencies = {"AtemaCore", "AtemaMath"},
 		packages = {"glslang"}
-	},
-	UI =
-	{
-		dependencies = {"AtemaCore", "AtemaMath", "AtemaRenderer", "AtemaVulkanRenderer", "AtemaWindow"},
-		packages = {"glfw"},
-		windowsDependencies = {"gdi32"}
 	},
 	VulkanRenderer =
 	{

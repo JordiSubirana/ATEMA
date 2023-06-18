@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,60 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_UI_UICONTEXT_HPP
-#define ATEMA_UI_UICONTEXT_HPP
+#ifndef ATEMA_RENDERER_IMGUI_HPP
+#define ATEMA_RENDERER_IMGUI_HPP
 
-#include <Atema/UI/Config.hpp>
-#include <Atema/UI/ImGui.hpp>
+#include <Atema/Renderer/Config.hpp>
+#include <Atema/Core/Error.hpp>
+#include <Atema/Math/Vector.hpp>
 
-#include <filesystem>
+#define IM_ASSERT(at_expr)  ATEMA_ASSERT(at_expr)
 
-namespace at
-{
-	namespace detail
-	{
-		class UiContextImplementation
-		{
-		public:
-			UiContextImplementation();
-			virtual ~UiContextImplementation();
+#define IMGUI_API ATEMA_RENDERER_API
 
-			virtual void newFrame() = 0;
-			virtual void renderDrawData(ImDrawData* drawData, CommandBuffer& commandBuffer) = 0;
-		};
-	}
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#define IMGUI_DISABLE_OBSOLETE_KEYIO
 
-	class RenderWindow;
+#define IM_VEC2_CLASS_EXTRA \
+	constexpr ImVec2(const at::Vector2f& f) : x(f.x), y(f.y) {} \
+	operator at::Vector2f() const { return at::Vector2f(x, y); }
 
-	class ATEMA_UI_API UiContext
-	{
-	public:
-		struct Settings
-		{
-			std::filesystem::path defaultFont;
-			float defaultFontSize = 13.0f;
-			Ptr<RenderWindow> renderWindow;
-		};
+#define IM_VEC4_CLASS_EXTRA                                                     \
+        constexpr ImVec4(const at::Vector4f& f) : x(f.x), y(f.y), z(f.z), w(f.w) {}   \
+        operator at::Vector4f() const { return at::Vector4f(x, y, z, w); }
 
-		~UiContext();
-
-		static UiContext& instance();
-
-		void initialize(const Settings& settings);
-		void shutdown();
-
-		ImGuiContext* getImGuiContext() const;
-
-		void newFrame();
-		void renderFrame();
-		void renderDrawData(ImDrawData* drawData, CommandBuffer& commandBuffer);
-
-	private:
-		UiContext();
-
-		Ptr<detail::UiContextImplementation> m_implementation;
-		ImGuiContext* m_context;
-	};
-}
+#include <imgui/imgui.h>
 
 #endif

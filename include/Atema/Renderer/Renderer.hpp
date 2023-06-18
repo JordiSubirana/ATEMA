@@ -38,6 +38,7 @@
 #include <Atema/Renderer/Sampler.hpp>
 #include <Atema/Renderer/Semaphore.hpp>
 #include <Atema/Renderer/Shader.hpp>
+#include <Atema/Renderer/Ui/UiContext.hpp>
 
 namespace at
 {
@@ -207,6 +208,7 @@ namespace at
 		virtual Ptr<Semaphore> createSemaphore() = 0;
 		virtual Ptr<Buffer> createBuffer(const Buffer::Settings& settings) = 0;
 		virtual Ptr<RenderWindow> createRenderWindow(const RenderWindow::Settings& settings) = 0;
+		virtual Ptr<UiContext> createUiContext(const UiContext::Settings& settings) = 0;
 
 		// Rendering
 		virtual void submit(

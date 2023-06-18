@@ -34,7 +34,7 @@
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Shader/Ast/AstPreprocessor.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
-#include <Atema/UI/UiContext.hpp>
+#include <Atema/Renderer/UI/UiContext.hpp>
 
 #include "../Resources.hpp"
 #include "../Scene.hpp"
@@ -1458,7 +1458,7 @@ void GraphicsSystem::createFrameGraph()
 				commandBuffer.draw(static_cast<uint32_t>(quadVertices.size()));
 
 				// UI
-				UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
+				UiContext::getActive()->draw(ImGui::GetDrawData(), commandBuffer);
 
 				context.destroyAfterUse(std::move(descriptorSet1));
 			});
