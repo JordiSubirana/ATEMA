@@ -47,6 +47,8 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 	size_t passIndex = 0;
 	for (auto& pass : m_passes)
 	{
+		ATEMA_BENCHMARK(pass.name);
+
 		FrameGraphContext context(renderFrame, *commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
 
 		if (pass.useRenderFrameOutput)

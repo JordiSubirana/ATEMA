@@ -80,6 +80,8 @@ namespace at
 
 		struct Pass
 		{
+			std::string name;
+
 			Ptr<RenderPass> renderPass;
 
 			Ptr<Framebuffer> framebuffer;

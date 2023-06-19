@@ -230,6 +230,7 @@ Ptr<FrameGraph> FrameGraphBuilder::build()
 		
 		auto& pass = passes[passIndex];
 
+		pass.name = frameGraphPass.getName();
 		pass.useRenderFrameOutput = physicalPass.useRenderFrameOutput;
 		pass.renderPass = std::move(physicalPass.renderPass);
 		pass.framebuffer = std::move(physicalPass.framebuffer);
