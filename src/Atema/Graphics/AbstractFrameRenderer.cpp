@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Graphics/AbstractFrameRenderer.hpp>
 #include <Atema/Graphics/FrameGraph.hpp>
 #include <Atema/Renderer/Renderer.hpp>
@@ -42,6 +43,8 @@ const RenderData& AbstractFrameRenderer::getRenderData() const noexcept
 
 void AbstractFrameRenderer::beginFrame()
 {
+	ATEMA_BENCHMARK_TAG(_1, "Begin frame");
+
 	if (m_updateFrameGraph)
 	{
 		Renderer::instance().waitForIdle();
@@ -54,40 +57,52 @@ void AbstractFrameRenderer::beginFrame()
 	doBeginFrame();
 
 	for (auto& renderPass : getRenderPasses())
+	{
+		ATEMA_BENCHMARK_TAG(_2, std::string(renderPass->getName()) + " (begin)");
+
 		renderPass->beginFrame(m_renderData);
+	}
 }
 
 void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 {
-	// Transfer data from CPU to GPU if needed
-	CommandBuffer::Settings commandBufferSettings;
-	commandBufferSettings.secondary = false;
-	commandBufferSettings.singleUse = true;
-	
-	auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+	{
+		ATEMA_BENCHMARK("Transfer data");
 
-	commandBuffer->begin();
+		// Transfer data from CPU to GPU if needed
+		CommandBuffer::Settings commandBufferSettings;
+		commandBufferSettings.secondary = false;
+		commandBufferSettings.singleUse = true;
 
-	commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
+		auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
 
-	for (auto& renderable : m_renderData.getRenderables())
-		renderable->updateResources(renderFrame, *commandBuffer);
+		commandBuffer->begin();
 
-	for (auto& renderPass : getRenderPasses())
-		renderPass->updateResources(renderFrame, *commandBuffer);
+		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
 
-	commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
+		for (auto& renderable : m_renderData.getRenderables())
+			renderable->updateResources(renderFrame, *commandBuffer);
 
-	commandBuffer->end();
+		for (auto& renderPass : getRenderPasses())
+			renderPass->updateResources(renderFrame, *commandBuffer);
 
-	renderFrame.submit({ commandBuffer }, {}, {});
+		commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
 
-	renderFrame.destroyAfterUse(std::move(commandBuffer));
+		commandBuffer->end();
 
-	destroyResources(renderFrame);
+		renderFrame.submit({ commandBuffer }, {}, {});
 
-	// Execute FrameGraph
-	getFrameGraph().execute(renderFrame);
+		renderFrame.destroyAfterUse(std::move(commandBuffer));
+
+		destroyResources(renderFrame);
+	}
+
+	{
+		ATEMA_BENCHMARK("Execute FrameGraph");
+
+		// Execute FrameGraph
+		getFrameGraph().execute(renderFrame);
+	}
 
 	// End frame
 	for (auto& renderPass : getRenderPasses())
@@ -98,6 +113,11 @@ void AbstractFrameRenderer::resize(const Vector2u& size)
 {
 	m_size = size;
 
+	m_updateFrameGraph = true;
+}
+
+void AbstractFrameRenderer::updateFrameGraph()
+{
 	m_updateFrameGraph = true;
 }
 

@@ -56,6 +56,8 @@ namespace at
 
 		void resize(const Vector2u& size);
 
+		void updateFrameGraph();
+
 		Vector2u getSize() const noexcept;
 
 		AbstractFrameRenderer& operator=(const AbstractFrameRenderer& other) = delete;
