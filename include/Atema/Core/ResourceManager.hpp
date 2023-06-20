@@ -99,6 +99,9 @@ namespace at
 		// If the user owns a resource at this time (saving a Ptr to the resource) it will not be deleted
 		void clear();
 
+		// Forces the deletion of a particular value
+		void remove(const T* value);
+
 	private:
 		StdHash getHash(const ID& id) const;
 
@@ -111,6 +114,7 @@ namespace at
 		};
 
 		std::unordered_map<std::size_t, ResourceData> m_resources;
+		std::unordered_map<const T*, std::vector<size_t>> m_resourceIndices;
 
 		uint32_t m_maxUnusedCounter;
 

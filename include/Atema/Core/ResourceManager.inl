@@ -66,7 +66,10 @@ namespace at
 	template <typename T, typename ID>
 	void ResourceManager<T, ID>::set(const ID& id, const Ptr<T>& resource)
 	{
-		m_resources[getHash(id)] = {resource, 0};
+		const auto hash = getHash(id);
+
+		m_resources[hash] = {resource, 0};
+		m_resourceIndices[resource.get()].emplace_back(hash);
 	}
 
 	template <typename T, typename ID>
@@ -121,6 +124,10 @@ namespace at
 
 				if (it->second.counter > m_maxUnusedCounter)
 				{
+					const auto indexIt = m_resourceIndices.find(it->second.resource.get());
+
+					m_resourceIndices.erase(indexIt);
+
 					m_deleter(std::move(it->second.resource));
 
 					it = m_resources.erase(it);
@@ -140,6 +147,29 @@ namespace at
 			m_deleter(std::move(resourceKV.second.resource));
 
 		m_resources.clear();
+	}
+
+	template <typename T, typename ID>
+	void ResourceManager<T, ID>::remove(const T* value)
+	{
+		auto it = m_resourceIndices.find(value);
+
+		if (it == m_resourceIndices.end())
+			return;
+
+		for (auto& hash : it->second)
+		{
+			auto resourceIt = m_resources.find(hash);
+
+			if (resourceIt != m_resources.end())
+			{
+				m_deleter(std::move(resourceIt->second.resource));
+
+				m_resources.erase(resourceIt);
+			}
+		}
+
+		m_resourceIndices.erase(it);
 	}
 
 	template <typename T, typename ID>
