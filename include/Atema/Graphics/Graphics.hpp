@@ -29,6 +29,7 @@
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Shader/ShaderLibraryManager.hpp>
+#include <Atema/Core/Signal.hpp>
 
 namespace at
 {
@@ -171,17 +172,31 @@ namespace at
 			const SurfaceMaterialData& materialData;
 		};
 
+		struct ResourceHandle
+		{
+			Signal<> onDestroy;
+			ConnectionGuard connectionGuard;
+		};
+
 		Ptr<UberShader> loadUberShader(const std::filesystem::path& path);
 		Ptr<UberShader> loadUberInstance(const UberInstanceSettings& settings);
 		Ptr<UberShader> loadUberStage(const UberStageSettings& settings);
 		Ptr<Shader> loadShader(const UberShader& uberShader);
-		static Ptr<DescriptorSetLayout> loadDescriptorSetLayout(const DescriptorSetLayout::Settings& settings);
+		Ptr<DescriptorSetLayout> loadDescriptorSetLayout(const DescriptorSetLayout::Settings& settings);
 		Ptr<GraphicsPipeline::Settings> loadGraphicsPipelineSettings(const GraphicsPipelineSettings& settings);
 		static Ptr<GraphicsPipeline> loadGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		static Ptr<Image> loadImage(const ImageSettings& settings);
 		static Ptr<Sampler> loadSampler(const Sampler::Settings& settings);
 		Ptr<SurfaceMaterial> loadSurfaceMaterial(const DefaultSurfaceMaterialSettings& settings);
 		Ptr<SurfaceMaterialInstance> loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings);
+
+		void onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
+		void onDestroy(const Shader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
+		void onDestroy(const DescriptorSetLayout* resource, ResourceHandle& dstHandle, std::function<void()> callback);
+		ResourceHandle& initializeResourceHandle(const void* resource);
+		void destroy(UberShader* resource);
+		void destroy(void* resource);
+		ResourceHandle& getResourceHandle(const void* resource);
 		
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
@@ -202,6 +217,8 @@ namespace at
 
 		std::unordered_map<const UberShader*, WPtr<UberShader>> m_uberShaders;
 		std::unordered_map<Shader*, Ptr<UberShader>> m_shaderToUber;
+
+		std::unordered_map<const void*, Ptr<ResourceHandle>> m_resourceHandles;
 	};
 }
 

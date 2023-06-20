@@ -371,7 +371,10 @@ Graphics::Graphics()
 			return loadShader(*uberShader);
 		});
 
-	m_descriptorSetLayoutManager.addLoader(&loadDescriptorSetLayout);
+	m_descriptorSetLayoutManager.addLoader([this](const DescriptorSetLayout::Settings& settings)
+		{
+			return loadDescriptorSetLayout(settings);
+		});
 
 	m_graphicsPipelineSettingsManager.addLoader([this](const GraphicsPipelineSettings& settings)
 		{
@@ -415,7 +418,7 @@ Graphics::Graphics()
 	m_resourceManagers.emplace_back(&m_defaultSurfaceMaterialSettingsManager);
 	m_resourceManagers.emplace_back(&m_defaultSurfaceInstanceSettingsManager);
 
-	m_shaderManager.setDeleter([&](Ptr<Shader> shader)
+	m_shaderManager.setDeleter([this](Ptr<Shader> shader)
 		{
 			const auto it = m_shaderToUber.find(shader.get());
 
@@ -425,16 +428,14 @@ Graphics::Graphics()
 			shader.reset();
 		});
 
-	auto deleteUberShader = [&](Ptr<UberShader> uberShader)
+	auto deleteUberShader = [this](Ptr<UberShader> uberShader)
 	{
-		const auto it = m_uberShaders.find(uberShader.get());
-
-		if (it != m_uberShaders.end())
-			m_uberShaders.erase(it);
+		destroy(uberShader.get());
 
 		uberShader.reset();
 	};
 
+	m_uberShaderIdManager.setDeleter(deleteUberShader);
 	m_uberShaderManager.setDeleter(deleteUberShader);
 	m_uberShaderOptionsManager.setDeleter(deleteUberShader);
 	m_uberShaderStageManager.setDeleter(deleteUberShader);
@@ -530,7 +531,13 @@ void Graphics::setUberShader(const std::string& identifier, const std::string& s
 
 	auto ast = converter.createAst(parser.createTokens(shaderCode));
 
-	m_uberShaderIdManager.set(identifier, std::make_shared<UberShader>(std::move(ast)));
+	auto uberShader = std::make_shared<UberShader>(std::move(ast));
+
+	m_uberShaderIdManager.set(identifier, uberShader);
+
+	m_uberShaders[uberShader.get()] = uberShader;
+
+	initializeResourceHandle(uberShader.get());
 }
 
 bool Graphics::uberShaderExists(const std::string& identifier) const
@@ -597,6 +604,11 @@ Ptr<GraphicsPipeline::Settings> Graphics::getGraphicsPipelineSettings(const Uber
 	return m_graphicsPipelineSettingsManager.get({ &vertexShader, &fragmentShader });
 }
 
+Ptr<GraphicsPipeline> Graphics::getGraphicsPipeline(const GraphicsPipeline::Settings& settings)
+{
+	return m_graphicsPipelineManager.get(settings);
+}
+
 Ptr<Image> Graphics::getImage(const std::filesystem::path& path, const ImageLoader::Settings& settings)
 {
 	return m_imageManager.get({ path, settings });
@@ -621,8 +633,9 @@ Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
 {
 	auto uberShader = AtslLoader::load(path);
 
-	if (m_uberShaders.find(uberShader.get()) == m_uberShaders.end())
-		m_uberShaders[uberShader.get()] = uberShader;
+	m_uberShaders[uberShader.get()] = uberShader;
+
+	initializeResourceHandle(uberShader.get());
 
 	return uberShader;
 }
@@ -631,8 +644,15 @@ Ptr<UberShader> Graphics::loadUberInstance(const UberInstanceSettings& settings)
 {
 	auto uberShader = settings.uberShader->createInstance(settings.options);
 
-	if (m_uberShaders.find(uberShader.get()) == m_uberShaders.end())
-		m_uberShaders[uberShader.get()] = uberShader;
+	m_uberShaders[uberShader.get()] = uberShader;
+
+	auto& resourceHandle = initializeResourceHandle(uberShader.get());
+
+	auto resourcePtr = uberShader.get();
+	onDestroy(settings.uberShader, resourceHandle, [this, resourcePtr]()
+		{
+			m_uberShaderOptionsManager.remove(resourcePtr);
+		});
 
 	return uberShader;
 }
@@ -641,8 +661,15 @@ Ptr<UberShader> Graphics::loadUberStage(const UberStageSettings& settings)
 {
 	auto uberShader = settings.uberShader->extractStage(settings.shaderStage);
 
-	if (m_uberShaders.find(uberShader.get()) == m_uberShaders.end())
-		m_uberShaders[uberShader.get()] = uberShader;
+	m_uberShaders[uberShader.get()] = uberShader;
+
+	auto& resourceHandle = initializeResourceHandle(uberShader.get());
+
+	auto resourcePtr = uberShader.get();
+	onDestroy(settings.uberShader, resourceHandle, [this, resourcePtr]()
+		{
+			m_uberShaderStageManager.remove(resourcePtr);
+		});
 
 	return uberShader;
 }
@@ -656,6 +683,8 @@ Ptr<Shader> Graphics::loadShader(const UberShader& uberShader)
 
 	auto shader = Shader::create(settings);
 
+	auto& resourceHandle = initializeResourceHandle(shader.get());
+
 	if (m_shaderToUber.find(shader.get()) == m_shaderToUber.end())
 	{
 		const auto it = m_uberShaders.find(&uberShader);
@@ -664,17 +693,29 @@ Ptr<Shader> Graphics::loadShader(const UberShader& uberShader)
 			m_shaderToUber[shader.get()] = it->second.lock();
 	}
 
+	auto resourcePtr = shader.get();
+	onDestroy(&uberShader, resourceHandle, [this, resourcePtr]()
+		{
+			m_shaderManager.remove(resourcePtr);
+		});
+
 	return shader;
 }
 
 Ptr<DescriptorSetLayout> Graphics::loadDescriptorSetLayout(const DescriptorSetLayout::Settings& settings)
 {
-	return DescriptorSetLayout::create(settings);
+	auto descriptorSetLayout = DescriptorSetLayout::create(settings);
+
+	initializeResourceHandle(descriptorSetLayout.get());
+
+	return descriptorSetLayout;
 }
 
 Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const GraphicsPipelineSettings& settings)
 {
 	auto pipelineSettings = std::make_shared<GraphicsPipeline::Settings>();
+
+	auto& resourceHandle = initializeResourceHandle(pipelineSettings.get());
 
 	const auto& vertexReflection = settings.vertexShader->getReflection(AstShaderStage::Vertex);
 	const auto& fragmentReflection = settings.fragmentShader->getReflection(AstShaderStage::Fragment);
@@ -735,6 +776,12 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 	if (!bindings.empty())
 		pipelineSettings->descriptorSetLayouts.resize(bindings.rbegin()->first + 1);
 
+	auto resourcePtr = pipelineSettings.get();
+	auto callback = [this, resourcePtr]()
+	{
+		m_graphicsPipelineSettingsManager.remove(resourcePtr);
+	};
+
 	// Retrieving DescriptorSetLayouts corresponding to each set index
 	// If no set is bound, the layout at this corresponding index is empty
 	for (auto& [setIndex, bindingMap] : bindings)
@@ -744,8 +791,15 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 		for (auto& [bindingIndex, binding] : bindingMap)
 			layoutSettings.bindings.emplace_back(std::move(binding));
 
-		pipelineSettings->descriptorSetLayouts[setIndex] = getDescriptorSetLayout(layoutSettings);
+		auto descriptorSetLayout = getDescriptorSetLayout(layoutSettings);
+
+		onDestroy(descriptorSetLayout.get(), resourceHandle, callback);
+
+		pipelineSettings->descriptorSetLayouts[setIndex] = std::move(descriptorSetLayout);
 	}
+
+	onDestroy(pipelineSettings->vertexShader.get(), resourceHandle, callback);
+	onDestroy(pipelineSettings->fragmentShader.get(), resourceHandle, callback);
 
 	return pipelineSettings;
 }
@@ -773,4 +827,61 @@ Ptr<SurfaceMaterial> Graphics::loadSurfaceMaterial(const DefaultSurfaceMaterialS
 Ptr<SurfaceMaterialInstance> Graphics::loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings)
 {
 	return SurfaceMaterialInstance::createDefault(settings.material, settings.materialData, *this);
+}
+
+void Graphics::onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback)
+{
+	auto& srcHandle = getResourceHandle(resource);
+
+	dstHandle.connectionGuard.connect(srcHandle.onDestroy, callback);
+}
+
+void Graphics::onDestroy(const Shader* resource, ResourceHandle& dstHandle, std::function<void()> callback)
+{
+	auto& srcHandle = getResourceHandle(resource);
+
+	dstHandle.connectionGuard.connect(srcHandle.onDestroy, callback);
+}
+
+void Graphics::onDestroy(const DescriptorSetLayout* resource, ResourceHandle& dstHandle, std::function<void()> callback)
+{
+	auto& srcHandle = getResourceHandle(resource);
+
+	dstHandle.connectionGuard.connect(srcHandle.onDestroy, callback);
+}
+
+Graphics::ResourceHandle& Graphics::initializeResourceHandle(const void* resource)
+{
+	const auto pair = m_resourceHandles.emplace(resource, std::make_shared<ResourceHandle>());
+
+	return *(pair.first->second);
+}
+
+void Graphics::destroy(UberShader* resource)
+{
+	// Destroy UberShader reference
+	const auto it = m_uberShaders.find(resource);
+
+	if (it != m_uberShaders.end())
+		m_uberShaders.erase(it);
+
+	destroy(static_cast<void*>(resource));
+}
+
+void Graphics::destroy(void* resource)
+{
+	const auto resourceIt = m_resourceHandles.find(resource);
+
+	resourceIt->second->onDestroy();
+
+	m_resourceHandles.erase(resourceIt);
+}
+
+Graphics::ResourceHandle& Graphics::getResourceHandle(const void* resource)
+{
+	const auto it = m_resourceHandles.find(resource);
+
+	ATEMA_ASSERT(it != m_resourceHandles.end(), "Requested resource was not found in Graphics instance");
+
+	return *it->second;
 }
