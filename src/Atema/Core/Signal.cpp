@@ -33,23 +33,9 @@ AbstractSignal::~AbstractSignal()
 }
 
 // Connection
-Connection::Connection()
-{
-}
-
 Connection::Connection(Ptr<AbstractSignal*> signal, Ptr<size_t> index) :
 	m_signal(signal),
 	m_index(index)
-{
-}
-
-Connection::Connection(Connection&& connection) noexcept :
-	m_signal(std::move(connection.m_signal)),
-	m_index(std::move(connection.m_index))
-{
-}
-
-Connection::~Connection()
 {
 }
 
@@ -67,10 +53,6 @@ void Connection::disconnect()
 }
 
 // ConnectionGuard
-ConnectionGuard::ConnectionGuard()
-{
-}
-
 ConnectionGuard::ConnectionGuard(const Connection& connection)
 {
 	addConnection(connection);
@@ -81,24 +63,19 @@ ConnectionGuard::ConnectionGuard(Connection&& connection)
 	addConnection(std::move(connection));
 }
 
-ConnectionGuard::ConnectionGuard(ConnectionGuard&& connectionGuard) noexcept
-{
-	operator=(std::move(connectionGuard));
-}
-
 ConnectionGuard::~ConnectionGuard()
 {
 	disconnect();
 }
 
-void ConnectionGuard::addConnection(const Connection& connection)
+Connection& ConnectionGuard::addConnection(const Connection& connection)
 {
-	m_connections.emplace_back(connection);
+	return m_connections.emplace_back(connection);
 }
 
-void ConnectionGuard::addConnection(Connection&& connection)
+Connection& ConnectionGuard::addConnection(Connection&& connection)
 {
-	m_connections.emplace_back(std::move(connection));
+	return m_connections.emplace_back(std::move(connection));
 }
 
 void ConnectionGuard::disconnect()
@@ -109,30 +86,23 @@ void ConnectionGuard::disconnect()
 	m_connections.clear();
 }
 
-ConnectionGuard& ConnectionGuard::operator=(const Connection& connection)
+ConnectionGuard& ConnectionGuard::operator=(const ConnectionGuard& other)
 {
-	disconnect();
-
-	addConnection(connection);
-
-	return *this;
-}
-
-ConnectionGuard& ConnectionGuard::operator=(Connection&& connection)
-{
-	disconnect();
-
-	addConnection(std::move(connection));
-
-	return *this;
-}
-
-ConnectionGuard& ConnectionGuard::operator=(ConnectionGuard&& connectionGuard) noexcept
-{
-	if (&connectionGuard != this)
+	if (&other != this)
 	{
 		disconnect();
-		m_connections = std::move(connectionGuard.m_connections);
+		m_connections = other.m_connections;
+	}
+
+	return *this;
+}
+
+ConnectionGuard& ConnectionGuard::operator=(ConnectionGuard&& other) noexcept
+{
+	if (&other != this)
+	{
+		disconnect();
+		m_connections = std::move(other.m_connections);
 	}
 
 	return *this;

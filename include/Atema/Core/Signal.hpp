@@ -24,7 +24,6 @@
 
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
-#include <Atema/Core/NonCopyable.hpp>
 
 #include <functional>
 #include <shared_mutex>
@@ -38,9 +37,14 @@ namespace at
 	{
 	public:
 		AbstractSignal();
+		AbstractSignal(const AbstractSignal& other) = delete;
+		AbstractSignal(AbstractSignal&& other) noexcept = delete;
 		virtual ~AbstractSignal();
 
 		virtual void disconnect(const Connection& connection) = 0;
+
+		AbstractSignal& operator=(const AbstractSignal& other) = delete;
+		AbstractSignal& operator=(AbstractSignal&& other) noexcept = delete;
 	};
 
 	template <typename ... Args>
@@ -93,14 +97,17 @@ namespace at
 		friend class Signal;
 
 	public:
-		Connection();
-		Connection(const Connection& connection) = default;
-		Connection(Connection&& connection) noexcept;
-		~Connection();
+		Connection() = default;
+		Connection(const Connection& other) = default;
+		Connection(Connection&& other) noexcept = default;
+		~Connection() = default;
 
 		bool isConnected() const noexcept;
 
 		void disconnect();
+
+		Connection& operator=(const Connection& other) = default;
+		Connection& operator=(Connection&& other) noexcept = default;
 
 	private:
 		Connection(Ptr<AbstractSignal*> signal, Ptr<size_t> index);
@@ -109,26 +116,26 @@ namespace at
 		WPtr<size_t> m_index;
 	};
 
-	class ATEMA_CORE_API ConnectionGuard : public NonCopyable
+	class ATEMA_CORE_API ConnectionGuard
 	{
 	public:
-		ConnectionGuard();
-		ConnectionGuard(const Connection& connection);
-		ConnectionGuard(Connection&& connection);
-		ConnectionGuard(ConnectionGuard&& connectionGuard) noexcept;
+		ConnectionGuard() = default;
+		explicit ConnectionGuard(const Connection& connection);
+		explicit ConnectionGuard(Connection&& connection);
+		ConnectionGuard(const ConnectionGuard& other) = default;
+		ConnectionGuard(ConnectionGuard&& other) noexcept = default;
 		~ConnectionGuard();
 
 		template <typename ... SignalArgs, typename ... ConnectionArgs>
-		void connect(Signal<SignalArgs...>& signal, ConnectionArgs&&... args);
+		Connection& connect(Signal<SignalArgs...>& signal, ConnectionArgs&&... args);
 
-		void addConnection(const Connection& connection);
-		void addConnection(Connection&& connection);
+		Connection& addConnection(const Connection& connection);
+		Connection& addConnection(Connection&& connection);
 
 		void disconnect();
 
-		ConnectionGuard& operator=(const Connection& connection);
-		ConnectionGuard& operator=(Connection&& connection);
-		ConnectionGuard& operator=(ConnectionGuard&& connectionGuard) noexcept;
+		ConnectionGuard& operator=(const ConnectionGuard& other);
+		ConnectionGuard& operator=(ConnectionGuard&& other) noexcept;
 
 	private:
 		std::vector<Connection> m_connections;

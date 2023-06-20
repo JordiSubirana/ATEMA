@@ -221,9 +221,9 @@ namespace at
 
 	// ConnectionGuard
 	template <typename ... SignalArgs, typename ... ConnectionArgs>
-	void ConnectionGuard::connect(Signal<SignalArgs...>& signal, ConnectionArgs&&... args)
+	Connection& ConnectionGuard::connect(Signal<SignalArgs...>& signal, ConnectionArgs&&... args)
 	{
-		addConnection(signal.connect(std::forward<ConnectionArgs>(args)...));
+		return addConnection(signal.connect(std::forward<ConnectionArgs>(args)...));
 	}
 }
 
