@@ -133,8 +133,14 @@ void main()
 )";
 }
 
-ShadowPass::ShadowPass()
+ShadowPass::ShadowPass(size_t threadCount)
 {
+	const auto& taskManager = TaskManager::instance();
+	const auto maxThreadCount = taskManager.getSize();
+	m_threadCount = threadCount;
+	if (threadCount == 0 || threadCount > maxThreadCount)
+		m_threadCount = maxThreadCount;
+
 	auto& graphics = Graphics::instance();
 
 	if (!graphics.uberShaderExists(ShaderName))
@@ -187,7 +193,7 @@ FrameGraphPass& ShadowPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder
 	else
 		pass.setDepthTexture(settings.shadowMap);
 
-	pass.enableSecondaryCommandBuffers(settings.threadCount != 1);
+	pass.enableSecondaryCommandBuffers(m_threadCount != 1);
 
 	Settings settingsCopy = settings;
 
@@ -226,32 +232,28 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	const auto shadowMapSize = settings.shadowMapSize;
 
-	if (settings.threadCount == 1)
+	if (m_threadCount == 1)
 	{
 		drawElements(commandBuffer, frameData, 0, m_renderElements.size(), shadowMapSize);
 	}
 	else
 	{
 		auto& taskManager = TaskManager::instance();
-		const auto maxThreadCount = taskManager.getSize();
-		size_t threadCount = settings.threadCount;
-		if (threadCount == 0 || threadCount > maxThreadCount)
-			threadCount = maxThreadCount;
-
+		
 		std::vector<Ptr<Task>> tasks;
-		tasks.reserve(threadCount);
+		tasks.reserve(m_threadCount);
 
 		std::vector<Ptr<CommandBuffer>> commandBuffers;
-		commandBuffers.resize(threadCount);
+		commandBuffers.resize(m_threadCount);
 
 		size_t firstIndex = 0;
-		size_t size = m_renderElements.size() / threadCount;
+		size_t size = m_renderElements.size() / m_threadCount;
 
-		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+		for (size_t taskIndex = 0; taskIndex < m_threadCount; taskIndex++)
 		{
-			if (taskIndex == threadCount - 1)
+			if (taskIndex == m_threadCount - 1)
 			{
-				const auto remainingSize = m_renderElements.size() - threadCount * size;
+				const auto remainingSize = m_renderElements.size() - m_threadCount * size;
 
 				size += remainingSize;
 			}
@@ -291,67 +293,123 @@ void ShadowPass::doBeginFrame()
 
 void ShadowPass::doEndFrame()
 {
-	m_renderables.clear();
-	m_renderableIntersections.clear();
 	m_renderElements.clear();
 }
 
 void ShadowPass::frustumCull()
 {
-	const auto& renderData = getRenderData();
-	const auto& camera = renderData.getCamera();
-	const auto& renderables = renderData.getRenderables();
+	const auto& renderables = getRenderData().getRenderables();
+
+	if (m_threadCount == 1)
+	{
+		frustumCullElements(m_renderElements, 0, renderables.size());
+	}
+	else
+	{
+		auto& taskManager = TaskManager::instance();
+
+		std::vector<std::vector<RenderElement>> renderElements(m_threadCount);
+
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(m_threadCount);
+
+		size_t firstIndex = 0;
+		size_t size = renderables.size() / m_threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < m_threadCount; taskIndex++)
+		{
+			if (taskIndex == m_threadCount - 1)
+			{
+				const auto remainingSize = renderables.size() - m_threadCount * size;
+
+				size += remainingSize;
+			}
+
+			auto task = taskManager.createTask([this, taskIndex, firstIndex, size, &renderElements](size_t threadIndex)
+				{
+					frustumCullElements(renderElements[taskIndex], firstIndex, size);
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
+		}
+
+		for (auto& task : tasks)
+			task->wait();
+
+		for (auto& elements : renderElements)
+		{
+			for (auto& renderElement : elements)
+			{
+				m_renderElements.emplace_back(std::move(renderElement));
+			}
+		}
+	}
+}
+
+void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const
+{
+	if (!count)
+		return;
+
+	const auto& renderables = getRenderData().getRenderables();
+
+	std::vector<const Renderable*> visibleRenderables;
+	std::vector<IntersectionType> renderableIntersections;
 
 	// Keep only visible renderables using frustum culling
-	m_renderables.reserve(renderables.size());
-	m_renderableIntersections.reserve(renderables.size());
+	visibleRenderables.reserve(count);
+	renderableIntersections.reserve(count);
 
 	size_t renderElementsSize = 0;
 
-	for (const auto& renderable : renderables)
+	for (size_t i = index; i < index + count; i++)
 	{
-		if (!renderable->castsShadows())
+		auto& renderable = *renderables[i];
+
+		if (!renderable.castsShadows())
 			continue;
-		
-		const auto intersectionType = getFrustumIntersection(m_frustum, renderable->getAABB());
+
+		const auto intersectionType = getFrustumIntersection(m_frustum, renderable.getAABB());
 
 		if (intersectionType != IntersectionType::Outside)
 		{
-			m_renderables.emplace_back(renderable);
-			m_renderableIntersections.emplace_back(intersectionType);
+			visibleRenderables.emplace_back(&renderable);
+			renderableIntersections.emplace_back(intersectionType);
 
-			renderElementsSize += renderable->getRenderElementsSize();
+			renderElementsSize += renderable.getRenderElementsSize();
 		}
 	}
 
 	// Cull individual elements if needed
-	m_renderElements.reserve(renderElementsSize);
+	renderElements.reserve(renderElementsSize);
 
-	std::vector<RenderElement> renderElements;
+	std::vector<RenderElement> tmpRenderElements;
 
-	for (size_t i = 0; i < m_renderables.size(); i++)
+	for (size_t i = 0; i < visibleRenderables.size(); i++)
 	{
-		const auto& renderable = m_renderables[i];
+		const auto& renderable = *visibleRenderables[i];
 
 		// Renderable is fully contained : every element also is
-		if (m_renderableIntersections[i] == IntersectionType::Inside)
+		if (renderableIntersections[i] == IntersectionType::Inside)
 		{
-			renderable->getRenderElements(m_renderElements);
+			renderable.getRenderElements(renderElements);
 		}
 		// Renderable is intersecting with the frustum : test every element
 		else
 		{
-			renderElements.clear();
-			renderElements.reserve(renderable->getRenderElementsSize());
+			tmpRenderElements.clear();
+			tmpRenderElements.reserve(renderable.getRenderElementsSize());
 
-			renderable->getRenderElements(renderElements);
+			renderable.getRenderElements(tmpRenderElements);
 
-			const auto& matrix = renderable->getTransform().getMatrix();
+			const auto& matrix = renderable.getTransform().getMatrix();
 
-			for (auto& renderElement : renderElements)
+			for (auto& renderElement : tmpRenderElements)
 			{
 				if (getFrustumIntersection(m_frustum, matrix * renderElement.aabb) != IntersectionType::Outside)
-					m_renderElements.emplace_back(std::move(renderElement));
+					renderElements.emplace_back(std::move(renderElement));
 			}
 		}
 	}

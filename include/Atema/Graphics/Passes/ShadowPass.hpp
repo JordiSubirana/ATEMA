@@ -45,10 +45,6 @@ namespace at
 	public:
 		struct Settings
 		{
-			// Number of threads this pass is allowed to use
-			// 0 means as much as possible
-			size_t threadCount = 1;
-
 			uint32_t shadowMapSize = 0;
 
 			FrameGraphTextureHandle shadowMap = FrameGraph::InvalidTextureHandle;
@@ -57,7 +53,10 @@ namespace at
 			std::optional<DepthStencil> shadowMapClearValue;
 		};
 
-		ShadowPass();
+		ShadowPass() = delete;
+		// threadCount : Number of threads this pass is allowed to use
+		// 0 means as much as possible
+		ShadowPass(size_t threadCount);
 		ShadowPass(const ShadowPass& other) = default;
 		ShadowPass(ShadowPass&& other) noexcept = default;
 		~ShadowPass() = default;
@@ -86,8 +85,11 @@ namespace at
 		};
 
 		void frustumCull();
+		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count);
 		void updateFrameData(FrameData& frameData);
 		void drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count, uint32_t shadowMapSize);
+
+		size_t m_threadCount;
 
 		Ptr<DescriptorSetLayout> m_setLayout;
 		Ptr<GraphicsPipeline> m_pipeline;
@@ -95,8 +97,6 @@ namespace at
 
 		Matrix4f m_viewProjection;
 		Frustumf m_frustum;
-		std::vector<const Renderable*> m_renderables;
-		std::vector<IntersectionType> m_renderableIntersections;
 		std::vector<RenderElement> m_renderElements;
 	};
 }
