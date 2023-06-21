@@ -47,8 +47,6 @@ void AbstractFrameRenderer::beginFrame()
 
 	if (m_updateFrameGraph)
 	{
-		Renderer::instance().waitForIdle();
-		
 		createFrameGraph();
 
 		m_updateFrameGraph = false;
