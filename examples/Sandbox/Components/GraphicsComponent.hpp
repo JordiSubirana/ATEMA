@@ -30,6 +30,8 @@
 
 struct GraphicsComponent
 {
+	at::Ptr<at::StaticModel> staticModel;
+	
 	at::Ptr<at::Model> model;
 	
 	std::vector<at::Ptr<MaterialData>> materials;

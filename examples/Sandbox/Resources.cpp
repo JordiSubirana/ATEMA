@@ -150,18 +150,18 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		float roughness;
 	}//*/
 
-	SurfaceMaterialData material;
+	materialData = std::make_shared<SurfaceMaterialData>();
 
 	std::vector<MaterialParam> materialParameters =
 	{
-		{ "Color", &material.colorMap, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
-		{ "Normal", &material.normalMap, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
-		{ "AO", &material.ambientOcclusionMap, ConstantValue(1.0f)},
-		{ "Height", &material.heightMap, ConstantValue(1.0f) },
-		{ "Emissive", &material.emissiveMap, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
-		{ "Metalness", &material.metalnessMap, ConstantValue(0.0f) },
-		{ "Roughness", &material.roughnessMap, ConstantValue(0.0f) },
-		{ "AlphaMask", &material.alphaMaskMap, ConstantValue(1.0f), true },
+		{ "Color", &materialData->colorMap, ConstantValue(Vector4f(1.0f, 1.0f, 1.0f, 1.0f)) },
+		{ "Normal", &materialData->normalMap, ConstantValue(Vector3f(0.5f, 0.5f, 1.0f)) },
+		{ "AO", &materialData->ambientOcclusionMap, ConstantValue(1.0f)},
+		{ "Height", &materialData->heightMap, ConstantValue(1.0f) },
+		{ "Emissive", &materialData->emissiveMap, ConstantValue(Vector3f(0.0f, 0.0f, 0.0f)) },
+		{ "Metalness", &materialData->metalnessMap, ConstantValue(0.0f) },
+		{ "Roughness", &materialData->roughnessMap, ConstantValue(0.0f) },
+		{ "AlphaMask", &materialData->alphaMaskMap, ConstantValue(1.0f), true },
 	};
 
 	for (auto& materialParameter : materialParameters)
@@ -175,7 +175,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 			texture = DefaultImageLoader::load(fullPath, {});
 	}
 
-	initialize(material);
+	initialize(*materialData);
 }
 
 MaterialData::MaterialData(const at::SurfaceMaterialData& material)

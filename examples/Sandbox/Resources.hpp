@@ -100,6 +100,7 @@ public:
 	MaterialData(const at::SurfaceMaterialData& material);
 
 	at::Ptr<at::SurfaceMaterialInstance> materialInstance;
+	at::Ptr<at::SurfaceMaterialData> materialData;
 
 private:
 	void initialize(const at::SurfaceMaterialData& material);

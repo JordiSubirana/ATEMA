@@ -196,6 +196,7 @@ SandboxApplication::SandboxApplication():
 	else
 	{
 		m_materialData.emplace_back(std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension));
+		m_modelData->model->addMaterialData(m_materialData.back()->materialData);
 	}
 
 	// Create entities
@@ -315,7 +316,11 @@ void SandboxApplication::createScene()
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
 		graphics.model = createPlaneModel({ 0, 0, 0 }, planeSize);
+		graphics.model->addMaterialData(materialData->materialData);
 		graphics.materials.emplace_back(materialData);
+		graphics.staticModel = std::make_shared<StaticModel>();
+		graphics.staticModel->setModel(graphics.model);
+		graphics.staticModel->setTransform(transform);
 	}
 }
 
@@ -395,6 +400,8 @@ void SandboxApplication::updateScene()
 				graphics.model = m_modelData->model;
 				graphics.materials = m_materialData;
 				graphics.castShadows = true;
+				graphics.staticModel = std::make_shared<StaticModel>();
+				graphics.staticModel->setModel(graphics.model);
 
 				// Transform component
 				m_entityManager.createComponent<Transform>(entity);
