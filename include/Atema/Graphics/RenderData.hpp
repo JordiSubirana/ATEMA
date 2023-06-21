@@ -42,8 +42,17 @@ namespace at
 		bool isValid() const noexcept;
 
 		void setCamera(const Camera& camera);
+
+		// Defines Renderables update policy
+		// If true, on scene change, the user must call clearRenderables then add all renderables
+		// If false, on scene change, the user must mainly call addRenderable / removeRenderable
+		// Default : false
+		void resetRenderablesEveryFrame(bool reset);
+
+		// This method is faster when Renderables are reset every frame
 		void addRenderable(Renderable& renderable);
 
+		// This method is faster when Renderables are not reset every frame
 		void removeRenderable(const Renderable& renderable);
 
 		void clearRenderables();
@@ -57,6 +66,7 @@ namespace at
 	private:
 		const Camera* m_camera;
 
+		bool m_resetRenderablesEveryFrame;
 		std::vector<Renderable*> m_renderables;
 		std::unordered_map<const Renderable*, size_t> m_renderableIndices;
 	};

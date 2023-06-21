@@ -24,7 +24,8 @@
 using namespace at;
 
 RenderData::RenderData() :
-	m_camera(nullptr)
+	m_camera(nullptr),
+	m_resetRenderablesEveryFrame(false)
 {
 }
 
@@ -38,9 +39,30 @@ void RenderData::setCamera(const Camera& camera)
 	m_camera = &camera;
 }
 
+void RenderData::resetRenderablesEveryFrame(bool reset)
+{
+	if (m_resetRenderablesEveryFrame != reset)
+	{
+		m_resetRenderablesEveryFrame = reset;
+
+		m_renderableIndices.clear();
+
+		// We will need renderable indices : initialize them
+		if (!m_resetRenderablesEveryFrame)
+		{
+			for (size_t i = 0; i < m_renderables.size(); i++)
+				m_renderableIndices[m_renderables[i]] = i;
+		}
+	}
+}
+
 void RenderData::addRenderable(Renderable& renderable)
 {
-	if (m_renderableIndices.find(&renderable) == m_renderableIndices.end())
+	if (m_resetRenderablesEveryFrame)
+	{
+		m_renderables.emplace_back(&renderable);
+	}
+	else if (m_renderableIndices.find(&renderable) == m_renderableIndices.end())
 	{
 		m_renderables.emplace_back(&renderable);
 		m_renderableIndices[&renderable] = m_renderables.size() - 1;
@@ -49,17 +71,31 @@ void RenderData::addRenderable(Renderable& renderable)
 
 void RenderData::removeRenderable(const Renderable& renderable)
 {
-	const auto it = m_renderableIndices.find(&renderable);
-
-	if (it != m_renderableIndices.end())
+	if (m_resetRenderablesEveryFrame)
 	{
-		const auto& last = m_renderables.back();
+		const auto it = std::find(m_renderables.begin(), m_renderables.end(), &renderable);
 
-		m_renderables[it->second] = last;
-		m_renderables.resize(m_renderables.size() - 1);
+		if (it != m_renderables.end())
+		{
+			std::swap(*it, m_renderables.back());
 
-		m_renderableIndices[last] = it->second;
-		m_renderableIndices.erase(it);
+			m_renderables.resize(m_renderables.size() - 1);
+		}
+	}
+	else
+	{
+		const auto it = m_renderableIndices.find(&renderable);
+
+		if (it != m_renderableIndices.end())
+		{
+			const auto& last = m_renderables.back();
+
+			m_renderables[it->second] = last;
+			m_renderables.resize(m_renderables.size() - 1);
+
+			m_renderableIndices[last] = it->second;
+			m_renderableIndices.erase(it);
+		}
 	}
 }
 
