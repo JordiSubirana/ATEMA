@@ -45,18 +45,6 @@ namespace at
 	}
 
 	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>::Matrix(const Matrix& other)
-	{
-		operator=(other);
-	}
-
-	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>::Matrix(Matrix&& other) noexcept
-	{
-		operator=(std::move(other));
-	}
-
-	template <size_t COL, size_t ROW, typename T>
 	Matrix<COL, ROW, T>::~Matrix() noexcept
 	{
 
@@ -250,23 +238,6 @@ namespace at
 			ATEMA_ERROR("Index is out of range.");
 
 		return this->m_columns[index];
-	}
-
-	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(const Matrix& value)
-	{
-		for (size_t i = 0; i < size; i++)
-			this->m_data[i] = value.m_data[i];
-
-		return *this;
-	}
-
-	template <size_t COL, size_t ROW, typename T>
-	Matrix<COL, ROW, T>& Matrix<COL, ROW, T>::operator=(Matrix&& other) noexcept
-	{
-		this->m_data = std::move(other.m_data);
-
-		return *this;
 	}
 
 	template <size_t COL, size_t ROW, typename T>

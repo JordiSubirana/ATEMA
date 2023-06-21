@@ -194,18 +194,6 @@ namespace at
 	}
 
 	template <size_t N, typename T>
-	Vector<N, T>::Vector(const Vector& other)
-	{
-		operator=(other);
-	}
-
-	template <size_t N, typename T>
-	Vector<N, T>::Vector(Vector&& other) noexcept
-	{
-		operator=(std::move(other));
-	}
-
-	template <size_t N, typename T>
 	template <typename ... Args>
 	Vector<N, T>::Vector(Args&&... args): Vector()
 	{
@@ -452,22 +440,6 @@ namespace at
 	Vector<N, T> Vector<N, T>::operator-() const
 	{
 		return Vector<N, T>(0) - *this;
-	}
-
-	template <size_t N, typename T>
-	Vector<N, T>& Vector<N, T>::operator=(const Vector& other)
-	{
-		this->data = other.data;
-
-		return *this;
-	}
-
-	template <size_t N, typename T>
-	Vector<N, T>& Vector<N, T>::operator=(Vector&& other) noexcept
-	{
-		this->data = std::move(other.data);
-
-		return *this;
 	}
 
 	template <size_t N, typename T>

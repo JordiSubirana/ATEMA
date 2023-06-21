@@ -33,8 +33,8 @@ namespace at
 	{
 	public:
 		Matrix();
-		Matrix(const Matrix& other);
-		Matrix(Matrix&& other) noexcept;
+		Matrix(const Matrix& other) = default;
+		Matrix(Matrix&& other) noexcept = default;
 		Matrix(T value);
 		~Matrix() noexcept;
 
@@ -62,8 +62,8 @@ namespace at
 		Vector<ROW, T>& operator[](size_t index);
 		const Vector<ROW, T>& operator[](size_t index) const;
 
-		Matrix& operator=(const Matrix& other);
-		Matrix& operator=(Matrix&& other) noexcept;
+		Matrix& operator=(const Matrix& other) = default;
+		Matrix& operator=(Matrix&& other) noexcept = default;
 
 		T* get();
 		const T* get() const;

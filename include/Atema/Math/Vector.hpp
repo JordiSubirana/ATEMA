@@ -227,8 +227,8 @@ namespace at
 	struct Vector : detail::VectorBase<N, T>
 	{
 		Vector();
-		Vector(const Vector& other);
-		Vector(Vector&& other) noexcept;
+		Vector(const Vector& other) = default;
+		Vector(Vector&& other) noexcept = default;
 		template <typename...Args>
 		Vector(Args&&... args);
 		~Vector() noexcept;
@@ -264,8 +264,8 @@ namespace at
 		Vector<N, T> operator+() const;
 		Vector<N, T> operator-() const;
 
-		Vector& operator=(const Vector& other);
-		Vector& operator=(Vector&& other) noexcept;
+		Vector& operator=(const Vector& other) = default;
+		Vector& operator=(Vector&& other) noexcept = default;
 
 		bool equals(const Vector<N, T>& other, T epsilon = Math::Epsilon<T>) const;
 
