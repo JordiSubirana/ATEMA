@@ -43,10 +43,6 @@ namespace at
 	public:
 		struct Settings
 		{
-			// Number of threads this pass is allowed to use
-			// 0 means as much as possible
-			size_t threadCount = 1;
-			
 			// GBuffer texture handles
 			std::vector<FrameGraphTextureHandle> gbuffer;
 			// Optional clear values
@@ -60,7 +56,10 @@ namespace at
 			std::optional<DepthStencil> depthStencilClearValue;
 		};
 
-		GBufferPass();
+		GBufferPass() = delete;
+		// threadCount : Number of threads this pass is allowed to use
+		// 0 means as much as possible
+		GBufferPass(size_t threadCount);
 		GBufferPass(const GBufferPass& other) = default;
 		GBufferPass(GBufferPass&& other) noexcept = default;
 		~GBufferPass() = default;
@@ -86,12 +85,13 @@ namespace at
 		};
 
 		void frustumCull();
+		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
 		void sortElements();
 		void updateFrameData(FrameData& frameData);
 		void drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count );
 
-		std::vector<const Renderable*> m_renderables;
-		std::vector<IntersectionType> m_renderableIntersections;
+		size_t m_threadCount;
+		
 		std::vector<RenderElement> m_renderElements;
 	
 		std::array<FrameData, Renderer::FramesInFlight> m_frameDatas;
