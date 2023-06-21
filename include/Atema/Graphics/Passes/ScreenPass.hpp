@@ -25,11 +25,6 @@
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
 #include <Atema/Graphics/AbstractRenderPass.hpp>
-#include <Atema/Renderer/Color.hpp>
-#include <Atema/Renderer/DepthStencil.hpp>
-
-#include <vector>
-#include <optional>
 
 namespace at
 {
@@ -56,6 +51,9 @@ namespace at
 
 		const char* getName() const noexcept override;
 
+		// Default : true
+		void showUI(bool show);
+
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
 		void execute(FrameGraphContext& context, const Settings& settings);
@@ -72,6 +70,7 @@ namespace at
 		Ptr<GraphicsPipeline> m_pipeline;
 		Ptr<Sampler> m_sampler;
 		Ptr<VertexBuffer> m_quadMesh;
+		bool m_showUI;
 	};
 }
 

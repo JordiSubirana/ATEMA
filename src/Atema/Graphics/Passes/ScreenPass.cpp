@@ -51,7 +51,8 @@ void main()
 )";
 }
 
-ScreenPass::ScreenPass()
+ScreenPass::ScreenPass() :
+	m_showUI(true)
 {
 	auto& graphics = Graphics::instance();
 
@@ -85,6 +86,11 @@ ScreenPass::ScreenPass()
 const char* ScreenPass::getName() const noexcept
 {
 	return "Screen";
+}
+
+void ScreenPass::showUI(bool show)
+{
+	m_showUI = show;
 }
 
 FrameGraphPass& ScreenPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings)
@@ -135,8 +141,12 @@ void ScreenPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	context.destroyAfterUse(std::move(descriptorSet));
 	
-	//TODO: Add UI ?
-	// UiContext::instance().renderDrawData(ImGui::GetDrawData(), commandBuffer);
+	if (m_showUI)
+	{
+		auto uiContext = UiContext::getActive();
+		if (uiContext)
+			uiContext->draw(ImGui::GetDrawData(), commandBuffer);
+	}
 }
 
 void ScreenPass::doBeginFrame()
