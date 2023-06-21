@@ -64,17 +64,16 @@ void AbstractFrameRenderer::beginFrame()
 
 void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 {
+	CommandBuffer::Settings commandBufferSettings;
+	commandBufferSettings.secondary = false;
+	commandBufferSettings.singleUse = true;
+
+	auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+
+	commandBuffer->begin();
+
 	{
 		ATEMA_BENCHMARK("Transfer data");
-
-		// Transfer data from CPU to GPU if needed
-		CommandBuffer::Settings commandBufferSettings;
-		commandBufferSettings.secondary = false;
-		commandBufferSettings.singleUse = true;
-
-		auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
-
-		commandBuffer->begin();
 
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
 
@@ -86,12 +85,6 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
 
-		commandBuffer->end();
-
-		renderFrame.submit({ commandBuffer }, {}, {});
-
-		renderFrame.destroyAfterUse(std::move(commandBuffer));
-
 		destroyResources(renderFrame);
 	}
 
@@ -99,8 +92,30 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 		ATEMA_BENCHMARK("Execute FrameGraph");
 
 		// Execute FrameGraph
-		getFrameGraph().execute(renderFrame);
+		getFrameGraph().execute(renderFrame, *commandBuffer);
 	}
+
+	commandBuffer->end();
+
+	renderFrame.getFence()->reset();
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::submit");
+
+		renderFrame.submit(
+			{ commandBuffer },
+			{ renderFrame.getImageAvailableWaitCondition() },
+			{ renderFrame.getRenderFinishedSemaphore() },
+			renderFrame.getFence());
+	}
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::present");
+
+		renderFrame.present();
+	}
+
+	renderFrame.destroyAfterUse(std::move(commandBuffer));
 
 	// End frame
 	for (auto& renderPass : getRenderPasses())

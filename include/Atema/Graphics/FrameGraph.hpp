@@ -51,7 +51,7 @@ namespace at
 		FrameGraph();
 		~FrameGraph();
 
-		void execute(RenderFrame& renderFrame);
+		void execute(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
 		
 	private:
 		struct TextureBarrier

@@ -34,31 +34,23 @@ FrameGraph::~FrameGraph()
 {
 }
 
-void FrameGraph::execute(RenderFrame& renderFrame)
+void FrameGraph::execute(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
-	CommandBuffer::Settings commandBufferSettings;
-	commandBufferSettings.secondary = false;
-	commandBufferSettings.singleUse = true;
-
-	auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
-
-	commandBuffer->begin();
-
 	size_t passIndex = 0;
 	for (auto& pass : m_passes)
 	{
 		ATEMA_BENCHMARK(pass.name);
 
-		FrameGraphContext context(renderFrame, *commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
+		FrameGraphContext context(renderFrame, commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
 
 		if (pass.useRenderFrameOutput)
-			commandBuffer->beginRenderPass(*renderFrame.getRenderPass(), *renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
+			commandBuffer.beginRenderPass(*renderFrame.getRenderPass(), *renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
 		else
-			commandBuffer->beginRenderPass(*pass.renderPass, *pass.framebuffer, pass.clearValues, pass.useSecondaryCommandBuffers);
+			commandBuffer.beginRenderPass(*pass.renderPass, *pass.framebuffer, pass.clearValues, pass.useSecondaryCommandBuffers);
 
 		pass.executionCallback(context);
 
-		commandBuffer->endRenderPass();
+		commandBuffer.endRenderPass();
 
 		for (const auto& texture : m_textures)
 		{
@@ -66,7 +58,7 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 
 			if (barrier.valid)
 			{
-				commandBuffer->imageBarrier(
+				commandBuffer.imageBarrier(
 					*texture.image,
 					barrier.srcPipelineStages, barrier.dstPipelineStages,
 					barrier.srcMemoryAccesses, barrier.dstMemoryAccesses,
@@ -76,26 +68,4 @@ void FrameGraph::execute(RenderFrame& renderFrame)
 
 		passIndex++;
 	}
-
-	commandBuffer->end();
-	
-	renderFrame.getFence()->reset();
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::submit");
-
-		renderFrame.submit(
-			{ commandBuffer },
-			{ renderFrame.getImageAvailableWaitCondition() },
-			{ renderFrame.getRenderFinishedSemaphore() },
-			renderFrame.getFence());
-	}
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::present");
-
-		renderFrame.present();
-	}
-
-	renderFrame.destroyAfterUse(std::move(commandBuffer));
 }

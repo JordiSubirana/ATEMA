@@ -1483,7 +1483,37 @@ void GraphicsSystem::updateFrame()
 
 	benchmark.start("FrameGraph::execute");
 
-	m_frameGraph->execute(renderFrame);
+	CommandBuffer::Settings commandBufferSettings;
+	commandBufferSettings.secondary = false;
+	commandBufferSettings.singleUse = true;
+
+	auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+
+	commandBuffer->begin();
+
+	m_frameGraph->execute(renderFrame, *commandBuffer);
+
+	commandBuffer->end();
+
+	renderFrame.getFence()->reset();
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::submit");
+
+		renderFrame.submit(
+			{ commandBuffer },
+			{ renderFrame.getImageAvailableWaitCondition() },
+			{ renderFrame.getRenderFinishedSemaphore() },
+			renderFrame.getFence());
+	}
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::present");
+
+		renderFrame.present();
+	}
+
+	renderFrame.destroyAfterUse(std::move(commandBuffer));
 }
 
 void GraphicsSystem::updateBoundingBoxes()
