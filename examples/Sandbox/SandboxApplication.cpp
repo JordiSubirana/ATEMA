@@ -157,6 +157,8 @@ SandboxApplication::SandboxApplication():
 			onEvent(event);
 		});
 
+	Graphics::instance().initializeShaderLibraries(ShaderLibraryManager::instance());
+
 	// Create systems
 	auto sceneUpdateSystem = std::make_shared<SceneUpdateSystem>();
 	sceneUpdateSystem->setEntityManager(m_entityManager);

@@ -212,8 +212,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
 	//translateShaders();
-	Graphics::instance().initializeShaderLibraries(ShaderLibraryManager::instance());
-
+	
 	auto& renderer = Renderer::instance();
 
 	m_debugRenderer = std::make_shared<DebugRenderer>();
@@ -872,8 +871,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (scene)");
-
 				const auto frameIndex = context.getFrameIndex();
 				auto& frameData = m_frameDatas[frameIndex];
 
@@ -1088,7 +1085,7 @@ void GraphicsSystem::createFrameGraph()
 	// Shadow Map
 	for (size_t cascadeIndex = 0; cascadeIndex < SHADOW_CASCADE_COUNT; cascadeIndex++)
 	{
-		auto& pass = frameGraphBuilder.createPass("shadow cascade #" + std::to_string(cascadeIndex + 1));
+		auto& pass = frameGraphBuilder.createPass("shadow");
 
 		pass.setDepthTexture(shadowCascades[cascadeIndex], DepthStencil(1.0f, 0));
 
@@ -1096,9 +1093,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, cascadeIndex](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (shadows)");
-				ATEMA_BENCHMARK_TAG(cascadeBenchmark, "Shadow cascade #" + std::to_string(cascadeIndex + 1));
-
 				const auto frameIndex = context.getFrameIndex();
 				auto& frameData = m_frameDatas[frameIndex];
 
@@ -1203,8 +1197,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, gbufferTextures](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (phong lighting)");
-
 				const auto frameIndex = context.getFrameIndex();
 				const auto& frameData = m_frameDatas[frameIndex];
 
@@ -1253,8 +1245,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (debug renderer)");
-
 				auto& commandBuffer = context.getCommandBuffer();
 
 				commandBuffer.setViewport(m_viewport);
@@ -1341,8 +1331,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, debugTexture](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (debug corner)");
-
 				auto descriptorSet = m_screenLayout->createSet();
 
 				descriptorSet->update(0, *context.getImageView(debugTexture), *m_ppSampler);
@@ -1390,8 +1378,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, debugTextures](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (debug full)");
-
 				auto& commandBuffer = context.getCommandBuffer();
 
 				commandBuffer.bindPipeline(*m_screenPipeline);
@@ -1437,8 +1423,6 @@ void GraphicsSystem::createFrameGraph()
 
 		pass.setExecutionCallback([this, phongOutputTexture](FrameGraphContext& context)
 			{
-				ATEMA_BENCHMARK("CommandBuffer (screen + UI)");
-
 				auto descriptorSet1 = m_screenLayout->createSet();
 
 				descriptorSet1->update(0, *context.getImageView(phongOutputTexture), *m_ppSampler);
