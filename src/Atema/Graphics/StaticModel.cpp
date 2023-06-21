@@ -32,7 +32,7 @@ StaticModel::StaticModel() :
 	m_updateTransform(true)
 {
 	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
+	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 	bufferSettings.byteSize = SurfaceMaterial::ObjectData::getBufferLayout().getSize();
 
 	m_objectBuffer = Buffer::create(bufferSettings);
@@ -48,6 +48,8 @@ StaticModel::StaticModel() :
 void StaticModel::setModel(const Ptr<Model>& model)
 {
 	m_model = model;
+
+	updateRenderElements();
 
 	updateAABB();
 }
@@ -85,18 +87,11 @@ void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 {
 	if (m_updateTransform)
 	{
-		SurfaceMaterial::ObjectData objectData;
-		objectData.model = m_transform.getMatrix();
+		auto data = m_objectBuffer->map();
 
-		auto stagingBuffer = renderFrame.createStagingBuffer(m_objectBuffer->getByteSize());
+		mapMemory<Matrix4f>(data, 0) = m_transform.getMatrix();
 
-		auto data = stagingBuffer.map();
-
-		objectData.copyTo(data);
-
-		stagingBuffer.unmap();
-
-		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_objectBuffer, stagingBuffer.size, stagingBuffer.offset);
+		m_objectBuffer->unmap();
 
 		m_updateTransform = false;
 	}
@@ -104,33 +99,8 @@ void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 
 void StaticModel::getRenderElements(std::vector<RenderElement>& renderElements) const
 {
-	if (!m_model)
-		return;
-
-	auto& graphics = Graphics::instance();
-
-	m_materialInstances.clear();
-	m_materialInstances.reserve(m_model->getMaterialData().size());
-
-	for (const auto& materialData : m_model->getMaterialData())
-	{
-		auto surfaceMaterial = graphics.getSurfaceMaterial(*materialData);
-		m_materialInstances.emplace_back(graphics.getSurfaceMaterialInstance(surfaceMaterial, *materialData));
-	}
-
-	for (const auto& mesh : m_model->getMeshes())
-	{
-		if (mesh->getMaterialID() >= m_materialInstances.size())
-			continue;
-		
-		auto& renderElement = renderElements.emplace_back();
-
-		renderElement.aabb = mesh->getAABB();
-		renderElement.vertexBuffer = mesh->getVertexBuffer().get();
-		renderElement.indexBuffer = mesh->getIndexBuffer().get();
-		renderElement.materialInstance = m_materialInstances[mesh->getMaterialID()].get();
-		renderElement.objectBinding = &m_objectBinding;
-	}
+	for (const auto& renderElement : m_renderElements)
+		renderElements.emplace_back(renderElement);
 }
 
 size_t StaticModel::getRenderElementsSize() const noexcept
@@ -147,4 +117,37 @@ void StaticModel::updateAABB()
 		return;
 	
 	m_aabb = m_transform.getMatrix() * m_model->getAABB();
+}
+
+void StaticModel::updateRenderElements()
+{
+	m_renderElements.clear();
+	m_materialInstances.clear();
+
+	if (!m_model)
+		return;
+
+	auto& graphics = Graphics::instance();
+
+	m_materialInstances.reserve(m_model->getMaterialData().size());
+
+	for (const auto& materialData : m_model->getMaterialData())
+	{
+		auto surfaceMaterial = graphics.getSurfaceMaterial(*materialData);
+		m_materialInstances.emplace_back(graphics.getSurfaceMaterialInstance(surfaceMaterial, *materialData));
+	}
+
+	for (const auto& mesh : m_model->getMeshes())
+	{
+		if (mesh->getMaterialID() >= m_materialInstances.size())
+			continue;
+
+		auto& renderElement = m_renderElements.emplace_back();
+
+		renderElement.aabb = mesh->getAABB();
+		renderElement.vertexBuffer = mesh->getVertexBuffer().get();
+		renderElement.indexBuffer = mesh->getIndexBuffer().get();
+		renderElement.materialInstance = m_materialInstances[mesh->getMaterialID()].get();
+		renderElement.objectBinding = &m_objectBinding;
+	}
 }

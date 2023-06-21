@@ -60,10 +60,12 @@ namespace at
 
 	private:
 		void updateAABB();
+		void updateRenderElements();
 
 		Ptr<Model> m_model;
 		Transform m_transform;
 		AABBf m_aabb;
+		std::vector<RenderElement> m_renderElements;
 		mutable std::vector<Ptr<SurfaceMaterialInstance>> m_materialInstances;
 		ShaderBinding m_objectBinding;
 		Ptr<Buffer> m_objectBuffer;
