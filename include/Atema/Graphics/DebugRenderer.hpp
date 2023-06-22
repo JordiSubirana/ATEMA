@@ -28,6 +28,7 @@
 #include <Atema/Math/AABB.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Math/Frustum.hpp>
+#include <Atema/Graphics/VertexFormat.hpp>
 
 #include <vector>
 
@@ -38,7 +39,6 @@ namespace at
 	class Buffer;
 	class FrameGraphContext;
 	class CommandBuffer;
-	class VertexFormat;
 	class RenderFrame;
 	class GraphicsPipeline;
 	class VertexBuffer;
@@ -79,7 +79,7 @@ namespace at
 
 		Ptr<DescriptorSetLayout> m_descriptorSetLayout;
 		Ptr<GraphicsPipeline> m_graphicsPipeline;
-		Ptr<const VertexFormat> m_vertexFormat;
+		VertexFormat m_vertexFormat;
 
 		std::vector<Vertex> m_vertices;
 

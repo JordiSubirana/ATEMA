@@ -66,7 +66,7 @@ namespace at
 		VertexFormat& operator=(const VertexFormat& other) = default;
 		VertexFormat& operator=(VertexFormat&& other) noexcept = default;
 
-		static Ptr<VertexFormat> create(DefaultVertexFormat defaultFormat);
+		static VertexFormat create(DefaultVertexFormat defaultFormat);
 
 		void addComponent(const VertexComponent& component);
 

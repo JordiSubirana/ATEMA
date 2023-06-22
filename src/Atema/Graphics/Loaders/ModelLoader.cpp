@@ -136,7 +136,7 @@ bool ModelLoader::StaticVertex::operator==(const StaticVertex& other) const
 
 //-----
 // ModelLoader::Settings
-ModelLoader::Settings::Settings(const Ptr<const VertexFormat>& vertexFormat) :
+ModelLoader::Settings::Settings(const VertexFormat& vertexFormat) :
 	m_vertexFormat(vertexFormat),
 	stagingBuffers(nullptr)
 {
@@ -145,11 +145,11 @@ ModelLoader::Settings::Settings(const Ptr<const VertexFormat>& vertexFormat) :
 
 void ModelLoader::Settings::ensureVertexFormatValid() const
 {
-	if (m_vertexFormat && m_vertexFormat->getByteSize() > 0)
+	if (m_vertexFormat.getByteSize() > 0)
 	{
-		if (m_vertexFormat->hasComponent(VertexComponentType::Position))
+		if (m_vertexFormat.hasComponent(VertexComponentType::Position))
 		{
-			const auto& component = m_vertexFormat->getComponent(VertexComponentType::Position);
+			const auto& component = m_vertexFormat.getComponent(VertexComponentType::Position);
 			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() >= 3, "Position component must have at least 3 floating point elements");
 		}
 		else
@@ -157,27 +157,27 @@ void ModelLoader::Settings::ensureVertexFormatValid() const
 			ATEMA_ERROR("Position component is required");
 		}
 
-		if (m_vertexFormat->hasComponent(VertexComponentType::TexCoords))
+		if (m_vertexFormat.hasComponent(VertexComponentType::TexCoords))
 		{
-			const auto& component = m_vertexFormat->getComponent(VertexComponentType::TexCoords);
+			const auto& component = m_vertexFormat.getComponent(VertexComponentType::TexCoords);
 			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() == 2, "TexCoords component must have 2 floating point elements");
 		}
 
-		if (m_vertexFormat->hasComponent(VertexComponentType::Normal))
+		if (m_vertexFormat.hasComponent(VertexComponentType::Normal))
 		{
-			const auto& component = m_vertexFormat->getComponent(VertexComponentType::Normal);
+			const auto& component = m_vertexFormat.getComponent(VertexComponentType::Normal);
 			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() >= 3, "Normal component must have at least 3 floating point elements");
 		}
 
-		if (m_vertexFormat->hasComponent(VertexComponentType::Tangent))
+		if (m_vertexFormat.hasComponent(VertexComponentType::Tangent))
 		{
-			const auto& component = m_vertexFormat->getComponent(VertexComponentType::Tangent);
+			const auto& component = m_vertexFormat.getComponent(VertexComponentType::Tangent);
 			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() >= 3, "Tangent component must have at least 3 floating point elements");
 		}
 
-		if (m_vertexFormat->hasComponent(VertexComponentType::Bitangent))
+		if (m_vertexFormat.hasComponent(VertexComponentType::Bitangent))
 		{
-			const auto& component = m_vertexFormat->getComponent(VertexComponentType::Bitangent);
+			const auto& component = m_vertexFormat.getComponent(VertexComponentType::Bitangent);
 			ATEMA_ASSERT(component.isFloatingPoint() && component.getElementSize() >= 3, "Bitangent component must have at least 3 floating point elements");
 		}
 	}
@@ -187,7 +187,7 @@ void ModelLoader::Settings::ensureVertexFormatValid() const
 	}
 }
 
-const Ptr<const VertexFormat>& ModelLoader::Settings::getVertexFormat() const
+const VertexFormat& ModelLoader::Settings::getVertexFormat() const
 {
 	return m_vertexFormat;
 }
@@ -315,7 +315,7 @@ void ModelLoader::removeDuplicates(std::vector<StaticVertex>& vertices, std::vec
 
 Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector<uint32_t>& indices, const Settings& settings)
 {
-	const auto& format = *settings.getVertexFormat();
+	const auto& format = settings.getVertexFormat();
 
 	const bool hasTexCoords = format.hasComponent(VertexComponentType::TexCoords);
 	const bool hasNormal = format.hasComponent(VertexComponentType::Normal);
@@ -386,7 +386,7 @@ Ptr<Mesh> ModelLoader::loadMesh(std::vector<StaticVertex>& vertices, std::vector
 
 	auto stagingVertexBuffer = std::make_shared<VertexBuffer>(vertexBufferSettings);
 
-	auto& dstFormat = *vertexBufferSettings.vertexFormat;
+	auto& dstFormat = vertexBufferSettings.vertexFormat;
 	auto dstData = stagingVertexBuffer->map();
 
 	MemoryMapper srcMemoryMapper(vertices.data(), 0, sizeof(StaticVertex));

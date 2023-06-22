@@ -29,12 +29,12 @@ VertexBuffer::VertexBuffer(const Settings& settings) :
 	m_data(nullptr),
 	m_size(settings.size)
 {
-	ATEMA_ASSERT(m_format && m_format->getByteSize() > 0, "Invalid vertex format");
+	ATEMA_ASSERT(m_format.getByteSize() > 0, "Invalid vertex format");
 	ATEMA_ASSERT(m_size > 0, "Invalid size");
 
 	Buffer::Settings bufferSettings;
 	bufferSettings.usages = settings.usages | BufferUsage::Vertex;
-	bufferSettings.byteSize = m_size * m_format->getByteSize();
+	bufferSettings.byteSize = m_size * m_format.getByteSize();
 
 	m_buffer = Buffer::create(bufferSettings);
 }
@@ -44,7 +44,7 @@ Ptr<VertexBuffer> VertexBuffer::create(const Settings& settings)
 	return std::make_shared<VertexBuffer>(settings);
 }
 
-const Ptr<const VertexFormat>& VertexBuffer::getFormat() const noexcept
+const VertexFormat& VertexBuffer::getFormat() const noexcept
 {
 	return m_format;
 }

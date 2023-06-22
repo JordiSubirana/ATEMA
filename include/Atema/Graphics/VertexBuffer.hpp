@@ -36,7 +36,7 @@ namespace at
 		struct Settings
 		{
 			// Vertex format defining each element
-			Ptr<const VertexFormat> vertexFormat;
+			VertexFormat vertexFormat;
 
 			// Element size (not byte size)
 			size_t size = 0;
@@ -57,7 +57,7 @@ namespace at
 		VertexBuffer& operator=(const VertexBuffer& other) = default;
 		VertexBuffer& operator=(VertexBuffer&& other) noexcept = default;
 
-		const Ptr<const VertexFormat>& getFormat() const noexcept;
+		const VertexFormat& getFormat() const noexcept;
 		const Ptr<Buffer>& getBuffer() const noexcept;
 
 		size_t getSize() const;
@@ -69,7 +69,7 @@ namespace at
 		void unmap();
 
 	private:
-		Ptr<const VertexFormat> m_format;
+		VertexFormat m_format;
 		Ptr<Buffer> m_buffer;
 		void* m_data;
 		size_t m_size;

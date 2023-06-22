@@ -23,6 +23,7 @@
 #define ATEMA_GRAPHICS_MESHLOADERSETTINGS_HPP
 
 #include <Atema/Graphics/Config.hpp>
+#include <Atema/Graphics/VertexFormat.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Renderer/Enums.hpp>
@@ -35,7 +36,6 @@ namespace at
 {
 	class CommandBuffer;
 	class Mesh;
-	class VertexFormat;
 	class Buffer;
 
 	struct ATEMA_GRAPHICS_API ModelLoader
@@ -64,14 +64,14 @@ namespace at
 			// Normal (XYZ if N = 3 / XYZW with W = 0 if N = 4)
 			// Tangent (XYZ if N = 3 / XYZW with W = 0 if N = 4)
 			// Bitangent (XYZ if N = 3 / XYZW with W = 0 if N = 4)
-			Settings(const Ptr<const VertexFormat>& vertexFormat);
+			Settings(const VertexFormat& vertexFormat);
 			Settings(const Settings& other) = default;
 			Settings(Settings&& other) noexcept = default;
 
 			Settings& operator=(const Settings& other) = default;
 			Settings& operator=(Settings&& other) noexcept = default;
 
-			const Ptr<const VertexFormat>& getVertexFormat() const;
+			const VertexFormat& getVertexFormat() const;
 
 			// Flip vertical component of texture coordinates
 			bool flipTexCoords = false;
@@ -111,7 +111,7 @@ namespace at
 		private:
 			void ensureVertexFormatValid() const;
 
-			Ptr<const VertexFormat> m_vertexFormat;
+			VertexFormat m_vertexFormat;
 		};
 
 		// Generate tangents and bitangeants

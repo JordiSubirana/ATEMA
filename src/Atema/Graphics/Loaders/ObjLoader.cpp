@@ -48,7 +48,7 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 	if (!isExtensionSupported(path.extension()))
 		return nullptr;
 
-	const auto& format = *settings.getVertexFormat();
+	const auto& format = settings.getVertexFormat();
 
 	auto model = std::make_shared<Model>();
 

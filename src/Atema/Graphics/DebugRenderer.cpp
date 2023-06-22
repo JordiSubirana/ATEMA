@@ -111,7 +111,7 @@ DebugRenderer::DebugRenderer()
 	GraphicsPipeline::Settings pipelineSettings;
 	auto& pipelineState = pipelineSettings.state;
 	
-	for (const auto& component : m_vertexFormat->getComponents())
+	for (const auto& component : m_vertexFormat.getComponents())
 		pipelineState.vertexInput.inputs.emplace_back(component);
 
 	pipelineState.inputAssembly.topology = PrimitiveTopology::LineList;

@@ -59,53 +59,53 @@ VertexFormat::VertexFormat(const std::vector<VertexComponent>& components) :
 		addComponent(component);
 }
 
-Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
+VertexFormat VertexFormat::create(DefaultVertexFormat defaultFormat)
 {
 	switch (defaultFormat)
 	{
 		case DefaultVertexFormat::XY:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RG32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XY_RGB:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RG32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XY_RGBA:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RG32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGBA32_SFLOAT)
 				});
 		}
 		case DefaultVertexFormat::XY_UV:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RG32_SFLOAT),
 				VertexComponent(VertexComponentType::TexCoords, 0, 1, VertexInputFormat::RG32_SFLOAT)
 				});
 		}
 		case DefaultVertexFormat::XYZ:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT)
 				});
 		}
 		case DefaultVertexFormat::XYZ_RGB:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT)
 			});
 		}
 		case DefaultVertexFormat::XYZ_RGB_N:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT)
@@ -113,7 +113,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_RGB_NT:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
 					VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
@@ -122,7 +122,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_RGB_NTB:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
@@ -132,14 +132,14 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_RGBA:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGBA32_SFLOAT)
 				});
 		}
 		case DefaultVertexFormat::XYZ_RGBA_N:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGBA32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT)
@@ -147,7 +147,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_RGBA_NT:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 					VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGBA32_SFLOAT),
 					VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
@@ -156,7 +156,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_RGBA_NTB:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::Color, 0, 1, VertexInputFormat::RGBA32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
@@ -166,14 +166,14 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_UV:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::TexCoords, 0, 1, VertexInputFormat::RG32_SFLOAT)
 				});
 		}
 		case DefaultVertexFormat::XYZ_UV_N:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::TexCoords, 0, 1, VertexInputFormat::RG32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT)
@@ -181,7 +181,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_UV_NT:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 					VertexComponent(VertexComponentType::TexCoords, 0, 1, VertexInputFormat::RG32_SFLOAT),
 					VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
@@ -190,7 +190,7 @@ Ptr<VertexFormat> VertexFormat::create(DefaultVertexFormat defaultFormat)
 		}
 		case DefaultVertexFormat::XYZ_UV_NTB:
 		{
-			return std::make_shared<VertexFormat>(std::initializer_list<VertexComponent>{
+			return std::vector<VertexComponent>({
 				VertexComponent(VertexComponentType::Position, 0, 0, VertexInputFormat::RGB32_SFLOAT),
 				VertexComponent(VertexComponentType::TexCoords, 0, 1, VertexInputFormat::RG32_SFLOAT),
 				VertexComponent(VertexComponentType::Normal, 0, 2, VertexInputFormat::RGB32_SFLOAT),
