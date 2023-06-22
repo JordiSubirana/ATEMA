@@ -77,6 +77,11 @@ namespace
 		return false;
 	}
 
+	bool isCommentSymbol(char c)
+	{
+		return c == '/';
+	}
+
 	bool isSpace(char c)
 	{
 		switch (c)
@@ -157,6 +162,28 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 		// Symbols
 		else if (isSymbol(c))
 		{
+			if (isCommentSymbol(c) && hasNext())
+			{
+				// Check if this is a comment : if it is, go to the next line
+				if (isCommentSymbol(getNext()))
+				{
+					while (hasNext())
+					{
+						if (isNewLine(getNext()))
+							break;
+					}
+
+					m_currentLine++;
+					m_currentColumn = 0; // Will be incremented by the next char
+
+					continue;
+				}
+				else
+				{
+					gotoLastChar();
+				}
+			}
+
 			tokens.push_back({ atsl::getSymbol(c) });
 		}
 		// Alphabetic
