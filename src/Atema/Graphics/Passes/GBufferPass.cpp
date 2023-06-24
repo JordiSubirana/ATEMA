@@ -117,6 +117,24 @@ FrameGraphPass& GBufferPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilde
 	return pass;
 }
 
+void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+{
+	const auto& camera = getRenderData().getCamera();
+
+	auto& buffer = m_frameDatas[renderFrame.getFrameIndex()].buffer;
+
+	SurfaceMaterial::FrameData surfaceFrameData;
+	surfaceFrameData.cameraPosition = camera.getPosition();
+	surfaceFrameData.view = camera.getViewMatrix();
+	surfaceFrameData.projection = camera.getProjectionMatrix();
+
+	auto data = buffer->map();
+
+	surfaceFrameData.copyTo(data);
+
+	buffer->unmap();
+}
+
 void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 {
 	const auto& renderData = getRenderData();
@@ -127,8 +145,6 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 	const auto frameIndex = context.getFrameIndex();
 
 	auto& frameData = m_frameDatas[frameIndex];
-
-	updateFrameData(frameData);
 
 	auto& commandBuffer = context.getCommandBuffer();
 
@@ -321,23 +337,6 @@ void GBufferPass::sortElements()
 		{
 			return getRenderPriority(a) < getRenderPriority(b);
 		});
-}
-
-void GBufferPass::updateFrameData(FrameData& frameData)
-{
-	auto& buffer = frameData.buffer;
-	const auto& camera = getRenderData().getCamera();
-
-	SurfaceMaterial::FrameData surfaceFrameData;
-	surfaceFrameData.cameraPosition = camera.getPosition();
-	surfaceFrameData.view = camera.getViewMatrix();
-	surfaceFrameData.projection = camera.getProjectionMatrix();
-	
-	auto data = buffer->map();
-
-	surfaceFrameData.copyTo(data);
-
-	buffer->unmap();
 }
 
 void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count)

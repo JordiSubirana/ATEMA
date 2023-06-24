@@ -27,6 +27,7 @@
 #include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Math/Matrix.hpp>
 
 #include <vector>
@@ -79,7 +80,7 @@ namespace at
 		const char* getName() const noexcept override;
 
 		void setShadowData(const std::vector<ShadowCascadeData>& shadowData);
-		void setLightData(const Vector3f& direction, const Color& color, float ambientStrength);
+		void setLightData(const Vector3f& direction, const Color& color, float ambientStrength, float diffuseStrength);
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
@@ -95,21 +96,28 @@ namespace at
 		void doEndFrame() override;
 
 	private:
+		struct FrameData
+		{
+			Ptr<DescriptorSet> descriptorSet;
+			Ptr<Buffer> frameBuffer;
+			Ptr<Buffer> lightBuffer;
+			Ptr<Buffer> shadowBuffer;
+		};
+
 		Ptr<DescriptorSetLayout> m_gbufferLayout;
 		Ptr<DescriptorSetLayout> m_phongLayout;
 		Ptr<GraphicsPipeline> m_pipeline;
 		Ptr<Sampler> m_gbufferSampler;
 		Ptr<Sampler> m_shadowMapSampler;
 		Ptr<VertexBuffer> m_quadMesh;
-		Ptr<DescriptorSet> m_phongSet;
-		Ptr<Buffer> m_frameBuffer;
-		Ptr<Buffer> m_shadowBuffer;
-		Ptr<Buffer> m_lightBuffer;
+
+		std::array<FrameData, Renderer::FramesInFlight> m_frameDatas;
 
 		std::vector<ShadowCascadeData> m_shadowCascadeDatas;
 		Vector3f m_lightDirection;
 		Color m_lightColor;
 		float m_lightAmbientStrength;
+		float m_lightDiffuseStrength;
 	};
 }
 

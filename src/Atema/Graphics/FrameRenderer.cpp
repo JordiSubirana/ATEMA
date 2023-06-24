@@ -63,6 +63,8 @@ namespace
 
 	constexpr float LightAmbientStrength = 0.35f;
 
+	constexpr float LightSpecularStrength = 0.5f;
+
 	constexpr size_t ShadowCascadeCount = 8;
 
 	constexpr float BaseDepthBias = 0.07f;
@@ -415,5 +417,5 @@ void FrameRenderer::updateShadowData()
 	}
 
 	m_phongLightingPass->setShadowData(m_shadowCascadeData);
-	m_phongLightingPass->setLightData(LightDirection, LightColor, LightAmbientStrength);
+	m_phongLightingPass->setLightData(LightDirection, LightColor, LightAmbientStrength, LightSpecularStrength);
 }

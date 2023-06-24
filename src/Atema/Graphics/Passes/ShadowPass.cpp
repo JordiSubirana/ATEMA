@@ -205,6 +205,20 @@ FrameGraphPass& ShadowPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder
 	return pass;
 }
 
+void ShadowPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+{
+	auto& buffer = m_frameDatas[renderFrame.getFrameIndex()].buffer;
+
+	ShadowData shadowData;
+	shadowData.viewProjection = m_viewProjection;
+
+	auto data = buffer->map();
+
+	shadowData.copyTo(data);
+
+	buffer->unmap();
+}
+
 void ShadowPass::setViewProjection(const Matrix4f& viewProjection)
 {
 	m_viewProjection = viewProjection;
@@ -225,8 +239,6 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 	const auto frameIndex = context.getFrameIndex();
 
 	auto& frameData = m_frameDatas[frameIndex];
-
-	updateFrameData(frameData);
 
 	auto& commandBuffer = context.getCommandBuffer();
 
@@ -368,7 +380,7 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 	{
 		auto& renderable = *renderables[i];
 
-		if (!renderable.castsShadows())
+		if (!renderable.castShadows())
 			continue;
 
 		const auto intersectionType = getFrustumIntersection(m_frustum, renderable.getAABB());
@@ -382,52 +394,14 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 		}
 	}
 
-	// Cull individual elements if needed
 	renderElements.reserve(renderElementsSize);
-
-	std::vector<RenderElement> tmpRenderElements;
 
 	for (size_t i = 0; i < visibleRenderables.size(); i++)
 	{
 		const auto& renderable = *visibleRenderables[i];
 
-		// Renderable is fully contained : every element also is
-		if (renderableIntersections[i] == IntersectionType::Inside)
-		{
-			renderable.getRenderElements(renderElements);
-		}
-		// Renderable is intersecting with the frustum : test every element
-		else
-		{
-			tmpRenderElements.clear();
-			tmpRenderElements.reserve(renderable.getRenderElementsSize());
-
-			renderable.getRenderElements(tmpRenderElements);
-
-			const auto& matrix = renderable.getTransform().getMatrix();
-
-			for (auto& renderElement : tmpRenderElements)
-			{
-				if (getFrustumIntersection(m_frustum, matrix * renderElement.aabb) != IntersectionType::Outside)
-					renderElements.emplace_back(std::move(renderElement));
-			}
-		}
+		renderable.getRenderElements(renderElements);
 	}
-}
-
-void ShadowPass::updateFrameData(FrameData& frameData)
-{
-	auto& buffer = frameData.buffer;
-	const auto& camera = getRenderData().getCamera();
-
-	ShadowData shadowData;
-	shadowData.viewProjection = m_viewProjection;
-
-	auto data = buffer->map();
-
-	shadowData.copyTo(data);
-
-	buffer->unmap();
 }
 
 void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count, uint32_t shadowMapSize)

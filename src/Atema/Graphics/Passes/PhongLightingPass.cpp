@@ -38,15 +38,22 @@ namespace
 	constexpr uint32_t GBufferSetIndex = 0;
 	constexpr uint32_t PhongSetIndex = 1;
 	constexpr uint32_t FrameBindingIndex = 0;
-	constexpr uint32_t ShadowBindingIndex = 1;
-	constexpr uint32_t LightBindingIndex = 2;
+	constexpr uint32_t LightBindingIndex = 1;
+	constexpr uint32_t ShadowBindingIndex = 2;
 
 	constexpr char* ShaderName = "AtemaPhongLightingPass";
 
 	constexpr char ShaderCode[] = R"(
 option
 {
+	bool UseBlinnPhong = true;
+	bool EnableShadows = true;
+	bool ShowDebugCascades = false;
 	uint MaxShadowMapCascadeCount = 16;
+	uint ShadowMapBindingIndex = 4;
+	uint FrameDataBindingIndex = 0;
+	uint LightDataBindingIndex = 1;
+	uint ShadowDataBindingIndex = 2;
 }
 
 include Atema.GBufferRead;
@@ -57,6 +64,14 @@ struct FrameData
 	mat4f view;
 }
 
+struct LightData
+{
+	vec3f direction;
+	vec3f color;
+	float ambientStrength;
+	float diffuseStrength;
+}
+
 struct ShadowData
 {
 	uint count;
@@ -65,22 +80,17 @@ struct ShadowData
 	float depthBias[MaxShadowMapCascadeCount];
 }
 
-struct LightData
-{
-	vec3f direction;
-	vec3f color;
-	float ambientStrength;
-}
-
 external
 {
-	[set(0), binding(4)] sampler2DArray shadowMap;
+	[optional(EnableShadows)]
+	[set(0), binding(ShadowMapBindingIndex)] sampler2DArray shadowMap;
 	
-	[set(1), binding(0)] FrameData frameData;
+	[set(1), binding(FrameDataBindingIndex)] FrameData frameData;
 
-	[set(1), binding(1)] ShadowData shadowData;
+	[set(1), binding(LightDataBindingIndex)] LightData lightData;
 	
-	[set(1), binding(2)] LightData lightData;
+	[optional(EnableShadows)]
+	[set(1), binding(ShadowDataBindingIndex)] ShadowData shadowData;
 }
 
 [stage(vertex)]
@@ -118,32 +128,21 @@ output
 	[location(0)] vec4f outColor;
 }
 
-vec2f poissonDisk[16] = vec2f[]( 
-   vec2f( -0.94201624, -0.39906216 ), 
-   vec2f( 0.94558609, -0.76890725 ), 
-   vec2f( -0.094184101, -0.92938870 ), 
-   vec2f( 0.34495938, 0.29387760 ), 
-   vec2f( -0.91588581, 0.45771432 ), 
-   vec2f( -0.81544232, -0.87912464 ), 
-   vec2f( -0.38277543, 0.27676845 ), 
-   vec2f( 0.97484398, 0.75648379 ), 
-   vec2f( 0.44323325, -0.97511554 ), 
-   vec2f( 0.53742981, -0.47373420 ), 
-   vec2f( -0.26496911, -0.41893023 ), 
-   vec2f( 0.79197514, 0.19090188 ), 
-   vec2f( -0.24188840, 0.99706507 ), 
-   vec2f( -0.81409955, 0.91437590 ), 
-   vec2f( 0.19984126, 0.78641367 ), 
-   vec2f( 0.14383161, -0.14100790 ) 
-);
-
-float random(vec3f seed, int i)
+uint getCascadeIndex(vec3f worldPos)
 {
-	vec4f seed4 = vec4f(seed,i);
+	vec4f posViewSpace = (frameData.view * vec4f(worldPos, 1.0));
 	
-	float dotProduct = dot(seed4, vec4f(12.9898,78.233,45.164,94.673));
+	uint cascadeIndex = uint(shadowData.count) - uint(1);
+	for(uint i = uint(0); i < shadowData.count; i++)
+	{
+		if(-posViewSpace.z < shadowData.depth[i])
+		{	
+			cascadeIndex = i;
+			break;
+		}
+	}
 	
-	return fract(sin(dotProduct) * 43758.5453);
+	return cascadeIndex;
 }
 
 float sampleVisibility(vec2f uv, uint cascadeIndex, float shadowZ)
@@ -156,96 +155,31 @@ float sampleVisibility(vec2f uv, uint cascadeIndex, float shadowZ)
 	return 1.0;
 }
 
-float sampleVisibilityPCF(vec2f uv, uint cascadeIndex, float shadowZ)
+float getVisibility(vec3f worldPos, float angle)
 {
-	float scale = 0.1;
+	optional (!EnableShadows)
+		return 1.0;
 	
-	vec2i texDim = textureSize(shadowMap, 0).xy;
-	float dx = scale / float(texDim.x);
-	float dy = scale / float(texDim.y);
-
-	float result = 0.0;
-	int count = 0;
-	int range = 8;
-	
-	for (int x = -range; x <= range; x++)
+	optional (EnableShadows)
 	{
-		for (int y = -range; y <= range; y++)
-		{
-			result = result + sampleVisibility(uv + vec2(dx*x, dy*y), cascadeIndex, shadowZ);
-			count++;
-		}
-	}
-	
-	return result / count;
-}
-
-float sampleVisibilityPoissonPCF(vec2f uv, uint cascadeIndex, float shadowZ)
-{
-	float scale = 0.4;
-	
-	vec2i texDim = textureSize(shadowMap, 0).xy;
-	float dx = scale / float(texDim.x);
-	float dy = scale / float(texDim.y);
-
-	float result = 0.0;
-	int count = 0;
-	int range = 4;
-	
-	vec3f pos = atGBufferReadPosition(inTexCoords);
-	
-	for (int x = -range; x <= range; x++)
-	{
-		for (int y = -range; y <= range; y++)
-		{
-			int index = int(int(16.0 * random(floor(pos * 1000.0), x + y * 100)) % 16);
+		uint cascadeIndex = getCascadeIndex(worldPos);
 		
-			vec2f offset = poissonDisk[index] / 200;
-			offset = offset * scale * 0.0;
-			
-			result = result + sampleVisibility(uv + vec2(dx*x, dy*y) + offset, cascadeIndex, shadowZ);
-			count++;
-		}
+		float cascadeBias = clamp(shadowData.depthBias[cascadeIndex] * tan(angle), 0.0, 0.5);
+		
+		vec4f shadowCoord = (shadowData.viewProjection[cascadeIndex] * vec4f(worldPos, 1.0));
+		shadowCoord.z = clamp(shadowCoord.z, -1.0, 1.0);
+		
+		vec2f shadowMapUV = shadowCoord.xy * 0.5 + 0.5;
+		float shadowZ = shadowCoord.z - cascadeBias;
+		
+		return sampleVisibility(shadowMapUV, cascadeIndex, shadowZ);
 	}
-	
-	return result / count;
-}
-
-float getVisibility(float angle)
-{
-	vec3f pos = atGBufferReadPosition(inTexCoords);
-	
-	vec4f posViewSpace = (frameData.view * vec4f(pos, 1.0));
-	
-	uint cascadeIndex = uint(shadowData.count) - uint(1);
-	for(uint i = uint(0); i < shadowData.count; i++)
-	{
-		if(-posViewSpace.z < shadowData.depth[i])
-		{	
-			cascadeIndex = i;
-			break;
-		}
-	}
-	
-	float cascadePoissonStrengths[8] = float[](2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 2000.0);
-	
-	float cascadePoissonStrength = cascadePoissonStrengths[cascadeIndex];
-	
-	float cascadeBias = clamp(shadowData.depthBias[cascadeIndex] * tan(angle), 0.0, 0.5);
-	
-	vec4f shadowCoord = (shadowData.viewProjection[cascadeIndex] * vec4f(pos, 1.0));
-	shadowCoord.z = clamp(shadowCoord.z, -1.0, 1.0);
-	
-	vec2f shadowMapUV = shadowCoord.xy * 0.5 + 0.5;
-	float shadowZ = shadowCoord.z - cascadeBias;
-	
-	return sampleVisibility(shadowMapUV, cascadeIndex, shadowZ);
 }
 
 [entry(fragment)]
 void main()
 {
-	vec3f pos = atGBufferReadPosition(inTexCoords);
+	vec3f worldPos = atGBufferReadPosition(inTexCoords);
 	vec3f normal = atGBufferReadNormal(inTexCoords);
 	vec3f color = atGBufferReadAlbedo(inTexCoords);
 	float ao = atGBufferReadAO(inTexCoords);
@@ -255,46 +189,59 @@ void main()
 	
 	vec3f inverseLightDir = -normalize(lightData.direction);
 	
-	vec3f ambientColor = lightData.ambientStrength * lightData.color * ao;
-	
 	float cosTheta = dot(normal, inverseLightDir);
 	
+	//TODO: Add shininess/specular to material data
+	const float Pi = 3.14159265;
+	const float shininess = 16.0;
+	const float specular = metalness;
+
+	// Ambient
+	vec3f ambientColor = lightData.ambientStrength * lightData.color * ao;
+	
+	// Diffuse
 	float diffuseFactor = max(cosTheta, 0.0);
 	
-	vec3f diffuseColor = diffuseFactor * lightData.color;
+	vec3f diffuseColor = diffuseFactor * lightData.diffuseStrength * lightData.color;
 	
-	vec3f viewDir = normalize(frameData.cameraPosition - pos);
+	// Specular
+	vec3f viewDir = normalize(frameData.cameraPosition - worldPos);
 	
-	vec3f reflectDir = reflect(-inverseLightDir, normal);
+	float specularFactor = 0.0;
+	optional (UseBlinnPhong)
+	{
+		const float energyConservation = ( 8.0 + shininess ) / ( 8.0 * Pi );
+		vec3f halfwayDir = normalize(inverseLightDir + viewDir);
+		specularFactor = energyConservation * pow(max(dot(normal, halfwayDir), 0.0), shininess);
+	}
 	
-	float specularFactor = clamp(pow(max(dot(viewDir, reflectDir), 0.0), roughness), 0.0, 1.0);
+	optional (!UseBlinnPhong)
+	{
+		const float energyConservation = ( 2.0 + shininess ) / ( 2.0 * Pi );
+		vec3f reflectDir = reflect(-inverseLightDir, normal);
+		specularFactor = energyConservation * pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+	}
 	
-	vec3f specularColor = specularFactor * metalness * lightData.color;
+	vec3f specularColor = specularFactor * specular * lightData.color;
 	
-	float visibility = getVisibility(acos(cosTheta));
+	// Visibility
+	float visibility = getVisibility(worldPos, acos(cosTheta));
 	
+	// Result
 	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * color.rgb;
 	finalColor = finalColor + emissiveColor;
 	
-	outColor = vec4f(finalColor, 1.0);
-	
-	
-	
-	vec3f colors[4] = vec3f[](vec3f(0, 1, 0), vec3f(0, 0, 1), vec3f(1, 1, 0), vec3f(1, 0, 0));
-	
-	vec4f posViewSpace = (frameData.view * vec4f(pos, 1.0));
-	
-	uint cascadeIndex = uint(shadowData.count) - uint(1);
-	for(uint i = uint(0); i < shadowData.count; i++)
+	// Debug
+	optional (ShowDebugCascades)
 	{
-		if(-posViewSpace.z < shadowData.depth[i])
-		{	
-			cascadeIndex = i;
-			break;
-		}
+		vec3f colors[4] = vec3f[](vec3f(0, 1, 0), vec3f(0, 0, 1), vec3f(1, 1, 0), vec3f(1, 0, 0));
+		
+		uint cascadeIndex = getCascadeIndex(worldPos);
+		
+		finalColor = finalColor + colors[int(cascadeIndex % 4)] * 0.15;
 	}
 	
-	outColor = vec4f(finalColor + colors[int(cascadeIndex % 4)] * 0.15, 1.0);
+	// Output
 	outColor = vec4f(finalColor, 1.0);
 }
 )";
@@ -317,6 +264,32 @@ void main()
 
 		size_t cameraPositionOffset;
 		size_t viewOffset;
+	};
+
+	struct LightLayout
+	{
+		LightLayout(StructLayout structLayout) : layout(structLayout)
+		{
+			/*struct LightData
+			{
+				vec3f direction;
+				vec3f color;
+				float ambientStrength;
+				float diffuseStrength;
+			}*/
+			
+			directionOffset = layout.add(BufferElementType::Float3);
+			colorOffset = layout.add(BufferElementType::Float3);
+			ambientStrengthOffset = layout.add(BufferElementType::Float);
+			diffuseStrengthOffset = layout.add(BufferElementType::Float);
+		}
+
+		BufferLayout layout;
+
+		size_t directionOffset;
+		size_t colorOffset;
+		size_t ambientStrengthOffset;
+		size_t diffuseStrengthOffset;
 	};
 
 	struct ShadowLayout
@@ -344,33 +317,11 @@ void main()
 		size_t depthOffset;
 		size_t depthBiasOffset;
 	};
-
-	struct LightLayout
-	{
-		LightLayout(StructLayout structLayout) : layout(structLayout)
-		{
-			/*struct LightData
-			{
-				vec3f direction;
-				vec3f color;
-				float ambientStrength;
-			}*/
-			
-			directionOffset = layout.add(BufferElementType::Float3);
-			colorOffset = layout.add(BufferElementType::Float3);
-			ambientStrengthOffset = layout.add(BufferElementType::Float);
-		}
-
-		BufferLayout layout;
-
-		size_t directionOffset;
-		size_t colorOffset;
-		size_t ambientStrengthOffset;
-	};
 }
 
 PhongLightingPass::PhongLightingPass() :
-	AbstractRenderPass()
+	m_lightAmbientStrength(1.0f),
+	m_lightDiffuseStrength(1.0f)
 {
 	auto& graphics = Graphics::instance();
 
@@ -410,38 +361,50 @@ PhongLightingPass::PhongLightingPass() :
 		m_phongLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 	}
 
-	// Frame buffer
+	// Buffers and descriptor sets (one per frame in flight)
 	{
-		FrameLayout layout(StructLayout::Default);
+		FrameLayout frameLayout(StructLayout::Default);
 
-		m_frameBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::TransferDst, layout.layout.getSize() });
+		Buffer::Settings frameBufferSettings;
+		frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+		frameBufferSettings.byteSize = frameLayout.layout.getSize();
+
+		LightLayout lightLayout(StructLayout::Default);
+
+		Buffer::Settings lightBufferSettings;
+		lightBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+		lightBufferSettings.byteSize = lightLayout.layout.getSize();
+
+		ShadowLayout shadowLayout(StructLayout::Default);
+
+		Buffer::Settings shadowBufferSettings;
+		shadowBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+		shadowBufferSettings.byteSize = shadowLayout.layout.getSize();
+
+		for (auto& frameData : m_frameDatas)
+		{
+			frameData.frameBuffer = Buffer::create(frameBufferSettings);
+			frameData.lightBuffer = Buffer::create(lightBufferSettings);
+			frameData.shadowBuffer = Buffer::create(shadowBufferSettings);
+
+			frameData.descriptorSet = m_phongLayout->createSet();
+			frameData.descriptorSet->update(FrameBindingIndex, *frameData.frameBuffer);
+			frameData.descriptorSet->update(LightBindingIndex, *frameData.lightBuffer);
+			frameData.descriptorSet->update(ShadowBindingIndex, *frameData.shadowBuffer);
+		}
 	}
-
-	// Shadow buffer
-	{
-		ShadowLayout layout(StructLayout::Default);
-
-		m_shadowBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::TransferDst, layout.layout.getSize() });
-	}
-
-	// Light buffer
-	{
-		LightLayout layout(StructLayout::Default);
-
-		m_lightBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::TransferDst, layout.layout.getSize() });
-	}
-
-	// Phong set
-	m_phongSet = m_phongLayout->createSet();
-
-	m_phongSet->update(FrameBindingIndex, *m_frameBuffer);
-	m_phongSet->update(ShadowBindingIndex, *m_shadowBuffer);
-	m_phongSet->update(LightBindingIndex, *m_lightBuffer);
 
 	// Graphics pipeline
 	std::vector<UberShader::Option> uberOptions =
 	{
-		{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(MaxShadowCascadeCount)) }
+		{ "UseBlinnPhong", ConstantValue(true) },
+		{ "EnableShadows", ConstantValue(true) },
+		{ "ShowDebugCascades", ConstantValue(false) },
+		{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(MaxShadowCascadeCount)) },
+		{ "ShadowMapBindingIndex", ConstantValue(static_cast<uint32_t>(4)) },
+		{ "FrameDataBindingIndex", ConstantValue(static_cast<uint32_t>(FrameBindingIndex)) },
+		{ "LightDataBindingIndex", ConstantValue(static_cast<uint32_t>(LightBindingIndex)) },
+		{ "ShadowDataBindingIndex", ConstantValue(static_cast<uint32_t>(ShadowBindingIndex)) }
 	};
 
 	GraphicsPipeline::Settings pipelineSettings;
@@ -485,11 +448,12 @@ void PhongLightingPass::setShadowData(const std::vector<ShadowCascadeData>& shad
 	m_shadowCascadeDatas = shadowData;
 }
 
-void PhongLightingPass::setLightData(const Vector3f& direction, const Color& color, float ambientStrength)
+void PhongLightingPass::setLightData(const Vector3f& direction, const Color& color, float ambientStrength, float diffuseStrength)
 {
 	m_lightDirection = direction;
 	m_lightColor = color;
 	m_lightAmbientStrength = ambientStrength;
+	m_lightDiffuseStrength = diffuseStrength;
 }
 
 FrameGraphPass& PhongLightingPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings)
@@ -526,29 +490,36 @@ void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer&
 {
 	const size_t shadowMapCount = std::min(MaxShadowCascadeCount, m_shadowCascadeDatas.size());
 
-	commandBuffer.memoryBarrier(MemoryBarrier::TransferBegin);
+	auto& frameData = m_frameDatas[renderFrame.getFrameIndex()];
 
 	{
 		const FrameLayout layout(StructLayout::Default);
-
-		auto stagingBuffer = renderFrame.createStagingBuffer(layout.layout.getSize());
-
-		auto data = stagingBuffer.map();
+		
+		auto data = frameData.frameBuffer->map();
 
 		mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderData().getCamera().getPosition();
 		mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderData().getCamera().getViewMatrix();
 
-		stagingBuffer.unmap();
+		frameData.frameBuffer->unmap();
+	}
 
-		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_frameBuffer, stagingBuffer.size, stagingBuffer.offset);
+	{
+		const LightLayout layout(StructLayout::Default);
+
+		auto data = frameData.lightBuffer->map();
+
+		mapMemory<Vector3f>(data, layout.directionOffset) = m_lightDirection;
+		mapMemory<Vector3f>(data, layout.colorOffset) = m_lightColor.toVector3f();
+		mapMemory<float>(data, layout.ambientStrengthOffset) = m_lightAmbientStrength;
+		mapMemory<float>(data, layout.diffuseStrengthOffset) = m_lightDiffuseStrength;
+
+		frameData.lightBuffer->unmap();
 	}
 
 	{
 		const ShadowLayout layout(StructLayout::Default);
 
-		auto stagingBuffer = renderFrame.createStagingBuffer(layout.layout.getSize());
-
-		auto data = stagingBuffer.map();
+		auto data = frameData.shadowBuffer->map();
 
 		mapMemory<uint32_t>(data, layout.countOffset) = static_cast<uint32_t>(shadowMapCount);
 		MemoryMapper viewProjections(data, layout.viewProjectionOffset, sizeof(Matrix4f));
@@ -562,28 +533,8 @@ void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer&
 			depthBiases.map<float>(i) = m_shadowCascadeDatas[i].depthBias;
 		}
 
-		stagingBuffer.unmap();
-
-		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_shadowBuffer, stagingBuffer.size, stagingBuffer.offset);
+		frameData.shadowBuffer->unmap();
 	}
-
-	{
-		const LightLayout layout(StructLayout::Default);
-
-		auto stagingBuffer = renderFrame.createStagingBuffer(layout.layout.getSize());
-
-		auto data = stagingBuffer.map();
-
-		mapMemory<Vector3f>(data, layout.directionOffset) = m_lightDirection;
-		mapMemory<Vector3f>(data, layout.colorOffset) = m_lightColor.toVector3f();
-		mapMemory<float>(data, layout.ambientStrengthOffset) = m_lightAmbientStrength;
-
-		stagingBuffer.unmap();
-
-		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_lightBuffer, stagingBuffer.size, stagingBuffer.offset);
-	}
-
-	commandBuffer.memoryBarrier(MemoryBarrier::TransferEnd);
 }
 
 void PhongLightingPass::execute(FrameGraphContext& context, const Settings& settings)
@@ -592,6 +543,8 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 
 	if (!renderData.isValid())
 		return;
+
+	const auto& frameData = m_frameDatas[context.getFrameIndex()];
 
 	const auto& viewport = getRenderData().getCamera().getViewport();
 	const auto& scissor = getRenderData().getCamera().getScissor();
@@ -611,7 +564,7 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
 	commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-	commandBuffer.bindDescriptorSet(PhongSetIndex, *m_phongSet);
+	commandBuffer.bindDescriptorSet(PhongSetIndex, *frameData.descriptorSet);
 
 	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 

@@ -68,6 +68,8 @@ namespace at
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
+		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+
 		void execute(FrameGraphContext& context, const Settings& settings);
 
 		GBufferPass& operator=(const GBufferPass& other) = default;
@@ -87,7 +89,6 @@ namespace at
 		void frustumCull();
 		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
 		void sortElements();
-		void updateFrameData(FrameData& frameData);
 		void drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count );
 
 		size_t m_threadCount;

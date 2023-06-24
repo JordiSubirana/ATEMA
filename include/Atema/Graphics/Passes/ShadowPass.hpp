@@ -68,6 +68,8 @@ namespace at
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
+		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+
 		void execute(FrameGraphContext& context, const Settings& settings);
 
 		ShadowPass& operator=(const ShadowPass& other) = default;
@@ -86,7 +88,6 @@ namespace at
 
 		void frustumCull();
 		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
-		void updateFrameData(FrameData& frameData);
 		void drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count, uint32_t shadowMapSize);
 
 		size_t m_threadCount;
