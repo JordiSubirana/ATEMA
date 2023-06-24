@@ -32,7 +32,7 @@ StaticModel::StaticModel() :
 	m_updateTransform(true)
 {
 	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = SurfaceMaterial::ObjectData::getBufferLayout().getSize();
 
 	m_objectBuffer = Buffer::create(bufferSettings);
@@ -78,21 +78,18 @@ const AABBf& StaticModel::getAABB() const noexcept
 	return m_aabb;
 }
 
-bool StaticModel::castsShadows() const noexcept
-{
-    return true;
-}
-
 void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
 	if (m_updateTransform)
 	{
-		auto data = m_objectBuffer->map();
+		auto stagingBuffer = renderFrame.createStagingBuffer(m_objectBuffer->getByteSize());
+
+		auto data = stagingBuffer.map();
 
 		mapMemory<Matrix4f>(data, 0) = m_transform.getMatrix();
 
-		m_objectBuffer->unmap();
-
+		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_objectBuffer, stagingBuffer.size, stagingBuffer.offset);
+		
 		m_updateTransform = false;
 	}
 }

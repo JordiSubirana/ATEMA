@@ -41,8 +41,10 @@ namespace at
 		Renderable(Renderable&& other) noexcept = default;
 		virtual ~Renderable() = default;
 
+		// Update Renderable & RenderElement resources
 		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) = 0;
 
+		// RenderElements are guaranteed to be valid only once updateResources has been called
 		virtual void getRenderElements(std::vector<RenderElement>& renderElements) const = 0;
 		virtual size_t getRenderElementsSize() const noexcept = 0;
 
@@ -50,12 +52,15 @@ namespace at
 
 		virtual const AABBf& getAABB() const noexcept = 0;
 
-		virtual bool castsShadows() const noexcept = 0;
+		// Default : true
+		virtual void setCastShadows(bool castShadows);
+		virtual bool castShadows() const noexcept;
 
 		Renderable& operator=(const Renderable& other) = default;
 		Renderable& operator=(Renderable&& other) noexcept = default;
 
 	private:
+		bool m_castShadows;
 	};
 }
 

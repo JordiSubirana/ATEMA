@@ -23,6 +23,17 @@
 
 using namespace at;
 
-Renderable::Renderable()
+Renderable::Renderable() :
+	m_castShadows(true)
 {
+}
+
+void Renderable::setCastShadows(bool castShadows)
+{
+	m_castShadows = castShadows;
+}
+
+bool Renderable::castShadows() const noexcept
+{
+	return m_castShadows;
 }
