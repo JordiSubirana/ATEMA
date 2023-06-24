@@ -422,15 +422,11 @@ void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData
 
 	for (size_t i = index; i < index + count; i++)
 	{
-		auto& renderElement = m_renderElements[i];
+		const auto& renderElement = m_renderElements[i];
+		const auto binding = renderElement.objectBinding;
 
-		if (renderElement.objectBinding)
-		{
-			if (renderElement.objectBinding->dynamicBufferOffsets.empty())
-				commandBuffer.bindDescriptorSet(ObjectSetIndex, *renderElement.objectBinding->descriptorSet);
-			else
-				commandBuffer.bindDescriptorSet(ObjectSetIndex, *renderElement.objectBinding->descriptorSet, renderElement.objectBinding->dynamicBufferOffsets);
-		}
+		if (binding)
+			commandBuffer.bindDescriptorSet(ObjectSetIndex, *binding->descriptorSet, binding->dynamicBufferOffsets.data(), binding->dynamicBufferOffsets.size());
 
 		commandBuffer.bindVertexBuffer(*renderElement.vertexBuffer->getBuffer(), 0);
 

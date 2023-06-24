@@ -33,10 +33,5 @@ ShaderBinding::ShaderBinding() :
 void ShaderBinding::bindTo(CommandBuffer& commandBuffer) const
 {
 	if (descriptorSet)
-	{
-		if (dynamicBufferOffsets.empty())
-			commandBuffer.bindDescriptorSet(index, *descriptorSet);
-		else
-			commandBuffer.bindDescriptorSet(index, *descriptorSet, dynamicBufferOffsets);
-	}
+		commandBuffer.bindDescriptorSet(index, *descriptorSet, dynamicBufferOffsets.data(), dynamicBufferOffsets.size());
 }

@@ -38,6 +38,11 @@ QueueType CommandBuffer::getQueueType() const noexcept
 	return m_queueType;
 }
 
+void CommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet, uint32_t dynamicBufferOffset)
+{
+	bindDescriptorSet(index, descriptorSet, &dynamicBufferOffset, 1);
+}
+
 void CommandBuffer::memoryBarrier(MemoryBarrier barrier)
 {
 	switch (barrier)

@@ -1027,7 +1027,7 @@ void GraphicsSystem::createFrameGraph()
 							{
 								auto& drawData = *it;
 
-								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, { drawData.index * m_dynamicObjectBufferOffset });
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, drawData.index * m_dynamicObjectBufferOffset);
 
 								auto& materialInstance = drawData.materialInstance;
 								auto& material = materialInstance->getMaterial();
@@ -1134,7 +1134,7 @@ void GraphicsSystem::createFrameGraph()
 
 							commandBuffer->setScissor(Vector2i(), { m_shadowMapSize, m_shadowMapSize });
 
-							commandBuffer->bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, *frameData.shadowSet, { static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset });
+							commandBuffer->bindDescriptorSet(SurfaceMaterial::MaterialSetIndex, *frameData.shadowSet, static_cast<uint32_t>(cascadeIndex) * m_dynamicShadowBufferOffset);
 
 							commandBuffer->bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameData.frameDescriptorSet);
 							
@@ -1150,7 +1150,7 @@ void GraphicsSystem::createFrameGraph()
 								if (!m_lightFrustums[cascadeIndex].intersects(graphics.aabb))
 									continue;
 
-								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, { i * m_dynamicObjectBufferOffset });
+								commandBuffer->bindDescriptorSet(SurfaceMaterial::ObjectSetIndex, *frameData.objectDescriptorSet, i * m_dynamicObjectBufferOffset);
 
 								for (const auto& mesh : graphics.model->getMeshes())
 								{

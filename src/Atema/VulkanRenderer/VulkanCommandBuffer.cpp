@@ -375,12 +375,7 @@ void VulkanCommandBuffer::bindIndexBuffer(const Buffer& buffer, IndexType indexT
 	m_device.vkCmdBindIndexBuffer(m_commandBuffer, vkBuffer, 0, Vulkan::getIndexType(indexType));
 }
 
-void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet)
-{
-	bindDescriptorSet(index, descriptorSet, {});
-}
-
-void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet, const std::vector<uint32_t>& dynamicBufferOffsets)
+void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet& descriptorSet, const uint32_t* dynamicBufferOffsets, size_t dynamicBufferOffsetsCount)
 {
 	const auto vkDescriptorSet = static_cast<const VulkanDescriptorSet&>(descriptorSet).getHandle();
 
@@ -391,8 +386,8 @@ void VulkanCommandBuffer::bindDescriptorSet(uint32_t index, const DescriptorSet&
 		index,
 		1,
 		&vkDescriptorSet,
-		static_cast<uint32_t>(dynamicBufferOffsets.size()),
-		dynamicBufferOffsets.empty() ? nullptr : dynamicBufferOffsets.data());
+		static_cast<uint32_t>(dynamicBufferOffsetsCount),
+		dynamicBufferOffsets);
 }
 
 void VulkanCommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
