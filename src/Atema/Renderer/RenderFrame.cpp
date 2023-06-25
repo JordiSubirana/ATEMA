@@ -30,7 +30,7 @@ namespace
 using namespace at;
 
 RenderFrame::RenderFrame() :
-	m_stagingBufferPool(BufferUsage::TransferSrc | BufferUsage::Map, StagingBufferBlockSize)
+	m_stagingBufferPool(BufferUsage::TransferSrc | BufferUsage::Map, StagingBufferBlockSize, true)
 {
 }
 
@@ -60,7 +60,7 @@ void RenderFrame::initializeFrame()
 	m_stagingBufferPool.clear();
 }
 
-BufferRange RenderFrame::createStagingBuffer(size_t byteSize)
+Ptr<BufferAllocation> RenderFrame::allocateStagingBuffer(size_t byteSize)
 {
-	return m_stagingBufferPool.create(byteSize);
+	return m_stagingBufferPool.allocate(byteSize);
 }

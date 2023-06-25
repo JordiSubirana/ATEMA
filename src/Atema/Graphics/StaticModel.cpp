@@ -82,13 +82,13 @@ void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 {
 	if (m_updateTransform)
 	{
-		auto stagingBuffer = renderFrame.createStagingBuffer(m_objectBuffer->getByteSize());
+		auto stagingBuffer = renderFrame.allocateStagingBuffer(m_objectBuffer->getByteSize());
 
-		auto data = stagingBuffer.map();
+		auto data = stagingBuffer->map();
 
 		mapMemory<Matrix4f>(data, 0) = m_transform.getMatrix();
 
-		commandBuffer.copyBuffer(*stagingBuffer.buffer, *m_objectBuffer, stagingBuffer.size, stagingBuffer.offset);
+		commandBuffer.copyBuffer(stagingBuffer->getBuffer(), *m_objectBuffer, stagingBuffer->getSize(), stagingBuffer->getOffset());
 		
 		m_updateTransform = false;
 	}

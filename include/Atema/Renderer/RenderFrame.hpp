@@ -48,7 +48,7 @@ namespace at
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType, size_t threadIndex) = 0;
 
 		// Create transient staging buffer that will be destroyed when the frame ends
-		BufferRange createStagingBuffer(size_t byteSize);
+		Ptr<BufferAllocation> allocateStagingBuffer(size_t byteSize);
 
 		virtual Ptr<RenderPass> getRenderPass() const noexcept = 0;
 		virtual Ptr<Framebuffer> getFramebuffer() const noexcept = 0;

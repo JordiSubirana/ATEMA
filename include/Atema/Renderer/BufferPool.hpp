@@ -24,44 +24,71 @@
 
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Renderer/Buffer.hpp>
-
-#include <vector>
-#include <map>
-#include <unordered_map>
+#include <Atema/Core/AllocationPool.hpp>
 
 namespace at
 {
-	class ATEMA_RENDERER_API BufferPool
+	class ATEMA_RENDERER_API BufferAllocation : public Allocation
+	{
+	public:
+		BufferAllocation() = delete;
+		BufferAllocation(Buffer& buffer, size_t page, size_t offset, size_t size);
+		BufferAllocation(const BufferAllocation& other) = delete;
+		BufferAllocation(BufferAllocation&& other) noexcept = delete;
+		~BufferAllocation() = default;
+
+		Buffer& getBuffer() noexcept;
+		const Buffer& getBuffer() const noexcept;
+
+		// Only valid for buffer created with BufferUsage::Map
+		void* map();
+
+		BufferAllocation& operator=(const BufferAllocation& other) = delete;
+		BufferAllocation& operator=(BufferAllocation&& other) noexcept = delete;
+
+	private:
+		Buffer* m_buffer;
+	};
+
+	class ATEMA_RENDERER_API BufferPageResources
+	{
+	public:
+		BufferPageResources() = delete;
+		BufferPageResources(Flags<BufferUsage> usages, size_t size);
+		BufferPageResources(const BufferPageResources& other) = delete;
+		BufferPageResources(BufferPageResources&& other) noexcept = delete;
+		~BufferPageResources() = default;
+
+		Buffer& getBuffer() noexcept;
+		const Buffer& getBuffer() const noexcept;
+
+		BufferPageResources& operator=(const BufferPageResources& other) = delete;
+		BufferPageResources& operator=(BufferPageResources&& other) noexcept = delete;
+
+	private:
+		Ptr<Buffer> m_buffer;
+	};
+
+	class ATEMA_RENDERER_API BufferPool : public AllocationPool<BufferAllocation, BufferPageResources>
 	{
 	public:
 		BufferPool() = delete;
-		BufferPool(Flags<BufferUsage> usages, size_t blockSize);
-		BufferPool(const BufferPool& other) = default;
-		BufferPool(BufferPool&& other) noexcept = default;
+		BufferPool(Flags<BufferUsage> usages, size_t pageSize, bool releaseOnClear);
+		BufferPool(const BufferPool& other) = delete;
+		BufferPool(BufferPool&& other) noexcept = delete;
 		~BufferPool() = default;
 
-		BufferRange create(size_t byteSize);
+		BufferPool& operator=(const BufferPool& other) = delete;
+		BufferPool& operator=(BufferPool&& other) noexcept = delete;
 
-		void release(const BufferRange& range);
-
-		void clear();
-
-		BufferPool& operator=(const BufferPool& other) = default;
-		BufferPool& operator=(BufferPool&& other) noexcept = default;
+	protected:
+		UPtr<BufferPageResources> createPageResources(size_t pageSize) override;
+		Ptr<BufferAllocation> createAllocation(BufferPageResources& pageResources, size_t page, size_t offset, size_t size) override;
+		void releaseResources(BufferPageResources& pageResources, size_t offset, size_t size) override;
+		void clearResources(BufferPageResources& pageResources) override;
 
 	private:
-		struct Block
-		{
-			Ptr<Buffer> buffer;
-			// Key is the range last address
-			std::map<size_t, BufferRange> freeRanges;
-		};
-
 		Flags<BufferUsage> m_usages;
-		size_t m_blockSize;
-
-		std::vector<Block> m_blocks;
-		std::unordered_map<Buffer*, size_t> m_bufferToBlock;
 	};
 }
 

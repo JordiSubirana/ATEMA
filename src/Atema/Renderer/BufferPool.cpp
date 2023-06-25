@@ -20,119 +20,68 @@
 */
 
 #include <Atema/Renderer/BufferPool.hpp>
-#include <Atema/Core/Error.hpp>
 
 using namespace at;
 
-BufferPool::BufferPool(Flags<BufferUsage> usages, size_t blockSize) :
-	m_usages(usages),
-	m_blockSize(blockSize)
+// BufferAllocation
+BufferAllocation::BufferAllocation(Buffer& buffer, size_t page, size_t offset, size_t size) :
+	Allocation(page, offset, size),
+	m_buffer(&buffer)
 {
-	ATEMA_ASSERT(usages, "Invalid buffer usages");
-	ATEMA_ASSERT(blockSize > 0, "Invalid block size");
 }
 
-BufferRange BufferPool::create(size_t byteSize)
+Buffer& BufferAllocation::getBuffer() noexcept
 {
-	for (auto& block : m_blocks)
-	{
-		for (auto it = block.freeRanges.begin(); it != block.freeRanges.end(); it++)
-		{
-			auto& freeRange = it->second;
-
-			if (freeRange.size >= byteSize)
-			{
-				BufferRange bufferRange;
-				bufferRange.buffer = block.buffer.get();
-				bufferRange.size = byteSize;
-				bufferRange.offset = freeRange.offset;
-				
-				if (freeRange.size == byteSize)
-				{
-					block.freeRanges.erase(it);
-				}
-				else
-				{
-					freeRange.size -= byteSize;
-					freeRange.offset += byteSize;
-				}
-
-				return bufferRange;
-			}
-		}
-	}
-
-	// No block currently available : create a new one
-	auto& block = m_blocks.emplace_back();
-
-	Buffer::Settings bufferSettings;
-	bufferSettings.usages = m_usages;
-	bufferSettings.byteSize = std::max(m_blockSize, byteSize);
-
-	block.buffer = Buffer::create(bufferSettings);
-
-	if (byteSize < bufferSettings.byteSize)
-	{
-		auto& freeRange = block.freeRanges[bufferSettings.byteSize];
-		freeRange.buffer = block.buffer.get();
-		freeRange.offset = byteSize;
-		freeRange.size = bufferSettings.byteSize - byteSize;
-	}
-
-	m_bufferToBlock[block.buffer.get()] = m_blocks.size() - 1;
-	
-	return BufferRange(*block.buffer.get(), 0, byteSize);
+	return *m_buffer;
 }
 
-void BufferPool::release(const BufferRange& range)
+const Buffer& BufferAllocation::getBuffer() const noexcept
 {
-	if (!range.buffer)
-		return;
-
-	auto it = m_bufferToBlock.find(range.buffer);
-
-	if (it == m_bufferToBlock.end())
-		return;
-
-	auto& block = m_blocks[it->second];
-
-	BufferRange newRange(range);
-	// Merge with previous range if it exists
-	auto prevIt = block.freeRanges.find(range.offset);
-	if (prevIt != block.freeRanges.end())
-	{
-		newRange.offset = prevIt->second.offset;
-		newRange.size += prevIt->second.size;
-		block.freeRanges.erase(prevIt);
-	}
-
-	const auto lastAddress = newRange.offset + newRange.size;
-	
-	// Merge with next range if it exists
-	auto nextIt = block.freeRanges.lower_bound(lastAddress);
-	if (nextIt != block.freeRanges.end() && nextIt->second.offset == lastAddress)
-	{
-		auto& nextRange = nextIt->second;
-		nextRange.offset = newRange.offset;
-		nextRange.size += newRange.size;
-	}
-	// If not, add a new one
-	else
-	{
-		block.freeRanges.emplace(lastAddress, newRange);
-	}
+	return *m_buffer;
 }
 
-void BufferPool::clear()
+void* BufferAllocation::map()
 {
-	for (auto& block : m_blocks)
-	{
-		BufferRange range;
-		range.buffer = block.buffer.get();
-		range.offset = 0;
-		range.size = range.buffer->getByteSize();
+	return m_buffer->map(getOffset(), getSize());
+}
 
-		block.freeRanges.clear();
-		block.freeRanges[range.size] = std::move(range);
-	}
+// BufferPageResources
+BufferPageResources::BufferPageResources(Flags<BufferUsage> usages, size_t size)
+{
+	m_buffer = Buffer::create({ usages, size });
+}
+
+Buffer& BufferPageResources::getBuffer() noexcept
+{
+	return *m_buffer;
+}
+
+const Buffer& BufferPageResources::getBuffer() const noexcept
+{
+	return *m_buffer;
+}
+
+// BufferPool
+BufferPool::BufferPool(Flags<BufferUsage> usages, size_t pageSize, bool releaseOnClear) :
+	AllocationPool(pageSize, releaseOnClear),
+	m_usages(usages)
+{
+}
+
+UPtr<BufferPageResources> BufferPool::createPageResources(size_t pageSize)
+{
+	return std::make_unique<BufferPageResources>(m_usages, pageSize);
+}
+
+Ptr<BufferAllocation> BufferPool::createAllocation(BufferPageResources& pageResources, size_t page, size_t offset, size_t size)
+{
+	return std::make_shared<BufferAllocation>(pageResources.getBuffer(), page, offset, size);
+}
+
+void BufferPool::releaseResources(BufferPageResources& pageResources, size_t offset, size_t size)
+{
+}
+
+void BufferPool::clearResources(BufferPageResources& pageResources)
+{
 }
