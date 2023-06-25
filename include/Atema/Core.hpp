@@ -22,6 +22,7 @@
 #ifndef ATEMA_GLOBAL_CORE_HPP
 #define ATEMA_GLOBAL_CORE_HPP
 
+#include <Atema/Core/AllocationPool.hpp>
 #include <Atema/Core/Application.hpp>
 #include <Atema/Core/Benchmark.hpp>
 #include <Atema/Core/Config.hpp>
