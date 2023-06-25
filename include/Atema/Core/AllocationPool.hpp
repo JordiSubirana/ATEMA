@@ -22,10 +22,11 @@
 #ifndef ATEMA_CORE_ALLOCATIONPOOL_HPP
 #define ATEMA_CORE_ALLOCATIONPOOL_HPP
 
-#include <map>
-#include <vector>
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
+
+#include <map>
+#include <vector>
 
 namespace at
 {

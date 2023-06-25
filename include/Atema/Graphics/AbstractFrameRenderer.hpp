@@ -47,7 +47,7 @@ namespace at
 		const RenderData& getRenderData() const noexcept;
 
 		// Must be called every frame before render method
-		void beginFrame();
+		void initializeFrame();
 
 		// Renders the current frame
 		// beginFrame must have been called before that
@@ -69,7 +69,7 @@ namespace at
 		virtual std::vector<AbstractRenderPass*>& getRenderPasses() = 0;
 		virtual void destroyResources(RenderFrame& renderFrame);
 		// Called before every AbstractRenderPass::doBeginFrame
-		virtual void doBeginFrame();
+		virtual void beginFrame();
 
 	private:
 		RenderData m_renderData;

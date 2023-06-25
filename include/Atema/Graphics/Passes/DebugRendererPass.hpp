@@ -71,8 +71,7 @@ namespace at
 		DebugRendererPass& operator=(DebugRendererPass&& other) noexcept = default;
 
 	protected:
-		void doBeginFrame() override;
-		void doEndFrame() override;
+		void beginFrame() override;
 
 	private:
 		Ptr<DebugRenderer> m_debugRenderer;

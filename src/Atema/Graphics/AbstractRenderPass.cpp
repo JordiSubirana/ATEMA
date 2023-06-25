@@ -28,21 +28,21 @@ AbstractRenderPass::AbstractRenderPass() :
 {
 }
 
-void AbstractRenderPass::beginFrame(const RenderData& renderData)
+void AbstractRenderPass::initializeFrame(const RenderData& renderData)
 {
 	m_renderData = &renderData;
 
-	doBeginFrame();
+	beginFrame();
 }
 
-void AbstractRenderPass::endFrame()
+void AbstractRenderPass::finalizeFrame()
 {
-	doEndFrame();
+	endFrame();
 
 	m_renderData = nullptr;
 }
 
-void AbstractRenderPass::doBeginFrame()
+void AbstractRenderPass::beginFrame()
 {
 	// Does nothing by default
 }
@@ -52,7 +52,7 @@ void AbstractRenderPass::updateResources(RenderFrame& renderFrame, CommandBuffer
 	// Does nothing by default
 }
 
-void AbstractRenderPass::doEndFrame()
+void AbstractRenderPass::endFrame()
 {
 	// Does nothing by default
 }

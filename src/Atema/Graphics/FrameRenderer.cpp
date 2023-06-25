@@ -272,7 +272,7 @@ void FrameRenderer::destroyResources(RenderFrame& renderFrame)
 	m_oldFrameGraphs.clear();
 }
 
-void FrameRenderer::doBeginFrame()
+void FrameRenderer::beginFrame()
 {
 	updateShadowData();
 }

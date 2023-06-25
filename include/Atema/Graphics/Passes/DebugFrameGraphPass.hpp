@@ -73,10 +73,6 @@ namespace at
 		DebugFrameGraphPass& operator=(const DebugFrameGraphPass& other) = default;
 		DebugFrameGraphPass& operator=(DebugFrameGraphPass&& other) noexcept = default;
 
-	protected:
-		void doBeginFrame() override;
-		void doEndFrame() override;
-
 	private:
 		Ptr<DescriptorSetLayout> m_setLayout;
 		Ptr<GraphicsPipeline> m_pipeline;

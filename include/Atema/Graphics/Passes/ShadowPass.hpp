@@ -76,8 +76,8 @@ namespace at
 		ShadowPass& operator=(ShadowPass&& other) noexcept = default;
 
 	protected:
-		void doBeginFrame() override;
-		void doEndFrame() override;
+		void beginFrame() override;
+		void endFrame() override;
 
 	private:
 		struct FrameData

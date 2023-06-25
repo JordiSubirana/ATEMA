@@ -148,11 +148,3 @@ void ScreenPass::execute(FrameGraphContext& context, const Settings& settings)
 			uiContext->draw(ImGui::GetDrawData(), commandBuffer);
 	}
 }
-
-void ScreenPass::doBeginFrame()
-{
-}
-
-void ScreenPass::doEndFrame()
-{
-}

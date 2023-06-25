@@ -293,7 +293,7 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 	}
 }
 
-void ShadowPass::doBeginFrame()
+void ShadowPass::beginFrame()
 {
 	const auto& renderData = getRenderData();
 
@@ -303,7 +303,7 @@ void ShadowPass::doBeginFrame()
 	frustumCull();
 }
 
-void ShadowPass::doEndFrame()
+void ShadowPass::endFrame()
 {
 	m_renderElements.clear();
 }

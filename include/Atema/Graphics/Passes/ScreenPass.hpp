@@ -61,10 +61,6 @@ namespace at
 		ScreenPass& operator=(const ScreenPass& other) = default;
 		ScreenPass& operator=(ScreenPass&& other) noexcept = default;
 
-	protected:
-		void doBeginFrame() override;
-		void doEndFrame() override;
-
 	private:
 		Ptr<DescriptorSetLayout> m_setLayout;
 		Ptr<GraphicsPipeline> m_pipeline;

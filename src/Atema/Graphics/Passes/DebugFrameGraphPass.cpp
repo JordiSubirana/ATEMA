@@ -154,11 +154,3 @@ void DebugFrameGraphPass::execute(FrameGraphContext& context, const Settings& se
 		index++;
 	}
 }
-
-void DebugFrameGraphPass::doBeginFrame()
-{
-}
-
-void DebugFrameGraphPass::doEndFrame()
-{
-}

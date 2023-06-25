@@ -572,11 +572,3 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 
 	context.destroyAfterUse(std::move(gbufferSet));
 }
-
-void PhongLightingPass::doBeginFrame()
-{
-}
-
-void PhongLightingPass::doEndFrame()
-{
-}

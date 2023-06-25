@@ -196,7 +196,7 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 	}
 }
 
-void GBufferPass::doBeginFrame()
+void GBufferPass::beginFrame()
 {
 	const auto& renderData = getRenderData();
 
@@ -208,7 +208,7 @@ void GBufferPass::doBeginFrame()
 	sortElements();
 }
 
-void GBufferPass::doEndFrame()
+void GBufferPass::endFrame()
 {
 	m_renderElements.clear();
 }

@@ -38,9 +38,9 @@ namespace at
 
 		virtual const char* getName() const noexcept = 0;
 
-		void beginFrame(const RenderData& renderData);
+		void initializeFrame(const RenderData& renderData);
 		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
-		void endFrame();
+		void finalizeFrame();
 
 		AbstractRenderPass& operator=(const AbstractRenderPass& other) = default;
 		AbstractRenderPass& operator=(AbstractRenderPass&& other) noexcept = default;
@@ -48,8 +48,8 @@ namespace at
 	protected:
 		AbstractRenderPass();
 
-		virtual void doBeginFrame();
-		virtual void doEndFrame();
+		virtual void beginFrame();
+		virtual void endFrame();
 
 		// This is valid only between doBeginFrame & doEndFrame
 		const RenderData& getRenderData() const noexcept;

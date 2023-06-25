@@ -81,7 +81,7 @@ void DebugRendererPass::execute(FrameGraphContext& context, const Settings& sett
 	m_debugRenderer->render(context, commandBuffer, getRenderData().getCamera().getMatrix());
 }
 
-void DebugRendererPass::doBeginFrame()
+void DebugRendererPass::beginFrame()
 {
 	const auto& renderData = getRenderData();
 
@@ -113,8 +113,4 @@ void DebugRendererPass::doBeginFrame()
 		}
 		//*/
 	}
-}
-
-void DebugRendererPass::doEndFrame()
-{
 }

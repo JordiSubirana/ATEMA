@@ -53,7 +53,7 @@ namespace at
 		FrameGraph& getFrameGraph() override;
 		std::vector<AbstractRenderPass*>& getRenderPasses() override;
 		void destroyResources(RenderFrame& renderFrame) override;
-		void doBeginFrame() override;
+		void beginFrame() override;
 
 	private:
 		void createPasses();

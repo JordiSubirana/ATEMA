@@ -91,10 +91,6 @@ namespace at
 		PhongLightingPass& operator=(const PhongLightingPass& other) = default;
 		PhongLightingPass& operator=(PhongLightingPass&& other) noexcept = default;
 
-	protected:
-		void doBeginFrame() override;
-		void doEndFrame() override;
-
 	private:
 		struct FrameData
 		{

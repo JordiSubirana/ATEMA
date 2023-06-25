@@ -41,7 +41,7 @@ const RenderData& AbstractFrameRenderer::getRenderData() const noexcept
 	return m_renderData;
 }
 
-void AbstractFrameRenderer::beginFrame()
+void AbstractFrameRenderer::initializeFrame()
 {
 	ATEMA_BENCHMARK_TAG(_1, "Begin frame");
 
@@ -52,13 +52,13 @@ void AbstractFrameRenderer::beginFrame()
 		m_updateFrameGraph = false;
 	}
 	
-	doBeginFrame();
+	beginFrame();
 
 	for (auto& renderPass : getRenderPasses())
 	{
 		ATEMA_BENCHMARK_TAG(_2, std::string(renderPass->getName()) + " (begin)");
 
-		renderPass->beginFrame(m_renderData);
+		renderPass->initializeFrame(m_renderData);
 	}
 }
 
@@ -119,7 +119,7 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 
 	// End frame
 	for (auto& renderPass : getRenderPasses())
-		renderPass->endFrame();
+		renderPass->finalizeFrame();
 }
 
 void AbstractFrameRenderer::resize(const Vector2u& size)
@@ -143,6 +143,6 @@ void AbstractFrameRenderer::destroyResources(RenderFrame& renderFrame)
 {
 }
 
-void AbstractFrameRenderer::doBeginFrame()
+void AbstractFrameRenderer::beginFrame()
 {
 }
