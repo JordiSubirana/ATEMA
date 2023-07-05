@@ -31,13 +31,15 @@ namespace at
 	class ATEMA_RENDERER_API BufferLayout
 	{
 	public:
-		BufferLayout() = delete;
+		BufferLayout();
 		BufferLayout(StructLayout structLayout);
+		BufferLayout(const BufferLayout& other) = default;
+		BufferLayout(BufferLayout&& other) noexcept = default;
 		~BufferLayout();
 
-		size_t getAlignment(BufferElementType elementType) const;
-		size_t getArrayAlignment(BufferElementType elementType) const;
-		size_t getSize(BufferElementType elementType) const;
+		static size_t getAlignment(BufferElementType elementType, StructLayout structLayout = StructLayout::Default);
+		static size_t getArrayAlignment(BufferElementType elementType, StructLayout structLayout = StructLayout::Default);
+		static size_t getSize(BufferElementType elementType, StructLayout structLayout = StructLayout::Default);
 
 		size_t add(BufferElementType elementType);
 		size_t addArray(BufferElementType elementType, size_t size);
@@ -47,6 +49,9 @@ namespace at
 		size_t addStructArray(const BufferLayout& structLayout, size_t size);
 
 		size_t getSize() const;
+
+		BufferLayout& operator=(const BufferLayout& other) = default;
+		BufferLayout& operator=(BufferLayout&& other) noexcept = default;
 
 	private:
 		size_t add(size_t alignment, size_t size);
