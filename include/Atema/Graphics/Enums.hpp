@@ -79,6 +79,13 @@ namespace at
 		XYZ_UV_NT,
 		XYZ_UV_NTB
 	};
+
+	enum class LightType
+	{
+		Directional,
+		Point,
+		Spot
+	};
 }
 
 #endif

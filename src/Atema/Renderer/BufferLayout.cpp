@@ -25,6 +25,11 @@
 
 using namespace at;
 
+BufferLayout::BufferLayout() :
+	BufferLayout(StructLayout::Default)
+{
+}
+
 BufferLayout::BufferLayout(StructLayout structLayout) :
 	m_structLayout(structLayout),
 	m_address(0),
@@ -36,9 +41,9 @@ BufferLayout::~BufferLayout()
 {
 }
 
-size_t BufferLayout::getAlignment(BufferElementType elementType) const
+size_t BufferLayout::getAlignment(BufferElementType elementType, StructLayout structLayout)
 {
-	switch (m_structLayout)
+	switch (structLayout)
 	{
 		case StructLayout::Std140:
 		{
@@ -82,13 +87,13 @@ size_t BufferLayout::getAlignment(BufferElementType elementType) const
 	}
 }
 
-size_t BufferLayout::getArrayAlignment(BufferElementType elementType) const
+size_t BufferLayout::getArrayAlignment(BufferElementType elementType, StructLayout structLayout)
 {
-	auto alignment = getAlignment(elementType);
+	auto alignment = getAlignment(elementType, structLayout);
 
-	if (m_structLayout == StructLayout::Std140)
+	if (structLayout == StructLayout::Std140)
 	{
-		const auto multiple = getAlignment(BufferElementType::Float4);
+		const auto multiple = getAlignment(BufferElementType::Float4, structLayout);
 
 		alignment = Math::getNextMultiple(alignment, multiple);
 	}
@@ -96,7 +101,7 @@ size_t BufferLayout::getArrayAlignment(BufferElementType elementType) const
 	return alignment;
 }
 
-size_t BufferLayout::getSize(BufferElementType elementType) const
+size_t BufferLayout::getSize(BufferElementType elementType, StructLayout structLayout)
 {
 	switch (elementType)
 	{
@@ -137,8 +142,8 @@ size_t BufferLayout::getSize(BufferElementType elementType) const
 
 size_t BufferLayout::add(BufferElementType elementType)
 {
-	const auto alignment = getAlignment(elementType);
-	const auto size = getSize(elementType);
+	const auto alignment = getAlignment(elementType, m_structLayout);
+	const auto size = getSize(elementType, m_structLayout);
 
 	return add(alignment, size);
 }
@@ -147,8 +152,8 @@ size_t BufferLayout::addArray(BufferElementType elementType, size_t size)
 {
 	ATEMA_ASSERT(size > 0, "Array size must be greater than zero");
 
-	const auto alignment = getArrayAlignment(elementType);
-	const auto elementSize = getSize(elementType);
+	const auto alignment = getArrayAlignment(elementType, m_structLayout);
+	const auto elementSize = getSize(elementType, m_structLayout);
 
 	const auto firstElementAddress = add(alignment, elementSize);
 
@@ -189,7 +194,7 @@ size_t BufferLayout::addStruct(const BufferLayout& structLayout)
 
 	if (m_structLayout == StructLayout::Std140)
 	{
-		const auto multiple = getAlignment(BufferElementType::Float4);
+		const auto multiple = getAlignment(BufferElementType::Float4, m_structLayout);
 
 		alignment = Math::getNextMultiple(alignment, multiple);
 	}
