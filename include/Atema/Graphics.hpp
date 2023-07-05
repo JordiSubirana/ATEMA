@@ -27,6 +27,7 @@
 #include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Graphics/Camera.hpp>
 #include <Atema/Graphics/DebugRenderer.hpp>
+#include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/Enums.hpp>
 #include <Atema/Graphics/FrameGraph.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
