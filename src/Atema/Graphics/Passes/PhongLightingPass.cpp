@@ -33,13 +33,10 @@ using namespace at;
 
 namespace
 {
-	constexpr size_t MaxShadowCascadeCount = 16;
-
 	constexpr uint32_t GBufferSetIndex = 0;
-	constexpr uint32_t PhongSetIndex = 1;
-	constexpr uint32_t FrameBindingIndex = 0;
-	constexpr uint32_t LightBindingIndex = 1;
-	constexpr uint32_t ShadowBindingIndex = 2;
+	constexpr uint32_t FrameSetIndex = 1;
+	constexpr uint32_t LightSetIndex = 2;
+	constexpr uint32_t ShadowSetIndex = 3;
 
 	constexpr char* ShaderName = "AtemaPhongLightingPass";
 
@@ -50,10 +47,6 @@ option
 	bool EnableShadows = true;
 	bool ShowDebugCascades = false;
 	uint MaxShadowMapCascadeCount = 16;
-	uint ShadowMapBindingIndex = 4;
-	uint FrameDataBindingIndex = 0;
-	uint LightDataBindingIndex = 1;
-	uint ShadowDataBindingIndex = 2;
 }
 
 include Atema.GBufferRead;
@@ -72,7 +65,7 @@ struct LightData
 	float diffuseStrength;
 }
 
-struct ShadowData
+struct CascadedShadowData
 {
 	uint count;
 	mat4f viewProjection[MaxShadowMapCascadeCount];
@@ -82,15 +75,15 @@ struct ShadowData
 
 external
 {
-	[optional(EnableShadows)]
-	[set(0), binding(ShadowMapBindingIndex)] sampler2DArray shadowMap;
-	
-	[set(1), binding(FrameDataBindingIndex)] FrameData frameData;
+	[set(1), binding(0)] FrameData frameData;
 
-	[set(1), binding(LightDataBindingIndex)] LightData lightData;
+	[set(2), binding(0)] LightData lightData;
 	
 	[optional(EnableShadows)]
-	[set(1), binding(ShadowDataBindingIndex)] ShadowData shadowData;
+	[set(3), binding(0)] CascadedShadowData shadowData;
+
+	[optional(EnableShadows)]
+	[set(3), binding(1)] sampler2DArray shadowMap;
 }
 
 [stage(vertex)]
@@ -265,63 +258,9 @@ void main()
 		size_t cameraPositionOffset;
 		size_t viewOffset;
 	};
-
-	struct LightLayout
-	{
-		LightLayout(StructLayout structLayout) : layout(structLayout)
-		{
-			/*struct LightData
-			{
-				vec3f direction;
-				vec3f color;
-				float ambientStrength;
-				float diffuseStrength;
-			}*/
-			
-			directionOffset = layout.add(BufferElementType::Float3);
-			colorOffset = layout.add(BufferElementType::Float3);
-			ambientStrengthOffset = layout.add(BufferElementType::Float);
-			diffuseStrengthOffset = layout.add(BufferElementType::Float);
-		}
-
-		BufferLayout layout;
-
-		size_t directionOffset;
-		size_t colorOffset;
-		size_t ambientStrengthOffset;
-		size_t diffuseStrengthOffset;
-	};
-
-	struct ShadowLayout
-	{
-		ShadowLayout(StructLayout structLayout) : layout(structLayout)
-		{
-			/*struct ShadowData
-			{
-				uint count;
-				mat4f viewProjection[MaxShadowCascadeCount];
-				float depth[MaxShadowCascadeCount];
-				float depthBias[MaxShadowCascadeCount];
-			}*/
-
-			countOffset = layout.add(BufferElementType::UInt);
-			viewProjectionOffset = layout.addMatrixArray(BufferElementType::Float, 4, 4, true, MaxShadowCascadeCount);
-			depthOffset = layout.addArray(BufferElementType::Float, MaxShadowCascadeCount);
-			depthBiasOffset = layout.addArray(BufferElementType::Float, MaxShadowCascadeCount);
-		}
-
-		BufferLayout layout;
-
-		size_t countOffset;
-		size_t viewProjectionOffset;
-		size_t depthOffset;
-		size_t depthBiasOffset;
-	};
 }
 
-PhongLightingPass::PhongLightingPass() :
-	m_lightAmbientStrength(1.0f),
-	m_lightDiffuseStrength(1.0f)
+PhongLightingPass::PhongLightingPass()
 {
 	auto& graphics = Graphics::instance();
 
@@ -352,9 +291,7 @@ PhongLightingPass::PhongLightingPass() :
 		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
 		descriptorSetLayoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, FrameBindingIndex, 1, ShaderStage::Fragment },
-			{ DescriptorType::UniformBuffer, ShadowBindingIndex, 1, ShaderStage::Fragment },
-			{ DescriptorType::UniformBuffer, LightBindingIndex, 1, ShaderStage::Fragment }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
 		};
 		descriptorSetLayoutSettings.pageSize = Renderer::FramesInFlight;
 
@@ -369,50 +306,17 @@ PhongLightingPass::PhongLightingPass() :
 		frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 		frameBufferSettings.byteSize = frameLayout.layout.getSize();
 
-		LightLayout lightLayout(StructLayout::Default);
-
-		Buffer::Settings lightBufferSettings;
-		lightBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-		lightBufferSettings.byteSize = lightLayout.layout.getSize();
-
-		ShadowLayout shadowLayout(StructLayout::Default);
-
-		Buffer::Settings shadowBufferSettings;
-		shadowBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-		shadowBufferSettings.byteSize = shadowLayout.layout.getSize();
-
 		for (auto& frameData : m_frameDatas)
 		{
 			frameData.frameBuffer = Buffer::create(frameBufferSettings);
-			frameData.lightBuffer = Buffer::create(lightBufferSettings);
-			frameData.shadowBuffer = Buffer::create(shadowBufferSettings);
 
 			frameData.descriptorSet = m_phongLayout->createSet();
-			frameData.descriptorSet->update(FrameBindingIndex, *frameData.frameBuffer);
-			frameData.descriptorSet->update(LightBindingIndex, *frameData.lightBuffer);
-			frameData.descriptorSet->update(ShadowBindingIndex, *frameData.shadowBuffer);
+			frameData.descriptorSet->update(0, *frameData.frameBuffer);
 		}
 	}
 
 	// Graphics pipeline
-	std::vector<UberShader::Option> uberOptions =
-	{
-		{ "UseBlinnPhong", ConstantValue(true) },
-		{ "EnableShadows", ConstantValue(true) },
-		{ "ShowDebugCascades", ConstantValue(false) },
-		{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(MaxShadowCascadeCount)) },
-		{ "ShadowMapBindingIndex", ConstantValue(static_cast<uint32_t>(4)) },
-		{ "FrameDataBindingIndex", ConstantValue(static_cast<uint32_t>(FrameBindingIndex)) },
-		{ "LightDataBindingIndex", ConstantValue(static_cast<uint32_t>(LightBindingIndex)) },
-		{ "ShadowDataBindingIndex", ConstantValue(static_cast<uint32_t>(ShadowBindingIndex)) }
-	};
-
 	GraphicsPipeline::Settings pipelineSettings;
-	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, uberOptions));
-	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, uberOptions));
-	pipelineSettings.descriptorSetLayouts.resize(2);
-	pipelineSettings.descriptorSetLayouts[GBufferSetIndex] = m_gbufferLayout;
-	pipelineSettings.descriptorSetLayouts[PhongSetIndex] = m_phongLayout;
 	pipelineSettings.state.vertexInput.inputs = Vertex_XYZ_UV::getVertexInput();
 	pipelineSettings.state.depth.test = false;
 	pipelineSettings.state.depth.write = false;
@@ -420,20 +324,48 @@ PhongLightingPass::PhongLightingPass() :
 	pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
 	pipelineSettings.state.stencilFront.compareMask = 1;
 	pipelineSettings.state.stencilFront.reference = 1;
+	pipelineSettings.state.colorBlend.enabled = true;
+	pipelineSettings.state.colorBlend.colorSrcFactor = BlendFactor::One;
+	pipelineSettings.state.colorBlend.colorDstFactor = BlendFactor::One;
 
-	m_pipeline = GraphicsPipeline::create(pipelineSettings);
+	pipelineSettings.descriptorSetLayouts =
+	{
+		m_gbufferLayout,
+		m_phongLayout,
+		Graphics::instance().getLightLayout()
+	};
+
+	// Light pipeline
+	{
+		std::vector<UberShader::Option> uberOptions =
+		{
+			{ "UseBlinnPhong", ConstantValue(false) },
+			{ "EnableShadows", ConstantValue(false) }
+		};
+
+		pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, uberOptions));
+		pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, uberOptions));
+		m_lightPipeline = GraphicsPipeline::create(pipelineSettings);
+	}
+
+	// Light & Shadow pipeline
+	{
+		std::vector<UberShader::Option> uberOptions =
+		{
+			{ "UseBlinnPhong", ConstantValue(false) },
+			{ "EnableShadows", ConstantValue(true) },
+			{ "ShowDebugCascades", ConstantValue(false) },
+			{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(CascadedShadowData::MaxCascadeCount)) }
+		};
+
+		pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, uberOptions));
+		pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, uberOptions));
+		pipelineSettings.descriptorSetLayouts.emplace_back(Graphics::instance().getLightShadowLayout());
+
+		m_lightShadowPipeline = GraphicsPipeline::create(pipelineSettings);
+	}
 
 	m_gbufferSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Nearest));
-
-	Sampler::Settings samplerSettings(SamplerFilter::Linear);
-	samplerSettings.addressModeU = SamplerAddressMode::ClampToBorder;
-	samplerSettings.addressModeV = SamplerAddressMode::ClampToBorder;
-	samplerSettings.addressModeW = SamplerAddressMode::ClampToBorder;
-	samplerSettings.borderColor = SamplerBorderColor::WhiteFloat;
-	samplerSettings.enableCompare = true;
-	samplerSettings.compareOperation = CompareOperation::Less;
-
-	m_shadowMapSampler = graphics.getSampler(samplerSettings);
 
 	m_quadMesh = graphics.getQuadMesh();
 }
@@ -441,19 +373,6 @@ PhongLightingPass::PhongLightingPass() :
 const char* PhongLightingPass::getName() const noexcept
 {
 	return "Phong Lighting";
-}
-
-void PhongLightingPass::setShadowData(const std::vector<ShadowCascadeData>& shadowData)
-{
-	m_shadowCascadeDatas = shadowData;
-}
-
-void PhongLightingPass::setLightData(const Vector3f& direction, const Color& color, float ambientStrength, float diffuseStrength)
-{
-	m_lightDirection = direction;
-	m_lightColor = color;
-	m_lightAmbientStrength = ambientStrength;
-	m_lightDiffuseStrength = diffuseStrength;
 }
 
 FrameGraphPass& PhongLightingPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings)
@@ -488,8 +407,6 @@ FrameGraphPass& PhongLightingPass::addToFrameGraph(FrameGraphBuilder& frameGraph
 
 void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
-	const size_t shadowMapCount = std::min(MaxShadowCascadeCount, m_shadowCascadeDatas.size());
-
 	auto& frameData = m_frameDatas[renderFrame.getFrameIndex()];
 
 	{
@@ -502,39 +419,6 @@ void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer&
 
 		frameData.frameBuffer->unmap();
 	}
-
-	{
-		const LightLayout layout(StructLayout::Default);
-
-		auto data = frameData.lightBuffer->map();
-
-		mapMemory<Vector3f>(data, layout.directionOffset) = m_lightDirection;
-		mapMemory<Vector3f>(data, layout.colorOffset) = m_lightColor.toVector3f();
-		mapMemory<float>(data, layout.ambientStrengthOffset) = m_lightAmbientStrength;
-		mapMemory<float>(data, layout.diffuseStrengthOffset) = m_lightDiffuseStrength;
-
-		frameData.lightBuffer->unmap();
-	}
-
-	{
-		const ShadowLayout layout(StructLayout::Default);
-
-		auto data = frameData.shadowBuffer->map();
-
-		mapMemory<uint32_t>(data, layout.countOffset) = static_cast<uint32_t>(shadowMapCount);
-		MemoryMapper viewProjections(data, layout.viewProjectionOffset, sizeof(Matrix4f));
-		MemoryMapper depths(data, layout.depthOffset, layout.layout.getArrayAlignment(BufferElementType::Float));
-		MemoryMapper depthBiases(data, layout.depthBiasOffset, layout.layout.getArrayAlignment(BufferElementType::Float));
-
-		for (size_t i = 0; i < shadowMapCount; i++)
-		{
-			viewProjections.map<Matrix4f>(i) = m_shadowCascadeDatas[i].viewProjection;
-			depths.map<float>(i) = m_shadowCascadeDatas[i].depth;
-			depthBiases.map<float>(i) = m_shadowCascadeDatas[i].depthBias;
-		}
-
-		frameData.shadowBuffer->unmap();
-	}
 }
 
 void PhongLightingPass::execute(FrameGraphContext& context, const Settings& settings)
@@ -544,31 +428,53 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 	if (!renderData.isValid())
 		return;
 
+	auto& renderLights = renderData.getRenderLights();
+
 	const auto& frameData = m_frameDatas[context.getFrameIndex()];
 
 	const auto& viewport = getRenderData().getCamera().getViewport();
 	const auto& scissor = getRenderData().getCamera().getScissor();
 
-	auto gbufferSet = m_gbufferLayout->createSet();
-
-	for (uint32_t i = 0; i < settings.gbuffer.size(); i++)
-		gbufferSet->update(i, *context.getImageView(settings.gbuffer[i]), *m_gbufferSampler);
-	gbufferSet->update(static_cast<uint32_t>(settings.gbuffer.size()), *settings.shadowMap->getView(), *m_shadowMapSampler);
-
 	auto& commandBuffer = context.getCommandBuffer();
-
-	commandBuffer.bindPipeline(*m_pipeline);
 
 	commandBuffer.setViewport(viewport);
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
+	auto gbufferSet = m_gbufferLayout->createSet();
+
+	for (uint32_t i = 0; i < settings.gbuffer.size(); i++)
+		gbufferSet->update(i, *context.getImageView(settings.gbuffer[i]), *m_gbufferSampler);
+
+	commandBuffer.bindPipeline(*m_lightPipeline);
+
 	commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-	commandBuffer.bindDescriptorSet(PhongSetIndex, *frameData.descriptorSet);
+	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameData.descriptorSet);
 
 	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 
-	commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+	for (auto& renderLight : renderLights)
+	{
+		if (renderLight->getLight().castShadows())
+			continue;
+
+		commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+	}
+
+	commandBuffer.bindPipeline(*m_lightShadowPipeline);
+
+	for (auto& renderLight : renderLights)
+	{
+		if (!renderLight->getLight().castShadows())
+			continue;
+
+		commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+		commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+	}
 
 	context.destroyAfterUse(std::move(gbufferSet));
 }

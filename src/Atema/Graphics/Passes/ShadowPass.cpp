@@ -29,6 +29,7 @@
 #include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Core/Utils.hpp>
 #include <Atema/Core/TaskManager.hpp>
+#include <Atema/Graphics/DirectionalLight.hpp>
 
 using namespace at;
 
@@ -158,7 +159,7 @@ ShadowPass::ShadowPass(size_t threadCount)
 	GraphicsPipeline::Settings pipelineSettings;
 	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex));
 	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment));
-	pipelineSettings.descriptorSetLayouts = { m_setLayout, SurfaceMaterial::getObjectLayout() };
+	pipelineSettings.descriptorSetLayouts = { m_setLayout, graphics.getObjectLayout()};
 	//TODO: Change vertex input depending on what mesh is drawn
 	pipelineSettings.state.vertexInput.inputs = Vertex_XYZ_UV_NTB::getVertexInput();
 	pipelineSettings.state.rasterization.depthClamp = true;
@@ -209,12 +210,9 @@ void ShadowPass::updateResources(RenderFrame& renderFrame, CommandBuffer& comman
 {
 	auto& buffer = m_frameDatas[renderFrame.getFrameIndex()].buffer;
 
-	ShadowData shadowData;
-	shadowData.viewProjection = m_viewProjection;
-
 	auto data = buffer->map();
 
-	shadowData.copyTo(data);
+	mapMemory<Matrix4f>(data, 0) = m_viewProjection;
 
 	buffer->unmap();
 }

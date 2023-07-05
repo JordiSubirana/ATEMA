@@ -467,6 +467,11 @@ void Graphics::clearUnused()
 void Graphics::clear()
 {
 	m_quadMesh.reset();
+
+	m_frameLayout.reset();
+	m_objectLayout.reset();
+	m_lightLayout.reset();
+	m_lightShadowLayout.reset();
 	
 	for (auto& resourceManager : m_resourceManagers)
 		resourceManager->clear();
@@ -521,6 +526,71 @@ Ptr<VertexBuffer> Graphics::getQuadMesh()
 	}
 
 	return m_quadMesh;
+}
+
+Ptr<DescriptorSetLayout> Graphics::getFrameLayout()
+{
+	if (!m_frameLayout)
+	{
+		DescriptorSetLayout::Settings layoutSettings;
+		layoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
+		};
+
+		m_frameLayout = getDescriptorSetLayout(layoutSettings);
+	}
+
+	return m_frameLayout;
+}
+
+Ptr<DescriptorSetLayout> Graphics::getObjectLayout()
+{
+	if (!m_objectLayout)
+	{
+		DescriptorSetLayout::Settings layoutSettings;
+		layoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
+		};
+
+		m_objectLayout = getDescriptorSetLayout(layoutSettings);
+	}
+
+	return m_objectLayout;
+}
+
+Ptr<DescriptorSetLayout> Graphics::getLightLayout()
+{
+	if (!m_lightLayout)
+	{
+		DescriptorSetLayout::Settings layoutSettings;
+		layoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
+		};
+
+		m_lightLayout = getDescriptorSetLayout(layoutSettings);
+	}
+
+	return m_lightLayout;
+}
+
+Ptr<DescriptorSetLayout> Graphics::getLightShadowLayout()
+{
+	if (!m_lightShadowLayout)
+	{
+		DescriptorSetLayout::Settings layoutSettings;
+		layoutSettings.bindings =
+		{
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment },
+			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment }
+		};
+
+		m_lightShadowLayout = getDescriptorSetLayout(layoutSettings);
+	}
+
+	return m_lightShadowLayout;
 }
 
 void Graphics::setUberShader(const std::string& identifier, const std::string& shaderCode)

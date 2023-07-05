@@ -80,6 +80,9 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 		for (auto& renderable : m_renderData.getRenderables())
 			renderable->update(renderFrame, *commandBuffer);
 
+		for (auto& resource : m_renderData.getRenderLights())
+			resource->update(renderFrame, *commandBuffer);
+
 		for (auto& renderPass : getRenderPasses())
 			renderPass->updateResources(renderFrame, *commandBuffer);
 

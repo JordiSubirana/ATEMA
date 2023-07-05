@@ -524,8 +524,8 @@ SurfaceMaterial::SurfaceMaterial(const SurfaceMaterial::Settings& settings) :
 	pipelineSettings.fragmentShader = settings.fragmentShader;
 	pipelineSettings.descriptorSetLayouts =
 	{
-		getFrameLayout(),
-		getObjectLayout(),
+		Graphics::instance().getFrameLayout(),
+		Graphics::instance().getObjectLayout(),
 		m_materialLayout,
 		m_instanceLayout
 	};
@@ -639,29 +639,6 @@ Ptr<SurfaceMaterial> SurfaceMaterial::createDefault(const SurfaceMaterialData& m
 	}
 	
 	return std::make_shared<SurfaceMaterial>(settings);
-}
-
-Ptr<DescriptorSetLayout> SurfaceMaterial::getFrameLayout()
-{
-	DescriptorSetLayout::Settings layoutSettings;
-	layoutSettings.bindings =
-	{
-		{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
-	};
-	
-	return Graphics::instance().getDescriptorSetLayout(layoutSettings);
-}
-
-Ptr<DescriptorSetLayout> SurfaceMaterial::getObjectLayout()
-{
-	DescriptorSetLayout::Settings layoutSettings;
-	layoutSettings.bindings =
-	{
-		{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
-	};
-
-	//return DescriptorSetLayout::create(layoutSettings);
-	return Graphics::instance().getDescriptorSetLayout(layoutSettings);
 }
 
 void SurfaceMaterial::bindTo(CommandBuffer& commandBuffer) const

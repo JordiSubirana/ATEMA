@@ -35,6 +35,7 @@
 
 namespace at
 {
+	class Light;
 	class VertexBuffer;
 	class Sampler;
 	class DescriptorSetLayout;
@@ -56,7 +57,6 @@ namespace at
 			// GBuffer texture handles
 			std::vector<FrameGraphTextureHandle> gbuffer;
 			std::vector<FrameGraphTextureHandle> shadowMaps;
-			Ptr<Image> shadowMap;
 
 			// Depth texture handle for stencil mask operations
 			FrameGraphTextureHandle depthStencil = FrameGraph::InvalidTextureHandle;
@@ -65,22 +65,12 @@ namespace at
 			std::optional<DepthStencil> depthStencilClearValue;
 		};
 
-		struct ShadowCascadeData
-		{
-			float depth = 0.0f;
-			float depthBias = 0.0f;
-			Matrix4f viewProjection;
-		};
-
 		PhongLightingPass();
 		PhongLightingPass(const PhongLightingPass& other) = default;
 		PhongLightingPass(PhongLightingPass&& other) noexcept = default;
 		~PhongLightingPass() = default;
 
 		const char* getName() const noexcept override;
-
-		void setShadowData(const std::vector<ShadowCascadeData>& shadowData);
-		void setLightData(const Vector3f& direction, const Color& color, float ambientStrength, float diffuseStrength);
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
@@ -96,24 +86,16 @@ namespace at
 		{
 			Ptr<DescriptorSet> descriptorSet;
 			Ptr<Buffer> frameBuffer;
-			Ptr<Buffer> lightBuffer;
-			Ptr<Buffer> shadowBuffer;
 		};
 
 		Ptr<DescriptorSetLayout> m_gbufferLayout;
 		Ptr<DescriptorSetLayout> m_phongLayout;
-		Ptr<GraphicsPipeline> m_pipeline;
+		Ptr<GraphicsPipeline> m_lightPipeline;
+		Ptr<GraphicsPipeline> m_lightShadowPipeline;
 		Ptr<Sampler> m_gbufferSampler;
-		Ptr<Sampler> m_shadowMapSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 
 		std::array<FrameData, Renderer::FramesInFlight> m_frameDatas;
-
-		std::vector<ShadowCascadeData> m_shadowCascadeDatas;
-		Vector3f m_lightDirection;
-		Color m_lightColor;
-		float m_lightAmbientStrength;
-		float m_lightDiffuseStrength;
 	};
 }
 

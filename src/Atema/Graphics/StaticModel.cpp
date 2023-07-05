@@ -37,7 +37,7 @@ StaticModel::StaticModel() :
 
 	m_objectBuffer = Buffer::create(bufferSettings);
 
-	m_objectSet = SurfaceMaterial::getObjectLayout()->createSet();
+	m_objectSet = Graphics::instance().getObjectLayout()->createSet();
 	m_objectSet->update(0, *m_objectBuffer);
 
 	m_objectBinding.index = SurfaceMaterial::ObjectSetIndex;

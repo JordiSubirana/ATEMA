@@ -56,9 +56,17 @@ namespace at
 		void beginFrame() override;
 
 	private:
-		void createPasses();
-		void updateShadowData();
+		struct ShadowPassData
+		{
+			std::vector<UPtr<ShadowPass>> passes;
+		};
 
+		void createPasses();
+		void updateLightResources();
+		void createShadowData(RenderLight& renderLight);
+		void updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData);
+
+		bool m_updateFrameGraph;
 		Ptr<FrameGraph> m_frameGraph;
 		
 		std::vector<AbstractRenderPass*> m_activePasses;
@@ -67,21 +75,16 @@ namespace at
 		std::vector<Ptr<FrameGraph>> m_oldFrameGraphs;
 
 		UPtr<GBufferPass> m_gbufferPass;
-		std::vector<UPtr<ShadowPass>> m_shadowPasses;
 		UPtr<PhongLightingPass> m_phongLightingPass;
 		UPtr<DebugRendererPass> m_debugRendererPass;
 		UPtr<DebugFrameGraphPass> m_debugFrameGraphPass;
 		UPtr<ScreenPass> m_screenPass;
 
-		std::vector<PhongLightingPass::ShadowCascadeData> m_shadowCascadeData;
-
 		bool m_enableDebugRenderer;
 		bool m_enableDebugFrameGraph;
 
 		// Shadows
-		uint32_t m_currentShadowMapSize;
-		uint32_t m_shadowMapSize;
-		Ptr<Image> m_shadowMap;
+		std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> m_shadowData;
 	};
 }
 

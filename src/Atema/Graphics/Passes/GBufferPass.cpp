@@ -72,7 +72,7 @@ GBufferPass::GBufferPass(size_t threadCount)
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 	bufferSettings.byteSize = bufferLayout.getSize();
 
-	auto frameLayout = SurfaceMaterial::getFrameLayout();
+	auto frameLayout = Graphics::instance().getFrameLayout();
 
 	for (auto& frameData : m_frameDatas)
 	{

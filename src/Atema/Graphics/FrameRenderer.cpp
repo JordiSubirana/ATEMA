@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/FrameRenderer.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
@@ -57,34 +58,15 @@ namespace
 
 	const DepthStencil DepthClearValue = DepthStencil(1.0f, 0);
 
-	const Vector3f LightDirection = Vector3f(1.0f, 1.0f, -1.0f).normalize();
-
-	const Color LightColor = Color::White;
-
-	constexpr float LightAmbientStrength = 0.35f;
-
-	constexpr float LightSpecularStrength = 0.5f;
-
-	constexpr size_t ShadowCascadeCount = 8;
-
-	constexpr float BaseDepthBias = 0.07f;
-
-	constexpr float MaxFarDepth = 1000.0f;
-
-	const float DepthStep = MaxFarDepth / static_cast<float>(std::pow(2, ShadowCascadeCount));
-
-	constexpr uint32_t ShadowMapSize = 4096;
-
-	const Color SkyColor = Color::Blue;
+	const Color SkyColor = Color::Black;
 
 	constexpr size_t ThreadCount = 0;
 }
 
 FrameRenderer::FrameRenderer() :
+	m_updateFrameGraph(false),
 	m_enableDebugRenderer(false),
-	m_enableDebugFrameGraph(false),
-	m_currentShadowMapSize(0),
-	m_shadowMapSize(ShadowMapSize)
+	m_enableDebugFrameGraph(false)
 {
 	createPasses();
 }
@@ -114,21 +96,6 @@ void FrameRenderer::createFrameGraph()
 	FrameGraphBuilder frameGraphBuilder;
 	
 	//-----
-	// Shadow Map (we are creating it here because the size can change & it causes FrameGraph to rebuild)
-	if (m_currentShadowMapSize != m_shadowMapSize)
-	{
-		Image::Settings imageSettings;
-		imageSettings.format = ImageFormat::D16_UNORM;
-		imageSettings.width = m_shadowMapSize;
-		imageSettings.height = m_shadowMapSize;
-		imageSettings.layers = ShadowCascadeCount;
-
-		m_shadowMap = Image::create(imageSettings);
-
-		m_currentShadowMapSize = m_shadowMapSize;
-	}
-	
-	//-----
 	// Texture setup
 
 	Vector2u targetSize = getSize();
@@ -155,11 +122,6 @@ void FrameRenderer::createFrameGraph()
 	textureSettings.format = ColorFormat;
 	auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
 
-	std::vector<FrameGraphTextureHandle> shadowCascades;
-	shadowCascades.reserve(ShadowCascadeCount);
-	for (size_t i = 0; i < ShadowCascadeCount; i++)
-		shadowCascades.emplace_back(frameGraphBuilder.importTexture(m_shadowMap, i));
-
 	//-----
 	// Pass setup
 
@@ -179,16 +141,30 @@ void FrameRenderer::createFrameGraph()
 	}
 
 	// Shadow
-	for (size_t i = 0; i < ShadowCascadeCount; i++)
+	std::vector<FrameGraphTextureHandle> shadowMaps;
+	for (auto& [renderLight, shadowData] : m_shadowData)
 	{
-		ShadowPass::Settings passSettings;
-		
-		passSettings.shadowMapSize = ShadowMapSize;
-		passSettings.shadowMap = shadowCascades[i];
-		passSettings.shadowMapClearValue = DepthStencil(1.0f, 0);
-		
-		m_shadowPasses[i]->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_shadowPasses[i].get());
+		const auto light = &renderLight->getLight();
+		const auto& shadowMap = renderLight->getShadowMap();
+
+		for (size_t i = 0; i < light->getShadowCascadeCount(); i++)
+		{
+			auto& shadowPass = shadowData->passes[i];
+
+			auto shadowTextureHandle = frameGraphBuilder.importTexture(shadowMap, static_cast<uint32_t>(i));
+
+			shadowMaps.emplace_back(shadowTextureHandle);
+
+			ShadowPass::Settings passSettings;
+
+			passSettings.shadowMapSize = shadowMap->getSize().x;
+			passSettings.shadowMap = shadowTextureHandle;
+			passSettings.shadowMapClearValue = DepthStencil(1.0f, 0);
+
+			shadowPass->addToFrameGraph(frameGraphBuilder, passSettings);
+
+			m_activePasses.emplace_back(shadowPass.get());
+		}
 	}
 
 	// Phong Lighting
@@ -198,8 +174,7 @@ void FrameRenderer::createFrameGraph()
 		passSettings.output = compositionTexture;
 		passSettings.outputClearValue = SkyColor;
 		passSettings.gbuffer = gbufferTextures;
-		passSettings.shadowMaps = shadowCascades;
-		passSettings.shadowMap = m_shadowMap;
+		passSettings.shadowMaps = shadowMaps;
 		passSettings.depthStencil = gbufferDepthTexture;
 		
 		m_phongLightingPass->addToFrameGraph(frameGraphBuilder, passSettings);
@@ -224,10 +199,10 @@ void FrameRenderer::createFrameGraph()
 		DebugFrameGraphPass::Settings passSettings;
 
 		passSettings.output = compositionTexture;
-		passSettings.textures = gbufferTextures;
-		passSettings.textures.insert(passSettings.textures.end(), shadowCascades.begin(), shadowCascades.end());
 		passSettings.columnCount = 0;
-		
+		passSettings.textures = gbufferTextures;
+		passSettings.textures.insert(passSettings.textures.end(), shadowMaps.begin(), shadowMaps.end());
+
 		m_debugFrameGraphPass->addToFrameGraph(frameGraphBuilder, passSettings);
 		m_activePasses.emplace_back(m_debugFrameGraphPass.get());
 	}
@@ -274,7 +249,14 @@ void FrameRenderer::destroyResources(RenderFrame& renderFrame)
 
 void FrameRenderer::beginFrame()
 {
-	updateShadowData();
+	updateLightResources();
+
+	if (m_updateFrameGraph)
+	{
+		createFrameGraph();
+
+		m_updateFrameGraph = false;
+	}
 }
 
 void FrameRenderer::createPasses()
@@ -283,10 +265,6 @@ void FrameRenderer::createPasses()
 
 	// Destroy old passes
 	m_oldRenderPasses.emplace_back(std::move(m_gbufferPass));
-
-	for (auto& pass : m_shadowPasses)
-		m_shadowPasses.emplace_back(std::move(pass));
-	m_shadowPasses.clear();
 
 	m_oldRenderPasses.emplace_back(std::move(m_phongLightingPass));
 
@@ -299,11 +277,6 @@ void FrameRenderer::createPasses()
 	// Create new ones
 	m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-	m_shadowPasses.reserve(ShadowCascadeCount);
-	m_shadowPasses.clear();
-	for (size_t i = 0; i < ShadowCascadeCount; i++)
-		m_shadowPasses.emplace_back(std::make_unique<ShadowPass>(ThreadCount));
-
 	m_phongLightingPass = std::make_unique<PhongLightingPass>();
 
 	m_debugRendererPass = std::make_unique<DebugRendererPass>();
@@ -313,109 +286,193 @@ void FrameRenderer::createPasses()
 	m_screenPass = std::make_unique<ScreenPass>();
 }
 
-void FrameRenderer::updateShadowData()
+void FrameRenderer::updateLightResources()
+{
+	std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> oldShadowData;
+
+	std::swap(m_shadowData, oldShadowData);
+
+	const auto& renderLights = getRenderData().getRenderLights();
+
+	for (const auto& renderLight : renderLights)
+	{
+		const auto& light = renderLight->getLight();
+
+		if (!light.castShadows())
+			continue;
+
+		// Does the shadow map already exist?
+		auto it = oldShadowData.find(renderLight.get());
+
+		if (it != oldShadowData.end())
+		{
+			// Update shadow data
+			updateShadowData(*renderLight, *it->second);
+
+			m_shadowData[renderLight.get()] = std::move(it->second);
+		}
+		// If not, create it
+		else
+		{
+			createShadowData(*renderLight);
+		}
+	}
+
+	// If some shadows were removed, update the FrameGraph
+	if (m_shadowData.size() != oldShadowData.size())
+		m_updateFrameGraph = true;
+
+	// Remove old shadow passes
+	for (auto& [light, shadowData] : oldShadowData)
+	{
+		if (!shadowData)
+			continue;
+
+		for (auto& pass : shadowData->passes)
+			m_oldRenderPasses.emplace_back(std::move(pass));
+	}
+}
+
+void FrameRenderer::createShadowData(RenderLight& renderLight)
+{
+	auto shadowData = std::make_shared<ShadowPassData>();
+	shadowData->passes.resize(renderLight.getLight().getShadowCascadeCount());
+
+	for (auto& pass : shadowData->passes)
+		pass = std::make_unique<ShadowPass>(ThreadCount);
+
+	updateShadowData(renderLight, *shadowData);
+
+	// We created a new shadow map : we need to update the FrameGraph
+	m_updateFrameGraph = true;
+
+	m_shadowData[&renderLight] = std::move(shadowData);
+}
+
+void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData)
 {
 	const auto& camera = getRenderData().getCamera();
 	const auto& cameraPos = camera.getPosition();
 
-	float previousDepth = 0.01f;
+	const auto& light = renderLight.getLight();
 
-	const auto lightView = Matrix4f::createLookAt(-LightDirection * MaxFarDepth, Vector3f(0, 0, 0), Vector3f(0, 0, 1));
-
-	const auto view = Matrix4f::createLookAt(Vector3f(0, 0, 0), Vector3f(1, 0, 0), Vector3f(0, 0, 1));
-
-	Frustumf frustumRef(camera.getProjectionMatrix() * view);
-
-	auto frustumPlanesRef = frustumRef.getPlanes();
-	auto& nearPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Near)];
-	auto& farPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Far)];
-	auto& viewDirRef = nearPlaneRef.getNormal();
-
-	auto frustumPlanes = camera.getFrustum().getPlanes();
-	auto& nearPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Near)];
-	auto& farPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Far)];
-	auto& viewDir = nearPlane.getNormal();
-
-	float currentFar = 0.0f;
-	m_shadowCascadeData.resize(ShadowCascadeCount);
-	for (size_t i = 0; i < ShadowCascadeCount; i++)
+	switch (light.getType())
 	{
-		auto& shadowPass = *m_shadowPasses[i];
-		auto& shadowCascadeData = m_shadowCascadeData[i];
+		case LightType::Directional :
+		{
+			const auto& directionalLight = static_cast<const DirectionalLight&>(light);
 
-		auto& depth = shadowCascadeData.depth;
-		auto& depthBias = shadowCascadeData.depthBias;
-		auto& viewProjection = shadowCascadeData.viewProjection;
+			const auto baseDepthBias = directionalLight.getShadowDepthBias();
+			const auto maxDepth = directionalLight.getShadowMaxDepth();
+			const float depthStep = maxDepth / static_cast<float>(std::pow(2, light.getShadowCascadeCount()));
+			const auto shadowMapSize = static_cast<float>(light.getShadowMapSize());
 
-		currentFar += DepthStep * static_cast<float>(std::pow(2, i));
-		depth = currentFar;
+			const auto lightView = Matrix4f::createLookAt(-directionalLight.getDirection() * maxDepth, Vector3f(0, 0, 0), Vector3f(0, 0, 1));
 
-		nearPlane.set(nearPlane.getNormal(), cameraPos + viewDir * previousDepth);
-		farPlane.set(farPlane.getNormal(), cameraPos + viewDir * depth);
+			const auto view = Matrix4f::createLookAt(Vector3f(0, 0, 0), Vector3f(1, 0, 0), Vector3f(0, 0, 1));
 
-		nearPlaneRef.set(nearPlaneRef.getNormal(), viewDirRef * previousDepth);
-		farPlaneRef.set(farPlaneRef.getNormal(), viewDirRef * depth);
+			Frustumf frustumRef(camera.getProjectionMatrix() * view);
 
-		Frustumf frustum(frustumPlanes);
+			auto frustumPlanesRef = frustumRef.getPlanes();
+			auto& nearPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Near)];
+			auto& farPlaneRef = frustumPlanesRef[static_cast<size_t>(FrustumPlane::Far)];
+			auto& viewDirRef = nearPlaneRef.getNormal();
 
-		frustumRef.set(frustumPlanesRef);
+			auto frustumPlanes = camera.getFrustum().getPlanes();
+			auto& nearPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Near)];
+			auto& farPlane = frustumPlanes[static_cast<size_t>(FrustumPlane::Far)];
+			auto& viewDir = nearPlane.getNormal();
 
-		// Find the tightest box possible around the frustum
-		Vector3f boundingBoxSize;
-		boundingBoxSize.x = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarTopRight)).getNorm();
-		boundingBoxSize.y = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarBottomLeft)).getNorm();
-		boundingBoxSize.z = depth - previousDepth;
+			float previousDepth = 0.01f;
 
-		// Find the bounding sphere of this box (and of the frustum)
-		// This way the shadowmap remains coherent in size no matter the orientation
-		const auto sphereCenter = cameraPos + viewDir * (previousDepth + depth) / 2.0f;
+			float currentFar = 0.0f;
 
-		auto sphereRadius = boundingBoxSize.getNorm() / 2.0f;
+			std::vector<ShadowData> cascades;
+			cascades.resize(shadowPassData.passes.size());
+			for (size_t i = 0; i < shadowPassData.passes.size(); i++)
+			{
+				auto& cascade = cascades[i];
+				auto& shadowPass = *shadowPassData.passes[i];
+				auto& depth = cascade.depth;
+				auto& depthBias = cascade.depthBias;
+				auto& viewProjection = cascade.viewProjection;
 
-		const float texelSizeWorldSpace = sphereRadius / static_cast<float>(m_shadowMapSize / 2);
+				currentFar += depthStep * static_cast<float>(std::pow(2, i));
+				depth = currentFar;
 
-		const auto factor = static_cast<float>(m_shadowMapSize) / static_cast<float>(m_shadowMapSize - 1);
-		sphereRadius = sphereRadius * factor;
+				nearPlane.set(nearPlane.getNormal(), cameraPos + viewDir * previousDepth);
+				farPlane.set(farPlane.getNormal(), cameraPos + viewDir * depth);
 
-		// We move the center of the shadowmap according to its resolution (avoid shadow shimmering)
-		auto centerOffsetLightSpace = lightView.transformVector(sphereCenter);
-		centerOffsetLightSpace.x = texelSizeWorldSpace * std::round(centerOffsetLightSpace.x / texelSizeWorldSpace);
-		centerOffsetLightSpace.y = texelSizeWorldSpace * std::round(centerOffsetLightSpace.y / texelSizeWorldSpace);
-		centerOffsetLightSpace.z = texelSizeWorldSpace * std::round(centerOffsetLightSpace.z / texelSizeWorldSpace);
+				nearPlaneRef.set(nearPlaneRef.getNormal(), viewDirRef * previousDepth);
+				farPlaneRef.set(farPlaneRef.getNormal(), viewDirRef * depth);
 
-		// Lightspace frustum bounding box
-		AABBf aabb;
-		for (const auto& corner : frustum.getCorners())
-			aabb.extend(lightView.transformPosition(corner));
+				Frustumf frustum(frustumPlanes);
 
-		auto c = centerOffsetLightSpace;
-		const auto r = sphereRadius;
+				frustumRef.set(frustumPlanesRef);
 
-		// Keep the Z range as tight as possible
-		auto proj = Matrix4f::createOrtho(c.x - r, c.x + r, -c.y - r, -c.y + r, -aabb.max.z, -aabb.min.z);
-		proj[1][1] *= -1;
+				// Find the tightest box possible around the frustum
+				Vector3f boundingBoxSize;
+				boundingBoxSize.x = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarTopRight)).getNorm();
+				boundingBoxSize.y = (frustumRef.getCorner(FrustumCorner::FarTopLeft) - frustumRef.getCorner(FrustumCorner::FarBottomLeft)).getNorm();
+				boundingBoxSize.z = depth - previousDepth;
 
-		viewProjection = proj * lightView;
+				// Find the bounding sphere of this box (and of the frustum)
+				// This way the shadowmap remains coherent in size no matter the orientation
+				const auto sphereCenter = cameraPos + viewDir * (previousDepth + depth) / 2.0f;
 
-		shadowPass.setViewProjection(viewProjection);
+				auto sphereRadius = boundingBoxSize.getNorm() / 2.0f;
 
-		// For the culling we use another projection :
-		// - reduced X/Y size to draw less objects
-		// - increased Z size in case a caster is between the view frustum & the light
-		c = aabb.getCenter();
-		const auto s = aabb.getSize() / 2.0f;
-		auto cullingProj = Matrix4f::createOrtho(c.x - s.x, c.x + s.x, -c.y - s.y, -c.y + s.y, 0.0f, -aabb.min.z);
-		cullingProj[1][1] *= -1;
+				const float texelSizeWorldSpace = sphereRadius / (shadowMapSize / 2.0f);
 
-		// Depth bias depends on the base depth bias and the z difference in light space
-		const auto diffZ = aabb.getSize().z;
-		depthBias = BaseDepthBias / diffZ;
+				const auto factor = shadowMapSize / (shadowMapSize - 1.0f);
+				sphereRadius = sphereRadius * factor;
 
-		shadowPass.setFrustum(Frustumf(cullingProj * lightView));
+				// We move the center of the shadowmap according to its resolution (avoid shadow shimmering)
+				auto centerOffsetLightSpace = lightView.transformVector(sphereCenter);
+				centerOffsetLightSpace.x = texelSizeWorldSpace * std::round(centerOffsetLightSpace.x / texelSizeWorldSpace);
+				centerOffsetLightSpace.y = texelSizeWorldSpace * std::round(centerOffsetLightSpace.y / texelSizeWorldSpace);
+				centerOffsetLightSpace.z = texelSizeWorldSpace * std::round(centerOffsetLightSpace.z / texelSizeWorldSpace);
 
-		previousDepth = depth;
+				// Lightspace frustum bounding box
+				AABBf aabb;
+				for (const auto& corner : frustum.getCorners())
+					aabb.extend(lightView.transformPosition(corner));
+
+				auto c = centerOffsetLightSpace;
+				const auto r = sphereRadius;
+
+				// Keep the Z range as tight as possible
+				auto proj = Matrix4f::createOrtho(c.x - r, c.x + r, -c.y - r, -c.y + r, -aabb.max.z, -aabb.min.z);
+				proj[1][1] *= -1;
+
+				viewProjection = proj * lightView;
+
+				shadowPass.setViewProjection(viewProjection);
+
+				// For the culling we use another projection :
+				// - reduced X/Y size to draw less objects
+				// - increased Z size in case a caster is between the view frustum & the light
+				c = aabb.getCenter();
+				const auto s = aabb.getSize() / 2.0f;
+				auto cullingProj = Matrix4f::createOrtho(c.x - s.x, c.x + s.x, -c.y - s.y, -c.y + s.y, 0.0f, -aabb.min.z);
+				cullingProj[1][1] *= -1;
+
+				// Depth bias depends on the base depth bias and the z difference in light space
+				const auto diffZ = aabb.getSize().z;
+				depthBias = baseDepthBias / diffZ;
+
+				shadowPass.setFrustum(Frustumf(cullingProj * lightView));
+
+				previousDepth = depth;
+			}
+
+			renderLight.setShadowData(cascades);
+
+			break;
+		}
+		default :
+		{
+			ATEMA_ERROR("Unhandled light type");
+		}
 	}
-
-	m_phongLightingPass->setShadowData(m_shadowCascadeData);
-	m_phongLightingPass->setLightData(LightDirection, LightColor, LightAmbientStrength, LightSpecularStrength);
 }

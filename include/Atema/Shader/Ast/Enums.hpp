@@ -94,6 +94,8 @@ namespace at
 	{
 		Std140,
 
+		_COUNT,
+
 		Default = Std140
 	};
 }

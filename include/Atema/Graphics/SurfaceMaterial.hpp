@@ -162,9 +162,6 @@ namespace at
 		// graphics is the Graphics instance used to store & retrieve resources
 		static Ptr<SurfaceMaterial> createDefault(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize = 0, Graphics& graphics = Graphics::instance());
 		
-		static Ptr<DescriptorSetLayout> getFrameLayout();
-		static Ptr<DescriptorSetLayout> getObjectLayout();
-
 		// Binds the graphics pipeline and the descriptor set (if any) to a command buffer
 		// The user is reponsible for binding per-frame & per-object descriptor sets
 		void bindTo(CommandBuffer& commandBuffer) const;

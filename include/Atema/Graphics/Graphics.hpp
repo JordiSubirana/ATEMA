@@ -66,6 +66,12 @@ namespace at
 		// Default quad mesh (x & y : [-1,1], z : 0)
 		Ptr<VertexBuffer> getQuadMesh();
 
+		// Default descriptor set layouts
+		Ptr<DescriptorSetLayout> getFrameLayout();
+		Ptr<DescriptorSetLayout> getObjectLayout();
+		Ptr<DescriptorSetLayout> getLightLayout();
+		Ptr<DescriptorSetLayout> getLightShadowLayout();
+
 		// Saves a UberShader an associates it to an identifier
 		void setUberShader(const std::string& identifier, const std::string& shaderCode);
 		bool uberShaderExists(const std::string& identifier) const;
@@ -201,6 +207,11 @@ namespace at
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
 		Ptr<VertexBuffer> m_quadMesh;
+
+		Ptr<DescriptorSetLayout> m_frameLayout;
+		Ptr<DescriptorSetLayout> m_objectLayout;
+		Ptr<DescriptorSetLayout> m_lightLayout;
+		Ptr<DescriptorSetLayout> m_lightShadowLayout;
 
 		ResourceManager<UberShader, std::string> m_uberShaderIdManager;
 		ResourceManager<UberShader> m_uberShaderManager;
