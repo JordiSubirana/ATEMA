@@ -25,6 +25,8 @@
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/Camera.hpp>
 #include <Atema/Graphics/Renderable.hpp>
+#include <Atema/Graphics/Light.hpp>
+#include <Atema/Graphics/RenderLight.hpp>
 
 #include <vector>
 #include <unordered_map>
@@ -57,8 +59,17 @@ namespace at
 
 		void clearRenderables();
 
+		void resetLightsEveryFrame(bool reset);
+
+		void addLight(Light& light);
+
+		void removeLight(const Light& light);
+
+		void clearLights();
+
 		const Camera& getCamera() const noexcept;
 		const std::vector<Renderable*>& getRenderables() const noexcept;
+		const std::vector<Ptr<RenderLight>>& getRenderLights() const noexcept;
 
 		RenderData& operator=(const RenderData& other) = default;
 		RenderData& operator=(RenderData&& other) noexcept = default;
@@ -69,6 +80,10 @@ namespace at
 		bool m_resetRenderablesEveryFrame;
 		std::vector<Renderable*> m_renderables;
 		std::unordered_map<const Renderable*, size_t> m_renderableIndices;
+
+		bool m_resetLightsEveryFrame;
+		std::unordered_map<const Light*, size_t> m_lightIndices;
+		std::vector<Ptr<RenderLight>> m_renderLights;
 	};
 }
 

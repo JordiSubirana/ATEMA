@@ -25,7 +25,8 @@ using namespace at;
 
 RenderData::RenderData() :
 	m_camera(nullptr),
-	m_resetRenderablesEveryFrame(false)
+	m_resetRenderablesEveryFrame(false),
+	m_resetLightsEveryFrame(false)
 {
 }
 
@@ -105,6 +106,74 @@ void RenderData::clearRenderables()
 	m_renderableIndices.clear();
 }
 
+void RenderData::resetLightsEveryFrame(bool reset)
+{
+	if (m_resetLightsEveryFrame != reset)
+	{
+		m_resetLightsEveryFrame = reset;
+
+		m_lightIndices.clear();
+
+		// We will need lights indices : initialize them
+		if (!m_resetLightsEveryFrame)
+		{
+			for (size_t i = 0; i < m_renderLights.size(); i++)
+				m_lightIndices[&m_renderLights[i]->getLight()] = i;
+		}
+	}
+}
+
+void RenderData::addLight(Light& light)
+{
+	if (m_resetLightsEveryFrame)
+	{
+		m_renderLights.emplace_back(std::make_shared<RenderLight>(light));
+	}
+	else if (m_lightIndices.find(&light) == m_lightIndices.end())
+	{
+		m_renderLights.emplace_back(std::make_shared<RenderLight>(light));
+		m_lightIndices[&light] = m_renderLights.size() - 1;
+	}
+}
+
+void RenderData::removeLight(const Light& light)
+{
+	if (m_resetLightsEveryFrame)
+	{
+		for (auto& renderLight : m_renderLights)
+		{
+			if (&renderLight->getLight() != &light)
+				continue;
+
+			std::swap(renderLight, m_renderLights.back());
+
+			m_renderLights.resize(m_renderLights.size() - 1);
+
+			break;
+		}
+	}
+	else
+	{
+		const auto it = m_lightIndices.find(&light);
+
+		if (it != m_lightIndices.end())
+		{
+			auto& last = m_renderLights.back();
+
+			std::swap(m_renderLights[it->second], last);
+			m_renderLights.resize(m_renderLights.size() - 1);
+
+			m_lightIndices[&last->getLight()] = it->second;
+			m_lightIndices.erase(it);
+		}
+	}
+}
+
+void RenderData::clearLights()
+{
+	m_lightIndices.clear();
+}
+
 const Camera& RenderData::getCamera() const noexcept
 {
 	return *m_camera;
@@ -113,4 +182,9 @@ const Camera& RenderData::getCamera() const noexcept
 const std::vector<Renderable*>& RenderData::getRenderables() const noexcept
 {
 	return m_renderables;
+}
+
+const std::vector<Ptr<RenderLight>>& RenderData::getRenderLights() const noexcept
+{
+	return m_renderLights;
 }

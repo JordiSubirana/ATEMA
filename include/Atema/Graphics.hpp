@@ -36,6 +36,7 @@
 #include <Atema/Graphics/FrameRenderer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
+#include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
@@ -55,6 +56,7 @@
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Graphics/RenderData.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
+#include <Atema/Graphics/RenderLight.hpp>
 #include <Atema/Graphics/RenderResource.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
