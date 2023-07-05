@@ -78,7 +78,7 @@ const AABBf& StaticModel::getAABB() const noexcept
 	return m_aabb;
 }
 
-void StaticModel::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void StaticModel::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
 	if (m_updateTransform)
 	{

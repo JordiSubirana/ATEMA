@@ -48,7 +48,7 @@ namespace at
 		const Transform& getTransform() const noexcept override;
 		const AABBf& getAABB() const noexcept override;
 
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
 
 		void getRenderElements(std::vector<RenderElement>& renderElements) const override;
 		size_t getRenderElementsSize() const noexcept override;

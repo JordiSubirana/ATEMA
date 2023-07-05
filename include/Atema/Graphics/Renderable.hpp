@@ -24,6 +24,7 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
+#include <Atema/Graphics/RenderResource.hpp>
 #include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Transform.hpp>
 
@@ -31,7 +32,7 @@ namespace at
 {
 	class RenderFrame;
 	
-	class ATEMA_GRAPHICS_API Renderable
+	class ATEMA_GRAPHICS_API Renderable : public RenderResource
 	{
 		friend class RenderScene;
 
@@ -41,10 +42,7 @@ namespace at
 		Renderable(Renderable&& other) noexcept = default;
 		virtual ~Renderable() = default;
 
-		// Update Renderable & RenderElement resources
-		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) = 0;
-
-		// RenderElements are guaranteed to be valid only once updateResources has been called
+		// RenderElements are guaranteed to be valid only once update method has been called
 		virtual void getRenderElements(std::vector<RenderElement>& renderElements) const = 0;
 		virtual size_t getRenderElementsSize() const noexcept = 0;
 

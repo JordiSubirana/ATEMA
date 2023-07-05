@@ -78,7 +78,7 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
 
 		for (auto& renderable : m_renderData.getRenderables())
-			renderable->updateResources(renderFrame, *commandBuffer);
+			renderable->update(renderFrame, *commandBuffer);
 
 		for (auto& renderPass : getRenderPasses())
 			renderPass->updateResources(renderFrame, *commandBuffer);
