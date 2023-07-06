@@ -76,7 +76,12 @@ namespace at
 	template <typename T>
 	bool EntityManager::hasComponent(EntityHandle entity) const
 	{
-		return getComponents<T>().contains[entity];
+		const auto componentsPtr = getComponentsPtr<T>();
+
+		if (!componentsPtr)
+			return false;
+
+		return componentsPtr->contains(entity);
 	}
 
 	template <typename T>
@@ -122,16 +127,25 @@ namespace at
 	template <typename T>
 	const SparseSet<T>& EntityManager::getComponents() const
 	{
+		const auto componentsPtr = getComponentsPtr<T>();
+
+		if (!componentsPtr)
+			ATEMA_ERROR("Requested component set does not exist");
+
+		return *componentsPtr;
+	}
+
+	template <typename T>
+	const SparseSet<T>* EntityManager::getComponentsPtr() const
+	{
 		constexpr auto typeID = TypeInfo<T>::id;
 
 		const auto it = m_components.find(typeID);
 
 		if (it == m_components.end())
-		{
-			ATEMA_ERROR("Requested component set does not exist");
-		}
+			return nullptr;
 
-		return static_cast<detail::ComponentHandler<T>*>(it->second.get())->getSet();
+		return &static_cast<detail::ComponentHandler<T>*>(it->second.get())->getSet();
 	}
 }
 

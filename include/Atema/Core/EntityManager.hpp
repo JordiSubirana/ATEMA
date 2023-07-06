@@ -100,6 +100,8 @@ namespace at
 		SparseSet<T>& getComponents();
 		template <typename T>
 		const SparseSet<T>& getComponents() const;
+		template <typename T>
+		const SparseSet<T>* getComponentsPtr() const;
 
 		EntityHandle getNextID();
 
