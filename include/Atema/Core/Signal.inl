@@ -135,7 +135,7 @@ namespace at
 
 		m_pendingConnections = std::move(signal.m_pendingConnections);
 
-		m_deleteLater = signal.m_deleteLater;
+		m_deleteLater = signal.m_deleteLater.load();
 
 		return *this;
 	}
