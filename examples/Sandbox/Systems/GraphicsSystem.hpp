@@ -25,6 +25,9 @@
 #include <Atema/Graphics/DebugRenderer.hpp>
 #include <Atema/Math/AABB.hpp>
 #include <Atema/Math/Enums.hpp>
+#include <Atema/Graphics/FrameRenderer.hpp>
+#include <Atema/Graphics/PerspectiveCamera.hpp>
+#include <Atema/Graphics/StaticModel.hpp>
 
 #include "System.hpp"
 #include "../Settings.hpp"
@@ -41,106 +44,35 @@ public:
 	void update(at::TimeStep timeStep) override;
 	void onEvent(at::Event& event) override;
 
+	void onEntityAdded(at::EntityHandle entity) override;
+	void onEntityRemoved(at::EntityHandle entity) override;
+
 private:
-	struct FrameData
-	{
-		size_t objectCount;
-		at::Ptr<at::Buffer> objectsUniformBuffer;
-		at::Ptr<at::DescriptorSet> objectDescriptorSet;
-
-		at::Ptr<at::Buffer> frameUniformBuffer;
-		at::Ptr<at::DescriptorSet> frameDescriptorSet;
-
-		at::Ptr<at::Buffer> shadowBuffer;
-		at::Ptr<at::DescriptorSet> shadowSet;
-
-		at::Ptr<at::Buffer> shadowCascadesBuffer;
-
-		at::Ptr<at::Buffer> phongBuffer;
-	};
-
-	struct Material
-	{
-		at::Ptr<at::GraphicsPipeline> pipeline;
-		at::Ptr<at::DescriptorSet> descriptorSet;
-	};
-
-	void translateShaders();
-
 	void checkSettings();
-
-	void createFrameGraph();
 	void onResize(const at::Vector2u& size);
 	void updateFrame();
 
-	void updateBoundingBoxes();
-	void updateUniformBuffers(FrameData& frameData);
+	void updateRenderables();
+	void updateCamera();
+
+	void destroyAfterUse(at::Ptr<void> resource);
+	void destroyPendingResources(at::RenderFrame& renderFrame);
 
 	at::WPtr<at::RenderWindow> m_renderWindow;
-	
-	float m_totalTime;
-
-	at::ImageFormat m_depthFormat;
-
-	at::Viewport m_viewport;
-	at::Vector2u m_windowSize;
-
-	// FrameGraph
-	bool m_updateFrameGraph;
-	at::Ptr<at::FrameGraph> m_frameGraph;
-
-	// Rendering resources (post process)
-	at::Ptr<at::Buffer> m_ppQuad;
-	at::Ptr<at::Sampler> m_ppSampler;
-	at::Ptr<at::DescriptorSetLayout> m_ppLayout;
-
-	// Object resources
-	std::unordered_map<MaterialData*, Material> m_materials;
-
-	// Frame resources
-	at::Ptr<at::DescriptorSetLayout> m_frameLayout;
-	at::Ptr<at::DescriptorSetLayout> m_objectLayout;
-	uint32_t m_elementByteSize;
-	uint32_t m_dynamicObjectBufferOffset;
-	std::vector<FrameData> m_frameDatas;
-
-	// Shadow mapping
-	at::Ptr<at::DescriptorSetLayout> m_shadowLayout;
-	at::Ptr<at::DescriptorSetLayout> m_gbufferShadowMapLayout;
-	at::Ptr<at::GraphicsPipeline> m_shadowPipeline;
-	uint32_t m_currentShadowMapSize;
-	uint32_t m_shadowMapSize;
-	uint32_t m_dynamicShadowBufferOffset;
-	uint32_t m_shadowElementByteSize;
-	at::Viewport m_shadowViewport;
-	at::Ptr<at::Image> m_shadowMap;
-	at::Ptr<at::Sampler> m_shadowMapSampler;
-	std::array<float, SHADOW_CASCADE_COUNT> m_shadowCascadeDepths;
-	std::array<float, SHADOW_CASCADE_COUNT> m_shadowCascadeRadii;
-
-	// Phong lighting
-	at::Ptr<at::DescriptorSetLayout> m_phongLayout;
-	at::Ptr<at::GraphicsPipeline> m_phongPipeline;
-
-	// Screen
-	at::Ptr<at::DescriptorSetLayout> m_screenLayout;
-	at::Ptr<at::GraphicsPipeline> m_screenPipeline;
 
 	// Settings
 	bool m_enableDebugRenderer;
 	Settings::DebugViewMode m_debugViewMode;
 	std::vector<Settings::DebugView> m_debugViews;
-
-	// Misc
-	at::Ptr<at::DebugRenderer> m_debugRenderer;
+	float m_baseDepthBias;
 
 	float m_frustumRotation;
-	at::Frustumf m_customFrustum;
-	std::function<at::IntersectionType(const at::AABBf&)> m_cullFunction;
 
-	std::array<at::Frustumf, SHADOW_CASCADE_COUNT> m_lightFrustums;
+	at::FrameRenderer m_frameRenderer;
+	at::PerspectiveCamera m_camera;
+	std::vector<at::Ptr<at::StaticModel>> m_staticModels;
 
-	at::Matrix4f m_viewProjection;
+	std::vector<at::Ptr<void>> m_resourcesToDestroy;
 };
 
 #endif
