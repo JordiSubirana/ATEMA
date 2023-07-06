@@ -50,7 +50,7 @@ namespace at
 
 		Ptr<UberShader> createInstance(const std::vector<Option>& options) const;
 		Ptr<UberShader> extractStage(AstShaderStage stage) const;
-		const Ptr<const AstReflection>& getReflection(AstShaderStage stage) const;
+		const AstReflection& getReflection(AstShaderStage stage) const;
 
 		const Ptr<SequenceStatement>& getAst() const;
 
@@ -63,7 +63,7 @@ namespace at
 		// So use ugly mutables to keep class methods const
 		mutable AstReflector m_astReflector;
 		mutable bool m_extractorReady;
-		mutable std::unordered_map<AstShaderStage, Ptr<const AstReflection>> m_stageReflections;
+		mutable std::unordered_map<AstShaderStage, AstReflection> m_stageReflections;
 	};
 }
 

@@ -795,7 +795,7 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 	pipelineSettings->fragmentShader = getShader(*settings.fragmentShader);
 
 	// VertexInputState
-	for (const auto& input : vertexReflection->getInputs())
+	for (const auto& input : vertexReflection.getInputs())
 		pipelineSettings->state.vertexInput.inputs.emplace_back(0, input.location, getVertexFormat(input.type));
 
 	// DescriptorSetLayouts
@@ -803,7 +803,7 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 	// bindings[setIndex][bindingIndex] = DescriptorSetBinding
 	std::map<uint32_t, std::map<uint32_t, DescriptorSetBinding>> bindings;
 
-	for (const auto& external : vertexReflection->getExternals())
+	for (const auto& external : vertexReflection.getExternals())
 	{
 		auto& binding = bindings[external.set][external.binding];
 
@@ -813,7 +813,7 @@ Ptr<GraphicsPipeline::Settings> Graphics::loadGraphicsPipelineSettings(const Gra
 		binding.shaderStages = ShaderStage::Vertex;
 	}
 
-	for (const auto& external : fragmentReflection->getExternals())
+	for (const auto& external : fragmentReflection.getExternals())
 	{
 		auto& set = bindings[external.set];
 		const auto it = set.find(external.binding);
