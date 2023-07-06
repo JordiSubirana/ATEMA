@@ -26,10 +26,12 @@
 #include <Atema/Graphics/VertexFormat.hpp>
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Renderer/RenderWindow.hpp>
+#include <Atema/Graphics/Primitive.hpp>
 
 #include "Components/GraphicsComponent.hpp"
 #include "Components/VelocityComponent.hpp"
 #include "Components/CameraComponent.hpp"
+#include "Components/LightComponent.hpp"
 #include "Systems/SceneUpdateSystem.hpp"
 #include "Systems/GraphicsSystem.hpp"
 #include "Systems/CameraSystem.hpp"
@@ -205,6 +207,8 @@ SandboxApplication::SandboxApplication():
 	createCamera();
 
 	createPlayer();
+
+	createLights();
 }
 
 SandboxApplication::~SandboxApplication()
@@ -321,6 +325,62 @@ void SandboxApplication::createScene()
 		graphics.staticModel = std::make_shared<StaticModel>();
 		graphics.staticModel->setModel(graphics.model);
 		graphics.staticModel->setTransform(transform);
+		graphics.staticModel->setCastShadows(false);
+
+		onEntityAdded(entity);
+	}
+
+	// Create Spheres
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+
+		float radius = .5f;
+		float space = 2.0f;
+		size_t subdivisions = 10;
+		int s = 10;
+
+		auto mesh = Primitive::createUVSphere(settings, radius, subdivisions, subdivisions);
+		mesh->setMaterialID(0);
+
+		auto groundMat = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
+
+		for (int x = -s; x < s; x++)
+		{
+			for (int y = -s; y < s; y++)
+			{
+				for (int z = -s; z < s; z++)
+				{
+					// Entity
+					auto entity = m_entityManager.createEntity();
+
+					// Transform component
+					auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+					transform.setTranslation({ space * x, space * y, space * (z +  3 * s) });
+
+					// Graphics component
+					auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+					auto surfaceData = std::make_shared<SurfaceMaterialData>();
+					surfaceData->color.x = static_cast<float>(rand() % 255) / 255.0f;
+					surfaceData->color.y = static_cast<float>(rand() % 255) / 255.0f;
+					surfaceData->color.z = static_cast<float>(rand() % 255) / 255.0f;
+
+					auto model = std::make_shared<Model>();
+					model->addMesh(mesh);
+					model->addMaterialData(surfaceData);
+					//model->addMaterialData(groundMat->materialData);
+
+					graphics.model = model;
+					graphics.materials.emplace_back(std::make_shared<MaterialData>(*surfaceData));
+					graphics.staticModel = std::make_shared<StaticModel>();
+					graphics.staticModel->setModel(graphics.model);
+					graphics.staticModel->setTransform(transform);
+
+					onEntityAdded(entity);
+				}
+			}
+		}
 	}
 }
 
@@ -358,6 +418,47 @@ void SandboxApplication::createPlayer()
 	camera.farPlane = 10000.0f;
 
 	onEntityAdded(entity);
+}
+
+void SandboxApplication::createLights()
+{
+	DirectionalLight refLight;
+	refLight.setShadowMaxDepth(1000.0f);
+	refLight.setColor(Color(1.0f, 1.0f, 1.0f));
+	refLight.setAmbientStrength(0.1f);
+	refLight.setDiffuseStrength(0.4f);
+	refLight.setCastShadows(true);
+	refLight.setShadowMapSize(4096);
+	refLight.setShadowCascadeCount(8);
+	refLight.setShadowDepthBias(0.07f);
+
+	{
+		auto entity = m_entityManager.createEntity();
+
+		auto light = std::make_shared<DirectionalLight>();
+		*light = refLight;
+		light->setDirection({ 1.0f, 1.0f, -1.0f });
+		light->setColor(Color(1.0f, 1.0f, 1.0f));
+
+		auto& lightComponent = m_entityManager.createComponent<LightComponent>(entity);
+		lightComponent.light = std::move(light);
+
+		onEntityAdded(entity);
+	}
+
+	{
+		auto entity = m_entityManager.createEntity();
+
+		auto light = std::make_shared<DirectionalLight>();
+		*light = refLight;
+		light->setDirection({ 1.0f, -1.0f, -1.0f });
+		light->setColor(Color(1.0f, 1.0f, 1.0f));
+
+		auto& lightComponent = m_entityManager.createComponent<LightComponent>(entity);
+		lightComponent.light = std::move(light);
+
+		onEntityAdded(entity);
+	}
 }
 
 void SandboxApplication::updateScene()
@@ -465,7 +566,7 @@ void SandboxApplication::updateScene()
 
 				velocity.speed = percent * 3.14159f * 2.0f;
 				velocity.speed = percent * 3.14159f * 0.25f;
-				velocity.speed = 0.0f;
+				//velocity.speed = 0.0f;
 			}
 		}
 	}
