@@ -66,19 +66,17 @@ GBufferPass::GBufferPass(size_t threadCount)
 	if (threadCount == 0 || threadCount > maxThreadCount)
 		m_threadCount = maxThreadCount;
 
-	const auto bufferLayout = SurfaceMaterial::FrameData::getBufferLayout();
-
 	Buffer::Settings bufferSettings;
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-	bufferSettings.byteSize = bufferLayout.getSize();
+	bufferSettings.byteSize = FrameData::getLayout().getByteSize();
 
 	auto frameLayout = Graphics::instance().getFrameLayout();
 
-	for (auto& frameData : m_frameDatas)
+	for (auto& frameResources : m_frameResources)
 	{
-		frameData.buffer = Buffer::create(bufferSettings);
-		frameData.descriptorSet = frameLayout->createSet();
-		frameData.descriptorSet->update(0, *frameData.buffer);
+		frameResources.buffer = Buffer::create(bufferSettings);
+		frameResources.descriptorSet = frameLayout->createSet();
+		frameResources.descriptorSet->update(0, *frameResources.buffer);
 	}
 }
 
@@ -121,9 +119,9 @@ void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 {
 	const auto& camera = getRenderData().getCamera();
 
-	auto& buffer = m_frameDatas[renderFrame.getFrameIndex()].buffer;
+	auto& buffer = m_frameResources[renderFrame.getFrameIndex()].buffer;
 
-	SurfaceMaterial::FrameData surfaceFrameData;
+	FrameData surfaceFrameData;
 	surfaceFrameData.cameraPosition = camera.getPosition();
 	surfaceFrameData.view = camera.getViewMatrix();
 	surfaceFrameData.projection = camera.getProjectionMatrix();
@@ -144,13 +142,13 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	const auto frameIndex = context.getFrameIndex();
 
-	auto& frameData = m_frameDatas[frameIndex];
+	auto& frameResources = m_frameResources[frameIndex];
 
 	auto& commandBuffer = context.getCommandBuffer();
 
 	if (m_threadCount == 1)
 	{
-		drawElements(commandBuffer, frameData, 0, m_renderElements.size());
+		drawElements(commandBuffer, frameResources, 0, m_renderElements.size());
 	}
 	else
 	{
@@ -173,11 +171,11 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 				size += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameData, &commandBuffers, taskIndex, firstIndex, size](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, firstIndex, size](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameData, firstIndex, size);
+					drawElements(*commandBuffer, frameResources, firstIndex, size);
 
 					commandBuffer->end();
 
@@ -339,7 +337,7 @@ void GBufferPass::sortElements()
 		});
 }
 
-void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count)
+void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count)
 {
 	const auto& viewport = getRenderData().getCamera().getViewport();
 	const auto& scissor = getRenderData().getCamera().getScissor();
@@ -366,7 +364,7 @@ void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameDat
 		currentMaterialInstanceID = materialInstance->getID();
 	}
 
-	commandBuffer.bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameData.descriptorSet);
+	commandBuffer.bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameResources.descriptorSet);
 
 	for (size_t i = index; i < index + count; i++)
 	{

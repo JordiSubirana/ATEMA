@@ -92,7 +92,7 @@ namespace at
 		FrameData& operator=(FrameData&& other) noexcept = default;
 	};
 
-	class ATEMA_GRAPHICS_API ObjectData : public ShaderData
+	class ATEMA_GRAPHICS_API TransformData : public ShaderData
 	{
 	public:
 		class Layout : public ShaderData::Layout
@@ -104,10 +104,10 @@ namespace at
 			size_t modelOffset;
 		};
 
-		ObjectData() = default;
-		ObjectData(const ObjectData& other) = default;
-		ObjectData(ObjectData&& other) noexcept = default;
-		virtual ~ObjectData() = default;
+		TransformData() = default;
+		TransformData(const TransformData& other) = default;
+		TransformData(TransformData&& other) noexcept = default;
+		virtual ~TransformData() = default;
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
@@ -115,8 +115,8 @@ namespace at
 
 		Matrix4f model;
 
-		ObjectData& operator=(const ObjectData& other) = default;
-		ObjectData& operator=(ObjectData&& other) noexcept = default;
+		TransformData& operator=(const TransformData& other) = default;
+		TransformData& operator=(TransformData&& other) noexcept = default;
 	};
 
 	class ATEMA_GRAPHICS_API ShadowData : public ShaderData

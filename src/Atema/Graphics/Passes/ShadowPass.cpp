@@ -83,7 +83,7 @@ namespace
 	constexpr char* ShaderName = "AtemaShadowPass";
 
 	const char ShaderCode[] = R"(
-struct ObjectData
+struct TransformData
 {
 	mat4f model;
 }
@@ -97,7 +97,7 @@ external
 {
 	[set(0), binding(0)] ShadowData shadowData;
 	
-	[set(1), binding(0)] ObjectData objectData;
+	[set(1), binding(0)] TransformData transformData;
 }
 
 [stage(vertex)]
@@ -113,7 +113,7 @@ input
 [entry(vertex)]
 void main()
 {
-	vec4f worldPos = objectData.model * vec4f(inPosition, 1.0);
+	vec4f worldPos = transformData.model * vec4f(inPosition, 1.0);
 	
 	vec4f screenPosition = shadowData.viewProjection * worldPos;
 	
@@ -172,11 +172,11 @@ ShadowPass::ShadowPass(size_t threadCount)
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 	bufferSettings.byteSize = layoutData.bufferLayout.getSize();
 
-	for (auto& frameData : m_frameDatas)
+	for (auto& frameResources : m_frameResources)
 	{
-		frameData.buffer = Buffer::create(bufferSettings);
-		frameData.descriptorSet = m_setLayout->createSet();
-		frameData.descriptorSet->update(0, *frameData.buffer);
+		frameResources.buffer = Buffer::create(bufferSettings);
+		frameResources.descriptorSet = m_setLayout->createSet();
+		frameResources.descriptorSet->update(0, *frameResources.buffer);
 	}
 }
 
@@ -208,7 +208,7 @@ FrameGraphPass& ShadowPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder
 
 void ShadowPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
-	auto& buffer = m_frameDatas[renderFrame.getFrameIndex()].buffer;
+	auto& buffer = m_frameResources[renderFrame.getFrameIndex()].buffer;
 
 	auto data = buffer->map();
 
@@ -236,7 +236,7 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	const auto frameIndex = context.getFrameIndex();
 
-	auto& frameData = m_frameDatas[frameIndex];
+	auto& frameResources = m_frameResources[frameIndex];
 
 	auto& commandBuffer = context.getCommandBuffer();
 
@@ -244,7 +244,7 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	if (m_threadCount == 1)
 	{
-		drawElements(commandBuffer, frameData, 0, m_renderElements.size(), shadowMapSize);
+		drawElements(commandBuffer, frameResources, 0, m_renderElements.size(), shadowMapSize);
 	}
 	else
 	{
@@ -268,11 +268,11 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 				size += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameData, &commandBuffers, taskIndex, firstIndex, size, shadowMapSize](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, firstIndex, size, shadowMapSize](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameData, firstIndex, size, shadowMapSize);
+					drawElements(*commandBuffer, frameResources, firstIndex, size, shadowMapSize);
 
 					commandBuffer->end();
 
@@ -402,7 +402,7 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 	}
 }
 
-void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count, uint32_t shadowMapSize)
+void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count, uint32_t shadowMapSize)
 {
 	if (!count)
 		return;
@@ -416,7 +416,7 @@ void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameData& frameData
 
 	commandBuffer.setScissor(Vector2i(), { shadowMapSize, shadowMapSize });
 
-	commandBuffer.bindDescriptorSet(ShadowSetIndex, *frameData.descriptorSet);
+	commandBuffer.bindDescriptorSet(ShadowSetIndex, *frameResources.descriptorSet);
 
 	for (size_t i = index; i < index + count; i++)
 	{

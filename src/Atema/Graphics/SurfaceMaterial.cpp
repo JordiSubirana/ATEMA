@@ -58,7 +58,7 @@ struct FrameData
 	vec3f cameraPosition;
 }
 
-struct ObjectData
+struct TransformData
 {
 	mat4f model;
 }
@@ -81,7 +81,7 @@ struct MaterialData
 external
 {
 	[set(0), binding(0)] FrameData frameData;
-	[set(1), binding(0)] ObjectData objectData;
+	[set(1), binding(0)] TransformData transformData;
 	
 	[optional (MaterialColorBinding < 0 ||
 		MaterialEmissiveBinding < 0 ||
@@ -137,10 +137,10 @@ output
 [entry(vertex)]
 void main()
 {
-	vec4f worldPos = objectData.model * vec4f(inPosition, 1.0);
-	vec3f worldNormal = normalize(objectData.model * vec4f(inNormal, 0.0)).xyz;
-	vec3f worldTangent = normalize(objectData.model * vec4f(inTangent, 0.0)).xyz;
-	vec3f worldBitangent = normalize(objectData.model * vec4f(inBitangent, 0.0)).xyz;
+	vec4f worldPos = transformData.model * vec4f(inPosition, 1.0);
+	vec3f worldNormal = normalize(transformData.model * vec4f(inNormal, 0.0)).xyz;
+	vec3f worldTangent = normalize(transformData.model * vec4f(inTangent, 0.0)).xyz;
+	vec3f worldBitangent = normalize(transformData.model * vec4f(inBitangent, 0.0)).xyz;
 	
 	outPosition = worldPos.xyz;
 	
@@ -392,80 +392,6 @@ namespace
 		else
 			ATEMA_ERROR("Invalid type");
 	}
-
-	struct FrameLayoutData
-	{
-		FrameLayoutData(StructLayout structLayout) : bufferLayout(structLayout)
-		{
-			/*struct FrameData
-			{
-				mat4f proj;
-				mat4f view;
-				vec3f cameraPosition;
-			}*/
-			
-			projectionOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
-			viewOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
-			cameraPositionOffset = bufferLayout.add(BufferElementType::Float3);
-		}
-		
-		BufferLayout bufferLayout;
-
-		size_t projectionOffset;
-		size_t viewOffset;
-		size_t cameraPositionOffset;
-	};
-
-	struct ObjectLayoutData
-	{
-		ObjectLayoutData(StructLayout structLayout) : bufferLayout(structLayout)
-		{
-			/*struct ObjectData
-			{
-				mat4f model;
-			}*/
-
-			modelOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
-		}
-
-		BufferLayout bufferLayout;
-
-		size_t modelOffset;
-	};
-}
-
-//-----
-// SurfaceMaterial::FrameData
-BufferLayout SurfaceMaterial::FrameData::getBufferLayout(StructLayout structLayout)
-{
-	FrameLayoutData layoutData(structLayout);
-
-	return layoutData.bufferLayout;
-}
-
-void SurfaceMaterial::FrameData::copyTo(void* destData, StructLayout structLayout)
-{
-	FrameLayoutData layoutData(structLayout);
-	
-	mapMemory<Matrix4f>(destData, layoutData.viewOffset) = view;
-	mapMemory<Matrix4f>(destData, layoutData.projectionOffset) = projection;
-	mapMemory<Vector3f>(destData, layoutData.cameraPositionOffset) = cameraPosition;
-}
-
-//-----
-// SurfaceMaterial::Object
-BufferLayout SurfaceMaterial::ObjectData::getBufferLayout(StructLayout structLayout)
-{
-	ObjectLayoutData layoutData(structLayout);
-
-	return layoutData.bufferLayout;
-}
-
-void SurfaceMaterial::ObjectData::copyTo(void* destData, StructLayout structLayout)
-{
-	ObjectLayoutData layoutData(structLayout);
-
-	mapMemory<Matrix4f>(destData, layoutData.modelOffset) = model;
 }
 
 //-----

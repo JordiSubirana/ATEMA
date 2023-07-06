@@ -306,12 +306,11 @@ PhongLightingPass::PhongLightingPass()
 		frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
 		frameBufferSettings.byteSize = frameLayout.layout.getSize();
 
-		for (auto& frameData : m_frameDatas)
+		for (auto& frameResources : m_frameResources)
 		{
-			frameData.frameBuffer = Buffer::create(frameBufferSettings);
-
-			frameData.descriptorSet = m_phongLayout->createSet();
-			frameData.descriptorSet->update(0, *frameData.frameBuffer);
+			frameResources.buffer = Buffer::create(frameBufferSettings);
+			frameResources.descriptorSet = m_phongLayout->createSet();
+			frameResources.descriptorSet->update(0, *frameResources.buffer);
 		}
 	}
 
@@ -407,18 +406,16 @@ FrameGraphPass& PhongLightingPass::addToFrameGraph(FrameGraphBuilder& frameGraph
 
 void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
-	auto& frameData = m_frameDatas[renderFrame.getFrameIndex()];
+	auto& frameResources = m_frameResources[renderFrame.getFrameIndex()];
 
-	{
-		const FrameLayout layout(StructLayout::Default);
-		
-		auto data = frameData.frameBuffer->map();
+	const FrameLayout layout(StructLayout::Default);
+	
+	auto data = frameResources.buffer->map();
 
-		mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderData().getCamera().getPosition();
-		mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderData().getCamera().getViewMatrix();
+	mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderData().getCamera().getPosition();
+	mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderData().getCamera().getViewMatrix();
 
-		frameData.frameBuffer->unmap();
-	}
+	frameResources.buffer->unmap();
 }
 
 void PhongLightingPass::execute(FrameGraphContext& context, const Settings& settings)
@@ -430,7 +427,7 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 
 	auto& renderLights = renderData.getRenderLights();
 
-	const auto& frameData = m_frameDatas[context.getFrameIndex()];
+	const auto& frameResources = m_frameResources[context.getFrameIndex()];
 
 	const auto& viewport = getRenderData().getCamera().getViewport();
 	const auto& scissor = getRenderData().getCamera().getScissor();
@@ -449,7 +446,7 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 	commandBuffer.bindPipeline(*m_lightPipeline);
 
 	commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameData.descriptorSet);
+	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
 
 	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 

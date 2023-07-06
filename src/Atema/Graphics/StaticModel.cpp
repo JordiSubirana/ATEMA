@@ -22,6 +22,7 @@
 #include <Atema/Graphics/StaticModel.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/ShaderData.hpp>
 #include <Atema/Renderer/RenderFrame.hpp>
 #include <Atema/Renderer/Buffer.hpp>
 #include <Atema/Graphics/SurfaceMaterial.hpp>
@@ -33,7 +34,7 @@ StaticModel::StaticModel() :
 {
 	Buffer::Settings bufferSettings;
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
-	bufferSettings.byteSize = SurfaceMaterial::ObjectData::getBufferLayout().getSize();
+	bufferSettings.byteSize = TransformData::getLayout().getByteSize();
 
 	m_objectBuffer = Buffer::create(bufferSettings);
 

@@ -128,26 +128,6 @@ namespace at
 			Ptr<DescriptorSetLayout> instanceLayout;
 		};
 
-		struct FrameData
-		{
-			Matrix4f projection;
-			Matrix4f view;
-			Vector3f cameraPosition;
-
-			static BufferLayout getBufferLayout(StructLayout structLayout = StructLayout::Default);
-
-			void copyTo(void* destData, StructLayout structLayout = StructLayout::Default);
-		};
-
-		struct ObjectData
-		{
-			Matrix4f model;
-
-			static BufferLayout getBufferLayout(StructLayout structLayout = StructLayout::Default);
-
-			void copyTo(void* destData, StructLayout structLayout = StructLayout::Default);
-		};
-
 		SurfaceMaterial() = delete;
 		SurfaceMaterial(const Settings& settings);
 		SurfaceMaterial(const SurfaceMaterial& other) = default;

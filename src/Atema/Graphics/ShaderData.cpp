@@ -88,8 +88,8 @@ void FrameData::copyTo(void* dstData, StructLayout structLayout)
 	mapMemory<Vector3f>(dstData, layout.cameraPositionOffset) = cameraPosition;
 }
 
-// ObjectData
-ObjectData::Layout::Layout(StructLayout structLayout)
+// TransformData
+TransformData::Layout::Layout(StructLayout structLayout)
 {
 	BufferLayout bufferLayout(structLayout);
 
@@ -98,14 +98,14 @@ ObjectData::Layout::Layout(StructLayout structLayout)
 	initialize(bufferLayout);
 }
 
-const ObjectData::Layout& ObjectData::getLayout(StructLayout structLayout)
+const TransformData::Layout& TransformData::getLayout(StructLayout structLayout)
 {
 	static std::vector<Layout> s_layouts = initializeLayouts<Layout>();
 
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void ObjectData::copyTo(void* dstData, StructLayout structLayout)
+void TransformData::copyTo(void* dstData, StructLayout structLayout)
 {
 	const auto& layout = getLayout(structLayout);
 

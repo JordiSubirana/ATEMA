@@ -82,10 +82,10 @@ namespace at
 		PhongLightingPass& operator=(PhongLightingPass&& other) noexcept = default;
 
 	private:
-		struct FrameData
+		struct FrameResources
 		{
 			Ptr<DescriptorSet> descriptorSet;
-			Ptr<Buffer> frameBuffer;
+			Ptr<Buffer> buffer;
 		};
 
 		Ptr<DescriptorSetLayout> m_gbufferLayout;
@@ -95,7 +95,7 @@ namespace at
 		Ptr<Sampler> m_gbufferSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 
-		std::array<FrameData, Renderer::FramesInFlight> m_frameDatas;
+		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
 	};
 }
 

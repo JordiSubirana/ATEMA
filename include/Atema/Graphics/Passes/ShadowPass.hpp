@@ -80,7 +80,7 @@ namespace at
 		void endFrame() override;
 
 	private:
-		struct FrameData
+		struct FrameResources
 		{
 			Ptr<Buffer> buffer;
 			Ptr<DescriptorSet> descriptorSet;
@@ -88,13 +88,13 @@ namespace at
 
 		void frustumCull();
 		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
-		void drawElements(CommandBuffer& commandBuffer, FrameData& frameData, size_t index, size_t count, uint32_t shadowMapSize);
+		void drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count, uint32_t shadowMapSize);
 
 		size_t m_threadCount;
 
 		Ptr<DescriptorSetLayout> m_setLayout;
 		Ptr<GraphicsPipeline> m_pipeline;
-		std::array<FrameData, Renderer::FramesInFlight> m_frameDatas;
+		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
 
 		Matrix4f m_viewProjection;
 		Frustumf m_frustum;
