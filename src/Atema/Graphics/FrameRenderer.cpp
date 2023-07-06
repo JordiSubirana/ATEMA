@@ -66,7 +66,8 @@ namespace
 FrameRenderer::FrameRenderer() :
 	m_updateFrameGraph(false),
 	m_enableDebugRenderer(false),
-	m_enableDebugFrameGraph(false)
+	m_enableDebugGBuffer(false),
+	m_enableDebugShadowMaps(false)
 {
 	createPasses();
 }
@@ -81,11 +82,21 @@ void FrameRenderer::enableDebugRenderer(bool enable)
 	}
 }
 
-void FrameRenderer::enableDebugFrameGraph(bool enable)
+void FrameRenderer::enableDebugGBuffer(bool enable)
 {
-	if (m_enableDebugFrameGraph != enable)
+	if (m_enableDebugGBuffer != enable)
 	{
-		m_enableDebugFrameGraph = enable;
+		m_enableDebugGBuffer = enable;
+
+		updateFrameGraph();
+	}
+}
+
+void FrameRenderer::enableDebugShadowMaps(bool enable)
+{
+	if (m_enableDebugShadowMaps != enable)
+	{
+		m_enableDebugShadowMaps = enable;
 
 		updateFrameGraph();
 	}
@@ -194,14 +205,18 @@ void FrameRenderer::createFrameGraph()
 	}
 	
 	// Debug FrameGraph
-	if (m_enableDebugFrameGraph)
+	if (m_enableDebugGBuffer || m_enableDebugShadowMaps)
 	{
 		DebugFrameGraphPass::Settings passSettings;
 
 		passSettings.output = compositionTexture;
 		passSettings.columnCount = 0;
-		passSettings.textures = gbufferTextures;
-		passSettings.textures.insert(passSettings.textures.end(), shadowMaps.begin(), shadowMaps.end());
+
+		if (m_enableDebugGBuffer)
+			passSettings.textures.insert(passSettings.textures.end(), gbufferTextures.begin(), gbufferTextures.end());
+
+		if (m_enableDebugShadowMaps)
+			passSettings.textures.insert(passSettings.textures.end(), shadowMaps.begin(), shadowMaps.end());
 
 		m_debugFrameGraphPass->addToFrameGraph(frameGraphBuilder, passSettings);
 		m_activePasses.emplace_back(m_debugFrameGraphPass.get());
@@ -361,6 +376,23 @@ void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& s
 	const auto& cameraPos = camera.getPosition();
 
 	const auto& light = renderLight.getLight();
+
+	if (shadowPassData.passes.size() < light.getShadowCascadeCount())
+	{
+		for (size_t i = shadowPassData.passes.size(); i < light.getShadowCascadeCount(); i++)
+			shadowPassData.passes.emplace_back(std::make_unique<ShadowPass>(ThreadCount));
+
+		m_updateFrameGraph = true;
+	}
+	else if (shadowPassData.passes.size() > light.getShadowCascadeCount())
+	{
+		for (size_t i = light.getShadowCascadeCount(); i < shadowPassData.passes.size(); i++)
+			m_oldRenderPasses.emplace_back(std::move(shadowPassData.passes[i]));
+
+		shadowPassData.passes.resize(light.getShadowCascadeCount());
+
+		m_updateFrameGraph = true;
+	}
 
 	switch (light.getType())
 	{

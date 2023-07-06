@@ -43,7 +43,9 @@ namespace at
 		~FrameRenderer() = default;
 
 		void enableDebugRenderer(bool enable);
-		void enableDebugFrameGraph(bool enable);
+
+		void enableDebugGBuffer(bool enable);
+		void enableDebugShadowMaps(bool enable);
 
 		FrameRenderer& operator=(const FrameRenderer& other) = delete;
 		FrameRenderer& operator=(FrameRenderer&& other) noexcept = default;
@@ -81,7 +83,8 @@ namespace at
 		UPtr<ScreenPass> m_screenPass;
 
 		bool m_enableDebugRenderer;
-		bool m_enableDebugFrameGraph;
+		bool m_enableDebugGBuffer;
+		bool m_enableDebugShadowMaps;
 
 		// Shadows
 		std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> m_shadowData;

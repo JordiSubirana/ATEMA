@@ -38,7 +38,7 @@ namespace at
 		RenderLight(const Light& light);
 		RenderLight(const RenderLight& other) = default;
 		RenderLight(RenderLight&& other) noexcept = default;
-		~RenderLight() override = default;
+		virtual ~RenderLight() = default;
 
 		void setShadowData(const std::vector<ShadowData>& cascades);
 
@@ -58,9 +58,9 @@ namespace at
 
 	private:
 		bool needShadowMapUpdate() const;
-		void createShadowResources();
-		void createShadowMap();
-		void createShadowDescriptorSet();
+		void updateShadowResources();
+		void updateShadowMap();
+		void updateShadowDescriptorSet();
 
 		const Light* m_light;
 
@@ -76,6 +76,10 @@ namespace at
 
 		bool m_updateShadowData;
 		CascadedShadowData m_shadowData;
+
+		std::vector<Ptr<void>> m_resourcesToDestroy;
+
+		ConnectionGuard m_connectionGuard;
 	};
 }
 

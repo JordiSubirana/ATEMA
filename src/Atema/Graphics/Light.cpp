@@ -68,7 +68,12 @@ float Light::getDiffuseStrength() const noexcept
 
 void Light::setCastShadows(bool castShadows)
 {
-	m_castShadows = castShadows;
+	if (m_castShadows != castShadows)
+	{
+		m_castShadows = castShadows;
+
+		onShadowMapDataChanged();
+	}
 }
 
 bool Light::castShadows() const noexcept
@@ -78,7 +83,12 @@ bool Light::castShadows() const noexcept
 
 void Light::setShadowMapSize(uint32_t size)
 {
-	m_shadowMapSize = size;
+	if (m_shadowMapSize != size)
+	{
+		m_shadowMapSize = size;
+
+		onShadowMapDataChanged();
+	}
 }
 
 uint32_t Light::getShadowMapSize() const noexcept
@@ -90,7 +100,12 @@ void Light::setShadowMapFormat(ImageFormat format)
 {
 	ATEMA_ASSERT(Renderer::isDepthImageFormat(format), "Shadow mapping requires a depth ImageFormat");
 
-	m_shadowMapFormat = format;
+	if (m_shadowMapFormat != format)
+	{
+		m_shadowMapFormat = format;
+
+		onShadowMapDataChanged();
+	}
 }
 
 ImageFormat Light::getShadowMapFormat() const noexcept
@@ -100,7 +115,12 @@ ImageFormat Light::getShadowMapFormat() const noexcept
 
 void Light::setShadowCascadeCount(size_t cascadeCount)
 {
-	m_shadowCascadeCount = cascadeCount;
+	if (m_shadowCascadeCount != cascadeCount)
+	{
+		m_shadowCascadeCount = cascadeCount;
+
+		onShadowMapDataChanged();
+	}
 }
 
 size_t Light::getShadowCascadeCount() const noexcept

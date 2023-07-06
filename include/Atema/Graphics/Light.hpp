@@ -26,6 +26,7 @@
 #include <Atema/Graphics/Enums.hpp>
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/Enums.hpp>
+#include <Atema/Core/Signal.hpp>
 
 namespace at
 {
@@ -70,6 +71,8 @@ namespace at
 
 		Light& operator=(const Light& other) = default;
 		Light& operator=(Light&& other) noexcept = default;
+
+		Signal<> onShadowMapDataChanged;
 
 	private:
 		Color m_color;

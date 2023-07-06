@@ -61,11 +61,9 @@ private:
 	at::WPtr<at::RenderWindow> m_renderWindow;
 
 	// Settings
-	bool m_enableDebugRenderer;
-	Settings::DebugViewMode m_debugViewMode;
-	std::vector<Settings::DebugView> m_debugViews;
 	float m_baseDepthBias;
 	uint32_t m_shadowMapSize;
+	uint32_t m_shadowCascadeCount;
 
 	float m_frustumRotation;
 

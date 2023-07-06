@@ -41,7 +41,13 @@ RenderLight::RenderLight(const Light& light) :
 	m_lightDescriptorSet->update(0, *m_lightBuffer);
 
 	if (light.castShadows())
-		createShadowResources();
+		updateShadowResources();
+
+	//TODO: Replace the const_cast. A Signal doesn't represent an object's state so it could be connected even if it's const
+	m_connectionGuard.connect(const_cast<Signal<>&>(light.onShadowMapDataChanged), [this]()
+		{
+			updateShadowMap();
+		});
 }
 
 void RenderLight::setShadowData(const std::vector<ShadowData>& cascades)
@@ -72,27 +78,14 @@ void RenderLight::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 	if (m_light->castShadows())
 	{
 		// Ensure shadow resources exist
-		createShadowResources();
+		updateShadowResources();
 
 		// New shadow map couldn't be used last frame because it's part of the FrameGraph, use it from now
 		if (m_updateShadowMapDescriptor)
 		{
-			renderFrame.destroyAfterUse(std::move(m_shadowDescriptorSet));
-
-			createShadowDescriptorSet();
+			updateShadowDescriptorSet();
 
 			m_updateShadowMapDescriptor = false;
-		}
-
-		// Resize the shadow map if needed
-		// The shadow map will only be used next frame because we need to rebuild the FrameGraph
-		if (needShadowMapUpdate())
-		{
-			renderFrame.destroyAfterUse(std::move(m_shadowMap));
-
-			createShadowMap();
-
-			m_updateShadowMapDescriptor = true;
 		}
 
 		// Update shadow data
@@ -119,6 +112,9 @@ void RenderLight::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 
 		m_updateShadowMapDescriptor = false;
 	}
+
+	for (auto& resource : m_resourcesToDestroy)
+		renderFrame.destroyAfterUse(std::move(resource));
 }
 
 const Light& RenderLight::getLight() const noexcept
@@ -144,7 +140,7 @@ const Ptr<Image>& RenderLight::getShadowMap() const noexcept
 bool RenderLight::needShadowMapUpdate() const
 {
 	if (!m_shadowMap)
-		return false;
+		return true;
 
 	if (m_shadowMap->getSize().x != m_light->getShadowMapSize())
 		return true;
@@ -158,12 +154,10 @@ bool RenderLight::needShadowMapUpdate() const
 	return false;
 }
 
-void RenderLight::createShadowResources()
+void RenderLight::updateShadowResources()
 {
 	if (m_shadowBuffer || !m_light->castShadows())
 		return;
-
-	createShadowMap();
 
 	auto& graphics = Graphics::instance();
 
@@ -179,11 +173,19 @@ void RenderLight::createShadowResources()
 
 	m_shadowBuffer = Buffer::create({ BufferUsage::Uniform | BufferUsage::TransferDst, CascadedShadowData::getLayout().getByteSize() });
 
-	createShadowDescriptorSet();
+	updateShadowMap();
+
+	updateShadowDescriptorSet();
 }
 
-void RenderLight::createShadowMap()
+void RenderLight::updateShadowMap()
 {
+	if (!needShadowMapUpdate())
+		return;
+
+	if (m_shadowMap)
+		m_resourcesToDestroy.emplace_back(std::move(m_shadowMap));
+
 	Image::Settings imageSettings;
 	imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderSampling;
 	imageSettings.format = m_light->getShadowMapFormat();
@@ -193,11 +195,16 @@ void RenderLight::createShadowMap()
 
 	m_shadowMap = Image::create(imageSettings);
 
+	m_updateShadowMapDescriptor = true;
+
 	onShadowMapUpdated();
 }
 
-void RenderLight::createShadowDescriptorSet()
+void RenderLight::updateShadowDescriptorSet()
 {
+	if (m_shadowDescriptorSet)
+		m_resourcesToDestroy.emplace_back(std::move(m_shadowDescriptorSet));
+
 	m_shadowDescriptorSet = Graphics::instance().getLightShadowLayout()->createSet();
 	m_shadowDescriptorSet->update(0, *m_shadowBuffer);
 	m_shadowDescriptorSet->update(1, *m_shadowMap->getView(), *m_sampler);

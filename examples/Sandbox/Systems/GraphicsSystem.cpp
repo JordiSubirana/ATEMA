@@ -59,10 +59,9 @@ namespace
 GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	System(),
 	m_renderWindow(renderWindow),
-	m_enableDebugRenderer(false),
-	m_debugViewMode(Settings::DebugViewMode::Disabled),
 	m_baseDepthBias(Settings::instance().baseDepthBias),
 	m_shadowMapSize(Settings::instance().shadowMapSize),
+	m_shadowCascadeCount(Settings::instance().shadowCascadeCount),
 	m_frustumRotation(0.0f)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
@@ -163,11 +162,11 @@ void GraphicsSystem::checkSettings()
 	{
 		m_baseDepthBias = settings.baseDepthBias;
 
-		auto entities = getEntityManager().getUnion<LightComponent>();
+		auto lightEntities = getEntityManager().getUnion<LightComponent>();
 
-		for (auto& entity : entities)
+		for (auto& entity : lightEntities)
 		{
-			auto& lightComponent = entities.get<LightComponent>(entity);
+			auto& lightComponent = lightEntities.get<LightComponent>(entity);
 			lightComponent.light->setShadowDepthBias(m_baseDepthBias);
 		}
 	}
@@ -176,33 +175,31 @@ void GraphicsSystem::checkSettings()
 	{
 		m_shadowMapSize = settings.shadowMapSize;
 
-		auto entities = getEntityManager().getUnion<LightComponent>();
+		auto lightEntities = getEntityManager().getUnion<LightComponent>();
 
-		for (auto& entity : entities)
+		for (auto& entity : lightEntities)
 		{
-			auto& lightComponent = entities.get<LightComponent>(entity);
+			auto& lightComponent = lightEntities.get<LightComponent>(entity);
 			lightComponent.light->setShadowMapSize(m_shadowMapSize);
 		}
 	}
 
-	if (m_enableDebugRenderer != settings.enableDebugRenderer)
+	if (m_shadowCascadeCount != settings.shadowCascadeCount)
 	{
-		m_enableDebugRenderer = settings.enableDebugRenderer;
+		m_shadowCascadeCount = settings.shadowCascadeCount;
 
-		m_frameRenderer.enableDebugRenderer(settings.enableDebugRenderer);
+		auto lightEntities = getEntityManager().getUnion<LightComponent>();
+
+		for (auto& entity : lightEntities)
+		{
+			auto& lightComponent = lightEntities.get<LightComponent>(entity);
+			lightComponent.light->setShadowCascadeCount(m_shadowCascadeCount);
+		}
 	}
 
-	if (m_debugViewMode != settings.debugViewMode)
-	{
-		m_debugViewMode = settings.debugViewMode;
-
-		m_frameRenderer.enableDebugFrameGraph(m_debugViewMode != Settings::DebugViewMode::Disabled);
-	}
-
-	if (m_debugViews != settings.debugViews)
-	{
-		m_debugViews = settings.debugViews;
-	}
+	m_frameRenderer.enableDebugRenderer(settings.enableDebugRenderer);
+	m_frameRenderer.enableDebugGBuffer(settings.enableDebugGBuffer);
+	m_frameRenderer.enableDebugShadowMaps(settings.enableDebugShadowMaps);
 }
 
 void GraphicsSystem::onResize(const Vector2u& size)

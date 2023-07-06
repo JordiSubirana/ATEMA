@@ -337,6 +337,32 @@ void GuiSystem::showSettings()
 		{
 			ImGui::BeginTable("Properties", 2);
 
+			// ShadowMap cascades
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Cascades");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static const std::vector<const char*> shadowMapCascadeItems =
+				{
+					"1",
+					"2",
+					"4",
+					"8",
+					"16"
+				};
+				static int shadowMapCascadeCurrentItem = 3;
+				ImGui::Combo("##Cascades", &shadowMapCascadeCurrentItem, shadowMapCascadeItems.data(), static_cast<int>(shadowMapCascadeItems.size()));
+
+				settings.shadowCascadeCount = std::stoul(shadowMapCascadeItems[shadowMapCascadeCurrentItem]);
+			}
+
 			// ShadowMap size
 			{
 				ImGui::TableNextRow();
@@ -388,105 +414,49 @@ void GuiSystem::showSettings()
 		{
 			ImGui::BeginTable("Properties", 2);
 
-			static int debugViewMode = 0;
-
-			static int views[] =
-			{
-				static_cast<int>(Settings::DebugView::ShadowCascade1),
-				static_cast<int>(Settings::DebugView::GBufferNormal),
-				static_cast<int>(Settings::DebugView::GBufferColor),
-				static_cast<int>(Settings::DebugView::GBufferAO)
-			};
-
-			static const std::vector<const char*> viewItems =
-			{
-				"GBuffer position",
-				"GBuffer normal",
-				"GBuffer color",
-				"GBuffer AO",
-				"GBuffer emissive",
-				"GBuffer metalness",
-				"GBuffer roughness",
-				"ShadowCascade1",
-				"ShadowCascade2",
-				"ShadowCascade3",
-				"ShadowCascade4",
-				"ShadowCascade5",
-				"ShadowCascade6",
-				"ShadowCascade7",
-				"ShadowCascade8",
-			};
-
 			// Debug Renderer
 			{
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Enable Debug Renderer");
+				ImGui::Text("Enable DebugRenderer");
 
 				ImGui::TableNextColumn();
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
-				ImGui::Checkbox("##Enable Debug Renderer", &settings.enableDebugRenderer);
+				ImGui::Checkbox("##Enable DebugRenderer", &settings.enableDebugRenderer);
 			}
 
-			// Views
+			// Debug GBuffer
 			{
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 
 				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Views");
+				ImGui::Text("Show GBuffer");
 
 				ImGui::TableNextColumn();
 
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
-				static const std::vector<const char*> items =
-				{
-					"Disabled",
-					"Corner",
-					"Full"
-				};
-				ImGui::Combo("##Views", &debugViewMode, items.data(), static_cast<int>(items.size()));
-
-				settings.debugViewMode = static_cast<Settings::DebugViewMode>(debugViewMode);
+				ImGui::Checkbox("##Show GBuffer", &settings.enableDebugGBuffer);
 			}
 
-			// Debug views
+			// Debug ShadowMaps
 			{
-				int disableRef = 1;
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
 
-				for (int i = 0; i < 4; i++)
-				{
-					ImGui::PushID(i);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Show ShadowMaps");
 
-					if (debugViewMode < disableRef)
-						ImGui::BeginDisabled();
+				ImGui::TableNextColumn();
 
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
+				ImGui::SetNextItemWidth(-FLT_MIN);
 
-					ImGui::AlignTextToFramePadding();
-					ImGui::Text(std::string("View #" + std::to_string(i)).c_str());
-
-					ImGui::TableNextColumn();
-
-					ImGui::SetNextItemWidth(-FLT_MIN);
-
-					ImGui::Combo("##View", &views[i], viewItems.data(), static_cast<int>(viewItems.size() - (8 - SHADOW_CASCADE_COUNT)));
-
-					settings.debugViews[i] = static_cast<Settings::DebugView>(views[i]);
-
-					if (debugViewMode < disableRef)
-						ImGui::EndDisabled();
-
-					ImGui::PopID();
-
-					disableRef = 2;
-				}
+				ImGui::Checkbox("##Show ShadowMaps", &settings.enableDebugShadowMaps);
 			}
 
 			ImGui::EndTable();
