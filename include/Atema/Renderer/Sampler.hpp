@@ -25,6 +25,7 @@
 #include <Atema/Renderer/Config.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Hash.hpp>
 #include <Atema/Renderer/Enums.hpp>
 
 namespace at
@@ -66,6 +67,32 @@ namespace at
 		
 	protected:
 		Sampler();
+	};
+
+	template <>
+	struct HashOverload<Sampler::Settings>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const Sampler::Settings& settings)
+		{
+			typename Hasher::HashType hash = 0;
+
+			Hasher::hashCombine(hash, settings.minFilter);
+			Hasher::hashCombine(hash, settings.magFilter);
+			Hasher::hashCombine(hash, settings.addressModeU);
+			Hasher::hashCombine(hash, settings.addressModeV);
+			Hasher::hashCombine(hash, settings.addressModeW);
+			Hasher::hashCombine(hash, settings.borderColor);
+			Hasher::hashCombine(hash, settings.enableCompare);
+			Hasher::hashCombine(hash, settings.compareOperation);
+			Hasher::hashCombine(hash, settings.anisotropyEnable);
+			Hasher::hashCombine(hash, settings.mipmapFilter);
+			Hasher::hashCombine(hash, settings.minLod);
+			Hasher::hashCombine(hash, settings.maxLod);
+			Hasher::hashCombine(hash, settings.loadBias);
+
+			return hash;
+		}
 	};
 }
 
