@@ -22,6 +22,7 @@
 #ifndef ATEMA_GRAPHICS_LIGHTRESOURCE_HPP
 #define ATEMA_GRAPHICS_LIGHTRESOURCE_HPP
 
+#include <Atema/Core/Signal.hpp>
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/RenderResource.hpp>
@@ -37,7 +38,7 @@ namespace at
 		RenderLight(const Light& light);
 		RenderLight(const RenderLight& other) = default;
 		RenderLight(RenderLight&& other) noexcept = default;
-		~RenderLight() = default;
+		~RenderLight() override = default;
 
 		void setShadowData(const std::vector<ShadowData>& cascades);
 
@@ -53,10 +54,15 @@ namespace at
 		RenderLight& operator=(const RenderLight& other) = default;
 		RenderLight& operator=(RenderLight&& other) noexcept = default;
 
-	private:
-		void createShadowResources();
+		Signal<> onShadowMapUpdated;
 
-		const Light& m_light;
+	private:
+		bool needShadowMapUpdate() const;
+		void createShadowResources();
+		void createShadowMap();
+		void createShadowDescriptorSet();
+
+		const Light* m_light;
 
 		Ptr<Buffer> m_lightBuffer;
 		Ptr<DescriptorSet> m_lightDescriptorSet;
@@ -64,6 +70,7 @@ namespace at
 		Ptr<Buffer> m_shadowBuffer;
 		Ptr<DescriptorSet> m_shadowDescriptorSet;
 
+		bool m_updateShadowMapDescriptor;
 		Ptr<Image> m_shadowMap;
 		Ptr<Sampler> m_sampler;
 

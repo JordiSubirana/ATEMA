@@ -85,6 +85,8 @@ namespace at
 
 		// Shadows
 		std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> m_shadowData;
+
+		ConnectionGuard m_connectionGuard;
 	};
 }
 

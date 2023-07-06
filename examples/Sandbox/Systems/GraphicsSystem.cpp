@@ -62,6 +62,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_enableDebugRenderer(false),
 	m_debugViewMode(Settings::DebugViewMode::Disabled),
 	m_baseDepthBias(Settings::instance().baseDepthBias),
+	m_shadowMapSize(Settings::instance().shadowMapSize),
 	m_frustumRotation(0.0f)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
@@ -158,9 +159,30 @@ void GraphicsSystem::checkSettings()
 {
 	const auto& settings = Settings::instance();
 
-	if (m_baseDepthBias != settings.baseDepthBias)
+	if (!Math::equals(m_baseDepthBias, settings.baseDepthBias))
 	{
 		m_baseDepthBias = settings.baseDepthBias;
+
+		auto entities = getEntityManager().getUnion<LightComponent>();
+
+		for (auto& entity : entities)
+		{
+			auto& lightComponent = entities.get<LightComponent>(entity);
+			lightComponent.light->setShadowDepthBias(m_baseDepthBias);
+		}
+	}
+
+	if (m_shadowMapSize != settings.shadowMapSize)
+	{
+		m_shadowMapSize = settings.shadowMapSize;
+
+		auto entities = getEntityManager().getUnion<LightComponent>();
+
+		for (auto& entity : entities)
+		{
+			auto& lightComponent = entities.get<LightComponent>(entity);
+			lightComponent.light->setShadowMapSize(m_shadowMapSize);
+		}
 	}
 
 	if (m_enableDebugRenderer != settings.enableDebugRenderer)

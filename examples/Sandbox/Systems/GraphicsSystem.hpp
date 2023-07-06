@@ -65,6 +65,7 @@ private:
 	Settings::DebugViewMode m_debugViewMode;
 	std::vector<Settings::DebugView> m_debugViews;
 	float m_baseDepthBias;
+	uint32_t m_shadowMapSize;
 
 	float m_frustumRotation;
 

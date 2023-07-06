@@ -347,6 +347,12 @@ void FrameRenderer::createShadowData(RenderLight& renderLight)
 	m_updateFrameGraph = true;
 
 	m_shadowData[&renderLight] = std::move(shadowData);
+
+	// Rebuild the FrameGraph everytime the shadow map changes
+	m_connectionGuard.connect(renderLight.onShadowMapUpdated, [this]()
+		{
+			m_updateFrameGraph = true;
+		});
 }
 
 void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData)
