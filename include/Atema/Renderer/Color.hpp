@@ -30,10 +30,12 @@ namespace at
 	class ATEMA_RENDERER_API Color
 	{
 	public:
-		Color();
-		Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
-		Color(float r, float g, float b, float a = 1.0f);
-		~Color();
+		constexpr Color() noexcept;
+		constexpr Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept;
+		constexpr Color(float r, float g, float b, float a = 1.0f) noexcept;
+		constexpr Color(const Color& other) noexcept = default;
+		Color(Color&& other) noexcept = default;
+		~Color() = default;
 
 		static const Color Black;
 		static const Color White;
@@ -56,6 +58,9 @@ namespace at
 		void toHSV(float* hue, float* saturation, float* value) const;
 		Vector3f toVector3f() const;
 		Vector4f toVector4f() const;
+
+		Color& operator=(const Color& other) noexcept = default;
+		Color& operator=(Color&& other) noexcept = default;
 		
 		float r, g, b, a;
 	};

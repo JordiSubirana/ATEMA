@@ -39,7 +39,7 @@ const Color Color::Yellow =		Color(1.0f, 1.0f, 0.0f, 1.0f);
 const Color Color::Orange =		Color(1.0f, 0.5f, 0.0f, 1.0f);
 const Color Color::Purple =		Color(0.5f, 0.0f, 1.0f, 1.0f);
 
-Color::Color() :
+constexpr Color::Color() noexcept :
 	r(0.0f),
 	g(0.0f),
 	b(0.0f),
@@ -48,7 +48,7 @@ Color::Color() :
 	
 }
 
-Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) :
+constexpr Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept :
 	r(static_cast<float>(r) / 255.0f),
 	g(static_cast<float>(g) / 255.0f),
 	b(static_cast<float>(b) / 255.0f),
@@ -56,15 +56,11 @@ Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) :
 {
 }
 
-Color::Color(float r, float g, float b, float a) :
+constexpr Color::Color(float r, float g, float b, float a) noexcept :
 	r(r),
 	g(g),
 	b(b),
 	a(a)
-{
-}
-
-Color::~Color()
 {
 }
 
