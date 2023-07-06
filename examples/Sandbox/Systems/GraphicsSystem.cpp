@@ -207,6 +207,8 @@ void GraphicsSystem::updateFrame()
 
 	benchmark.stop();
 
+	destroyPendingResources(renderFrame);
+
 	m_frameRenderer.render(renderFrame);
 }
 
