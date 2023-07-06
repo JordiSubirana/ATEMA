@@ -50,9 +50,9 @@ namespace
 		if (!renderElement.materialInstance || !renderElement.materialInstance->getMaterial())
 			return 0;
 
-		uint64_t renderPriority = 0;
-		renderPriority |= static_cast<uint64_t>(renderElement.materialInstance->getMaterial()->getID() & 0xFFFF) << 16;
-		renderPriority |= static_cast<uint64_t>(renderElement.materialInstance->getID() & 0xFFFF) << 0;
+		uint32_t renderPriority = 0;
+		renderPriority |= static_cast<uint32_t>(renderElement.materialInstance->getMaterial()->getID() & 0xFFFF) << 16;
+		renderPriority |= static_cast<uint32_t>(renderElement.materialInstance->getID() & 0xFFFF) << 0;
 
 		return renderPriority;
 	}
