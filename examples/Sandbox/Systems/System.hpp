@@ -37,6 +37,9 @@ public:
 
 	virtual void onEvent(at::Event& event);
 
+	virtual void onEntityAdded(at::EntityHandle entity);
+	virtual void onEntityRemoved(at::EntityHandle entity);
+
 private:
 	at::EntityManager *m_entityManager;
 };

@@ -46,6 +46,9 @@ private:
 	void createPlayer();
 
 	void updateScene();
+
+	void onEntityAdded(at::EntityHandle entity);
+	void onEntityRemoved(at::EntityHandle entity);
 	
 	at::Ptr<at::RenderWindow> m_window;
 

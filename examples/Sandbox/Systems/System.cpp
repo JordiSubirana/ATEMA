@@ -50,3 +50,11 @@ void System::update(at::TimeStep timeStep)
 void System::onEvent(at::Event& event)
 {
 }
+
+void System::onEntityAdded(at::EntityHandle entity)
+{
+}
+
+void System::onEntityRemoved(at::EntityHandle entity)
+{
+}

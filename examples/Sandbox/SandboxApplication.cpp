@@ -337,6 +337,8 @@ void SandboxApplication::createCamera()
 	camera.isAuto = true;
 	camera.useTarget = true;
 	camera.farPlane = 10000.0f;
+
+	onEntityAdded(entity);
 }
 
 void SandboxApplication::createPlayer()
@@ -354,6 +356,8 @@ void SandboxApplication::createPlayer()
 	camera.isAuto = false;
 	camera.useTarget = false;
 	camera.farPlane = 10000.0f;
+
+	onEntityAdded(entity);
 }
 
 void SandboxApplication::updateScene()
@@ -371,7 +375,10 @@ void SandboxApplication::updateScene()
 		auto firstIndex = getRadiusBegin(newObjectRows);
 
 		for (size_t i = firstIndex; i < m_objects.size(); i++)
+		{
+			onEntityRemoved(m_objects[i]);
 			m_entityManager.removeEntity(m_objects[i]);
+		}
 
 		m_objects.resize(newSize);
 	}
@@ -408,6 +415,8 @@ void SandboxApplication::updateScene()
 
 				// Velocity component
 				m_entityManager.createComponent<VelocityComponent>(entity);
+
+				onEntityAdded(entity);
 			}
 		}
 	}
@@ -463,4 +472,16 @@ void SandboxApplication::updateScene()
 
 	// Update parameters
 	m_objectRows = newObjectRows;
+}
+
+void SandboxApplication::onEntityAdded(at::EntityHandle entity)
+{
+	for (auto& system : m_systems)
+		system->onEntityAdded(entity);
+}
+
+void SandboxApplication::onEntityRemoved(at::EntityHandle entity)
+{
+	for (auto& system : m_systems)
+		system->onEntityRemoved(entity);
 }
