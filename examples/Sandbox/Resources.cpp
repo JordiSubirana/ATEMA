@@ -124,7 +124,7 @@ ModelData::ModelData(const std::filesystem::path& path)
 	model = ObjLoader::load(path, settings);
 }
 
-MaterialData::MaterialData(const std::filesystem::path& path, const std::string& extension)
+at::Ptr<at::SurfaceMaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension)
 {
 	/*struct MaterialData
 	{
@@ -150,7 +150,7 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 		float roughness;
 	}//*/
 
-	materialData = std::make_shared<SurfaceMaterialData>();
+	auto materialData = std::make_shared<SurfaceMaterialData>();
 
 	std::vector<MaterialParam> materialParameters =
 	{
@@ -175,16 +175,5 @@ MaterialData::MaterialData(const std::filesystem::path& path, const std::string&
 			texture = DefaultImageLoader::load(fullPath, {});
 	}
 
-	initialize(*materialData);
-}
-
-MaterialData::MaterialData(const at::SurfaceMaterialData& material)
-{
-	initialize(material);
-}
-
-void MaterialData::initialize(const at::SurfaceMaterialData& material)
-{
-	const auto surfaceMaterial = Graphics::instance().getSurfaceMaterial(material);
-	materialInstance = Graphics::instance().getSurfaceMaterialInstance(surfaceMaterial, material);
+	return materialData;
 }

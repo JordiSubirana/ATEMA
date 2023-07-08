@@ -190,16 +190,8 @@ SandboxApplication::SandboxApplication():
 	// Resources
 	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	if (!m_modelData->model->getMaterialData().empty())
-	{
-		for (const auto& materialData : m_modelData->model->getMaterialData())
-			m_materialData.emplace_back(std::make_shared<MaterialData>(*materialData));
-	}
-	else
-	{
-		m_materialData.emplace_back(std::make_shared<MaterialData>(modelTexturePath, modelTextureExtension));
-		m_modelData->model->addMaterialData(m_materialData.back()->materialData);
-	}
+	if (m_modelData->model->getMaterialData().empty())
+		m_modelData->model->addMaterialData(loadMaterialData(modelTexturePath, modelTextureExtension));
 
 	// Create entities
 	createScene();
@@ -218,7 +210,6 @@ SandboxApplication::~SandboxApplication()
 	m_entityManager.clear();
 
 	m_modelData.reset();
-	m_materialData.clear();
 	
 	m_window.reset();
 
@@ -304,7 +295,7 @@ void SandboxApplication::createScene()
 	// Create ground
 	{
 		// Resources
-		auto materialData = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
+		auto materialData = loadMaterialData(groundTexturePath, groundTextureExtension);
 
 		const Vector2f planeSize(1000.0f, 1000.0f);
 
@@ -319,11 +310,11 @@ void SandboxApplication::createScene()
 		// Graphics component
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-		graphics.model = createPlaneModel({ 0, 0, 0 }, planeSize);
-		graphics.model->addMaterialData(materialData->materialData);
-		graphics.materials.emplace_back(materialData);
+		auto model = createPlaneModel({ 0, 0, 0 }, planeSize);
+		model->addMaterialData(materialData);
+
 		graphics.staticModel = std::make_shared<StaticModel>();
-		graphics.staticModel->setModel(graphics.model);
+		graphics.staticModel->setModel(model);
 		graphics.staticModel->setTransform(transform);
 		graphics.staticModel->setCastShadows(false);
 
@@ -341,8 +332,6 @@ void SandboxApplication::createScene()
 
 		auto mesh = Primitive::createUVSphere(settings, radius, subdivisions, subdivisions);
 		mesh->setMaterialID(0);
-
-		auto groundMat = std::make_shared<MaterialData>(groundTexturePath, groundTextureExtension);
 
 		for (int x = -s; x < s; x++)
 		{
@@ -369,13 +358,11 @@ void SandboxApplication::createScene()
 					auto model = std::make_shared<Model>();
 					model->addMesh(mesh);
 					model->addMaterialData(surfaceData);
-					//model->addMaterialData(groundMat->materialData);
-
-					graphics.model = model;
-					graphics.materials.emplace_back(std::make_shared<MaterialData>(*surfaceData));
+					
 					graphics.staticModel = std::make_shared<StaticModel>();
-					graphics.staticModel->setModel(graphics.model);
+					graphics.staticModel->setModel(model);
 					graphics.staticModel->setTransform(transform);
+					graphics.staticModel->setCastShadows(true);
 
 					onEntityAdded(entity);
 				}
@@ -505,11 +492,9 @@ void SandboxApplication::updateScene()
 				// Graphics component
 				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-				graphics.model = m_modelData->model;
-				graphics.materials = m_materialData;
-				graphics.castShadows = true;
 				graphics.staticModel = std::make_shared<StaticModel>();
-				graphics.staticModel->setModel(graphics.model);
+				graphics.staticModel->setModel(m_modelData->model);
+				graphics.staticModel->setCastShadows(true);
 
 				// Transform component
 				m_entityManager.createComponent<Transform>(entity);
@@ -554,7 +539,7 @@ void SandboxApplication::updateScene()
 				transform.setTranslation(position);
 
 				// Update Scene aabb
-				sceneAABB.extend(transform.getMatrix() * graphics.model->getAABB());
+				sceneAABB.extend(transform.getMatrix() * graphics.staticModel->getModel()->getAABB());
 
 				// Velocity component
 				auto& velocity = m_entityManager.getComponent<VelocityComponent>(entity);

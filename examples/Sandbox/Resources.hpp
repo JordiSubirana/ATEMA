@@ -92,18 +92,6 @@ struct ModelData
 	at::Ptr<at::Model> model;
 };
 
-class MaterialData
-{
-public:
-	MaterialData() = delete;
-	MaterialData(const std::filesystem::path& path, const std::string& format);
-	MaterialData(const at::SurfaceMaterialData& material);
-
-	at::Ptr<at::SurfaceMaterialInstance> materialInstance;
-	at::Ptr<at::SurfaceMaterialData> materialData;
-
-private:
-	void initialize(const at::SurfaceMaterialData& material);
-};
+at::Ptr<at::SurfaceMaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension);
 
 #endif

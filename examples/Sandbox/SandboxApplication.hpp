@@ -58,7 +58,6 @@ private:
 	std::vector<at::Ptr<System>> m_systems;
 
 	at::Ptr<ModelData> m_modelData;
-	std::vector<at::Ptr<MaterialData>> m_materialData;
 
 	std::vector<at::EntityHandle> m_objects;
 
