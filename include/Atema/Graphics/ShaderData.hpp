@@ -53,7 +53,8 @@ namespace at
 		ShaderData(ShaderData&& other) noexcept = default;
 		virtual ~ShaderData() = default;
 
-		virtual void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) = 0;
+		virtual size_t getByteSize(StructLayout structLayout = StructLayout::Default) const noexcept = 0;
+		virtual void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const = 0;
 
 		ShaderData& operator=(const ShaderData& other) = default;
 		ShaderData& operator=(ShaderData&& other) noexcept = default;
@@ -82,7 +83,8 @@ namespace at
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
-		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) override;
+		size_t getByteSize(StructLayout structLayout) const noexcept override;
+		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
 		Matrix4f projection;
 		Matrix4f view;
@@ -111,7 +113,8 @@ namespace at
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
-		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) override;
+		size_t getByteSize(StructLayout structLayout) const noexcept override;
+		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
 		Matrix4f model;
 
@@ -140,7 +143,8 @@ namespace at
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
-		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) override;
+		size_t getByteSize(StructLayout structLayout) const noexcept override;
+		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
 		Matrix4f viewProjection;
 		float depth;
@@ -174,7 +178,8 @@ namespace at
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
-		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) override;
+		size_t getByteSize(StructLayout structLayout) const noexcept override;
+		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
 		std::vector<ShadowData> cascades;
 
@@ -204,7 +209,8 @@ namespace at
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
-		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) override;
+		size_t getByteSize(StructLayout structLayout) const noexcept override;
+		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
 		Vector3f direction;
 		Color color;

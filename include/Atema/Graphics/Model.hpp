@@ -25,13 +25,15 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Math/AABB.hpp>
+#include <Atema/Core/Signal.hpp>
 
 #include <vector>
 
 namespace at
 {
+	class MaterialInstance;
 	class Mesh;
-	struct SurfaceMaterialData;
+	class MaterialData;
 
 	class ATEMA_GRAPHICS_API Model
 	{
@@ -42,21 +44,26 @@ namespace at
 		~Model() = default;
 
 		void addMesh(const Ptr<Mesh>& mesh);
-		void addMaterialData(const Ptr<SurfaceMaterialData>& materialData);
+		void addMaterialData(const Ptr<MaterialData>& materialData);
+		void addMaterialInstance(Ptr<MaterialInstance> materialInstance);
 
 		const AABBf& updateAABB();
 
 		const std::vector<Ptr<Mesh>>& getMeshes() const noexcept;
-		const std::vector<Ptr<SurfaceMaterialData>>& getMaterialData() const noexcept;
+		const std::vector<Ptr<MaterialData>>& getMaterialData() const noexcept;
+		const std::vector<Ptr<MaterialInstance>>& getMaterialInstances() const noexcept;
 		const AABBf& getAABB() const;
 		size_t getTriangleCount() const noexcept;
 
 		Model& operator=(const Model& other) = default;
 		Model& operator=(Model&& other) noexcept = default;
-		
+
+		Signal<> onGeometryUpdate;
+
 	private:
 		std::vector<Ptr<Mesh>> m_meshes;
-		std::vector<Ptr<SurfaceMaterialData>> m_materialData;
+		std::vector<Ptr<MaterialData>> m_materialData;
+		std::vector<Ptr<MaterialInstance>> m_materialInstances;
 
 		size_t m_triangleCount;
 

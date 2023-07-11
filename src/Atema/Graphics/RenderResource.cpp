@@ -23,6 +23,17 @@
 
 using namespace at;
 
-RenderResource::RenderResource()
+void RenderResource::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
+	updateResources(renderFrame, commandBuffer);
+
+	for (auto& resource : m_resourcesToDestroy)
+		renderFrame.destroyAfterUse(std::move(resource));
+
+	m_resourcesToDestroy.clear();
+}
+
+void RenderResource::destroyAfterUse(Ptr<void> resource)
+{
+	m_resourcesToDestroy.emplace_back(std::move(resource));
 }

@@ -20,48 +20,41 @@
 */
 
 #include <Atema/Graphics/StaticModel.hpp>
-#include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/ShaderData.hpp>
-#include <Atema/Renderer/RenderFrame.hpp>
-#include <Atema/Renderer/Buffer.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
+#include <Atema/Graphics/StaticRenderModel.hpp>
 
 using namespace at;
 
-StaticModel::StaticModel() :
-	m_updateTransform(true)
+Ptr<RenderObject> StaticModel::createRenderObject(RenderScene& renderScene)
 {
-	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
-	bufferSettings.byteSize = TransformData::getLayout().getByteSize();
-
-	m_objectBuffer = Buffer::create(bufferSettings);
-
-	m_objectSet = Graphics::instance().getObjectLayout()->createSet();
-	m_objectSet->update(0, *m_objectBuffer);
-
-	m_objectBinding.index = SurfaceMaterial::ObjectSetIndex;
-	m_objectBinding.descriptorSet = m_objectSet.get();
-	m_objectBinding.dynamicBufferOffsets = { 0 };
+	return std::make_shared<StaticRenderModel>(renderScene, *this);
 }
 
 void StaticModel::setModel(const Ptr<Model>& model)
 {
+	m_modelConnectionGuard.disconnect();
+
 	m_model = model;
 
-	updateRenderElements();
+	m_modelConnectionGuard.connect(m_model->onGeometryUpdate, [this]()
+		{
+			updateAABB();
+
+			onModelUpdate();
+		});
 
 	updateAABB();
+
+	onModelUpdate();
 }
 
 void StaticModel::setTransform(const Transform& transform)
 {
 	m_transform = transform;
 
-	m_updateTransform = true;
-
 	updateAABB();
+
+	onTransformUpdate();
 }
 
 const Ptr<Model>& StaticModel::getModel() const noexcept
@@ -79,73 +72,10 @@ const AABBf& StaticModel::getAABB() const noexcept
 	return m_aabb;
 }
 
-void StaticModel::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
-{
-	if (m_updateTransform)
-	{
-		auto stagingBuffer = renderFrame.allocateStagingBuffer(m_objectBuffer->getByteSize());
-
-		auto data = stagingBuffer->map();
-
-		mapMemory<Matrix4f>(data, 0) = m_transform.getMatrix();
-
-		commandBuffer.copyBuffer(stagingBuffer->getBuffer(), *m_objectBuffer, stagingBuffer->getSize(), stagingBuffer->getOffset());
-		
-		m_updateTransform = false;
-	}
-}
-
-void StaticModel::getRenderElements(std::vector<RenderElement>& renderElements) const
-{
-	for (const auto& renderElement : m_renderElements)
-		renderElements.emplace_back(renderElement);
-}
-
-size_t StaticModel::getRenderElementsSize() const noexcept
-{
-	if (!m_model)
-		return 0;
-	
-	return m_model->getMeshes().size();
-}
-
 void StaticModel::updateAABB()
 {
 	if (!m_model)
 		return;
-	
+
 	m_aabb = m_transform.getMatrix() * m_model->getAABB();
-}
-
-void StaticModel::updateRenderElements()
-{
-	m_renderElements.clear();
-	m_materialInstances.clear();
-
-	if (!m_model)
-		return;
-
-	auto& graphics = Graphics::instance();
-
-	m_materialInstances.reserve(m_model->getMaterialData().size());
-
-	for (const auto& materialData : m_model->getMaterialData())
-	{
-		auto surfaceMaterial = graphics.getSurfaceMaterial(*materialData);
-		m_materialInstances.emplace_back(graphics.getSurfaceMaterialInstance(surfaceMaterial, *materialData));
-	}
-
-	for (const auto& mesh : m_model->getMeshes())
-	{
-		if (mesh->getMaterialID() >= m_materialInstances.size())
-			continue;
-
-		auto& renderElement = m_renderElements.emplace_back();
-
-		renderElement.aabb = mesh->getAABB();
-		renderElement.vertexBuffer = mesh->getVertexBuffer().get();
-		renderElement.indexBuffer = mesh->getIndexBuffer().get();
-		renderElement.materialInstance = m_materialInstances[mesh->getMaterialID()].get();
-		renderElement.objectBinding = &m_objectBinding;
-	}
 }

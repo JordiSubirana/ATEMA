@@ -77,11 +77,12 @@ public:
 	// ShadowMap
 	uint32_t shadowMapSize;
 	float baseDepthBias;
+	uint32_t shadowCascadeCount;
 
 	// Debug views
 	bool enableDebugRenderer;
-	DebugViewMode debugViewMode;
-	std::vector<DebugView> debugViews;
+	bool enableDebugGBuffer;
+	bool enableDebugShadowMaps;
 
 	// Metrics
 	float metricsUpdateTime;

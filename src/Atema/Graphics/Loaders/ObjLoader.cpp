@@ -21,9 +21,9 @@
 
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
 #include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/MaterialData.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
 #include <Atema/Renderer/Renderer.hpp>
@@ -89,37 +89,54 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 	// Load materials
 	const auto textureDir = settings.textureDir.empty() ? path.parent_path() : settings.textureDir;
 
-	for (const auto& mat : materials)
+	// Create a default material if none exist
+	if (materials.empty())
 	{
-		auto materialData = std::make_shared<SurfaceMaterialData>();
+		auto materialData = std::make_shared<MaterialData>();
 
-		materialData->color = { mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0f };
-		materialData->emissive = { mat.emission[0], mat.emission[1], mat.emission[2] };
-		materialData->metalness = { mat.metallic };
-		materialData->roughness = { mat.roughness };
-
-		if (!mat.diffuse_texname.empty())
-			materialData->colorMap = Graphics::instance().getImage(textureDir / mat.diffuse_texname);
-
-		if (!mat.normal_texname.empty())
-			materialData->normalMap = Graphics::instance().getImage(textureDir / mat.normal_texname);
-
-		if (!mat.displacement_texname.empty())
-			materialData->heightMap = Graphics::instance().getImage(textureDir / mat.displacement_texname);
-
-		if (!mat.emissive_texname.empty())
-			materialData->emissiveMap = Graphics::instance().getImage(textureDir / mat.emissive_texname);
-
-		if (!mat.metallic_texname.empty())
-			materialData->metalnessMap = Graphics::instance().getImage(textureDir / mat.metallic_texname);
-
-		if (!mat.roughness_texname.empty())
-			materialData->roughnessMap = Graphics::instance().getImage(textureDir / mat.roughness_texname);
-
-		if (!mat.alpha_texname.empty())
-			materialData->alphaMaskMap = Graphics::instance().getImage(textureDir / mat.alpha_texname);
+		materialData->set(MaterialData::BaseColor, Color::White);
 
 		model->addMaterialData(materialData);
+	}
+	else
+	{
+		for (const auto& mat : materials)
+		{
+			auto materialData = std::make_shared<MaterialData>();
+
+			materialData->set(MaterialData::BaseColor, Color(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0f));
+			materialData->set(MaterialData::EmissiveColor, Color(mat.emission[0], mat.emission[1], mat.emission[2], 1.0f));
+			materialData->set(MaterialData::Metalness, static_cast<float>(mat.metallic));
+			materialData->set(MaterialData::Roughness, static_cast<float>(mat.roughness));
+			materialData->set(MaterialData::Shininess, static_cast<float>(mat.shininess));
+			materialData->set(MaterialData::SpecularColor, Color(mat.specular[0], mat.specular[1], mat.specular[2], 1.0f));
+
+			if (!mat.alpha_texname.empty())
+				materialData->set(MaterialData::AlphaMap, MaterialData::Texture(textureDir / mat.alpha_texname));
+
+			if (!mat.diffuse_texname.empty())
+				materialData->set(MaterialData::BaseColorMap, MaterialData::Texture(textureDir / mat.diffuse_texname));
+
+			if (!mat.emissive_texname.empty())
+				materialData->set(MaterialData::EmissiveColorMap, MaterialData::Texture(textureDir / mat.emissive_texname));
+
+			if (!mat.displacement_texname.empty())
+				materialData->set(MaterialData::HeightMap, MaterialData::Texture(textureDir / mat.displacement_texname));
+
+			if (!mat.normal_texname.empty())
+				materialData->set(MaterialData::NormalMap, MaterialData::Texture(textureDir / mat.normal_texname));
+
+			if (!mat.metallic_texname.empty())
+				materialData->set(MaterialData::MetalnessMap, MaterialData::Texture(textureDir / mat.metallic_texname));
+
+			if (!mat.roughness_texname.empty())
+				materialData->set(MaterialData::RoughnessMap, MaterialData::Texture(textureDir / mat.roughness_texname));
+
+			if (!mat.specular_texname.empty())
+				materialData->set(MaterialData::SpecularColorMap, MaterialData::Texture(textureDir / mat.specular_texname));
+
+			model->addMaterialData(materialData);
+		}
 	}
 
 	// Load meshes

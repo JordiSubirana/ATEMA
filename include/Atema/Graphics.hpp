@@ -27,6 +27,7 @@
 #include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Graphics/Camera.hpp>
 #include <Atema/Graphics/DebugRenderer.hpp>
+#include <Atema/Graphics/DefaultMaterials.hpp>
 #include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/Enums.hpp>
 #include <Atema/Graphics/FrameGraph.hpp>
@@ -42,6 +43,8 @@
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Graphics/Loaders/ObjLoader.hpp>
+#include <Atema/Graphics/Material.hpp>
+#include <Atema/Graphics/MaterialData.hpp>
 #include <Atema/Graphics/MaterialParameters.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/Model.hpp>
@@ -55,14 +58,16 @@
 #include <Atema/Graphics/PerspectiveCamera.hpp>
 #include <Atema/Graphics/Primitive.hpp>
 #include <Atema/Graphics/Renderable.hpp>
-#include <Atema/Graphics/RenderData.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
 #include <Atema/Graphics/RenderLight.hpp>
+#include <Atema/Graphics/RenderMaterial.hpp>
+#include <Atema/Graphics/RenderObject.hpp>
 #include <Atema/Graphics/RenderResource.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
 #include <Atema/Graphics/StaticModel.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
+#include <Atema/Graphics/StaticRenderModel.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>

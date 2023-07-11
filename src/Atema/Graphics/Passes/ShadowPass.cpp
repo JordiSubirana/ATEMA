@@ -21,10 +21,9 @@
 
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
 #include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Renderer/BufferLayout.hpp>
 #include <Atema/Core/Utils.hpp>
@@ -229,9 +228,9 @@ void ShadowPass::setFrustum(const Frustumf& frustum)
 
 void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
 	const auto frameIndex = context.getFrameIndex();
@@ -293,9 +292,9 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 
 void ShadowPass::beginFrame()
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
 	frustumCull();
@@ -308,11 +307,11 @@ void ShadowPass::endFrame()
 
 void ShadowPass::frustumCull()
 {
-	const auto& renderables = getRenderData().getRenderables();
+	const auto& renderObjects = getRenderScene().getRenderObjects();
 
 	if (m_threadCount == 1)
 	{
-		frustumCullElements(m_renderElements, 0, renderables.size());
+		frustumCullElements(m_renderElements, 0, renderObjects.size());
 	}
 	else
 	{
@@ -324,13 +323,13 @@ void ShadowPass::frustumCull()
 		tasks.reserve(m_threadCount);
 
 		size_t firstIndex = 0;
-		size_t size = renderables.size() / m_threadCount;
+		size_t size = renderObjects.size() / m_threadCount;
 
 		for (size_t taskIndex = 0; taskIndex < m_threadCount; taskIndex++)
 		{
 			if (taskIndex == m_threadCount - 1)
 			{
-				const auto remainingSize = renderables.size() - m_threadCount * size;
+				const auto remainingSize = renderObjects.size() - m_threadCount * size;
 
 				size += remainingSize;
 			}
@@ -363,20 +362,21 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 	if (!count)
 		return;
 
-	const auto& renderables = getRenderData().getRenderables();
+	const auto& renderObjects = getRenderScene().getRenderObjects();
 
-	std::vector<const Renderable*> visibleRenderables;
-	std::vector<IntersectionType> renderableIntersections;
+	std::vector<const RenderObject*> visibleRenderObjects;
+	std::vector<IntersectionType> renderObjectIntersections;
 
 	// Keep only visible renderables using frustum culling
-	visibleRenderables.reserve(count);
-	renderableIntersections.reserve(count);
+	visibleRenderObjects.reserve(count);
+	renderObjectIntersections.reserve(count);
 
 	size_t renderElementsSize = 0;
 
 	for (size_t i = index; i < index + count; i++)
 	{
-		auto& renderable = *renderables[i];
+		const auto& renderObject = *renderObjects[i];
+		const auto& renderable = renderObject.getRenderable();
 
 		if (!renderable.castShadows())
 			continue;
@@ -385,20 +385,20 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 
 		if (intersectionType != IntersectionType::Outside)
 		{
-			visibleRenderables.emplace_back(&renderable);
-			renderableIntersections.emplace_back(intersectionType);
+			visibleRenderObjects.emplace_back(&renderObject);
+			renderObjectIntersections.emplace_back(intersectionType);
 
-			renderElementsSize += renderable.getRenderElementsSize();
+			renderElementsSize += renderObject.getRenderElementsSize();
 		}
 	}
 
 	renderElements.reserve(renderElementsSize);
 
-	for (size_t i = 0; i < visibleRenderables.size(); i++)
+	for (size_t i = 0; i < visibleRenderObjects.size(); i++)
 	{
-		const auto& renderable = *visibleRenderables[i];
+		const auto& renderObject = *visibleRenderObjects[i];
 
-		renderable.getRenderElements(renderElements);
+		renderObject.getRenderElements(renderElements);
 	}
 }
 
@@ -421,10 +421,12 @@ void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameResources& fram
 	for (size_t i = index; i < index + count; i++)
 	{
 		const auto& renderElement = m_renderElements[i];
-		const auto binding = renderElement.objectBinding;
 
-		if (binding)
-			commandBuffer.bindDescriptorSet(ObjectSetIndex, *binding->descriptorSet, binding->dynamicBufferOffsets.data(), binding->dynamicBufferOffsets.size());
+		//*
+		if (renderElement.transformDescriptorSet)
+			commandBuffer.bindDescriptorSet(ObjectSetIndex, *renderElement.transformDescriptorSet);
+			//commandBuffer.bindDescriptorSet(ObjectSetIndex, *binding->descriptorSet, binding->dynamicBufferOffsets.data(), binding->dynamicBufferOffsets.size());
+		//*/
 
 		commandBuffer.bindVertexBuffer(*renderElement.vertexBuffer->getBuffer(), 0);
 

@@ -35,6 +35,7 @@ const float cameraScale = 0.001f;
 
 // LampPost
 /*
+const bool overrideMaterial = false;
 const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
 const std::string modelTextureExtension = "png";
@@ -43,6 +44,7 @@ const at::Transform modelTransform({ 0.0f, 0.0f, -2.0f }, { at::Math::HalfPi<flo
 
 // Tardis
 /*
+const bool overrideMaterial = true;
 const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
 const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis";
 const std::string modelTextureExtension = "png";
@@ -51,6 +53,7 @@ const at::Transform modelTransform({ 0.0f, 0.0f, 0.0f }, { at::Math::HalfPi<floa
 
 // Sponza
 //*
+const bool overrideMaterial = false;
 const std::filesystem::path modelMeshPath = rscPath / "Models/sponza.obj"; // StMaryAbbots
 const std::filesystem::path modelTexturePath = rscPath / "Textures/uzv-checker";
 const std::string modelTextureExtension = "png";
@@ -92,6 +95,6 @@ struct ModelData
 	at::Ptr<at::Model> model;
 };
 
-at::Ptr<at::SurfaceMaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension);
+at::Ptr<at::MaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension);
 
 #endif

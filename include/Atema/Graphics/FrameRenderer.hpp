@@ -42,6 +42,8 @@ namespace at
 		FrameRenderer(FrameRenderer&& other) noexcept = default;
 		~FrameRenderer() = default;
 
+		Ptr<RenderMaterial> createRenderMaterial(Ptr<Material> material) override;
+
 		void enableDebugRenderer(bool enable);
 
 		void enableDebugGBuffer(bool enable);
@@ -88,6 +90,8 @@ namespace at
 
 		// Shadows
 		std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> m_shadowData;
+
+		IdManager<RenderMaterial::ID> m_materialIdManager;
 
 		ConnectionGuard m_connectionGuard;
 	};

@@ -27,63 +27,63 @@
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/RenderLight.hpp>
+#include <Atema/Graphics/RenderObject.hpp>
 
 #include <vector>
 #include <unordered_map>
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API RenderData
+	class AbstractFrameRenderer;
+
+	class ATEMA_GRAPHICS_API RenderScene : public RenderResource
 	{
 	public:
-		RenderData();
-		RenderData(const RenderData& other) = default;
-		RenderData(RenderData&& other) noexcept = default;
-		~RenderData() = default;
+		RenderScene() = delete;
+		RenderScene(AbstractFrameRenderer& frameRenderer);
+		RenderScene(const RenderScene& other) = default;
+		RenderScene(RenderScene&& other) noexcept = default;
+		~RenderScene() = default;
 
 		bool isValid() const noexcept;
 
 		void setCamera(const Camera& camera);
 
-		// Defines Renderables update policy
-		// If true, on scene change, the user must call clearRenderables then add all renderables
-		// If false, on scene change, the user must mainly call addRenderable / removeRenderable
-		// Default : false
-		void resetRenderablesEveryFrame(bool reset);
-
-		// This method is faster when Renderables are reset every frame
+		void addLight(Light& light);
 		void addRenderable(Renderable& renderable);
-
-		// This method is faster when Renderables are not reset every frame
+		
+		void removeLight(const Light& light);
 		void removeRenderable(const Renderable& renderable);
 
+		void clear();
+		void clearLights();
 		void clearRenderables();
 
-		void resetLightsEveryFrame(bool reset);
-
-		void addLight(Light& light);
-
-		void removeLight(const Light& light);
-
-		void clearLights();
-
 		const Camera& getCamera() const noexcept;
-		const std::vector<Renderable*>& getRenderables() const noexcept;
+		RenderMaterial& getRenderMaterial(Ptr<Material> material);
+		RenderMaterialInstance& getRenderMaterialInstance(const MaterialInstance& materialInstance);
+		const std::vector<Ptr<RenderObject>>& getRenderObjects() const noexcept;
 		const std::vector<Ptr<RenderLight>>& getRenderLights() const noexcept;
 
-		RenderData& operator=(const RenderData& other) = default;
-		RenderData& operator=(RenderData&& other) noexcept = default;
+		RenderScene& operator=(const RenderScene& other) = default;
+		RenderScene& operator=(RenderScene&& other) noexcept = default;
+
+	protected:
+		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
 
 	private:
+		AbstractFrameRenderer* m_frameRenderer;
+
 		const Camera* m_camera;
-
-		bool m_resetRenderablesEveryFrame;
-		std::vector<Renderable*> m_renderables;
-		std::unordered_map<const Renderable*, size_t> m_renderableIndices;
-
-		bool m_resetLightsEveryFrame;
-		std::unordered_map<const Light*, size_t> m_lightIndices;
+		
+		std::vector<Ptr<RenderObject>> m_renderObjects;
+		std::unordered_map<const Renderable*, size_t> m_renderObjectIndices;
+		
 		std::vector<Ptr<RenderLight>> m_renderLights;
+		std::unordered_map<const Light*, size_t> m_renderLightIndices;
+
+		std::unordered_map<const Material*, Ptr<RenderMaterial>> m_renderMaterials;
+		std::unordered_map<const MaterialInstance*, Ptr<RenderMaterialInstance>> m_renderMaterialInstances;
 	};
 }
 

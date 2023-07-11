@@ -23,7 +23,7 @@
 #define ATEMA_GRAPHICS_ABSTRACTFRAMERENDERER_HPP
 
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Math/Vector.hpp>
@@ -41,10 +41,12 @@ namespace at
 		AbstractFrameRenderer();
 		AbstractFrameRenderer(const AbstractFrameRenderer& other) = delete;
 		AbstractFrameRenderer(AbstractFrameRenderer&& other) noexcept = default;
-		virtual ~AbstractFrameRenderer() = default;
+		virtual ~AbstractFrameRenderer();
 
-		RenderData& getRenderData() noexcept;
-		const RenderData& getRenderData() const noexcept;
+		RenderScene& getRenderScene() noexcept;
+		const RenderScene& getRenderScene() const noexcept;
+
+		virtual Ptr<RenderMaterial> createRenderMaterial(Ptr<Material> material) = 0;
 
 		// Must be called every frame before render method
 		void initializeFrame();
@@ -72,7 +74,7 @@ namespace at
 		virtual void beginFrame();
 
 	private:
-		RenderData m_renderData;
+		RenderScene m_renderScene;
 
 		// FrameGraph
 		bool m_updateFrameGraph;

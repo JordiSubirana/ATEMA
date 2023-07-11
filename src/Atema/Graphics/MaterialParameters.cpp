@@ -20,51 +20,16 @@
 */
 
 #include <Atema/Graphics/MaterialParameters.hpp>
+#include <Atema/Renderer/DescriptorSet.hpp>
 
 using namespace at;
 
 //-----
 // MaterialParameter
-MaterialParameter::Texture::Texture(const Texture& other)
-{
-	operator=(other);
-}
-
-MaterialParameter::Texture::Texture(Texture&& other) noexcept
-{
-	operator=(std::move(other));
-}
-
 MaterialParameter::Texture::Texture(const Ptr<Image>& image, const Ptr<Sampler>& sampler) :
 	image(image),
 	sampler(sampler)
 {
-}
-
-MaterialParameter::Texture& MaterialParameter::Texture::operator=(const Texture& other)
-{
-	image = other.image;
-	sampler = other.sampler;
-
-	return *this;
-}
-
-MaterialParameter::Texture& MaterialParameter::Texture::operator=(Texture&& other) noexcept
-{
-	image = std::move(other.image);
-	sampler = std::move(other.sampler);
-
-	return *this;
-}
-
-MaterialParameter::Buffer::Buffer(const Buffer& other)
-{
-	operator=(other);
-}
-
-MaterialParameter::Buffer::Buffer(Buffer&& other) noexcept
-{
-	operator=(std::move(other));
 }
 
 MaterialParameter::Buffer::Buffer(const Ptr<at::Buffer>& buffer) :
@@ -72,32 +37,13 @@ MaterialParameter::Buffer::Buffer(const Ptr<at::Buffer>& buffer) :
 {
 }
 
-MaterialParameter::Buffer& MaterialParameter::Buffer::operator=(const Buffer& other)
-{
-	buffer = other.buffer;
-
-	return *this;
-}
-
-MaterialParameter::Buffer& MaterialParameter::Buffer::operator=(Buffer&& other) noexcept
-{
-	buffer = std::move(other.buffer);
-
-	return *this;
-}
-
 MaterialParameter::MaterialParameter()
 {
 }
 
-MaterialParameter::MaterialParameter(const MaterialParameter& other)
+MaterialParameter::MaterialParameter(const std::string& name) :
+	name(name)
 {
-	operator=(other);
-}
-
-MaterialParameter::MaterialParameter(MaterialParameter&& other) noexcept
-{
-	operator=(std::move(other));
 }
 
 MaterialParameter::MaterialParameter(const std::string& name, const Ptr<Image>& image, const Ptr<Sampler>& sampler) :
@@ -112,22 +58,33 @@ MaterialParameter::MaterialParameter(const std::string& name, const Ptr<at::Buff
 {
 }
 
+MaterialParameter::MaterialParameter(const MaterialParameter& other)
+{
+	operator=(other);
+}
+
 MaterialParameter::~MaterialParameter()
 {
+}
+
+void MaterialParameter::updateDescriptorSet(DescriptorSet& descriptorSet, uint32_t bindingIndex) const
+{
+	if (value.is<MaterialParameter::Texture>())
+	{
+		auto& texture = value.get<MaterialParameter::Texture>();
+		descriptorSet.update(bindingIndex, *texture.image->getView(), *texture.sampler);
+	}
+	else if (value.is<MaterialParameter::Buffer>())
+	{
+		auto& buffer = value.get<MaterialParameter::Buffer>();
+		descriptorSet.update(bindingIndex, *buffer.buffer);
+	}
 }
 
 MaterialParameter& MaterialParameter::operator=(const MaterialParameter& other)
 {
 	name = other.name;
 	value = other.value;
-
-	return *this;
-}
-
-MaterialParameter& MaterialParameter::operator=(MaterialParameter&& other) noexcept
-{
-	name = std::move(other.name);
-	value = std::move(other.value);
 
 	return *this;
 }
@@ -142,6 +99,11 @@ MaterialParameters::~MaterialParameters()
 {
 }
 
+bool MaterialParameters::exists(const std::string& parameterName) const noexcept
+{
+	return m_orderedParameters.find(parameterName) != m_orderedParameters.end();
+}
+
 void MaterialParameters::set(const MaterialParameter& parameter)
 {
 	emplace(parameter);
@@ -150,6 +112,16 @@ void MaterialParameters::set(const MaterialParameter& parameter)
 void MaterialParameters::set(MaterialParameter&& parameter)
 {
 	emplace(std::move(parameter));
+}
+
+MaterialParameter& MaterialParameters::get(const std::string& parameterName)
+{
+	return *m_orderedParameters.at(parameterName);
+}
+
+const MaterialParameter& MaterialParameters::get(const std::string& parameterName) const
+{
+	return *m_orderedParameters.at(parameterName);
 }
 
 const std::vector<MaterialParameter>& MaterialParameters::getParameters() const

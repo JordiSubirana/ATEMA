@@ -23,7 +23,7 @@
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 
 using namespace at;
 
@@ -64,13 +64,13 @@ FrameGraphPass& DebugRendererPass::addToFrameGraph(FrameGraphBuilder& frameGraph
 
 void DebugRendererPass::execute(FrameGraphContext& context, const Settings& settings)
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
-	const auto& viewport = getRenderData().getCamera().getViewport();
-	const auto& scissor = getRenderData().getCamera().getScissor();
+	const auto& viewport = getRenderScene().getCamera().getViewport();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
 
 	auto& commandBuffer = context.getCommandBuffer();
 
@@ -78,39 +78,39 @@ void DebugRendererPass::execute(FrameGraphContext& context, const Settings& sett
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
-	m_debugRenderer->render(context, commandBuffer, getRenderData().getCamera().getMatrix());
+	m_debugRenderer->render(context, commandBuffer, getRenderScene().getCamera().getMatrix());
 }
 
 void DebugRendererPass::beginFrame()
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
 	m_debugRenderer->clear();
 
 	std::vector<RenderElement> renderElements;
 
-	for (auto& renderable : getRenderData().getRenderables())
+	for (const auto& renderObject : getRenderScene().getRenderObjects())
 	{
-		const auto& aabb = renderable->getAABB();
-		const auto& matrix = renderable->getTransform().getMatrix();
+		const auto& renderable = renderObject->getRenderable();
+		const auto& aabb = renderable.getAABB();
+		const auto& matrix = renderable.getTransform().getMatrix();
 
 		// Axis Aligned Bounding Box
 		m_debugRenderer->draw(aabb, Color::Green);
 
 		// Submeshes' AABBs
-		/*
+		if (renderObject->getRenderElementsSize() > 1)
 		{
 			renderElements.clear();
-			renderElements.reserve(renderable->getRenderElementsSize());
+			renderElements.reserve(renderObject->getRenderElementsSize());
 
-			renderable->getRenderElements(renderElements);
+			renderObject->getRenderElements(renderElements);
 
 			for (auto& renderElement : renderElements)
 				m_debugRenderer->draw(matrix * renderElement.aabb, Color::Gray);
 		}
-		//*/
 	}
 }

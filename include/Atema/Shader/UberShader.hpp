@@ -26,6 +26,7 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/ResourceManager.hpp>
 #include <Atema/Shader/Enums.hpp>
+#include <Atema/Shader/ShaderLibraryManager.hpp>
 #include <Atema/Shader/Ast/Statement.hpp>
 #include <Atema/Shader/Ast/Constant.hpp>
 #include <Atema/Shader/Ast/AstReflector.hpp>
@@ -48,7 +49,7 @@ namespace at
 		UberShader(UPtr<SequenceStatement>&& ast);
 		~UberShader();
 
-		Ptr<UberShader> createInstance(const std::vector<Option>& options) const;
+		Ptr<UberShader> createInstance(const std::vector<Option>& options, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance()) const;
 		Ptr<UberShader> extractStage(AstShaderStage stage) const;
 		const AstReflection& getReflection(AstShaderStage stage) const;
 

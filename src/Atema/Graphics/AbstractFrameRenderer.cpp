@@ -27,18 +27,24 @@
 using namespace at;
 
 AbstractFrameRenderer::AbstractFrameRenderer() :
+	m_renderScene(*this),
 	m_updateFrameGraph(true)
 {
 }
 
-RenderData& AbstractFrameRenderer::getRenderData() noexcept
+AbstractFrameRenderer::~AbstractFrameRenderer()
 {
-	return m_renderData;
+	m_renderScene.clear();
 }
 
-const RenderData& AbstractFrameRenderer::getRenderData() const noexcept
+RenderScene& AbstractFrameRenderer::getRenderScene() noexcept
 {
-	return m_renderData;
+	return m_renderScene;
+}
+
+const RenderScene& AbstractFrameRenderer::getRenderScene() const noexcept
+{
+	return m_renderScene;
 }
 
 void AbstractFrameRenderer::initializeFrame()
@@ -58,7 +64,7 @@ void AbstractFrameRenderer::initializeFrame()
 	{
 		ATEMA_BENCHMARK_TAG(_2, std::string(renderPass->getName()) + " (begin)");
 
-		renderPass->initializeFrame(m_renderData);
+		renderPass->initializeFrame(m_renderScene);
 	}
 }
 
@@ -77,11 +83,7 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
 
-		for (auto& renderable : m_renderData.getRenderables())
-			renderable->update(renderFrame, *commandBuffer);
-
-		for (auto& resource : m_renderData.getRenderLights())
-			resource->update(renderFrame, *commandBuffer);
+		m_renderScene.update(renderFrame, *commandBuffer);
 
 		for (auto& renderPass : getRenderPasses())
 			renderPass->updateResources(renderFrame, *commandBuffer);

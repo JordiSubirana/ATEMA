@@ -22,7 +22,7 @@
 #include <Atema/Graphics/Passes/PhongLightingPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
@@ -412,25 +412,25 @@ void PhongLightingPass::updateResources(RenderFrame& renderFrame, CommandBuffer&
 	
 	auto data = frameResources.buffer->map();
 
-	mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderData().getCamera().getPosition();
-	mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderData().getCamera().getViewMatrix();
+	mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderScene().getCamera().getPosition();
+	mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderScene().getCamera().getViewMatrix();
 
 	frameResources.buffer->unmap();
 }
 
 void PhongLightingPass::execute(FrameGraphContext& context, const Settings& settings)
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
-	auto& renderLights = renderData.getRenderLights();
+	auto& renderLights = renderScene.getRenderLights();
 
 	const auto& frameResources = m_frameResources[context.getFrameIndex()];
 
-	const auto& viewport = getRenderData().getCamera().getViewport();
-	const auto& scissor = getRenderData().getCamera().getScissor();
+	const auto& viewport = getRenderScene().getCamera().getViewport();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
 
 	auto& commandBuffer = context.getCommandBuffer();
 

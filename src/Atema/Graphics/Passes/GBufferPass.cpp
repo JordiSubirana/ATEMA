@@ -21,13 +21,13 @@
 
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Graphics/Camera.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Core/TaskManager.hpp>
+#include <Atema/Graphics/Graphics.hpp>
 
 using namespace at;
 
@@ -47,12 +47,12 @@ namespace
 
 	inline uint32_t getRenderPriority(const RenderElement& renderElement)
 	{
-		if (!renderElement.materialInstance || !renderElement.materialInstance->getMaterial())
+		if (!renderElement.renderMaterialInstance)
 			return 0;
 
 		uint32_t renderPriority = 0;
-		renderPriority |= static_cast<uint32_t>(renderElement.materialInstance->getMaterial()->getID() & 0xFFFF) << 16;
-		renderPriority |= static_cast<uint32_t>(renderElement.materialInstance->getID() & 0xFFFF) << 0;
+		renderPriority |= static_cast<uint32_t>(renderElement.renderMaterialInstance->getRenderMaterial().getID() & 0xFFFF) << 16;
+		renderPriority |= static_cast<uint32_t>(renderElement.renderMaterialInstance->getID() & 0xFFFF) << 0;
 
 		return renderPriority;
 	}
@@ -117,7 +117,7 @@ FrameGraphPass& GBufferPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilde
 
 void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
-	const auto& camera = getRenderData().getCamera();
+	const auto& camera = getRenderScene().getCamera();
 
 	auto& buffer = m_frameResources[renderFrame.getFrameIndex()].buffer;
 
@@ -135,9 +135,9 @@ void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 
 void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
 	const auto frameIndex = context.getFrameIndex();
@@ -196,9 +196,9 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 
 void GBufferPass::beginFrame()
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
 	frustumCull();
@@ -213,11 +213,11 @@ void GBufferPass::endFrame()
 
 void GBufferPass::frustumCull()
 {
-	const auto& renderables = getRenderData().getRenderables();
+	const auto& renderObjects = getRenderScene().getRenderObjects();
 
 	if (m_threadCount == 1)
 	{
-		frustumCullElements(m_renderElements, 0, renderables.size());
+		frustumCullElements(m_renderElements, 0, renderObjects.size());
 	}
 	else
 	{
@@ -229,13 +229,13 @@ void GBufferPass::frustumCull()
 		tasks.reserve(m_threadCount);
 
 		size_t firstIndex = 0;
-		size_t size = renderables.size() / m_threadCount;
+		size_t size = renderObjects.size() / m_threadCount;
 
 		for (size_t taskIndex = 0; taskIndex < m_threadCount; taskIndex++)
 		{
 			if (taskIndex == m_threadCount - 1)
 			{
-				const auto remainingSize = renderables.size() - m_threadCount * size;
+				const auto remainingSize = renderObjects.size() - m_threadCount * size;
 
 				size += remainingSize;
 			}
@@ -268,31 +268,31 @@ void GBufferPass::frustumCullElements(std::vector<RenderElement>& renderElements
 	if (!count)
 		return;
 
-	const auto& renderables = getRenderData().getRenderables();
+	const auto& renderObjects = getRenderScene().getRenderObjects();
 
-	const auto& frustum = getRenderData().getCamera().getFrustum();
+	const auto& frustum = getRenderScene().getCamera().getFrustum();
 
-	std::vector<const Renderable*> visibleRenderables;
-	std::vector<IntersectionType> renderableIntersections;
+	std::vector<const RenderObject*> visibleRenderObjects;
+	std::vector<IntersectionType> renderObjectIntersections;
 
 	// Keep only visible renderables using frustum culling
-	visibleRenderables.reserve(count);
-	renderableIntersections.reserve(count);
+	visibleRenderObjects.reserve(count);
+	renderObjectIntersections.reserve(count);
 
 	size_t renderElementsSize = 0;
 
 	for (size_t i = index; i < index + count; i++)
 	{
-		auto& renderable = *renderables[i];
+		auto& renderObject = *renderObjects[i];
 
-		const auto intersectionType = getFrustumIntersection(frustum, renderable.getAABB());
+		const auto intersectionType = getFrustumIntersection(frustum, renderObject.getRenderable().getAABB());
 
 		if (intersectionType != IntersectionType::Outside)
 		{
-			visibleRenderables.emplace_back(&renderable);
-			renderableIntersections.emplace_back(intersectionType);
+			visibleRenderObjects.emplace_back(&renderObject);
+			renderObjectIntersections.emplace_back(intersectionType);
 
-			renderElementsSize += renderable.getRenderElementsSize();
+			renderElementsSize += renderObject.getRenderElementsSize();
 		}
 	}
 
@@ -301,24 +301,24 @@ void GBufferPass::frustumCullElements(std::vector<RenderElement>& renderElements
 
 	std::vector<RenderElement> tmpRenderElements;
 
-	for (size_t i = 0; i < visibleRenderables.size(); i++)
+	for (size_t i = 0; i < visibleRenderObjects.size(); i++)
 	{
-		const auto& renderable = *visibleRenderables[i];
+		const auto& renderObject = *visibleRenderObjects[i];
 
 		// Renderable is fully contained : every element also is
-		if (renderableIntersections[i] == IntersectionType::Inside)
+		if (renderObjectIntersections[i] == IntersectionType::Inside)
 		{
-			renderable.getRenderElements(renderElements);
+			renderObject.getRenderElements(renderElements);
 		}
 		// Renderable is intersecting with the frustum : test every element
 		else
 		{
 			tmpRenderElements.clear();
-			tmpRenderElements.reserve(renderable.getRenderElementsSize());
+			tmpRenderElements.reserve(renderObject.getRenderElementsSize());
 
-			renderable.getRenderElements(tmpRenderElements);
+			renderObject.getRenderElements(tmpRenderElements);
 
-			const auto& matrix = renderable.getTransform().getMatrix();
+			const auto& matrix = renderObject.getRenderable().getTransform().getMatrix();
 
 			for (auto& renderElement : tmpRenderElements)
 			{
@@ -339,8 +339,8 @@ void GBufferPass::sortElements()
 
 void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count)
 {
-	const auto& viewport = getRenderData().getCamera().getViewport();
-	const auto& scissor = getRenderData().getCamera().getScissor();
+	const auto& viewport = getRenderScene().getCamera().getViewport();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
 
 	commandBuffer.setViewport(viewport);
 
@@ -349,51 +349,51 @@ void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& fra
 	if (!count)
 		return;
 
-	auto currentMaterialID = SurfaceMaterial::InvalidID;
-	auto currentMaterialInstanceID = SurfaceMaterial::InvalidID;
+	auto currentMaterialID = RenderMaterial::InvalidID;
+	auto currentMaterialInstanceID = RenderMaterial::InvalidID;
 
 	// Initialize material to the first one and bind global frame data shared across all pipelines
 	{
-		auto& materialInstance = m_renderElements[index].materialInstance;
-		auto& material = materialInstance->getMaterial();
+		const auto& renderMaterialInstance = *m_renderElements[index].renderMaterialInstance;
+		const auto& renderMaterial = renderMaterialInstance.getRenderMaterial();
 
-		material->bindTo(commandBuffer);
-		materialInstance->bindTo(commandBuffer);
+		renderMaterial.bindTo(commandBuffer);
+		renderMaterialInstance.bindTo(commandBuffer);
 
-		currentMaterialID = material->getID();
-		currentMaterialInstanceID = materialInstance->getID();
+		currentMaterialID = renderMaterial.getID();
+		currentMaterialInstanceID = renderMaterialInstance.getID();
 	}
 
-	commandBuffer.bindDescriptorSet(SurfaceMaterial::FrameSetIndex, *frameResources.descriptorSet);
+	commandBuffer.bindDescriptorSet(0, *frameResources.descriptorSet);
 
 	for (size_t i = index; i < index + count; i++)
 	{
 		auto& renderElement = m_renderElements[i];
 		
-		auto& materialInstance = renderElement.materialInstance;
-		auto& material = materialInstance->getMaterial();
+		auto& renderMaterialInstance = *renderElement.renderMaterialInstance;
+		auto& renderMaterial = renderMaterialInstance.getRenderMaterial();
 
-		auto materialID = material->getID();
-		auto materialInstanceID = materialInstance->getID();
+		auto materialID = renderMaterial.getID();
+		auto materialInstanceID = renderMaterialInstance.getID();
 
 		if (materialID != currentMaterialID)
 		{
-			material->bindTo(commandBuffer);
+			renderMaterial.bindTo(commandBuffer);
 
 			currentMaterialID = materialID;
 
-			currentMaterialInstanceID = SurfaceMaterial::InvalidID;
+			currentMaterialInstanceID = RenderMaterial::InvalidID;
 		}
 
 		if (materialInstanceID != currentMaterialInstanceID)
 		{
-			materialInstance->bindTo(commandBuffer);
+			renderMaterialInstance.bindTo(commandBuffer);
 
 			currentMaterialInstanceID = materialInstanceID;
 		}
 
-		if (renderElement.objectBinding)
-			renderElement.objectBinding->bindTo(commandBuffer);
+		if (renderElement.transformDescriptorSet)
+			commandBuffer.bindDescriptorSet(renderElement.transformSetIndex, *renderElement.transformDescriptorSet);
 
 		const auto& vertexBuffer = renderElement.vertexBuffer;
 		const auto& indexBuffer = renderElement.indexBuffer;
@@ -402,6 +402,6 @@ void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& fra
 
 		commandBuffer.bindIndexBuffer(*indexBuffer->getBuffer(), indexBuffer->getIndexType());
 
-		commandBuffer.drawIndexed(indexBuffer->getSize());
+		commandBuffer.drawIndexed(static_cast<uint32_t>(indexBuffer->getSize()));
 	}
 }

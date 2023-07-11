@@ -34,18 +34,20 @@
 
 namespace at
 {
+	class DescriptorSet;
+
 	struct ATEMA_GRAPHICS_API MaterialParameter
 	{
 		struct Texture
 		{
 			Texture() = default;
-			Texture(const Texture& other);
-			Texture(Texture&& other) noexcept;
 			Texture(const Ptr<Image>& image, const Ptr<Sampler>& sampler);
+			Texture(const Texture& other) = default;
+			Texture(Texture&& other) noexcept = default;
 			~Texture() = default;
 
-			Texture& operator=(const Texture& other);
-			Texture& operator=(Texture&& other) noexcept;
+			Texture& operator=(const Texture& other) = default;
+			Texture& operator=(Texture&& other) noexcept = default;
 
 			Ptr<Image> image;
 			Ptr<Sampler> sampler;
@@ -54,26 +56,29 @@ namespace at
 		struct Buffer
 		{
 			Buffer() = default;
-			Buffer(const Buffer& other);
-			Buffer(Buffer&& other) noexcept;
 			Buffer(const Ptr<at::Buffer>& buffer);
+			Buffer(const Buffer& other) = default;
+			Buffer(Buffer&& other) noexcept = default;
 			~Buffer() = default;
 
-			Buffer& operator=(const Buffer& other);
-			Buffer& operator=(Buffer&& other) noexcept;
+			Buffer& operator=(const Buffer& other) = default;
+			Buffer& operator=(Buffer&& other) noexcept = default;
 
 			Ptr<at::Buffer> buffer;
 		};
 
 		MaterialParameter();
-		MaterialParameter(const MaterialParameter& other);
-		MaterialParameter(MaterialParameter&& other) noexcept;
+		MaterialParameter(const std::string& name);
 		MaterialParameter(const std::string& name, const Ptr<Image>& image, const Ptr<Sampler>& sampler);
 		MaterialParameter(const std::string& name, const Ptr<at::Buffer>& buffer);
+		MaterialParameter(const MaterialParameter& other);
+		MaterialParameter(MaterialParameter&& other) noexcept = default;
 		~MaterialParameter();
 
+		void updateDescriptorSet(DescriptorSet& descriptorSet, uint32_t bindingIndex) const;
+
 		MaterialParameter& operator=(const MaterialParameter& other);
-		MaterialParameter& operator=(MaterialParameter&& other) noexcept;
+		MaterialParameter& operator=(MaterialParameter&& other) noexcept = default;
 
 		std::string name;
 		Variant<Texture, Buffer> value;
@@ -87,6 +92,8 @@ namespace at
 		MaterialParameters(MaterialParameters&& other) = default;
 		~MaterialParameters();
 
+		bool exists(const std::string& parameterName) const noexcept;
+
 		void set(const MaterialParameter& parameter);
 		void set(MaterialParameter&& parameter);
 
@@ -96,6 +103,8 @@ namespace at
 			emplace({ std::forward<Args>(args)... });
 		}
 
+		MaterialParameter& get(const std::string& parameterName);
+		const MaterialParameter& get(const std::string& parameterName) const;
 		const std::vector<MaterialParameter>& getParameters() const;
 
 		Hash getHash() const;

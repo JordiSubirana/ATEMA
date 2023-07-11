@@ -190,8 +190,16 @@ SandboxApplication::SandboxApplication():
 	// Resources
 	m_modelData = std::make_shared<ModelData>(modelMeshPath);
 
-	if (m_modelData->model->getMaterialData().empty())
-		m_modelData->model->addMaterialData(loadMaterialData(modelTexturePath, modelTextureExtension));
+	if (overrideMaterial)
+	{
+		for (auto& mesh : m_modelData->model->getMeshes())
+			mesh->setMaterialID(0);
+
+		*m_modelData->model->getMaterialData()[0] = *loadMaterialData(modelTexturePath, modelTextureExtension);
+	}
+
+	for (auto& materialData : m_modelData->model->getMaterialData())
+		m_modelData->model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
 
 	// Create entities
 	createScene();
@@ -312,6 +320,7 @@ void SandboxApplication::createScene()
 
 		auto model = createPlaneModel({ 0, 0, 0 }, planeSize);
 		model->addMaterialData(materialData);
+		model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
 
 		graphics.staticModel = std::make_shared<StaticModel>();
 		graphics.staticModel->setModel(model);
@@ -350,14 +359,18 @@ void SandboxApplication::createScene()
 					// Graphics component
 					auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-					auto surfaceData = std::make_shared<SurfaceMaterialData>();
-					surfaceData->color.x = static_cast<float>(rand() % 255) / 255.0f;
-					surfaceData->color.y = static_cast<float>(rand() % 255) / 255.0f;
-					surfaceData->color.z = static_cast<float>(rand() % 255) / 255.0f;
+					Color color;
+					color.r = static_cast<float>(rand() % 255) / 255.0f;
+					color.g = static_cast<float>(rand() % 255) / 255.0f;
+					color.b = static_cast<float>(rand() % 255) / 255.0f;
+
+					auto materialData = std::make_shared<MaterialData>();
+					materialData->set(MaterialData::BaseColor, color);
 
 					auto model = std::make_shared<Model>();
 					model->addMesh(mesh);
-					model->addMaterialData(surfaceData);
+					model->addMaterialData(materialData);
+					model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
 					
 					graphics.staticModel = std::make_shared<StaticModel>();
 					graphics.staticModel->setModel(model);

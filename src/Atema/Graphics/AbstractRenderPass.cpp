@@ -24,13 +24,13 @@
 using namespace at;
 
 AbstractRenderPass::AbstractRenderPass() :
-	m_renderData(nullptr)
+	m_renderScene(nullptr)
 {
 }
 
-void AbstractRenderPass::initializeFrame(const RenderData& renderData)
+void AbstractRenderPass::initializeFrame(const RenderScene& renderScene)
 {
-	m_renderData = &renderData;
+	m_renderScene = &renderScene;
 
 	beginFrame();
 }
@@ -39,7 +39,7 @@ void AbstractRenderPass::finalizeFrame()
 {
 	endFrame();
 
-	m_renderData = nullptr;
+	m_renderScene = nullptr;
 }
 
 void AbstractRenderPass::beginFrame()
@@ -57,7 +57,7 @@ void AbstractRenderPass::endFrame()
 	// Does nothing by default
 }
 
-const RenderData& AbstractRenderPass::getRenderData() const noexcept
+const RenderScene& AbstractRenderPass::getRenderScene() const noexcept
 {
-	return *m_renderData;
+	return *m_renderScene;
 }

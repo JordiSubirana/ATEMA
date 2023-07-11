@@ -79,7 +79,12 @@ const FrameData::Layout& FrameData::getLayout(StructLayout structLayout)
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void FrameData::copyTo(void* dstData, StructLayout structLayout)
+size_t FrameData::getByteSize(StructLayout structLayout) const noexcept
+{
+	return getLayout(structLayout).getByteSize();
+}
+
+void FrameData::copyTo(void* dstData, StructLayout structLayout) const
 {
 	const auto& layout = getLayout(structLayout);
 
@@ -105,7 +110,12 @@ const TransformData::Layout& TransformData::getLayout(StructLayout structLayout)
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void TransformData::copyTo(void* dstData, StructLayout structLayout)
+size_t TransformData::getByteSize(StructLayout structLayout) const noexcept
+{
+	return getLayout(structLayout).getByteSize();
+}
+
+void TransformData::copyTo(void* dstData, StructLayout structLayout) const
 {
 	const auto& layout = getLayout(structLayout);
 
@@ -137,7 +147,12 @@ const ShadowData::Layout& ShadowData::getLayout(StructLayout structLayout)
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void ShadowData::copyTo(void* dstData, StructLayout structLayout)
+size_t ShadowData::getByteSize(StructLayout structLayout) const noexcept
+{
+	return getLayout(structLayout).getByteSize();
+}
+
+void ShadowData::copyTo(void* dstData, StructLayout structLayout) const
 {
 	const auto& layout = getLayout(structLayout);
 
@@ -166,7 +181,12 @@ const CascadedShadowData::Layout& CascadedShadowData::getLayout(StructLayout str
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void CascadedShadowData::copyTo(void* dstData, StructLayout structLayout)
+size_t CascadedShadowData::getByteSize(StructLayout structLayout) const noexcept
+{
+	return getLayout(structLayout).getByteSize();
+}
+
+void CascadedShadowData::copyTo(void* dstData, StructLayout structLayout) const
 {
 	const auto& layout = getLayout(structLayout);
 
@@ -211,7 +231,12 @@ const DirectionalLightData::Layout& DirectionalLightData::getLayout(StructLayout
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-void DirectionalLightData::copyTo(void* dstData, StructLayout structLayout)
+size_t DirectionalLightData::getByteSize(StructLayout structLayout) const noexcept
+{
+	return getLayout(structLayout).getByteSize();
+}
+
+void DirectionalLightData::copyTo(void* dstData, StructLayout structLayout) const
 {
 	const auto& layout = getLayout(structLayout);
 

@@ -30,21 +30,19 @@
 
 namespace at
 {
+	class RenderObject;
+	class RenderScene;
 	class RenderFrame;
-	
-	class ATEMA_GRAPHICS_API Renderable : public RenderResource
-	{
-		friend class RenderScene;
 
+	class ATEMA_GRAPHICS_API Renderable
+	{
 	public:
 		Renderable();
 		Renderable(const Renderable& other) = default;
 		Renderable(Renderable&& other) noexcept = default;
 		virtual ~Renderable() = default;
 
-		// RenderElements are guaranteed to be valid only once update method has been called
-		virtual void getRenderElements(std::vector<RenderElement>& renderElements) const = 0;
-		virtual size_t getRenderElementsSize() const noexcept = 0;
+		virtual Ptr<RenderObject> createRenderObject(RenderScene& renderScene) = 0;
 
 		virtual const Transform& getTransform() const noexcept = 0;
 
@@ -53,7 +51,7 @@ namespace at
 		// Default : true
 		virtual void setCastShadows(bool castShadows);
 		virtual bool castShadows() const noexcept;
-
+		
 		Renderable& operator=(const Renderable& other) = default;
 		Renderable& operator=(Renderable&& other) noexcept = default;
 

@@ -21,7 +21,6 @@
 
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
-#include <Atema/Graphics/SurfaceMaterial.hpp>
 #include <Atema/Shader/Loaders/AtslLoader.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/Buffer.hpp>
@@ -255,8 +254,9 @@ void atPostProcessWriteOutColor(vec4f value)
 
 //-----
 // UberInstanceSettings
-Graphics::UberInstanceSettings::UberInstanceSettings(const UberShader* uberShader, const std::vector<UberShader::Option>& options) :
+Graphics::UberInstanceSettings::UberInstanceSettings(const UberShader* uberShader, const ShaderLibraryManager* shaderLibraryManager, const std::vector<UberShader::Option>& options) :
 	uberShader(uberShader),
+	shaderLibraryManager(shaderLibraryManager),
 	options(options)
 {
 }
@@ -274,6 +274,7 @@ StdHash Graphics::UberInstanceSettings::hash(const UberInstanceSettings& setting
 	size_t hash = 0;
 
 	DefaultStdHasher::hashCombine(hash, settings.uberShader);
+	DefaultStdHasher::hashCombine(hash, settings.shaderLibraryManager);
 
 	for (const auto& kv : orderedOptions)
 		DefaultStdHasher::hashCombine(hash, *kv.second);
@@ -308,42 +309,6 @@ StdHash Graphics::ImageSettings::hash(const ImageSettings& settings)
 	DefaultStdHasher::hashCombine(hash, settings.settings.usages);
 
 	return hash;
-}
-
-//-----
-// DefaultSurfaceMaterialSettings
-Graphics::DefaultSurfaceMaterialSettings::DefaultSurfaceMaterialSettings(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize) :
-		materialData(materialData),
-		instanceLayoutPageSize(instanceLayoutPageSize)
-{
-
-}
-
-StdHash at::Graphics::DefaultSurfaceMaterialSettings::hash(const DefaultSurfaceMaterialSettings& settings)
-{
-	// We just want to know how many textures there are, to have a valid descriptor set layout
-	StdHash hash = 0;
-
-	DefaultStdHasher::hashCombine(hash, settings.materialData.colorMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.normalMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.ambientOcclusionMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.heightMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.emissiveMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.metalnessMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.roughnessMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.materialData.alphaMaskMap ? 1 : 0);
-	DefaultStdHasher::hashCombine(hash, settings.instanceLayoutPageSize);
-
-	return hash;
-}
-
-//-----
-// DefaultSurfaceInstanceSettings
-Graphics::DefaultSurfaceInstanceSettings::DefaultSurfaceInstanceSettings(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData) :
-	material(material),
-	materialData(materialData)
-{
-
 }
 
 //-----
@@ -387,22 +352,10 @@ Graphics::Graphics()
 
 	m_samplerManager.addLoader(&loadSampler);
 
-	m_defaultSurfaceMaterialSettingsManager.addLoader([this](const DefaultSurfaceMaterialSettings& settings)
-		{
-			return loadSurfaceMaterial(settings);
-		});
-
-	m_defaultSurfaceInstanceSettingsManager.addLoader([this](const DefaultSurfaceInstanceSettings& settings)
-		{
-			return loadSurfaceMaterialInstance(settings);
-		});
-
 	// Hashers
 	m_uberShaderOptionsManager.setHasher(&UberInstanceSettings::hash);
 
 	m_imageManager.setHasher(&ImageSettings::hash);
-
-	m_defaultSurfaceMaterialSettingsManager.setHasher(&DefaultSurfaceMaterialSettings::hash);
 
 	// Before uber managers to properly destroy UberShaders after Shader deletion
 	m_resourceManagers.emplace_back(&m_graphicsPipelineManager);
@@ -415,8 +368,6 @@ Graphics::Graphics()
 	m_resourceManagers.emplace_back(&m_uberShaderStageManager);
 	m_resourceManagers.emplace_back(&m_imageManager);
 	m_resourceManagers.emplace_back(&m_samplerManager);
-	m_resourceManagers.emplace_back(&m_defaultSurfaceMaterialSettingsManager);
-	m_resourceManagers.emplace_back(&m_defaultSurfaceInstanceSettingsManager);
 
 	m_shaderManager.setDeleter([this](Ptr<Shader> shader)
 		{
@@ -551,7 +502,7 @@ Ptr<DescriptorSetLayout> Graphics::getObjectLayout()
 		DescriptorSetLayout::Settings layoutSettings;
 		layoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBufferDynamic, 0, 1, ShaderStage::Vertex }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex }
 		};
 
 		m_objectLayout = getDescriptorSetLayout(layoutSettings);
@@ -625,9 +576,9 @@ Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path)
 	return m_uberShaderManager.get(path);
 }
 
-Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options)
+Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
 {
-	return m_uberShaderOptionsManager.get({ &baseUberShader, options });
+	return m_uberShaderOptionsManager.get({ &baseUberShader, &shaderLibraryManager, options });
 }
 
 Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, AstShaderStage shaderStage)
@@ -635,25 +586,25 @@ Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, AstSha
 	return m_uberShaderStageManager.get({ &baseUberShader, shaderStage });
 }
 
-Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options)
+Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
 {
 	// Get the raw shader
 	auto baseUberShader = getUberShader(path);
 
 	// Preprocess the shader
-	baseUberShader = getUberShader(*baseUberShader, options);
+	baseUberShader = getUberShader(*baseUberShader, options, shaderLibraryManager);
 
 	// Extract the desired stage
 	return getUberShader(*baseUberShader, shaderStage);
 }
 
-Ptr<UberShader> Graphics::getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options)
+Ptr<UberShader> Graphics::getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
 {
 	// Get the raw shader
 	auto baseUberShader = getUberShader(identifier);
 
 	// Preprocess the shader
-	baseUberShader = getUberShader(*baseUberShader, options);
+	baseUberShader = getUberShader(*baseUberShader, options, shaderLibraryManager);
 
 	// Extract the desired stage
 	return getUberShader(*baseUberShader, shaderStage);
@@ -689,16 +640,6 @@ Ptr<Sampler> Graphics::getSampler(const Sampler::Settings& settings)
 	return m_samplerManager.get(settings);
 }
 
-Ptr<SurfaceMaterial> Graphics::getSurfaceMaterial(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize)
-{
-	return m_defaultSurfaceMaterialSettingsManager.get({ materialData, instanceLayoutPageSize });
-}
-
-Ptr<SurfaceMaterialInstance> Graphics::getSurfaceMaterialInstance(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData)
-{
-	return m_defaultSurfaceInstanceSettingsManager.get({ material, materialData });
-}
-
 Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
 {
 	auto uberShader = AtslLoader::load(path);
@@ -712,7 +653,7 @@ Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
 
 Ptr<UberShader> Graphics::loadUberInstance(const UberInstanceSettings& settings)
 {
-	auto uberShader = settings.uberShader->createInstance(settings.options);
+	auto uberShader = settings.uberShader->createInstance(settings.options, *settings.shaderLibraryManager);
 
 	m_uberShaders[uberShader.get()] = uberShader;
 
@@ -887,16 +828,6 @@ Ptr<Image> Graphics::loadImage(const ImageSettings& settings)
 Ptr<Sampler> Graphics::loadSampler(const Sampler::Settings& settings)
 {
 	return Sampler::create(settings);
-}
-
-Ptr<SurfaceMaterial> Graphics::loadSurfaceMaterial(const DefaultSurfaceMaterialSettings& settings)
-{
-	return SurfaceMaterial::createDefault(settings.materialData, settings.instanceLayoutPageSize, *this);
-}
-
-Ptr<SurfaceMaterialInstance> Graphics::loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings)
-{
-	return SurfaceMaterialInstance::createDefault(settings.material, settings.materialData, *this);
 }
 
 void Graphics::onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback)

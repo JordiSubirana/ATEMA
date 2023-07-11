@@ -21,31 +21,16 @@
 
 #include "GraphicsSystem.hpp"
 
-#include <Atema/Core/Utils.hpp>
-#include <Atema/Graphics/FrameGraphBuilder.hpp>
-#include <Atema/Graphics/FrameGraphContext.hpp>
 #include <Atema/Graphics/Graphics.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/Mesh.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Renderer/Buffer.hpp>
-#include <Atema/Renderer/BufferLayout.hpp>
-#include <Atema/Renderer/GraphicsPipeline.hpp>
-#include <Atema/Renderer/Shader.hpp>
-#include <Atema/Shader/Ast/AstPreprocessor.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
-#include <Atema/Renderer/UI/UiContext.hpp>
 
 #include "../Resources.hpp"
-#include "../Scene.hpp"
 #include "../Settings.hpp"
-#include "../Stats.hpp"
 #include "../Components/GraphicsComponent.hpp"
 #include "../Components/CameraComponent.hpp"
 #include "../Components/LightComponent.hpp"
 
 #include <fstream>
-#include <Atema/Graphics/DirectionalLight.hpp>
 
 using namespace at;
 
@@ -66,8 +51,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
-	m_frameRenderer.getRenderData().setCamera(m_camera);
-	//m_frameRenderer.getRenderData().resetRenderablesEveryFrame(true);
+	m_frameRenderer.getRenderScene().setCamera(m_camera);
 
 	// Remove unused resources if they are not used during 3 cycles (arbitrary)
 	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(Renderer::FramesInFlight) * 3);
@@ -113,33 +97,33 @@ void GraphicsSystem::onEvent(Event& event)
 void GraphicsSystem::onEntityAdded(at::EntityHandle entity)
 {
 	auto& entityManager = getEntityManager();
-	auto& renderData = m_frameRenderer.getRenderData();
+	auto& renderScene = m_frameRenderer.getRenderScene();
 
 	if (entityManager.hasComponent<GraphicsComponent>(entity))
 	{
 		auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
 
-		renderData.addRenderable(*graphics.staticModel);
+		renderScene.addRenderable(*graphics.staticModel);
 	}
 
 	if (entityManager.hasComponent<LightComponent>(entity))
 	{
 		auto& light = entityManager.getComponent<LightComponent>(entity);
 
-		renderData.addLight(*light.light);
+		renderScene.addLight(*light.light);
 	}
 }
 
 void GraphicsSystem::onEntityRemoved(at::EntityHandle entity)
 {
 	auto& entityManager = getEntityManager();
-	auto& renderData = m_frameRenderer.getRenderData();
+	auto& renderScene = m_frameRenderer.getRenderScene();
 
 	if (entityManager.hasComponent<GraphicsComponent>(entity))
 	{
 		auto& graphics = entityManager.getComponent<GraphicsComponent>(entity);
 
-		renderData.removeRenderable(*graphics.staticModel);
+		renderScene.removeRenderable(*graphics.staticModel);
 
 		destroyAfterUse(std::move(graphics.staticModel));
 	}
@@ -148,7 +132,7 @@ void GraphicsSystem::onEntityRemoved(at::EntityHandle entity)
 	{
 		auto& light = entityManager.getComponent<LightComponent>(entity);
 
-		renderData.removeLight(*light.light);
+		renderScene.removeLight(*light.light);
 
 		destroyAfterUse(std::move(light.light));
 	}

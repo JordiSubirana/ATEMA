@@ -42,8 +42,6 @@ namespace at
 
 		void setShadowData(const std::vector<ShadowData>& cascades);
 
-		void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
-
 		const Light& getLight() const noexcept;
 
 		const DescriptorSet& getLightDescriptorSet() const noexcept;
@@ -55,6 +53,9 @@ namespace at
 		RenderLight& operator=(RenderLight&& other) noexcept = default;
 
 		Signal<> onShadowMapUpdated;
+
+	protected:
+		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
 
 	private:
 		bool needShadowMapUpdate() const;
@@ -76,8 +77,6 @@ namespace at
 
 		bool m_updateShadowData;
 		CascadedShadowData m_shadowData;
-
-		std::vector<Ptr<void>> m_resourcesToDestroy;
 
 		ConnectionGuard m_connectionGuard;
 	};

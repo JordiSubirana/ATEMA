@@ -27,7 +27,7 @@
 
 namespace at
 {
-	class RenderData;
+	class RenderScene;
 
 	class ATEMA_GRAPHICS_API AbstractRenderPass
 	{
@@ -38,7 +38,7 @@ namespace at
 
 		virtual const char* getName() const noexcept = 0;
 
-		void initializeFrame(const RenderData& renderData);
+		void initializeFrame(const RenderScene& renderScene);
 		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
 		void finalizeFrame();
 
@@ -52,10 +52,10 @@ namespace at
 		virtual void endFrame();
 
 		// This is valid only between doBeginFrame & doEndFrame
-		const RenderData& getRenderData() const noexcept;
+		const RenderScene& getRenderScene() const noexcept;
 
 	private:
-		const RenderData* m_renderData;
+		const RenderScene* m_renderScene;
 	};
 }
 

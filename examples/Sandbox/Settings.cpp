@@ -25,15 +25,16 @@ Settings::Settings() :
 	enableFpsLimit(false),
 	fpsLimit(60),
 	cameraSpeed(20.0f),
-	objectRows(10),
+	objectRows(20),
 	customFrustumCulling(false),
 	shadowMapSize(2048),
 	baseDepthBias(0.07f),
+	shadowCascadeCount(8),
 	enableDebugRenderer(false),
-	debugViewMode(DebugViewMode::Disabled),
-	debugViews(4),
-	metricsUpdateTime(0.2f),
-	enableBenchmarks(false)
+	enableDebugGBuffer(false),
+	enableDebugShadowMaps(false),
+	metricsUpdateTime(1.0f),
+	enableBenchmarks(true)
 {
 }
 

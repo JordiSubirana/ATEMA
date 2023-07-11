@@ -28,7 +28,6 @@
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
-#include <Atema/Math/Enums.hpp>
 
 #include <vector>
 #include <optional>
@@ -89,7 +88,7 @@ namespace at
 		void frustumCull();
 		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
 		void sortElements();
-		void drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count );
+		void drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count);
 
 		size_t m_threadCount;
 		

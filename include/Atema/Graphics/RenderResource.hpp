@@ -30,15 +30,22 @@ namespace at
 	class ATEMA_GRAPHICS_API RenderResource
 	{
 	public:
-		RenderResource();
+		RenderResource() = default;
 		RenderResource(const RenderResource& other) = default;
 		RenderResource(RenderResource&& other) noexcept = default;
 		virtual ~RenderResource() = default;
 
-		virtual void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer) = 0;
+		void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
 
 		RenderResource& operator=(const RenderResource& other) = default;
 		RenderResource& operator=(RenderResource&& other) noexcept = default;
+
+	protected:
+		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) = 0;
+		void destroyAfterUse(Ptr<void> resource);
+
+	private:
+		std::vector<Ptr<void>> m_resourcesToDestroy;
 	};
 }
 

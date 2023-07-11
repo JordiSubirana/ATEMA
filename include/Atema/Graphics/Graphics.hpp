@@ -33,9 +33,6 @@
 
 namespace at
 {
-	struct SurfaceMaterialData;
-	class SurfaceMaterial;
-	class SurfaceMaterialInstance;
 	class VertexBuffer;
 	
 	// Class managing all resources needed to do rendering
@@ -82,12 +79,12 @@ namespace at
 		// The UberShader won't pass through a preprocessor stage, use another overload with empty options to get a preprocessed shader
 		Ptr<UberShader> getUberShader(const std::filesystem::path& path);
 		// Returns a UberShader instance created from a base UberShader and some options
-		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options);
+		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
 		// Returns a UberShader instance representing only one shader stage of a base UberShader
 		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, AstShaderStage shaderStage);
 		// Convenience method to get a specific UberShader using other overloads
-		Ptr<UberShader> getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {});
-		Ptr<UberShader> getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {});
+		Ptr<UberShader> getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
+		Ptr<UberShader> getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
 
 		// Returns a Shader module created from a UberShader
 		Ptr<Shader> getShader(const UberShader& uberShader);
@@ -115,20 +112,16 @@ namespace at
 
 		Ptr<Sampler> getSampler(const Sampler::Settings& settings);
 
-		// instanceLayoutPageSize is an hint of which descriptor set layout to use for instance set allocation
-		Ptr<SurfaceMaterial> getSurfaceMaterial(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize = 0);
-
-		Ptr<SurfaceMaterialInstance> getSurfaceMaterialInstance(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData);
-
 	private:
 		struct UberInstanceSettings
 		{
 			UberInstanceSettings() = delete;
-			UberInstanceSettings(const UberShader* uberShader, const std::vector<UberShader::Option>& options);
+			UberInstanceSettings(const UberShader* uberShader, const ShaderLibraryManager* shaderLibraryManager, const std::vector<UberShader::Option>& options);
 
 			static StdHash hash(const UberInstanceSettings& settings);
 
 			const UberShader* uberShader;
+			const ShaderLibraryManager* shaderLibraryManager;
 			const std::vector<UberShader::Option>& options;
 		};
 
@@ -158,26 +151,6 @@ namespace at
 			const ImageLoader::Settings& settings;
 		};
 
-		struct DefaultSurfaceMaterialSettings
-		{
-			DefaultSurfaceMaterialSettings() = delete;
-			DefaultSurfaceMaterialSettings(const SurfaceMaterialData& materialData, uint32_t instanceLayoutPageSize);
-
-			static StdHash hash(const DefaultSurfaceMaterialSettings& settings);
-
-			const SurfaceMaterialData& materialData;
-			uint32_t instanceLayoutPageSize;
-		};
-
-		struct DefaultSurfaceInstanceSettings
-		{
-			DefaultSurfaceInstanceSettings() = delete;
-			DefaultSurfaceInstanceSettings(const Ptr<SurfaceMaterial>& material, const SurfaceMaterialData& materialData);
-
-			const Ptr<SurfaceMaterial>& material;
-			const SurfaceMaterialData& materialData;
-		};
-
 		struct ResourceHandle
 		{
 			Signal<> onDestroy;
@@ -193,8 +166,6 @@ namespace at
 		static Ptr<GraphicsPipeline> loadGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		static Ptr<Image> loadImage(const ImageSettings& settings);
 		static Ptr<Sampler> loadSampler(const Sampler::Settings& settings);
-		Ptr<SurfaceMaterial> loadSurfaceMaterial(const DefaultSurfaceMaterialSettings& settings);
-		Ptr<SurfaceMaterialInstance> loadSurfaceMaterialInstance(const DefaultSurfaceInstanceSettings& settings);
 
 		void onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
 		void onDestroy(const Shader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
@@ -223,8 +194,6 @@ namespace at
 		ResourceManager<GraphicsPipeline, GraphicsPipeline::Settings> m_graphicsPipelineManager;
 		ResourceManager<Image, ImageSettings> m_imageManager;
 		ResourceManager<Sampler, Sampler::Settings> m_samplerManager;
-		ResourceManager<SurfaceMaterial, DefaultSurfaceMaterialSettings> m_defaultSurfaceMaterialSettingsManager;
-		ResourceManager<SurfaceMaterialInstance, DefaultSurfaceInstanceSettings> m_defaultSurfaceInstanceSettingsManager;
 
 		std::unordered_map<const UberShader*, WPtr<UberShader>> m_uberShaders;
 		std::unordered_map<Shader*, Ptr<UberShader>> m_shaderToUber;

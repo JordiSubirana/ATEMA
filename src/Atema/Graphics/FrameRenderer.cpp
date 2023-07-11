@@ -22,6 +22,7 @@
 #include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/FrameRenderer.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
+#include <Atema/Graphics/Material.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
 #include <Atema/Graphics/Passes/PhongLightingPass.hpp>
@@ -70,6 +71,30 @@ FrameRenderer::FrameRenderer() :
 	m_enableDebugShadowMaps(false)
 {
 	createPasses();
+}
+
+Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
+{
+	const auto materialID = m_materialIdManager.get();
+
+	RenderMaterial::Settings settings;
+	settings.material = std::move(material);
+	settings.id = materialID;
+
+	settings.pipelineState.stencil = true;
+	settings.pipelineState.stencilFront.compareOperation = CompareOperation::Equal;
+	settings.pipelineState.stencilFront.writeMask = 1;
+	settings.pipelineState.stencilFront.passOperation = StencilOperation::Replace;
+	settings.pipelineState.stencilFront.reference = 1;
+
+	auto renderMaterial = std::make_shared<RenderMaterial>(settings);
+
+	m_connectionGuard.connect(renderMaterial->onDestroy, [this, materialID]()
+		{
+			m_materialIdManager.release(materialID);
+		});
+
+	return renderMaterial;
 }
 
 void FrameRenderer::enableDebugRenderer(bool enable)
@@ -307,7 +332,7 @@ void FrameRenderer::updateLightResources()
 
 	std::swap(m_shadowData, oldShadowData);
 
-	const auto& renderLights = getRenderData().getRenderLights();
+	const auto& renderLights = getRenderScene().getRenderLights();
 
 	for (const auto& renderLight : renderLights)
 	{
@@ -372,7 +397,7 @@ void FrameRenderer::createShadowData(RenderLight& renderLight)
 
 void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData)
 {
-	const auto& camera = getRenderData().getCamera();
+	const auto& camera = getRenderScene().getCamera();
 	const auto& cameraPos = camera.getPosition();
 
 	const auto& light = renderLight.getLight();

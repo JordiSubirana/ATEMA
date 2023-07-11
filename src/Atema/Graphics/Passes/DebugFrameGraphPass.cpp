@@ -22,7 +22,8 @@
 #include <Atema/Graphics/Passes/DebugFrameGraphPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 
@@ -117,7 +118,7 @@ void DebugFrameGraphPass::execute(FrameGraphContext& context, const Settings& se
 	if (columnCount == 0)
 		columnCount = static_cast<size_t>(std::ceil(std::sqrt(settings.textures.size())));
 	
-	const auto& scissor = getRenderData().getCamera().getScissor();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
 
 	Viewport viewport;
 	viewport.size = scissor.size;

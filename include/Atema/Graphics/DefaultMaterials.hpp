@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,52 +19,20 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_GRAPHICS_DEFAULTMATERIALS_HPP
+#define ATEMA_GRAPHICS_DEFAULTMATERIALS_HPP
 
-#include <Atema/Atema.hpp>
+#include <Atema/Graphics/Config.hpp>
+#include <Atema/Graphics/Material.hpp>
+#include <Atema/Graphics/MaterialData.hpp>
 
-class System;
-struct ModelData;
-
-class SandboxApplication : public at::Application
+namespace at
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
-
-	void onEvent(at::Event& event) override;
-
-	void update(at::TimeStep ms) override;
-
-private:
-	void checkSettings();
-
-	void createScene();
-	void createCamera();
-	void createPlayer();
-	void createLights();
-
-	void updateScene();
-
-	void onEntityAdded(at::EntityHandle entity);
-	void onEntityRemoved(at::EntityHandle entity);
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::Ptr<ModelData> m_modelData;
-
-	std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	uint32_t m_objectRows;
-};
+	struct ATEMA_GRAPHICS_API DefaultMaterials
+	{
+		static Ptr<Material> getPhong(const MaterialData& materialData);
+		static Ptr<MaterialInstance> getPhongInstance(const MaterialData& materialData);
+	};
+}
 
 #endif

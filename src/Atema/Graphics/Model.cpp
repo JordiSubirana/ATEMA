@@ -25,8 +25,8 @@
 using namespace at;
 
 Model::Model() :
-	m_aabbValid(false),
-	m_triangleCount(0)
+	m_triangleCount(0),
+	m_aabbValid(false)
 {
 }
 
@@ -37,11 +37,18 @@ void Model::addMesh(const Ptr<Mesh>& mesh)
 	m_triangleCount += mesh->getTriangleCount();
 
 	m_aabbValid = false;
+
+	onGeometryUpdate();
 }
 
-void Model::addMaterialData(const Ptr<SurfaceMaterialData>& material)
+void Model::addMaterialData(const Ptr<MaterialData>& materialData)
 {
-	m_materialData.emplace_back(material);
+	m_materialData.emplace_back(materialData);
+}
+
+void Model::addMaterialInstance(Ptr<MaterialInstance> materialInstance)
+{
+	m_materialInstances.emplace_back(std::move(materialInstance));
 }
 
 const AABBf& Model::updateAABB()
@@ -56,9 +63,14 @@ const std::vector<Ptr<Mesh>>& Model::getMeshes() const noexcept
 	return m_meshes;
 }
 
-const std::vector<Ptr<SurfaceMaterialData>>& Model::getMaterialData() const noexcept
+const std::vector<Ptr<MaterialData>>& Model::getMaterialData() const noexcept
 {
 	return m_materialData;
+}
+
+const std::vector<Ptr<MaterialInstance>>& Model::getMaterialInstances() const noexcept
+{
+	return m_materialInstances;
 }
 
 const AABBf& Model::getAABB() const

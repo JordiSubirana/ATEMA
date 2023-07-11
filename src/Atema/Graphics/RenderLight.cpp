@@ -57,7 +57,7 @@ void RenderLight::setShadowData(const std::vector<ShadowData>& cascades)
 	m_updateShadowData = true;
 }
 
-void RenderLight::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderLight::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 {
 	{
 		auto stagingBuffer = renderFrame.allocateStagingBuffer(m_lightBuffer->getByteSize());
@@ -112,9 +112,6 @@ void RenderLight::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
 
 		m_updateShadowMapDescriptor = false;
 	}
-
-	for (auto& resource : m_resourcesToDestroy)
-		renderFrame.destroyAfterUse(std::move(resource));
 }
 
 const Light& RenderLight::getLight() const noexcept
@@ -184,7 +181,7 @@ void RenderLight::updateShadowMap()
 		return;
 
 	if (m_shadowMap)
-		m_resourcesToDestroy.emplace_back(std::move(m_shadowMap));
+		destroyAfterUse(std::move(m_shadowMap));
 
 	Image::Settings imageSettings;
 	imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderSampling;
@@ -203,7 +200,7 @@ void RenderLight::updateShadowMap()
 void RenderLight::updateShadowDescriptorSet()
 {
 	if (m_shadowDescriptorSet)
-		m_resourcesToDestroy.emplace_back(std::move(m_shadowDescriptorSet));
+		destroyAfterUse(std::move(m_shadowDescriptorSet));
 
 	m_shadowDescriptorSet = Graphics::instance().getLightShadowLayout()->createSet();
 	m_shadowDescriptorSet->update(0, *m_shadowBuffer);

@@ -26,7 +26,8 @@ using namespace at;
 RenderElement::RenderElement() :
 	vertexBuffer(nullptr),
 	indexBuffer(nullptr),
-	materialInstance(nullptr),
-	objectBinding(nullptr)
+	renderMaterialInstance(nullptr),
+	transformSetIndex(0),
+	transformDescriptorSet(nullptr)
 {
 }

@@ -19,37 +19,40 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GRAPHICS_RENDERELEMENT_HPP
-#define ATEMA_GRAPHICS_RENDERELEMENT_HPP
+#ifndef ATEMA_GRAPHICS_RENDEROBJECT_HPP
+#define ATEMA_GRAPHICS_RENDEROBJECT_HPP
 
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Graphics/VertexBuffer.hpp>
-#include <Atema/Graphics/IndexBuffer.hpp>
-#include <Atema/Graphics/ShaderBinding.hpp>
-#include <Atema/Graphics/RenderMaterial.hpp>
-#include <Atema/Math/AABB.hpp>
-
-#include <vector>
+#include <Atema/Graphics/RenderElement.hpp>
+#include <Atema/Graphics/RenderResource.hpp>
 
 namespace at
 {
-	class ATEMA_GRAPHICS_API RenderElement
+	class RenderScene;
+	class Renderable;
+
+	class ATEMA_GRAPHICS_API RenderObject : public RenderResource
 	{
 	public:
-		RenderElement();
-		RenderElement(const RenderElement& other) = default;
-		RenderElement(RenderElement&& other) noexcept = default;
-		~RenderElement() = default;
+		RenderObject() = delete;
+		RenderObject(RenderScene& renderScene, const Renderable& renderable);
+		RenderObject(const RenderObject& other) = default;
+		RenderObject(RenderObject&& other) noexcept = default;
+		~RenderObject() = default;
 
-		RenderElement& operator=(const RenderElement& other) = default;
-		RenderElement& operator=(RenderElement&& other) noexcept = default;
+		RenderScene& getRenderScene() const noexcept;
+		const Renderable& getRenderable() const noexcept;
 
-		AABBf aabb;
-		const VertexBuffer* vertexBuffer;
-		const IndexBuffer* indexBuffer;
-		const RenderMaterialInstance* renderMaterialInstance;
-		uint32_t transformSetIndex;
-		const DescriptorSet* transformDescriptorSet;
+		// RenderElements are guaranteed to be valid only once updateResources method has been called
+		virtual void getRenderElements(std::vector<RenderElement>& renderElements) const = 0;
+		virtual size_t getRenderElementsSize() const noexcept = 0;
+
+		RenderObject& operator=(const RenderObject& other) = default;
+		RenderObject& operator=(RenderObject&& other) noexcept = default;
+
+	private:
+		RenderScene* m_renderScene;
+		const Renderable* m_renderable;
 	};
 }
 

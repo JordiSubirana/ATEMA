@@ -31,15 +31,15 @@
 
 namespace at
 {
-	class Buffer;
-	
 	class ATEMA_GRAPHICS_API StaticModel : public Renderable
 	{
 	public:
-		StaticModel();
+		StaticModel() = default;
 		StaticModel(const StaticModel& other) = default;
 		StaticModel(StaticModel&& other) noexcept = default;
 		~StaticModel() = default;
+
+		Ptr<RenderObject> createRenderObject(RenderScene& renderScene) override;
 
 		void setModel(const Ptr<Model>& model);
 		void setTransform(const Transform& transform);
@@ -48,27 +48,20 @@ namespace at
 		const Transform& getTransform() const noexcept override;
 		const AABBf& getAABB() const noexcept override;
 
-		void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
-
-		void getRenderElements(std::vector<RenderElement>& renderElements) const override;
-		size_t getRenderElementsSize() const noexcept override;
-
 		StaticModel& operator=(const StaticModel& other) = default;
 		StaticModel& operator=(StaticModel&& other) noexcept = default;
 
+		Signal<> onModelUpdate;
+		Signal<> onTransformUpdate;
+
 	private:
 		void updateAABB();
-		void updateRenderElements();
 
 		Ptr<Model> m_model;
 		Transform m_transform;
 		AABBf m_aabb;
-		std::vector<RenderElement> m_renderElements;
-		mutable std::vector<Ptr<SurfaceMaterialInstance>> m_materialInstances;
-		ShaderBinding m_objectBinding;
-		Ptr<Buffer> m_objectBuffer;
-		Ptr<DescriptorSet> m_objectSet;
-		bool m_updateTransform;
+
+		ConnectionGuard m_modelConnectionGuard;
 	};
 }
 

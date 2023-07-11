@@ -32,8 +32,6 @@
 #include "System.hpp"
 #include "../Settings.hpp"
 
-struct MaterialData;
-
 class GraphicsSystem : public System
 {
 public:
@@ -69,7 +67,6 @@ private:
 
 	at::FrameRenderer m_frameRenderer;
 	at::PerspectiveCamera m_camera;
-	std::vector<at::Ptr<at::StaticModel>> m_staticModels;
 
 	std::vector<at::Ptr<void>> m_resourcesToDestroy;
 };

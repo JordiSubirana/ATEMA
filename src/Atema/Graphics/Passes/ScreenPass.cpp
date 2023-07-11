@@ -22,7 +22,7 @@
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Graphics/RenderData.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
@@ -113,13 +113,13 @@ FrameGraphPass& ScreenPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder
 
 void ScreenPass::execute(FrameGraphContext& context, const Settings& settings)
 {
-	const auto& renderData = getRenderData();
+	const auto& renderScene = getRenderScene();
 
-	if (!renderData.isValid())
+	if (!renderScene.isValid())
 		return;
 
-	const auto& viewport = getRenderData().getCamera().getViewport();
-	const auto& scissor = getRenderData().getCamera().getScissor();
+	const auto& viewport = getRenderScene().getCamera().getViewport();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
 	
 	auto descriptorSet = m_setLayout->createSet();
 
