@@ -25,6 +25,7 @@
 #include <Atema/VulkanRenderer/Config.hpp>
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Core/SparseSet.hpp>
+#include <Atema/Core/Signal.hpp>
 
 #include <queue>
 
@@ -66,6 +67,7 @@ namespace at
 			std::queue<VkDescriptorSet> m_unusedSets;
 			uint32_t m_size;
 			uint32_t m_maxSize;
+			ConnectionGuard m_connectionGuard;
 		};
 		
 		void addPool();

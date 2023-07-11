@@ -27,19 +27,17 @@
 
 using namespace at;
 
-VulkanDescriptorSet::VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback) :
+VulkanDescriptorSet::VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes) :
 	DescriptorSet(),
 	m_device(device),
 	m_descriptorSet(descriptorSet),
-	m_destroyCallback(destroyCallback),
 	m_bindingTypes(bindingTypes)
 {
 }
 
 VulkanDescriptorSet::~VulkanDescriptorSet()
 {
-	// Destruction handled by the pool
-	m_destroyCallback();
+	onDestroy();
 }
 
 VkDescriptorSet VulkanDescriptorSet::getHandle() const noexcept

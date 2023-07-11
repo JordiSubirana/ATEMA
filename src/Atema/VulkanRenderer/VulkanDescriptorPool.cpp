@@ -72,7 +72,9 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 
 	m_size++;
 
-	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(m_device, handle, m_bindingTypes, [this, handle]()
+	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(m_device, handle, m_bindingTypes);
+
+	m_connectionGuard.connect(descriptorSet->onDestroy, [this, handle]()
 	{
 		m_unusedSets.push(handle);
 		m_size--;

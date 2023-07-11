@@ -26,6 +26,7 @@
 #include <Atema/VulkanRenderer/Vulkan.hpp>
 #include <Atema/Renderer/DescriptorSet.hpp>
 #include <Atema/Core/SparseSet.hpp>
+#include <Atema/Core/Signal.hpp>
 
 #include <functional>
 
@@ -35,7 +36,7 @@ namespace at
 	{
 	public:
 		VulkanDescriptorSet() = delete;
-		VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes, std::function<void()> destroyCallback);
+		VulkanDescriptorSet(const VulkanDevice& device, VkDescriptorSet descriptorSet, const SparseSet<VkDescriptorType>& bindingTypes);
 		
 		virtual ~VulkanDescriptorSet();
 
@@ -46,13 +47,14 @@ namespace at
 		void update(uint32_t binding, uint32_t index, const std::vector<const Buffer*>& buffers, const std::vector<size_t>& bufferOffsets, const std::vector<size_t>& bufferSizes) override;
 		void update(uint32_t binding, const ImageView& imageView, const Sampler& sampler) override;
 		void update(uint32_t binding, uint32_t index, const std::vector<const ImageView*>& imageViews, const std::vector<const Sampler*>& samplers) override;
-		
+
+		Signal<> onDestroy;
+
 	private:
 		void update(uint32_t binding, uint32_t index, uint32_t descriptorCount, const VkDescriptorImageInfo* imageInfo, const VkDescriptorBufferInfo* bufferInfo, const VkBufferView* texelBufferView);
 
 		const VulkanDevice& m_device;
 		VkDescriptorSet m_descriptorSet;
-		std::function<void()> m_destroyCallback;
 		const SparseSet<VkDescriptorType>& m_bindingTypes;
 	};
 }
