@@ -265,9 +265,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice& device, const
 	{
 		for (auto& layout : settings.descriptorSetLayouts)
 		{
+			VkDescriptorSetLayout descriptorSetLayoutHandle = VK_NULL_HANDLE;
+
 			auto descriptorSetLayout = std::static_pointer_cast<VulkanDescriptorSetLayout>(layout);
+			if (descriptorSetLayout)
+				descriptorSetLayoutHandle = descriptorSetLayout->getHandle();
 			
-			descriptorSetLayouts.push_back(descriptorSetLayout->getHandle());
+			descriptorSetLayouts.emplace_back(descriptorSetLayoutHandle);
 		}
 		
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
