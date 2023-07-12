@@ -205,7 +205,8 @@ UPtr<Statement> AstPreprocessor::process(const VariableDeclarationStatement& sta
 	newStatement->name = statement.name;
 	newStatement->qualifiers = statement.qualifiers;
 	newStatement->type = statement.type;
-	newStatement->value = process(*statement.value);
+	if (statement.value)
+		newStatement->value = process(*statement.value);
 
 	return std::move(newStatement);
 }
