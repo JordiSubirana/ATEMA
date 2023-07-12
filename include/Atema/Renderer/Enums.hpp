@@ -154,6 +154,33 @@ namespace at
 		_COUNT
 	};
 
+	enum class ImageComponentType
+	{
+		UNORM8,
+		SNORM8,
+		USCALED8,
+		SSCALED8,
+		UINT8,
+		SINT8,
+		SRGB8,
+
+		UNORM16,
+		SNORM16,
+		USCALED16,
+		SSCALED16,
+		UINT16,
+		SINT16,
+		SFLOAT16,
+
+		UINT32,
+		SINT32,
+		SFLOAT32,
+
+		UINT64,
+		SINT64,
+		SFLOAT64,
+	};
+
 	enum class ImageSamples
 	{
 		S1 = 0x0001,

@@ -38,6 +38,12 @@ namespace at
 	ATEMA_RENDERER_API size_t getByteSize(IndexType indexType);
 
 	ATEMA_RENDERER_API size_t getComponentCount(ImageFormat format);
+	// Only valid for color formats
+	ATEMA_RENDERER_API ImageComponentType getComponentType(ImageFormat format);
+	// Only valid for color formats
+	// componentCount must be in the range [1,4]
+	// BGR components are not taken into account (RGB only)
+	ATEMA_RENDERER_API ImageFormat getImageColorFormat(ImageComponentType componentType, size_t componentCount);
 }
 
 #endif
