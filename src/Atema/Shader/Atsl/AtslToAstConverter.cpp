@@ -1387,32 +1387,14 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 		{
 			auto& identifier = token.value.get<AtslIdentifier>();
 
-			if (isTypeOrStruct(identifier))
+			// Variable declaration
+			if (get(1).type == AtslTokenType::Identifier)
 			{
-				// Type(expression) : cast
-				if (get(1).is(AtslSymbol::LeftParenthesis))
-				{
-					auto statement = std::make_unique<ExpressionStatement>();
-
-					statement->expression = parseCast();
-
-					// Parse semicolon after expression statement
-					expect(iterate(), AtslSymbol::Semicolon);
-
-					return std::move(statement);
-				}
-				// Variable declaration
-				else if (get(1).type == AtslTokenType::Identifier)
-				{
-					return parseVariableDeclaration();
-				}
-				else
-				{
-					ATEMA_ATSL_TOKEN_ERROR("Unexpected token");
-				}
+				return parseVariableDeclaration();
 			}
-			// Function call
-			else if (get().is(AtslSymbol::LeftParenthesis))
+			// Function call (or cast ?)
+			//TODO: Check if we allow casts here
+			else if (get(1).is(AtslSymbol::LeftParenthesis))
 			{
 				auto statement = std::make_unique<ExpressionStatement>();
 
