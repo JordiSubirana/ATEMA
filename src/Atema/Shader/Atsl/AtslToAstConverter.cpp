@@ -45,12 +45,6 @@ namespace
 		ATEMA_ERROR(str);
 	}
 
-	struct Variable
-	{
-		Type type;
-		std::string name;
-	};
-
 	template <typename T>
 	const T& expectType(const AtslToken& token)
 	{
@@ -60,12 +54,6 @@ namespace
 		}
 
 		return token.value.get<T>();
-	}
-
-	bool isTypeOrStruct(const std::string& identifier)
-	{
-		//TODO: Manage struct types
-		return atsl::isType(identifier);
 	}
 }
 
@@ -1385,8 +1373,6 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
-			auto& identifier = token.value.get<AtslIdentifier>();
-
 			// Variable declaration
 			if (get(1).type == AtslTokenType::Identifier)
 			{
