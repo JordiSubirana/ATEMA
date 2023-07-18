@@ -28,6 +28,7 @@
 #include <Atema/Shader/ShaderLibraryManager.hpp>
 
 #include <unordered_map>
+#include <unordered_set>
 #include <optional>
 
 namespace at
@@ -74,6 +75,8 @@ namespace at
 		AstCloner m_cloner;
 
 		const ShaderLibraryManager* m_libraryManager;
+
+		std::unordered_set<std::string> m_libraries;
 	};
 }
 

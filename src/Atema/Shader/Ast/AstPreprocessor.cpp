@@ -395,10 +395,15 @@ UPtr<Statement> AstPreprocessor::process(const OptionDeclarationStatement& state
 
 UPtr<Statement> AstPreprocessor::process(const FunctionDeclarationStatement& statement)
 {
-	auto processedStatement = process(*statement.sequence);
+	UPtr<Statement> processedStatement;
 
-	if (!processedStatement || processedStatement->getType() != Statement::Type::Sequence)
-		return m_cloner.clone(statement);
+	if (statement.sequence)
+	{
+		processedStatement = process(*statement.sequence);
+
+		if (!processedStatement || processedStatement->getType() != Statement::Type::Sequence)
+			return m_cloner.clone(statement);
+	}
 
 	auto functionDeclaration = std::make_unique<FunctionDeclarationStatement>();
 
@@ -502,6 +507,13 @@ UPtr<Statement> AstPreprocessor::process(const IncludeStatement& statement)
 
 	for (const auto& libraryName : statement.libraries)
 	{
+		// Ignore libraries already added
+		if (m_libraries.find(libraryName) != m_libraries.end())
+			continue;
+
+		m_libraries.emplace(libraryName);
+
+		// Get the library, process it and include it
 		const auto& libStatement = m_libraryManager->getLibrary(libraryName);
 
 		libStatement->accept(*this);

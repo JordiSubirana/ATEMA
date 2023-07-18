@@ -376,12 +376,22 @@ void GlslShaderWriter::visit(const FunctionDeclarationStatement& statement)
 
 	m_ostream << ")";
 
-	beginBlock();
-
+	// Function definition
 	if (statement.sequence)
+	{
+		beginBlock();
+
 		statement.sequence->accept(*this);
 
-	endBlock();
+		endBlock();
+	}
+	// Declaration only
+	else
+	{
+		addDelimiter();
+
+		newLine();
+	}
 }
 
 void GlslShaderWriter::visit(const EntryFunctionDeclarationStatement& statement)

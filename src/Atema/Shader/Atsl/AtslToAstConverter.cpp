@@ -1669,7 +1669,12 @@ UPtr<FunctionDeclarationStatement> AtslToAstConverter::parseFunctionDeclaration(
 
 	expect(iterate(), AtslSymbol::RightParenthesis);
 
-	statement->sequence = parseBlockSequence();
+	// Function definition
+	if (get().is(AtslSymbol::LeftBrace))
+		statement->sequence = parseBlockSequence();
+	// Declaration only
+	else
+		expect(iterate(), AtslSymbol::Semicolon);
 
 	return std::move(statement);
 }

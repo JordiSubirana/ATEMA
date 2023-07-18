@@ -234,6 +234,7 @@ namespace at
 		std::string name;
 		at::Type returnType;
 		std::vector<Argument> arguments;
+		// Sequence is valid only if there is a function definition
 		UPtr<SequenceStatement> sequence;
 	};
 

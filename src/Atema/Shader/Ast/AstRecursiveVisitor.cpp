@@ -131,7 +131,8 @@ void AstRecursiveVisitor::visit(OptionDeclarationStatement& statement)
 
 void AstRecursiveVisitor::visit(FunctionDeclarationStatement& statement)
 {
-	statement.sequence->accept(*this);
+	if (statement.sequence)
+		statement.sequence->accept(*this);
 }
 
 void AstRecursiveVisitor::visit(EntryFunctionDeclarationStatement& statement)
@@ -327,7 +328,8 @@ void AstConstRecursiveVisitor::visit(const OptionDeclarationStatement& statement
 
 void AstConstRecursiveVisitor::visit(const FunctionDeclarationStatement& statement)
 {
-	statement.sequence->accept(*this);
+	if (statement.sequence)
+		statement.sequence->accept(*this);
 }
 
 void AstConstRecursiveVisitor::visit(const EntryFunctionDeclarationStatement& statement)
