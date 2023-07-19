@@ -576,9 +576,9 @@ Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path)
 	return m_uberShaderManager.get(path);
 }
 
-Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
+Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager* shaderLibraryManager)
 {
-	return m_uberShaderOptionsManager.get({ &baseUberShader, &shaderLibraryManager, options });
+	return m_uberShaderOptionsManager.get({ &baseUberShader, shaderLibraryManager, options });
 }
 
 Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, AstShaderStage shaderStage)
@@ -586,7 +586,7 @@ Ptr<UberShader> Graphics::getUberShader(const UberShader& baseUberShader, AstSha
 	return m_uberShaderStageManager.get({ &baseUberShader, shaderStage });
 }
 
-Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
+Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager* shaderLibraryManager)
 {
 	// Get the raw shader
 	auto baseUberShader = getUberShader(path);
@@ -598,7 +598,7 @@ Ptr<UberShader> Graphics::getUberShader(const std::filesystem::path& path, AstSh
 	return getUberShader(*baseUberShader, shaderStage);
 }
 
-Ptr<UberShader> Graphics::getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager)
+Ptr<UberShader> Graphics::getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options, const ShaderLibraryManager* shaderLibraryManager)
 {
 	// Get the raw shader
 	auto baseUberShader = getUberShader(identifier);
@@ -653,7 +653,7 @@ Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
 
 Ptr<UberShader> Graphics::loadUberInstance(const UberInstanceSettings& settings)
 {
-	auto uberShader = settings.uberShader->createInstance(settings.options, *settings.shaderLibraryManager);
+	auto uberShader = settings.uberShader->createInstance(settings.options, settings.shaderLibraryManager);
 
 	m_uberShaders[uberShader.get()] = uberShader;
 

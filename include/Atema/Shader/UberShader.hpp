@@ -49,7 +49,7 @@ namespace at
 		UberShader(UPtr<SequenceStatement>&& ast);
 		~UberShader();
 
-		Ptr<UberShader> createInstance(const std::vector<Option>& options, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance()) const;
+		Ptr<UberShader> createInstance(const std::vector<Option>& options, const ShaderLibraryManager* shaderLibraryManager = nullptr) const;
 		Ptr<UberShader> extractStage(AstShaderStage stage) const;
 		const AstReflection& getReflection(AstShaderStage stage) const;
 

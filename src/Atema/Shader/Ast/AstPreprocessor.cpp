@@ -41,9 +41,9 @@ void AstPreprocessor::setOption(const std::string& optionName, const ConstantVal
 	m_options[optionName] = value;
 }
 
-void AstPreprocessor::setLibraryManager(const ShaderLibraryManager& libraryManager)
+void AstPreprocessor::setLibraryManager(const ShaderLibraryManager* libraryManager)
 {
-	m_libraryManager = &libraryManager;
+	m_libraryManager = libraryManager;
 }
 
 void AstPreprocessor::clear()
@@ -500,31 +500,37 @@ UPtr<Statement> AstPreprocessor::process(const OptionalStatement& statement)
 
 UPtr<Statement> AstPreprocessor::process(const IncludeStatement& statement)
 {
-	if (statement.libraries.empty())
-		return nullptr;
-
-	auto sequence = std::make_unique<SequenceStatement>();
-
-	for (const auto& libraryName : statement.libraries)
+	// Process include statements only if a library manager was set
+	if (m_libraryManager)
 	{
-		// Ignore libraries already added
-		if (m_libraries.find(libraryName) != m_libraries.end())
-			continue;
+		if (statement.libraries.empty())
+			return nullptr;
 
-		m_libraries.emplace(libraryName);
+		auto sequence = std::make_unique<SequenceStatement>();
 
-		// Get the library, process it and include it
-		const auto& libStatement = m_libraryManager->getLibrary(libraryName);
+		for (const auto& libraryName : statement.libraries)
+		{
+			// Ignore libraries already added
+			if (m_libraries.find(libraryName) != m_libraries.end())
+				continue;
 
-		libStatement->accept(*this);
+			m_libraries.emplace(libraryName);
 
-		sequence->statements.emplace_back(process(*libStatement));
+			// Get the library, process it and include it
+			const auto& libStatement = m_libraryManager->getLibrary(libraryName);
+
+			libStatement->accept(*this);
+
+			sequence->statements.emplace_back(process(*libStatement));
+		}
+
+		if (sequence->statements.size() == 1)
+			return std::move(sequence->statements[0]);
+
+		return std::move(sequence);
 	}
 
-	if (sequence->statements.size() == 1)
-		return std::move(sequence->statements[0]);
-
-	return std::move(sequence);
+	return m_cloner.clone(statement);
 }
 
 UPtr<Expression> AstPreprocessor::process(const ConstantExpression& expression)

@@ -68,9 +68,11 @@ ScreenPass::ScreenPass() :
 
 	m_setLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
 
+	const auto& shaderLibraryManager = ShaderLibraryManager::instance();
+
 	GraphicsPipeline::Settings pipelineSettings;
-	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex));
-	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment));
+	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, {}, &shaderLibraryManager));
+	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, {}, &shaderLibraryManager));
 	pipelineSettings.descriptorSetLayouts = { m_setLayout };
 	pipelineSettings.state.vertexInput.inputs = Vertex_XYZ_UV::getVertexInput();
 	pipelineSettings.state.depth.test = false;

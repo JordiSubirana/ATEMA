@@ -79,12 +79,12 @@ namespace at
 		// The UberShader won't pass through a preprocessor stage, use another overload with empty options to get a preprocessed shader
 		Ptr<UberShader> getUberShader(const std::filesystem::path& path);
 		// Returns a UberShader instance created from a base UberShader and some options
-		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
+		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, const std::vector<UberShader::Option>& options, const ShaderLibraryManager* shaderLibraryManager = nullptr);
 		// Returns a UberShader instance representing only one shader stage of a base UberShader
 		Ptr<UberShader> getUberShader(const UberShader& baseUberShader, AstShaderStage shaderStage);
 		// Convenience method to get a specific UberShader using other overloads
-		Ptr<UberShader> getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
-		Ptr<UberShader> getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance());
+		Ptr<UberShader> getUberShader(const std::filesystem::path& path, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager* shaderLibraryManager = nullptr);
+		Ptr<UberShader> getUberShaderFromString(const std::string& identifier, AstShaderStage shaderStage, const std::vector<UberShader::Option>& options = {}, const ShaderLibraryManager* shaderLibraryManager = nullptr);
 
 		// Returns a Shader module created from a UberShader
 		Ptr<Shader> getShader(const UberShader& uberShader);

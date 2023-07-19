@@ -41,9 +41,9 @@ namespace at
 
 		void setOption(const std::string& optionName, const ConstantValue& value);
 
-		// If no library manager is used, ShaderLibraryManager::instance() will be used
-		// The user is reponsible to keep the library manager alive
-		void setLibraryManager(const ShaderLibraryManager& libraryManager);
+		// If no library manager is used, include won't be resolved
+		// The user is responsible for keeping the library manager alive
+		void setLibraryManager(const ShaderLibraryManager* libraryManager);
 
 		void clear();
 

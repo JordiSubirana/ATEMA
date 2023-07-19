@@ -52,7 +52,7 @@ namespace at
 			Ptr<Material> material;
 			ID id = InvalidID;
 			std::vector<UberShader::Option> uberShaderOptions;
-			ShaderLibraryManager& shaderLibraryManager = ShaderLibraryManager::instance();
+			const ShaderLibraryManager* shaderLibraryManager = nullptr;
 			GraphicsPipeline::State pipelineState;
 		};
 

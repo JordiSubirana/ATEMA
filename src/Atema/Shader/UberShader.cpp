@@ -40,7 +40,7 @@ UberShader::~UberShader()
 {
 }
 
-Ptr<UberShader> UberShader::createInstance(const std::vector<Option>& options, const ShaderLibraryManager& shaderLibraryManager) const
+Ptr<UberShader> UberShader::createInstance(const std::vector<Option>& options, const ShaderLibraryManager* shaderLibraryManager) const
 {
 	AstPreprocessor astPreprocessor;
 	astPreprocessor.setLibraryManager(shaderLibraryManager);
