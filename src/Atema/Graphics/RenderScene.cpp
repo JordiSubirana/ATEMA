@@ -133,6 +133,12 @@ void RenderScene::clearRenderables()
 	m_renderObjects.clear();
 }
 
+void RenderScene::recompileMaterials()
+{
+	m_renderMaterialInstances.clear();
+	m_renderMaterials.clear();
+}
+
 const Camera& RenderScene::getCamera() const noexcept
 {
 	return *m_camera;

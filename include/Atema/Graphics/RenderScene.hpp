@@ -59,6 +59,8 @@ namespace at
 		void clearLights();
 		void clearRenderables();
 
+		void recompileMaterials();
+
 		const Camera& getCamera() const noexcept;
 		RenderMaterial& getRenderMaterial(Ptr<Material> material);
 		RenderMaterialInstance& getRenderMaterialInstance(const MaterialInstance& materialInstance);

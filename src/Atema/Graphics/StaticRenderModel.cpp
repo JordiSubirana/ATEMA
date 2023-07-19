@@ -92,8 +92,13 @@ void StaticRenderModel::updateResources(RenderFrame& renderFrame, CommandBuffer&
 		m_transformDescriptorSets.clear();
 		for (auto& materialInstance : model.getMaterialInstances())
 		{
-			const auto& renderMaterialInstance = renderScene.getRenderMaterialInstance(*materialInstance);
+			auto& renderMaterialInstance = renderScene.getRenderMaterialInstance(*materialInstance);
 			const auto& renderMaterial = renderMaterialInstance.getRenderMaterial();
+
+			m_connectionGuard.connect(renderMaterialInstance.onDestroy, [this]()
+				{
+					m_modelValid = false;
+				});
 
 			m_renderMaterialInstances.emplace_back(&renderMaterialInstance);
 

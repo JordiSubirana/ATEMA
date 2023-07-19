@@ -35,7 +35,7 @@ using namespace at;
 
 namespace
 {
-	constexpr ImageFormat ColorFormat = ImageFormat::RGBA32_SFLOAT;
+	constexpr ImageFormat ColorFormat = ImageFormat::RGBA8_SRGB;
 	constexpr ImageFormat DepthFormat = ImageFormat::D32_SFLOAT_S8_UINT;
 
 	const DepthStencil DepthClearValue = DepthStencil(1.0f, 0);
@@ -347,6 +347,8 @@ void FrameRenderer::createGBuffer()
 		m_gbuffer = std::make_unique<GBuffer>(lightingModels);
 
 		m_gbuffer->generateShaderLibraries(m_shaderLibraryManager);
+
+		getRenderScene().recompileMaterials();
 	}
 
 	createPasses();
