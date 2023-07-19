@@ -177,7 +177,7 @@ LightingModel DefaultLightingModels::getPhong()
 	model.parameters =
 	{
 		{ "Position", ImageFormat::RGB32_SFLOAT },
-		{ "Normal", ImageFormat::RGB32_SFLOAT },
+		{ "Normal", ImageFormat::RGB16_SFLOAT },
 		{ "BaseColor", ImageFormat::RGB8_UNORM },
 		{ "EmissiveColor", ImageFormat::RGB8_UNORM },
 		{ "Metalness", ImageFormat::R8_UNORM },

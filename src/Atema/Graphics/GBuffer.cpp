@@ -21,15 +21,18 @@
 
 #include <Atema/Graphics/GBuffer.hpp>
 #include <Atema/Renderer/Utils.hpp>
-
-#include <set>
+#include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Shader/Atsl/AtslParser.hpp>
 #include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
+
+#include <set>
 
 using namespace at;
 
 namespace
 {
+	static constexpr size_t ComponentCount = 4;
+
 	std::string componentToString(ImageComponentType componentType)
 	{
 #define ATEMA_IMAGE_COMPONENT_TO_STRING(atComponent) case ImageComponentType::atComponent : return #atComponent
@@ -103,14 +106,14 @@ namespace
 		PhysicalTexture(ImageComponentType componentType) :
 			componentType(componentType)
 		{
-			gbufferComponents.resize(4);
+			gbufferComponents.resize(ComponentCount);
 		}
 
 		bool canBeAdded(const GBufferTexture& texture, size_t& index) const
 		{
 			bool dependencyFound = false;
 			index = 0;
-			while (index <= 4 - texture.componentCount)
+			while (index <= ComponentCount - texture.componentCount)
 			{
 				size_t dependencyIndex = 0;
 				dependencyFound = false;
@@ -149,12 +152,8 @@ namespace
 
 		ImageFormat getImageFormat() const
 		{
-			return getImageColorFormat(componentType, 4);
-
-			//TODO: Manage Renderer capabilities
-			/*
+			// Get the smallest format possible
 			size_t componentCount = 0;
-
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				if (components[i].empty())
@@ -162,12 +161,31 @@ namespace
 
 				componentCount++;
 			}
+
+			ImageFormat format = getImageColorFormat(componentType, componentCount);
+
+			// Ensure the format is valid, if not, increase the component count
+			while (componentCount <= ComponentCount)
+			{
+				format = getImageColorFormat(componentType, componentCount);
+
+				const auto usages = Renderer::instance().getImageFormatOptimalUsages(format);
+
+				if (usages & ImageUsage::RenderTarget && usages & ImageUsage::ShaderSampling)
+					break;
+
+				// The component type is not supported, component count has no impact
+				if (componentCount == ComponentCount)
+					ATEMA_ERROR("Unsupported ImageFormat for GBuffer attachment");
+
+				componentCount++;
+			}
 			
-			return getImageColorFormat(componentType, componentCount);//*/
+			return format;
 		}
 
 		ImageComponentType componentType;
-		std::array<std::vector<const GBufferTexture*>, 4> components;
+		std::array<std::vector<const GBufferTexture*>, ComponentCount> components;
 		std::vector<std::vector<GBuffer::Component>> gbufferComponents;
 	};
 
@@ -246,13 +264,13 @@ namespace
 					size_t currentIndex = 0;
 
 					// Get a compatible physical texture and try to reduce the remaining size as much as possible
-					size_t currentRemainingSize = 4;
+					size_t currentRemainingSize = ComponentCount;
 					for (auto& physicalTexture : physicalTextures)
 					{
 						size_t index = 0;
 						if (physicalTexture.canBeAdded(*texture, index))
 						{
-							const size_t remainingSize = 4 - index - texture->componentCount;
+							const size_t remainingSize = ComponentCount - index - texture->componentCount;
 
 							if (!currentPhysicalTexture || remainingSize < currentRemainingSize)
 							{
@@ -373,7 +391,7 @@ namespace
 
 	std::string getTextureFilterStr(size_t colorChannel, size_t componentCount)
 	{
-		static const std::string filters[4] = { "r", "g", "b", "a" };
+		static const std::string filters[ComponentCount] = { "r", "g", "b", "a" };
 
 		std::string filterStr = ".";
 
@@ -442,7 +460,7 @@ GBuffer::Component::Component(const std::string& name, size_t size) :
 	size(size)
 {
 	ATEMA_ASSERT(!name.empty(), "Invalid GBuffer component name");
-	ATEMA_ASSERT(size > 0 && size <= 4, "Invalid GBuffer component size");
+	ATEMA_ASSERT(size > 0 && size <= ComponentCount, "Invalid GBuffer component size");
 }
 
 // GBuffer::Texture
