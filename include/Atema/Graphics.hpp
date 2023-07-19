@@ -37,6 +37,7 @@
 #include <Atema/Graphics/FrameGraphPass.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
 #include <Atema/Graphics/FrameRenderer.hpp>
+#include <Atema/Graphics/GBuffer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Light.hpp>
