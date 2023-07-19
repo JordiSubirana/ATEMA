@@ -56,7 +56,7 @@ at::Ptr<at::MaterialData> loadMaterialData(const std::filesystem::path& path, co
 		{ MaterialData::EmissiveColorMap, "Emissive" },
 		{ MaterialData::MetalnessMap, "Metalness" },
 		{ MaterialData::RoughnessMap, "Roughness" },
-		{ MaterialData::AlphaMap, "AlphaMask" }
+		{ MaterialData::AlphaMaskMap, "AlphaMask" }
 	};
 
 	auto materialData = std::make_shared<at::MaterialData>();

@@ -25,6 +25,7 @@
 #include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
+#include <Atema/Graphics/Material.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
 #include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Renderer.hpp>
@@ -38,7 +39,7 @@ namespace
 	constexpr uint32_t LightSetIndex = 2;
 	constexpr uint32_t ShadowSetIndex = 3;
 
-	constexpr char* ShaderName = "AtemaPhongLightingPass";
+	const std::string ShaderName = "AtemaPhongLightingPass";
 
 	constexpr char ShaderCode[] = R"(
 option
@@ -172,13 +173,13 @@ float getVisibility(vec3f worldPos, float angle)
 [entry(fragment)]
 void main()
 {
-	vec3f worldPos = atGBufferReadPosition(inTexCoords);
-	vec3f normal = atGBufferReadNormal(inTexCoords);
-	vec3f color = atGBufferReadAlbedo(inTexCoords);
-	float ao = atGBufferReadAO(inTexCoords);
-	float metalness = atGBufferReadMetalness(inTexCoords);
-	int roughness = int(atGBufferReadRoughness(inTexCoords) * 255.0);
-	vec3f emissiveColor = atGBufferReadEmissive(inTexCoords);
+	vec3f worldPos = GBufferReadPosition(inTexCoords);
+	vec3f normal = GBufferReadNormal(inTexCoords);
+	vec3f color = GBufferReadBaseColor(inTexCoords);
+	float ao = GBufferReadAmbientOcclusion(inTexCoords);
+	float metalness = GBufferReadMetalness(inTexCoords);
+	int roughness = int(GBufferReadRoughness(inTexCoords) * 255.0);
+	vec3f emissiveColor = GBufferReadEmissiveColor(inTexCoords);
 	
 	vec3f inverseLightDir = -normalize(lightData.direction);
 	
@@ -260,43 +261,53 @@ void main()
 	};
 }
 
-PhongLightingPass::PhongLightingPass()
+PhongLightingPass::PhongLightingPass() :
+	PhongLightingPass(ShaderLibraryManager::instance())
+{
+	
+}
+
+PhongLightingPass::PhongLightingPass(const ShaderLibraryManager& shaderLibraryManager)
 {
 	auto& graphics = Graphics::instance();
 
 	if (!graphics.uberShaderExists(ShaderName))
 		graphics.setUberShader(ShaderName, ShaderCode);
 
-	// GBuffer layout
+	auto phongMaterial = std::make_shared<Material>(graphics.getUberShader(ShaderName));
+
+	RenderMaterial::Settings renderMaterialSettings;
+	renderMaterialSettings.material = phongMaterial;
+	renderMaterialSettings.shaderLibraryManager = &shaderLibraryManager;
+	renderMaterialSettings.pipelineState.depth.test = false;
+	renderMaterialSettings.pipelineState.depth.write = false;
+	renderMaterialSettings.pipelineState.stencil = true;
+	renderMaterialSettings.pipelineState.stencilFront.compareOperation = CompareOperation::Equal;
+	renderMaterialSettings.pipelineState.stencilFront.compareMask = 1;
+	renderMaterialSettings.pipelineState.stencilFront.reference = 1;
+	renderMaterialSettings.pipelineState.colorBlend.enabled = true;
+	renderMaterialSettings.pipelineState.colorBlend.colorSrcFactor = BlendFactor::One;
+	renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
+
+	// Light material
+	renderMaterialSettings.uberShaderOptions =
 	{
-		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-		descriptorSetLayoutSettings.bindings =
-		{
-			//TODO: Support different GBuffer formats
-			// GBuffer
-			{ DescriptorType::CombinedImageSampler, 0, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 1, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 2, 1, ShaderStage::Fragment },
-			{ DescriptorType::CombinedImageSampler, 3, 1, ShaderStage::Fragment },
-			// Shadow map
-			{ DescriptorType::CombinedImageSampler, 4, 1, ShaderStage::Fragment }
-		};
-		descriptorSetLayoutSettings.pageSize = Renderer::FramesInFlight;
+		{ "UseBlinnPhong", ConstantValue(false) },
+		{ "EnableShadows", ConstantValue(false) }
+	};
 
-		m_gbufferLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
+	m_lightMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
 
-	// Phong layout
+	// Light + shadow material
+	renderMaterialSettings.uberShaderOptions =
 	{
-		DescriptorSetLayout::Settings descriptorSetLayoutSettings;
-		descriptorSetLayoutSettings.bindings =
-		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
-		};
-		descriptorSetLayoutSettings.pageSize = Renderer::FramesInFlight;
+		{ "UseBlinnPhong", ConstantValue(false) },
+		{ "EnableShadows", ConstantValue(true) },
+		{ "ShowDebugCascades", ConstantValue(false) },
+		{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(CascadedShadowData::MaxCascadeCount)) }
+	};
 
-		m_phongLayout = DescriptorSetLayout::create(descriptorSetLayoutSettings);
-	}
+	m_lightShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
 
 	// Buffers and descriptor sets (one per frame in flight)
 	{
@@ -309,61 +320,11 @@ PhongLightingPass::PhongLightingPass()
 		for (auto& frameResources : m_frameResources)
 		{
 			frameResources.buffer = Buffer::create(frameBufferSettings);
-			frameResources.descriptorSet = m_phongLayout->createSet();
+			frameResources.descriptorSet = m_lightMaterial->createSet(LightSetIndex);
 			frameResources.descriptorSet->update(0, *frameResources.buffer);
 		}
 	}
-
-	// Graphics pipeline
-	GraphicsPipeline::Settings pipelineSettings;
-	pipelineSettings.state.vertexInput.inputs = Vertex_XYZ_UV::getVertexInput();
-	pipelineSettings.state.depth.test = false;
-	pipelineSettings.state.depth.write = false;
-	pipelineSettings.state.stencil = true;
-	pipelineSettings.state.stencilFront.compareOperation = CompareOperation::Equal;
-	pipelineSettings.state.stencilFront.compareMask = 1;
-	pipelineSettings.state.stencilFront.reference = 1;
-	pipelineSettings.state.colorBlend.enabled = true;
-	pipelineSettings.state.colorBlend.colorSrcFactor = BlendFactor::One;
-	pipelineSettings.state.colorBlend.colorDstFactor = BlendFactor::One;
-
-	pipelineSettings.descriptorSetLayouts =
-	{
-		m_gbufferLayout,
-		m_phongLayout,
-		Graphics::instance().getLightLayout()
-	};
-
-	// Light pipeline
-	{
-		std::vector<UberShader::Option> uberOptions =
-		{
-			{ "UseBlinnPhong", ConstantValue(false) },
-			{ "EnableShadows", ConstantValue(false) }
-		};
-
-		pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, uberOptions));
-		pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, uberOptions));
-		m_lightPipeline = GraphicsPipeline::create(pipelineSettings);
-	}
-
-	// Light & Shadow pipeline
-	{
-		std::vector<UberShader::Option> uberOptions =
-		{
-			{ "UseBlinnPhong", ConstantValue(false) },
-			{ "EnableShadows", ConstantValue(true) },
-			{ "ShowDebugCascades", ConstantValue(false) },
-			{ "MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(CascadedShadowData::MaxCascadeCount)) }
-		};
-
-		pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Vertex, uberOptions));
-		pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShaderFromString(std::string(ShaderName), AstShaderStage::Fragment, uberOptions));
-		pipelineSettings.descriptorSetLayouts.emplace_back(Graphics::instance().getLightShadowLayout());
-
-		m_lightShadowPipeline = GraphicsPipeline::create(pipelineSettings);
-	}
-
+	
 	m_gbufferSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Nearest));
 
 	m_quadMesh = graphics.getQuadMesh();
@@ -437,13 +398,13 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 	commandBuffer.setViewport(viewport);
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
-
-	auto gbufferSet = m_gbufferLayout->createSet();
+	
+	auto gbufferSet = m_lightMaterial->createSet(GBufferSetIndex);
 
 	for (uint32_t i = 0; i < settings.gbuffer.size(); i++)
 		gbufferSet->update(i, *context.getImageView(settings.gbuffer[i]), *m_gbufferSampler);
-
-	commandBuffer.bindPipeline(*m_lightPipeline);
+	
+	m_lightMaterial->bindTo(commandBuffer);
 
 	commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
 	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
@@ -459,8 +420,8 @@ void PhongLightingPass::execute(FrameGraphContext& context, const Settings& sett
 
 		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
 	}
-
-	commandBuffer.bindPipeline(*m_lightShadowPipeline);
+	
+	m_lightShadowMaterial->bindTo(commandBuffer);
 
 	for (auto& renderLight : renderLights)
 	{

@@ -40,108 +40,6 @@ using namespace at;
 
 namespace
 {
-	const char atGBufferWrite[] = R"(
-option
-{
-	int AtGBufferWriteLocation = 0;
-}
-
-[stage(fragment)]
-output
-{
-	[location(AtGBufferWriteLocation + 0)] vec4f _atGBufferWritePositionMetalness;
-	[location(AtGBufferWriteLocation + 1)] vec4f _atGBufferWriteNormalRoughness;
-	[location(AtGBufferWriteLocation + 2)] vec4f _atGBufferWriteAlbedoAO;
-	[location(AtGBufferWriteLocation + 3)] vec4f _atGBufferWriteEmissive;
-}
-
-void atGBufferWritePosition(vec3f value)
-{
-	_atGBufferWritePositionMetalness.rgb = value;
-}
-
-void atGBufferWriteNormal(vec3f value)
-{
-	_atGBufferWriteNormalRoughness.rgb = value;
-}
-
-void atGBufferWriteAlbedo(vec3f value)
-{
-	_atGBufferWriteAlbedoAO.rgb = value;
-}
-
-void atGBufferWriteAO(float value)
-{
-	_atGBufferWriteAlbedoAO.a = value;
-}
-
-void atGBufferWriteEmissive(vec3f value)
-{
-	_atGBufferWriteEmissive.rgb = value;
-}
-
-void atGBufferWriteMetalness(float value)
-{
-	_atGBufferWritePositionMetalness.a = value;
-}
-
-void atGBufferWriteRoughness(float value)
-{
-	_atGBufferWriteNormalRoughness.a = value;
-}
-)";
-
-	const char atGBufferRead[] = R"(
-option
-{
-	int AtGBufferReadSet = 0;
-	int AtGBufferReadBinding = 0;
-}
-
-external
-{
-	[set(AtGBufferReadSet), binding(AtGBufferReadBinding + 0)] sampler2Df _atGBufferReadPositionMetalness;
-	[set(AtGBufferReadSet), binding(AtGBufferReadBinding + 1)] sampler2Df _atGBufferReadNormalRoughness;
-	[set(AtGBufferReadSet), binding(AtGBufferReadBinding + 2)] sampler2Df _atGBufferReadAlbedoAO;
-	[set(AtGBufferReadSet), binding(AtGBufferReadBinding + 3)] sampler2Df _atGBufferReadEmissive;
-}
-
-vec3f atGBufferReadPosition(vec2f uv)
-{
-	return sample(_atGBufferReadPositionMetalness, uv).rgb;
-}
-
-vec3f atGBufferReadNormal(vec2f uv)
-{
-	return sample(_atGBufferReadNormalRoughness, uv).rgb;
-}
-
-vec3f atGBufferReadAlbedo(vec2f uv)
-{
-	return sample(_atGBufferReadAlbedoAO, uv).rgb;
-}
-
-float atGBufferReadAO(vec2f uv)
-{
-	return sample(_atGBufferReadAlbedoAO, uv).a;
-}
-
-vec3f atGBufferReadEmissive(vec2f uv)
-{
-	return sample(_atGBufferReadEmissive, uv).rgb;
-}
-
-float atGBufferReadMetalness(vec2f uv)
-{
-	return sample(_atGBufferReadPositionMetalness, uv).a;
-}
-
-float atGBufferReadRoughness(vec2f uv)
-{
-	return sample(_atGBufferReadNormalRoughness, uv).a;
-}
-)";
-
 	const char atPostProcess[] = R"(
 option
 {
@@ -195,8 +93,6 @@ void atPostProcessWriteOutColor(vec4f value)
 
 	const std::unordered_map<std::string, const char*> s_shaderLibraries =
 	{
-		{ "Atema.GBufferWrite", atGBufferWrite },
-		{ "Atema.GBufferRead", atGBufferRead },
 		{ "Atema.PostProcess", atPostProcess },
 	};
 
@@ -440,6 +336,29 @@ void Graphics::initializeShaderLibraries(ShaderLibraryManager& libraryManager)
 
 		libraryManager.setLibrary(libName, std::move(ast));
 	}
+}
+
+void Graphics::addLightingModel(const LightingModel& lightingModel)
+{
+	ATEMA_ASSERT(m_lightingModels.find(lightingModel.name) != m_lightingModels.end(), "Lighting model already defined");
+
+	m_lightingModels[lightingModel.name] = lightingModel;
+
+	// Initialize default shader library
+	const auto& libAst = lightingModel.materialLibrary->getAst();
+
+	AstCloner cloner;
+
+	ShaderLibraryManager::instance().setLibrary("Atema.LightingModel." + lightingModel.name, cloner.clone(*libAst));
+}
+
+const LightingModel& Graphics::getLightingModel(const std::string& name) const
+{
+	const auto it = m_lightingModels.find(name);
+
+	ATEMA_ASSERT(it == m_lightingModels.end(), "Undefined lighting model");
+
+	return it->second;
 }
 
 Ptr<VertexBuffer> Graphics::getQuadMesh()

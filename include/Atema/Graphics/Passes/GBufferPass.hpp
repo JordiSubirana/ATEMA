@@ -50,7 +50,7 @@ namespace at
 
 			// Depth texture handle for depth-stencil read/write operations
 			FrameGraphTextureHandle depthStencil = FrameGraph::InvalidTextureHandle;
-			// Optional clear values
+			// Optional clear value
 			// If unspecified or null, the attachment won't be cleared
 			std::optional<DepthStencil> depthStencilClearValue;
 		};

@@ -61,8 +61,9 @@ namespace
 }
 
 // Material
-Material::Material(Ptr<UberShader> uberShader) :
-	m_uberShader(std::move(uberShader))
+Material::Material(Ptr<UberShader> uberShader, const MaterialData& metaData) :
+	m_uberShader(std::move(uberShader)),
+	m_metaData(metaData)
 {
 	
 }
@@ -75,6 +76,11 @@ Material::~Material()
 const UberShader& Material::getUberShader() const noexcept
 {
 	return *m_uberShader;
+}
+
+const MaterialData& Material::getMetaData() const noexcept
+{
+	return m_metaData;
 }
 
 void Material::setParameter(const std::string& name, const ShaderData& shaderData)

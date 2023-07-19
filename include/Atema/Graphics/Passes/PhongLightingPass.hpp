@@ -28,6 +28,7 @@
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Renderer/DepthStencil.hpp>
 #include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Shader/ShaderLibraryManager.hpp>
 #include <Atema/Math/Matrix.hpp>
 
 #include <vector>
@@ -35,6 +36,7 @@
 
 namespace at
 {
+	class RenderMaterial;
 	class Light;
 	class VertexBuffer;
 	class Sampler;
@@ -66,6 +68,7 @@ namespace at
 		};
 
 		PhongLightingPass();
+		PhongLightingPass(const ShaderLibraryManager& shaderLibraryManager);
 		PhongLightingPass(const PhongLightingPass& other) = default;
 		PhongLightingPass(PhongLightingPass&& other) noexcept = default;
 		~PhongLightingPass() = default;
@@ -88,10 +91,8 @@ namespace at
 			Ptr<Buffer> buffer;
 		};
 
-		Ptr<DescriptorSetLayout> m_gbufferLayout;
-		Ptr<DescriptorSetLayout> m_phongLayout;
-		Ptr<GraphicsPipeline> m_lightPipeline;
-		Ptr<GraphicsPipeline> m_lightShadowPipeline;
+		Ptr<RenderMaterial> m_lightMaterial;
+		Ptr<RenderMaterial> m_lightShadowMaterial;
 		Ptr<Sampler> m_gbufferSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 

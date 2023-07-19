@@ -30,6 +30,7 @@
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Shader/ShaderLibraryManager.hpp>
 #include <Atema/Core/Signal.hpp>
+#include <Atema/Graphics/LightingModel.hpp>
 
 namespace at
 {
@@ -59,6 +60,10 @@ namespace at
 
 		// Initializes ShaderLibraryManager with built-in shader libraries
 		void initializeShaderLibraries(ShaderLibraryManager& libraryManager);
+
+		void addLightingModel(const LightingModel& lightingModel);
+
+		const LightingModel& getLightingModel(const std::string& name) const;
 
 		// Default quad mesh (x & y : [-1,1], z : 0)
 		Ptr<VertexBuffer> getQuadMesh();
@@ -176,6 +181,8 @@ namespace at
 		ResourceHandle& getResourceHandle(const void* resource);
 		
 		std::vector<AbstractResourceManager*> m_resourceManagers;
+
+		std::unordered_map<std::string, LightingModel> m_lightingModels;
 
 		Ptr<VertexBuffer> m_quadMesh;
 

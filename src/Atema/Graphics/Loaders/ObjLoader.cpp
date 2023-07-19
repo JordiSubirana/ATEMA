@@ -112,7 +112,7 @@ Ptr<Model> ObjLoader::load(const std::filesystem::path& path, const ModelLoader:
 			materialData->set(MaterialData::SpecularColor, Color(mat.specular[0], mat.specular[1], mat.specular[2], 1.0f));
 
 			if (!mat.alpha_texname.empty())
-				materialData->set(MaterialData::AlphaMap, MaterialData::Texture(textureDir / mat.alpha_texname));
+				materialData->set(MaterialData::AlphaMaskMap, MaterialData::Texture(textureDir / mat.alpha_texname));
 
 			if (!mat.diffuse_texname.empty())
 				materialData->set(MaterialData::BaseColorMap, MaterialData::Texture(textureDir / mat.diffuse_texname));

@@ -22,6 +22,7 @@
 #include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/FrameRenderer.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
+#include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/Material.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
@@ -34,26 +35,6 @@ using namespace at;
 
 namespace
 {
-	const std::vector<ImageFormat> GBufferFormat =
-	{
-		// Position (RGB) + Metalness (A)
-		ImageFormat::RGBA32_SFLOAT,
-		// Normal (RGB) + Roughness (A)
-		ImageFormat::RGBA32_SFLOAT,
-		// Albedo (RGB) + AO (A)
-		ImageFormat::RGBA8_UNORM,
-		// Emissive
-		ImageFormat::RGBA8_UNORM,
-	};
-
-	const std::vector<std::optional<Color>> GBufferClearValues =
-	{
-		Color::Black,
-		Color::Black,
-		Color::Black,
-		Color::Black
-	};
-
 	constexpr ImageFormat ColorFormat = ImageFormat::RGBA32_SFLOAT;
 	constexpr ImageFormat DepthFormat = ImageFormat::D32_SFLOAT_S8_UINT;
 
@@ -65,21 +46,29 @@ namespace
 }
 
 FrameRenderer::FrameRenderer() :
+	m_shaderLibraryManager(ShaderLibraryManager::instance()),
 	m_updateFrameGraph(false),
 	m_enableDebugRenderer(false),
 	m_enableDebugGBuffer(false),
 	m_enableDebugShadowMaps(false)
 {
-	createPasses();
+	createGBuffer();
 }
 
 Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
 {
 	const auto materialID = m_materialIdManager.get();
 
+	ATEMA_ASSERT(material->getMetaData().exists(MaterialData::LightingModel), "Material must define the lighting model in its metadata");
+
+	const auto& lightingModelName = material->getMetaData().getValue(MaterialData::LightingModel).get<std::string>();
+
+	addLightingModel(lightingModelName);
+
 	RenderMaterial::Settings settings;
 	settings.material = std::move(material);
 	settings.id = materialID;
+	settings.shaderLibraryManager = &m_shaderLibraryManager;
 
 	settings.pipelineState.stencil = true;
 	settings.pipelineState.stencilFront.compareOperation = CompareOperation::Equal;
@@ -130,9 +119,6 @@ void FrameRenderer::enableDebugShadowMaps(bool enable)
 void FrameRenderer::createFrameGraph()
 {
 	FrameGraphBuilder frameGraphBuilder;
-	
-	//-----
-	// Texture setup
 
 	Vector2u targetSize = getSize();
 
@@ -140,121 +126,154 @@ void FrameRenderer::createFrameGraph()
 	textureSettings.width = targetSize.x;
 	textureSettings.height = targetSize.y;
 
-	std::vector<FrameGraphTextureHandle> gbufferTextures;
-	gbufferTextures.reserve(GBufferFormat.size());
-
-	for (auto& format : GBufferFormat)
+	// Basic FrameGraph : only shows UI if GBuffer is not valid
+	if (!m_gbuffer)
 	{
-		textureSettings.format = format;
+		textureSettings.format = ColorFormat;
+		auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
 
-		auto texture = frameGraphBuilder.createTexture(textureSettings);
-
-		gbufferTextures.emplace_back(texture);
-	}
-
-	textureSettings.format = DepthFormat;
-	auto gbufferDepthTexture = frameGraphBuilder.createTexture(textureSettings);
-
-	textureSettings.format = ColorFormat;
-	auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
-
-	//-----
-	// Pass setup
-
-	m_activePasses.clear();
-
-	// GBuffer
-	{
-		GBufferPass::Settings passSettings;
-
-		passSettings.gbuffer = gbufferTextures;
-		passSettings.gbufferClearValue = GBufferClearValues;
-		passSettings.depthStencil = gbufferDepthTexture;
-		passSettings.depthStencilClearValue = DepthClearValue;
-		
-		m_gbufferPass->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_gbufferPass.get());
-	}
-
-	// Shadow
-	std::vector<FrameGraphTextureHandle> shadowMaps;
-	for (auto& [renderLight, shadowData] : m_shadowData)
-	{
-		const auto light = &renderLight->getLight();
-		const auto& shadowMap = renderLight->getShadowMap();
-
-		for (size_t i = 0; i < light->getShadowCascadeCount(); i++)
+		// Empty pass only here to clear attachments
 		{
-			auto& shadowPass = shadowData->passes[i];
+			auto& pass = frameGraphBuilder.createPass("Empty");
 
-			auto shadowTextureHandle = frameGraphBuilder.importTexture(shadowMap, static_cast<uint32_t>(i));
+			pass.addOutputTexture(compositionTexture, 0, Color::Black);
 
-			shadowMaps.emplace_back(shadowTextureHandle);
+			pass.setExecutionCallback([](FrameGraphContext& context)
+				{
+					// Does nothing
+				});
+		}
 
-			ShadowPass::Settings passSettings;
+		// Screen
+		{
+			ScreenPass::Settings passSettings;
 
-			passSettings.shadowMapSize = shadowMap->getSize().x;
-			passSettings.shadowMap = shadowTextureHandle;
-			passSettings.shadowMapClearValue = DepthStencil(1.0f, 0);
+			passSettings.input = compositionTexture;
 
-			shadowPass->addToFrameGraph(frameGraphBuilder, passSettings);
-
-			m_activePasses.emplace_back(shadowPass.get());
+			m_screenPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_screenPass.get());
 		}
 	}
-
-	// Phong Lighting
+	// GBuffer is valid : build full FrameGraph
+	else
 	{
-		PhongLightingPass::Settings passSettings;
+		// Texture setup
 
-		passSettings.output = compositionTexture;
-		passSettings.outputClearValue = SkyColor;
-		passSettings.gbuffer = gbufferTextures;
-		passSettings.shadowMaps = shadowMaps;
-		passSettings.depthStencil = gbufferDepthTexture;
-		
-		m_phongLightingPass->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_phongLightingPass.get());
-	}
+		std::vector<FrameGraphTextureHandle> gbufferTextures;
+		std::vector<std::optional<Color>> gbufferClearValues;
+		for (auto& texture : m_gbuffer->getTextures())
+		{
+			textureSettings.format = texture.format;
 
-	// Debug Renderer
-	if (m_enableDebugRenderer)
-	{
-		DebugRendererPass::Settings passSettings;
+			const auto gbufferTexture = frameGraphBuilder.createTexture(textureSettings);
 
-		passSettings.output = compositionTexture;
-		passSettings.depthStencil = gbufferDepthTexture;
-		
-		m_debugRendererPass->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_debugRendererPass.get());
-	}
-	
-	// Debug FrameGraph
-	if (m_enableDebugGBuffer || m_enableDebugShadowMaps)
-	{
-		DebugFrameGraphPass::Settings passSettings;
+			gbufferTextures.emplace_back(gbufferTexture);
+			gbufferClearValues.emplace_back(Color::Black);
+		}
 
-		passSettings.output = compositionTexture;
-		passSettings.columnCount = 0;
+		textureSettings.format = DepthFormat;
+		auto gbufferDepthTexture = frameGraphBuilder.createTexture(textureSettings);
 
-		if (m_enableDebugGBuffer)
-			passSettings.textures.insert(passSettings.textures.end(), gbufferTextures.begin(), gbufferTextures.end());
+		textureSettings.format = ColorFormat;
+		auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
 
-		if (m_enableDebugShadowMaps)
-			passSettings.textures.insert(passSettings.textures.end(), shadowMaps.begin(), shadowMaps.end());
+		// Pass setup
 
-		m_debugFrameGraphPass->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_debugFrameGraphPass.get());
-	}
+		m_activePasses.clear();
 
-	// Screen
-	{
-		ScreenPass::Settings passSettings;
+		// GBuffer
+		{
+			GBufferPass::Settings passSettings;
 
-		passSettings.input = compositionTexture;
-		
-		m_screenPass->addToFrameGraph(frameGraphBuilder, passSettings);
-		m_activePasses.emplace_back(m_screenPass.get());
+			passSettings.gbuffer = gbufferTextures;
+			passSettings.gbufferClearValue = gbufferClearValues;
+			passSettings.depthStencil = gbufferDepthTexture;
+			passSettings.depthStencilClearValue = DepthClearValue;
+
+			m_gbufferPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_gbufferPass.get());
+		}
+
+		// Shadow
+		std::vector<FrameGraphTextureHandle> shadowMaps;
+		for (auto& [renderLight, shadowData] : m_shadowData)
+		{
+			const auto light = &renderLight->getLight();
+			const auto& shadowMap = renderLight->getShadowMap();
+
+			for (size_t i = 0; i < light->getShadowCascadeCount(); i++)
+			{
+				auto& shadowPass = shadowData->passes[i];
+
+				auto shadowTextureHandle = frameGraphBuilder.importTexture(shadowMap, static_cast<uint32_t>(i));
+
+				shadowMaps.emplace_back(shadowTextureHandle);
+
+				ShadowPass::Settings passSettings;
+
+				passSettings.shadowMapSize = shadowMap->getSize().x;
+				passSettings.shadowMap = shadowTextureHandle;
+				passSettings.shadowMapClearValue = DepthStencil(1.0f, 0);
+
+				shadowPass->addToFrameGraph(frameGraphBuilder, passSettings);
+
+				m_activePasses.emplace_back(shadowPass.get());
+			}
+		}
+
+		// Phong Lighting
+		{
+			PhongLightingPass::Settings passSettings;
+
+			passSettings.output = compositionTexture;
+			passSettings.outputClearValue = SkyColor;
+			passSettings.gbuffer = gbufferTextures;
+			passSettings.shadowMaps = shadowMaps;
+			passSettings.depthStencil = gbufferDepthTexture;
+
+			m_phongLightingPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_phongLightingPass.get());
+		}
+
+		// Debug Renderer
+		if (m_enableDebugRenderer)
+		{
+			DebugRendererPass::Settings passSettings;
+
+			passSettings.output = compositionTexture;
+			passSettings.depthStencil = gbufferDepthTexture;
+
+			m_debugRendererPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_debugRendererPass.get());
+		}
+
+		// Debug FrameGraph
+		if (m_enableDebugGBuffer || m_enableDebugShadowMaps)
+		{
+			DebugFrameGraphPass::Settings passSettings;
+
+			passSettings.output = compositionTexture;
+			passSettings.columnCount = 0;
+
+			if (m_enableDebugGBuffer)
+				passSettings.textures.insert(passSettings.textures.end(), gbufferTextures.begin(), gbufferTextures.end());
+
+			if (m_enableDebugShadowMaps)
+				passSettings.textures.insert(passSettings.textures.end(), shadowMaps.begin(), shadowMaps.end());
+
+			m_debugFrameGraphPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_debugFrameGraphPass.get());
+		}
+
+		// Screen
+		{
+			ScreenPass::Settings passSettings;
+
+			passSettings.input = compositionTexture;
+
+			m_screenPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_screenPass.get());
+		}
 	}
 
 	//-----
@@ -299,6 +318,42 @@ void FrameRenderer::beginFrame()
 	}
 }
 
+void FrameRenderer::addLightingModel(const std::string& name)
+{
+	// Check if the lighting model already exists
+	if (m_lightingModels.find(name) != m_lightingModels.end())
+		return;
+
+	const auto& lightingModel = Graphics::instance().getLightingModel(name);
+
+	m_lightingModels[name] = lightingModel;
+
+	if (!m_gbuffer || !m_gbuffer->isCompatible(lightingModel))
+		createGBuffer();
+}
+
+void FrameRenderer::createGBuffer()
+{
+	if (m_lightingModels.empty())
+	{
+		m_gbuffer.reset();
+	}
+	else
+	{
+		std::vector<LightingModel> lightingModels;
+		for (const auto& [lightingModelName, lightingModel] : m_lightingModels)
+			lightingModels.emplace_back(lightingModel);
+
+		m_gbuffer = std::make_unique<GBuffer>(lightingModels);
+
+		m_gbuffer->generateShaderLibraries(m_shaderLibraryManager);
+	}
+
+	createPasses();
+
+	updateFrameGraph();
+}
+
 void FrameRenderer::createPasses()
 {
 	m_activePasses.clear();
@@ -315,14 +370,20 @@ void FrameRenderer::createPasses()
 	m_oldRenderPasses.emplace_back(std::move(m_screenPass));
 
 	// Create new ones
-	m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-	m_phongLightingPass = std::make_unique<PhongLightingPass>();
+	// Some passes require a valid GBuffer
+	if (m_gbuffer)
+	{
+		m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-	m_debugRendererPass = std::make_unique<DebugRendererPass>();
+		m_phongLightingPass = std::make_unique<PhongLightingPass>(m_shaderLibraryManager);
 
-	m_debugFrameGraphPass = std::make_unique<DebugFrameGraphPass>();
+		m_debugRendererPass = std::make_unique<DebugRendererPass>();
 
+		m_debugFrameGraphPass = std::make_unique<DebugFrameGraphPass>();
+	}
+
+	// Some passes are always valid
 	m_screenPass = std::make_unique<ScreenPass>();
 }
 

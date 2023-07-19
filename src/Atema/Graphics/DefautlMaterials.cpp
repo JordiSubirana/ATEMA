@@ -19,14 +19,15 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <optional>
 #include <Atema/Core/Utils.hpp>
 #include <Atema/Graphics/DefaultMaterials.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/MaterialData.hpp>
 
-#define ATEMA_DEFAULT_MATERIAL(atMaterialName, atMaterialShader) const std::string atMaterialName ## Material("Default" #atMaterialName "Material"); \
-	constexpr const char atMaterialName ## MaterialShader[] = atMaterialShader;
+#include <optional>
+
+#define ATEMA_DEFAULT_MATERIAL(atName, atShader) const std::string atName ## Material("Default" #atName "Material"); \
+	constexpr const char atName ## MaterialShader[] = atShader;
 
 using namespace at;
 
@@ -42,49 +43,33 @@ option
 	int MaterialEmissiveColorMapBinding = -1;
 	int MaterialMetalnessMapBinding = -1;
 	int MaterialRoughnessMapBinding = -1;
-	int MaterialAlphaMapBinding = -1;
+	int MaterialAlphaMaskMapBinding = -1;
 	int MaterialStructBinding = -1;
 	int InstanceSetIndex = 2;
 }
 
-include Atema.GBufferWrite;
-
-struct FrameDataStruct
-{
-	mat4f proj;
-	mat4f view;
-	vec3f cameraPosition;
-}
-
-struct TransformDataStruct
-{
-	mat4f model;
-}
+include Atema.LightingModel.Phong;
 
 struct MaterialDataStruct
 {
 	[optional (MaterialBaseColorMapBinding < 0)]
-	vec4f color;
+	vec4f BaseColor;
 	
 	[optional (MaterialEmissiveColorMapBinding < 0)]
-	vec3f emissive;
+	vec3f EmissiveColor;
 	
 	[optional (MaterialMetalnessMapBinding < 0)]
-	float metalness;
+	float Metalness;
 	
 	[optional (MaterialRoughnessMapBinding < 0)]
-	float roughness;
+	float Roughness;
 
-	[optional (MaterialAlphaMapBinding >= 0)]
-	float alphaThreshold;
+	[optional (MaterialAlphaMaskMapBinding >= 0)]
+	float AlphaMaskThreshold;
 }
 
 external
 {
-	[set(0), binding(0)] FrameDataStruct FrameData;
-
-	[set(1), binding(0)] TransformDataStruct TransformData;
-	
 	[optional (MaterialBaseColorMapBinding >= 0)]
 	[set(InstanceSetIndex), binding(MaterialBaseColorMapBinding)] sampler2Df BaseColorMap;
 	
@@ -106,71 +91,18 @@ external
 	[optional (MaterialRoughnessMapBinding >= 0)]
 	[set(InstanceSetIndex), binding(MaterialRoughnessMapBinding)] sampler2Df RoughnessMap;
 	
-	[optional (MaterialAlphaMapBinding >= 0)]
-	[set(InstanceSetIndex), binding(MaterialAlphaMapBinding)] sampler2Df AlphaMap;
+	[optional (MaterialAlphaMaskMapBinding >= 0)]
+	[set(InstanceSetIndex), binding(MaterialAlphaMaskMapBinding)] sampler2Df AlphaMaskMap;
 	
 	[optional (MaterialBaseColorMapBinding < 0 ||
 		MaterialEmissiveColorMapBinding < 0 ||
 		MaterialMetalnessMapBinding < 0 ||
 		MaterialRoughnessMapBinding < 0 ||
-		MaterialAlphaMapBinding >= 0)]
+		MaterialAlphaMaskMapBinding >= 0)]
 	[set(InstanceSetIndex), binding(MaterialStructBinding)] MaterialDataStruct MaterialData;
 }
 
-[stage(vertex)]
-input
-{
-	[location(0)] vec3f inPosition;
-	[location(1)] vec2f inTexCoords;
-	[location(2)] vec3f inNormal;
-	[location(3)] vec3f inTangent;
-	[location(4)] vec3f inBitangent;
-}
-
-[stage(vertex)]
-output
-{
-	[location(0)] vec3f outPosition;
-	[location(1)] vec2f outTexCoords;
-	[location(2)] mat3f outTBN;
-	[location(5)] vec3f outTanViewDir;
-	[location(6)] vec3f outCameraPosition;
-}
-
-[entry(vertex)]
-void main()
-{
-	vec4f worldPos = TransformData.model * vec4f(inPosition, 1.0);
-	vec3f worldNormal = normalize(TransformData.model * vec4f(inNormal, 0.0)).xyz;
-	vec3f worldTangent = normalize(TransformData.model * vec4f(inTangent, 0.0)).xyz;
-	vec3f worldBitangent = normalize(TransformData.model * vec4f(inBitangent, 0.0)).xyz;
-	
-	outPosition = worldPos.xyz;
-	
-	outTBN = mat3f(worldTangent, worldBitangent, worldNormal);
-	
-	outTexCoords = inTexCoords;
-	
-	outTanViewDir = outTBN * (FrameData.cameraPosition - worldPos.xyz);
-	
-	outCameraPosition = FrameData.cameraPosition;
-	
-	vec4f screenPosition = FrameData.proj * FrameData.view * worldPos;
-	
-	setVertexPosition(screenPosition);
-}
-
-[stage(fragment)]
-input
-{
-	[location(0)] vec3f inPosition;
-	[location(1)] vec2f inTexCoords;
-	[location(2)] mat3f inTBN;
-	[location(5)] vec3f inTanViewDir;
-	[location(6)] vec3f inCameraPosition;
-}
-
-vec2f getTexCoords()
+vec2f getUV()
 { 
 	optional (MaterialHeightMapBinding < 0)
 		return inTexCoords;
@@ -217,114 +149,109 @@ vec2f getTexCoords()
 	}
 }
 
-vec4f getMaterialColor()
+vec3f getBaseColor(vec2f uv)
 {
 	optional (MaterialBaseColorMapBinding < 0)
-		return MaterialData.color;
+		return MaterialData.BaseColor.rgb;
 	
 	optional (MaterialBaseColorMapBinding >= 0)
-		return sample(BaseColorMap, getTexCoords());
+		return sample(BaseColorMap, uv).rgb;
 }
 
-vec3f getMaterialNormal()
+vec3f getNormal(vec2f uv)
 {
 	optional (MaterialNormalMapBinding < 0)
 		return vec3f(0.5, 0.5, 1.0);
 	
 	optional (MaterialNormalMapBinding >= 0)
-		return sample(NormalMap, getTexCoords()).xyz;
+		return sample(NormalMap, uv).xyz;
 }
 
-float getMaterialAO()
+float getAmbientOcclusion(vec2f uv)
 {
 	optional (MaterialAmbientOcclusionMapBinding < 0)
 		return 1.0;
 	
 	optional (MaterialAmbientOcclusionMapBinding >= 0)
-		return sample(AmbientOcclusionMap, getTexCoords()).r;
+		return sample(AmbientOcclusionMap, uv).r;
 }
 
-float getMaterialHeight()
+float getHeight(vec2f uv)
 {
 	optional (MaterialHeightMapBinding < 0)
 		return 1.0;
 	
 	optional (MaterialHeightMapBinding >= 0)
-		return sample(HeightMap, getTexCoords()).r;
+		return sample(HeightMap, uv).r;
 }
 
-vec3f getMaterialEmissive()
+vec3f getEmissiveColor(vec2f uv)
 {
 	optional (MaterialEmissiveColorMapBinding < 0)
-		return MaterialData.emissive;
+		return MaterialData.EmissiveColor;
 	
 	optional (MaterialEmissiveColorMapBinding >= 0)
-		return sample(EmissiveColorMap, getTexCoords()).rgb;
+		return sample(EmissiveColorMap, uv).rgb;
 }
 
-float getMaterialMetalness()
+float getMetalness(vec2f uv)
 {
 	optional (MaterialMetalnessMapBinding < 0)
-		return MaterialData.metalness;
+		return MaterialData.Metalness;
 	
 	optional (MaterialMetalnessMapBinding >= 0)
-		return sample(MetalnessMap, getTexCoords()).r;
+		return sample(MetalnessMap, uv).r;
 }
 
-float getMaterialRoughness()
+float getRoughness(vec2f uv)
 {
 	optional (MaterialRoughnessMapBinding < 0)
-		return MaterialData.roughness;
+		return MaterialData.Roughness;
 	
 	optional (MaterialRoughnessMapBinding >= 0)
-		return sample(RoughnessMap, getTexCoords()).r;
+		return sample(RoughnessMap, uv).r;
 }
 
-float getMaterialAlpha()
+float getAlphaMask(vec2f uv)
 {
-	optional (MaterialAlphaMapBinding < 0)
+	optional (MaterialAlphaMaskMapBinding < 0)
 		return 1.0;
 	
-	optional (MaterialAlphaMapBinding >= 0)
-		return sample(AlphaMap, getTexCoords()).r;
+	optional (MaterialAlphaMaskMapBinding >= 0)
+		return sample(AlphaMaskMap, uv).r;
 }
 
-[entry(fragment)]
-void main()
+float getAlphaMaskThreshold()
 {
-	optional (MaterialAlphaMapBinding >= 0)
+	optional (MaterialAlphaMaskMapBinding < 0)
+		return 0.5;
+	
+	optional (MaterialAlphaMaskMapBinding >= 0)
+		return MaterialData.AlphaMaskThreshold;
+}
+
+MaterialFragmentParameters getMaterialFragmentParameters()
+{
+	MaterialFragmentParameters parameters = getDefaultMaterialFragmentParameters();
+	
+	vec2f uv = getUV();
+	
+	parameters.BaseColor = getBaseColor(uv);
+	parameters.EmissiveColor = getEmissiveColor(uv);
+	parameters.Metalness = getMetalness(uv);
+	parameters.Roughness = getRoughness(uv);
+	parameters.AmbientOcclusion = getAmbientOcclusion(uv);
+	parameters.Normal = getNormal(uv);
+	
+	optional (MaterialAlphaMaskMapBinding >= 0)
 	{
-		if (getMaterialAlpha() < MaterialData.alphaThreshold)
-			discard;
+		parameters.AlphaMask = getAlphaMask(uv);
+		parameters.AlphaMaskThreshold = getAlphaMaskThreshold();
 	}
 	
-	vec4f matColor = getMaterialColor();
-	vec3f matNormal = getMaterialNormal();
-	float matAO = getMaterialAO();
-	vec3f matEmissive = getMaterialEmissive();
-	float matMetalness = getMaterialMetalness();
-	float matRoughness = getMaterialRoughness();
-	
-	vec3f normal = (matNormal * 2.0) - 1.0;
-	normal = normalize(inTBN * normal);
-	
-	atGBufferWritePosition(inPosition);
-	atGBufferWriteNormal(normal);
-	atGBufferWriteAlbedo(matColor.rgb);
-	atGBufferWriteAO(matAO);
-	atGBufferWriteEmissive(matEmissive);
-	atGBufferWriteMetalness(matMetalness);
-	atGBufferWriteRoughness(matRoughness);
+	return parameters;
 }
 )");
-
-	struct PhongParameter
-	{
-		std::string name;
-		const char* textureName = nullptr;
-		const char* constantName = nullptr;
-		std::optional<ConstantValue> defautValue;
-	};
 
 	struct DefaultPhongData : public ShaderData
 	{
@@ -339,7 +266,7 @@ void main()
 			int32_t EmissiveColorMap = InvalidBinding;
 			int32_t MetalnessMap = InvalidBinding;
 			int32_t RoughnessMap = InvalidBinding;
-			int32_t AlphaMap = InvalidBinding;
+			int32_t AlphaMaskMap = InvalidBinding;
 		};
 
 		struct Offsets
@@ -350,7 +277,7 @@ void main()
 			size_t emissiveColor = InvalidOffset;
 			size_t metalness = InvalidOffset;
 			size_t roughness = InvalidOffset;
-			size_t alphaThreshold = InvalidOffset;
+			size_t alphaMaskThreshold = InvalidOffset;
 		};
 
 		std::filesystem::path BaseColorMapPath;
@@ -360,13 +287,13 @@ void main()
 		std::filesystem::path EmissiveColorMapPath;
 		std::filesystem::path MetalnessMapPath;
 		std::filesystem::path RoughnessMapPath;
-		std::filesystem::path AlphaMapPath;
+		std::filesystem::path AlphaMaskMapPath;
 
 		Color BaseColor = Color::White;
 		Color EmissiveColor = Color::Black;
 		float Metalness = 0.0f;
 		float Roughness = 0.0f;
-		float AlphaThreshold = 0.5f;
+		float AlphaMaskThreshold = 0.5f;
 
 		int32_t structBinding = InvalidBinding;
 		TextureBindings textureBindings;
@@ -377,8 +304,6 @@ void main()
 		DefaultPhongData() = delete;
 		DefaultPhongData(const MaterialData& MaterialData, StructLayout structLayout = StructLayout::Default)
 		{
-			auto& graphics = Graphics::instance();
-
 			int32_t bindingIndex = 0;
 
 			// Load textures
@@ -400,7 +325,7 @@ void main()
 			ATEMA_PHONG_CHECK_TEXTURE(EmissiveColorMap)
 			ATEMA_PHONG_CHECK_TEXTURE(MetalnessMap)
 			ATEMA_PHONG_CHECK_TEXTURE(RoughnessMap)
-			ATEMA_PHONG_CHECK_TEXTURE(AlphaMap)
+			ATEMA_PHONG_CHECK_TEXTURE(AlphaMaskMap)
 
 #undef ATEMA_PHONG_CHECK_TEXTURE
 
@@ -416,7 +341,7 @@ void main()
 			ATEMA_PHONG_GET_PARAMETER(Color, EmissiveColor)
 			ATEMA_PHONG_GET_PARAMETER(float, Metalness)
 			ATEMA_PHONG_GET_PARAMETER(float, Roughness)
-			ATEMA_PHONG_GET_PARAMETER(float, AlphaThreshold)
+			ATEMA_PHONG_GET_PARAMETER(float, AlphaMaskThreshold)
 
 #undef ATEMA_PHONG_GET_PARAMETER
 
@@ -436,8 +361,8 @@ void main()
 			if (RoughnessMapPath.empty())
 				offsets.roughness = layout.add(BufferElementType::Float);
 
-			if (!AlphaMapPath.empty())
-				offsets.alphaThreshold = layout.add(BufferElementType::Float);
+			if (!AlphaMaskMapPath.empty())
+				offsets.alphaMaskThreshold = layout.add(BufferElementType::Float);
 
 			byteSize = layout.getSize();
 
@@ -467,8 +392,8 @@ void main()
 			if (offsets.roughness != Offsets::InvalidOffset)
 				mapMemory<float>(dstData, offsets.roughness) = Roughness;
 
-			if (offsets.alphaThreshold != Offsets::InvalidOffset)
-				mapMemory<float>(dstData, offsets.alphaThreshold) = AlphaThreshold;
+			if (offsets.alphaMaskThreshold != Offsets::InvalidOffset)
+				mapMemory<float>(dstData, offsets.alphaMaskThreshold) = AlphaMaskThreshold;
 		}
 	};
 }
@@ -494,8 +419,9 @@ Ptr<Material> DefaultMaterials::getPhong(const MaterialData& materialData)
 		{ "MaterialEmissiveColorMapBinding", phongData.textureBindings.EmissiveColorMap },
 		{ "MaterialMetalnessMapBinding", phongData.textureBindings.MetalnessMap },
 		{ "MaterialRoughnessMapBinding", phongData.textureBindings.RoughnessMap },
-		{ "MaterialAlphaMapBinding", phongData.textureBindings.AlphaMap },
-		{ "MaterialStructBinding", phongData.structBinding }
+		{ "MaterialAlphaMaskMapBinding", phongData.textureBindings.AlphaMaskMap },
+		{ "MaterialStructBinding", phongData.structBinding },
+		{ "UseAlphaMask", phongData.textureBindings.AlphaMaskMap != DefaultPhongData::InvalidBinding }
 	};
 
 	// Get the raw shader
@@ -504,7 +430,10 @@ Ptr<Material> DefaultMaterials::getPhong(const MaterialData& materialData)
 	// Preprocess the shader with the options we just defined
 	uberShader = graphics.getUberShader(*uberShader, shaderOptions);
 
-	return std::make_shared<Material>(uberShader);
+	MaterialData metaData;
+	metaData.set(MaterialData::LightingModel, "Phong");
+
+	return std::make_shared<Material>(uberShader, metaData);
 }
 
 Ptr<MaterialInstance> DefaultMaterials::getPhongInstance(const MaterialData& materialData)
@@ -535,7 +464,7 @@ Ptr<MaterialInstance> DefaultMaterials::getPhongInstance(const MaterialData& mat
 	ATEMA_PHONG_SET_TEXTURE(EmissiveColorMap)
 	ATEMA_PHONG_SET_TEXTURE(MetalnessMap)
 	ATEMA_PHONG_SET_TEXTURE(RoughnessMap)
-	ATEMA_PHONG_SET_TEXTURE(AlphaMap)
+	ATEMA_PHONG_SET_TEXTURE(AlphaMaskMap)
 
 #undef ATEMA_PHONG_SET_TEXTURE
 

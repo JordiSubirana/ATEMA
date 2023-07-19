@@ -27,6 +27,7 @@
 #include <Atema/Renderer/GraphicsPipeline.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
 #include <Atema/Core/Signal.hpp>
+#include <Atema/Graphics/MaterialData.hpp>
 
 namespace at
 {
@@ -38,12 +39,13 @@ namespace at
 	{
 	public:
 		Material() = delete;
-		Material(Ptr<UberShader> uberShader);
+		Material(Ptr<UberShader> uberShader, const MaterialData& metaData = {});
 		Material(const Material& other) = delete;
 		Material(Material&& other) noexcept = default;
 		~Material();
 
 		const UberShader& getUberShader() const noexcept;
+		const MaterialData& getMetaData() const noexcept;
 
 		void setParameter(const std::string& name, const ShaderData& shaderData);
 		void setParameter(const std::string& name, const Ptr<Image>& image, const Ptr<Sampler>& sampler);
@@ -58,6 +60,7 @@ namespace at
 
 	private:
 		Ptr<UberShader> m_uberShader;
+		MaterialData m_metaData;
 
 		MaterialParameters m_parameters;
 	};

@@ -36,14 +36,15 @@ namespace at
 	class ATEMA_GRAPHICS_API MaterialData
 	{
 	public:
-		ATEMA_DEFINE_MATERIAL_DATA(AlphaMap)
-		ATEMA_DEFINE_MATERIAL_DATA(AlphaThreshold)
+		ATEMA_DEFINE_MATERIAL_DATA(AlphaMaskMap)
+		ATEMA_DEFINE_MATERIAL_DATA(AlphaMaskThreshold)
 		ATEMA_DEFINE_MATERIAL_DATA(AmbientOcclusionMap)
 		ATEMA_DEFINE_MATERIAL_DATA(BaseColor)
 		ATEMA_DEFINE_MATERIAL_DATA(BaseColorMap)
 		ATEMA_DEFINE_MATERIAL_DATA(EmissiveColor)
 		ATEMA_DEFINE_MATERIAL_DATA(EmissiveColorMap)
 		ATEMA_DEFINE_MATERIAL_DATA(HeightMap)
+		ATEMA_DEFINE_MATERIAL_DATA(LightingModel)
 		ATEMA_DEFINE_MATERIAL_DATA(Metalness)
 		ATEMA_DEFINE_MATERIAL_DATA(MetalnessMap)
 		ATEMA_DEFINE_MATERIAL_DATA(NormalMap)
@@ -60,7 +61,7 @@ namespace at
 			std::filesystem::path path;
 		};
 
-		using Value = Variant<int32_t, uint32_t, float, double, Color, MaterialData::Texture>;
+		using Value = Variant<int32_t, uint32_t, float, double, Color, std::string, MaterialData::Texture>;
 
 		struct Parameter
 		{

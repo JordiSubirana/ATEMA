@@ -23,6 +23,7 @@
 
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Window/WindowResizeEvent.hpp>
+#include <Atema/Graphics/DefaultLightingModels.hpp>
 
 #include "../Resources.hpp"
 #include "../Settings.hpp"
@@ -50,6 +51,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	m_frustumRotation(0.0f)
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
+
+	Graphics::instance().addLightingModel(DefaultLightingModels::getPhong());
 
 	m_frameRenderer.getRenderScene().setCamera(m_camera);
 

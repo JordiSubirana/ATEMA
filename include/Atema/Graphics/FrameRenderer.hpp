@@ -24,6 +24,8 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/AbstractFrameRenderer.hpp>
+#include <Atema/Graphics/GBuffer.hpp>
+#include <Atema/Graphics/LightingModel.hpp>
 #include <Atema/Graphics/Passes/DebugFrameGraphPass.hpp>
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
@@ -64,15 +66,22 @@ namespace at
 		{
 			std::vector<UPtr<ShadowPass>> passes;
 		};
-
+		
+		void addLightingModel(const std::string& name);
+		void createGBuffer();
 		void createPasses();
 		void updateLightResources();
 		void createShadowData(RenderLight& renderLight);
 		void updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData);
 
+		ShaderLibraryManager m_shaderLibraryManager;
+
+		UPtr<GBuffer> m_gbuffer;
+		std::unordered_map<std::string, LightingModel> m_lightingModels;
+
 		bool m_updateFrameGraph;
 		Ptr<FrameGraph> m_frameGraph;
-		
+
 		std::vector<AbstractRenderPass*> m_activePasses;
 
 		std::vector<UPtr<AbstractRenderPass>> m_oldRenderPasses;
