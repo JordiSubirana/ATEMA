@@ -25,7 +25,14 @@
 using namespace at;
 
 ShaderLibraryManager::ShaderLibraryManager() :
-	NonCopyable()
+	NonCopyable(),
+	m_parent(nullptr)
+{
+}
+
+ShaderLibraryManager::ShaderLibraryManager(const ShaderLibraryManager& parent) :
+	NonCopyable(),
+	m_parent(&parent)
 {
 }
 
@@ -57,7 +64,13 @@ bool ShaderLibraryManager::hasLibrary(const std::string& libraryName) const
 
 const UPtr<SequenceStatement>& ShaderLibraryManager::getLibrary(const std::string& libraryName) const
 {
-	ATEMA_ASSERT(hasLibrary(libraryName), "Library not found");
-	
+	if (!hasLibrary(libraryName))
+	{
+		if (m_parent)
+			return m_parent->getLibrary(libraryName);
+		else
+			ATEMA_ERROR("Shader library not found");
+	}
+
 	return m_libraries.at(libraryName);
 }

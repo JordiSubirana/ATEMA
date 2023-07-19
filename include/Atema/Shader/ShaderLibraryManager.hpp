@@ -36,6 +36,8 @@ namespace at
 	{
 	public:
 		ShaderLibraryManager();
+		// Associates a parent manager to fallback on if a library was not found here
+		ShaderLibraryManager(const ShaderLibraryManager& parent);
 		ShaderLibraryManager(ShaderLibraryManager&& other) noexcept = default;
 		~ShaderLibraryManager() = default;
 
@@ -48,9 +50,11 @@ namespace at
 
 		bool hasLibrary(const std::string& libraryName) const;
 
+		// Gets the library or tries to find it in the parent manager, if any
 		const UPtr<SequenceStatement>& getLibrary(const std::string& libraryName) const;
 
 	private:
+		const ShaderLibraryManager* m_parent;
 		std::unordered_map<std::string, UPtr<SequenceStatement>> m_libraries;
 	};
 }
