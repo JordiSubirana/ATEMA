@@ -27,6 +27,7 @@
 #include <Atema/Graphics/AbstractRenderPass.hpp>
 #include <Atema/Graphics/Camera.hpp>
 #include <Atema/Graphics/DebugRenderer.hpp>
+#include <Atema/Graphics/DefaultLightingModels.hpp>
 #include <Atema/Graphics/DefaultMaterials.hpp>
 #include <Atema/Graphics/DirectionalLight.hpp>
 #include <Atema/Graphics/Enums.hpp>
@@ -39,6 +40,7 @@
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/IndexBuffer.hpp>
 #include <Atema/Graphics/Light.hpp>
+#include <Atema/Graphics/LightingModel.hpp>
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ImageLoader.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
