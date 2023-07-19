@@ -288,9 +288,19 @@ void AstReflector::visit(const StructDeclarationStatement& statement)
 
 void AstReflector::visit(const FunctionDeclarationStatement& statement)
 {
-	if (m_functions.find(statement.name) != m_functions.end())
+	// Check if the function was already defined
+	const auto functionIt = m_functions.find(statement.name);
+	if (functionIt != m_functions.end())
 	{
-		ATEMA_ERROR("Function '" + statement.name + "' already defined");
+		if (functionIt->second.statement->sequence)
+		{
+			// Error : the 2 statements try to define the function
+			if (statement.sequence)
+				ATEMA_ERROR("Function '" + statement.name + "' already defined");
+			// Valid : here we declare a function that is defined, so we only keep the definition
+			else
+				return;
+		}
 	}
 
 	auto& function = m_functions[statement.name];
