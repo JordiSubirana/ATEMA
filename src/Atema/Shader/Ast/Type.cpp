@@ -25,10 +25,10 @@ using namespace at;
 
 ATEMA_SHADER_API bool at::isInOutType(const Type& type)
 {
-	return type.isOneOf<PrimitiveType, VectorType, MatrixType>();
+	return type.isOneOf<PrimitiveType, VectorType, MatrixType, StructType>();
 }
 
 ATEMA_SHADER_API bool at::isReturnType(const Type& type)
 {
-	return type.isOneOf<VoidType, PrimitiveType, VectorType, MatrixType>();
+	return type.isOneOf<VoidType, PrimitiveType, VectorType, MatrixType, StructType>();
 }
