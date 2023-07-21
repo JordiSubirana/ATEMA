@@ -55,7 +55,7 @@
 #include <Atema/Graphics/Passes/DebugFrameGraphPass.hpp>
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
-#include <Atema/Graphics/Passes/PhongLightingPass.hpp>
+#include <Atema/Graphics/Passes/LightPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
 #include <Atema/Graphics/PerspectiveCamera.hpp>

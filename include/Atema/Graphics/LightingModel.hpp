@@ -46,22 +46,28 @@ namespace at
 		LightingModel(LightingModel&& other) noexcept = default;
 		~LightingModel() = default;
 
+		static size_t generateID();
+
 		LightingModel& operator=(const LightingModel& other) = default;
 		LightingModel& operator=(LightingModel&& other) noexcept = default;
+
+		// Unique ID identifying the LightingModel
+		// Must have been generated from LightingModel::generateID()
+		size_t id;
 
 		// Lighting model name
 		// Must match the include statement in the Material using it
 		std::string name;
 
-		// Material library used to compile geometry Materials
+		// Material library used to compile geometry object materials
 		// Used during GBufferPass
 		// Must use shader library Atema.GBufferWrite and respect its descriptor set indices
 		Ptr<UberShader> materialLibrary;
 
-		// Material applied to lights
+		// Light material library used to compile light materials
 		// Used during LightPass
-		// Must use shader library Atema.GBufferRead and respect its descriptor set indices
-		Ptr<Material> lightMaterial;
+		// Must define the function : vec3f get[LightingModelName]FinalColor(vec2f uv)
+		Ptr<UberShader> lightLibrary;
 
 		// Parameters defining the LightingModel
 		// Represent both outputs of materialLibrary and inputs of lightMaterial

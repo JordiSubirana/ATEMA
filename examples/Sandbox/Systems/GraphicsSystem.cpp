@@ -53,6 +53,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
 	Graphics::instance().addLightingModel(DefaultLightingModels::getPhong());
+	Graphics::instance().addLightingModel(DefaultLightingModels::getEmissive());
 
 	m_frameRenderer.getRenderScene().setCamera(m_camera);
 

@@ -343,13 +343,16 @@ void Graphics::addLightingModel(const LightingModel& lightingModel)
 	ATEMA_ASSERT(m_lightingModels.find(lightingModel.name) != m_lightingModels.end(), "Lighting model already defined");
 
 	m_lightingModels[lightingModel.name] = lightingModel;
+	m_lightingModelIDs[lightingModel.name] = lightingModel.id;
 
 	// Initialize default shader library
 	const auto& libAst = lightingModel.materialLibrary->getAst();
+	const auto& lightLibAst = lightingModel.lightLibrary->getAst();
 
 	AstCloner cloner;
 
 	ShaderLibraryManager::instance().setLibrary("Atema.LightingModel." + lightingModel.name, cloner.clone(*libAst));
+	ShaderLibraryManager::instance().setLibrary("Atema.LightingModel." + lightingModel.name + "LightMaterial", cloner.clone(*lightLibAst));
 }
 
 const LightingModel& Graphics::getLightingModel(const std::string& name) const
@@ -357,6 +360,15 @@ const LightingModel& Graphics::getLightingModel(const std::string& name) const
 	const auto it = m_lightingModels.find(name);
 
 	ATEMA_ASSERT(it == m_lightingModels.end(), "Undefined lighting model");
+
+	return it->second;
+}
+
+size_t Graphics::getLightingModelID(const std::string& name) const
+{
+	const auto it = m_lightingModelIDs.find(name);
+
+	ATEMA_ASSERT(it == m_lightingModelIDs.end(), "Undefined lighting model");
 
 	return it->second;
 }

@@ -30,6 +30,9 @@ namespace at
 {
 	struct ATEMA_GRAPHICS_API DefaultMaterials
 	{
+		static Ptr<Material> getEmissive(const MaterialData& materialData);
+		static Ptr<MaterialInstance> getEmissiveInstance(const MaterialData& materialData);
+
 		static Ptr<Material> getPhong(const MaterialData& materialData);
 		static Ptr<MaterialInstance> getPhongInstance(const MaterialData& materialData);
 	};

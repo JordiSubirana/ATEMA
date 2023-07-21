@@ -19,8 +19,8 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_GRAPHICS_PHONGLIGHTINGPASS_HPP
-#define ATEMA_GRAPHICS_PHONGLIGHTINGPASS_HPP
+#ifndef ATEMA_GRAPHICS_LIGHTPASS_HPP
+#define ATEMA_GRAPHICS_LIGHTPASS_HPP
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
@@ -36,6 +36,7 @@
 
 namespace at
 {
+	class GBuffer;
 	class RenderMaterial;
 	class Light;
 	class VertexBuffer;
@@ -45,7 +46,7 @@ namespace at
 	class Renderable;
 	class FrameGraphBuilder;
 
-	class ATEMA_GRAPHICS_API PhongLightingPass : public AbstractRenderPass
+	class ATEMA_GRAPHICS_API LightPass : public AbstractRenderPass
 	{
 	public:
 		struct Settings
@@ -67,11 +68,11 @@ namespace at
 			std::optional<DepthStencil> depthStencilClearValue;
 		};
 
-		PhongLightingPass();
-		PhongLightingPass(const ShaderLibraryManager& shaderLibraryManager);
-		PhongLightingPass(const PhongLightingPass& other) = default;
-		PhongLightingPass(PhongLightingPass&& other) noexcept = default;
-		~PhongLightingPass() = default;
+		LightPass() = delete;
+		LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager);
+		LightPass(const LightPass& other) = default;
+		LightPass(LightPass&& other) noexcept = default;
+		~LightPass() = default;
 
 		const char* getName() const noexcept override;
 
@@ -79,24 +80,43 @@ namespace at
 
 		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
 
+		void setLightingModels(const std::vector<std::string>& lightingModelNames);
 		void execute(FrameGraphContext& context, const Settings& settings);
 
-		PhongLightingPass& operator=(const PhongLightingPass& other) = default;
-		PhongLightingPass& operator=(PhongLightingPass&& other) noexcept = default;
-
+		LightPass& operator=(const LightPass& other) = default;
+		LightPass& operator=(LightPass&& other) noexcept = default;
+		
 	private:
+		void createLightingModel(const std::string& name);
+		void createShader();
+
 		struct FrameResources
 		{
 			Ptr<DescriptorSet> descriptorSet;
 			Ptr<Buffer> buffer;
 		};
 
-		Ptr<RenderMaterial> m_lightMaterial;
-		Ptr<RenderMaterial> m_lightShadowMaterial;
+		const GBuffer* m_gbuffer;
+		const ShaderLibraryManager* m_shaderLibraryManager;
+
 		Ptr<Sampler> m_gbufferSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 
 		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
+
+		std::unordered_set<std::string> m_lightingModels;
+
+		bool m_updateShader;
+		bool m_useFrameSet;
+		bool m_useLightSet;
+		bool m_useLightShadowSet;
+		Ptr<RenderMaterial> m_lightMaterial;
+		Ptr<RenderMaterial> m_lightShadowMaterial;
+
+		std::map<size_t, std::string> m_gbufferOptions;
+		std::vector<uint32_t> m_gbufferBindings;
+
+		std::vector<Ptr<void>> m_oldResources;
 	};
 }
 

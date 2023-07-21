@@ -33,6 +33,39 @@ using namespace at;
 
 namespace
 {
+	ATEMA_DEFAULT_MATERIAL(Emissive, R"(
+option
+{
+	int InstanceSetIndex = 2;
+}
+
+include Atema.LightingModel.Emissive;
+
+struct MaterialDataStruct
+{
+	vec4f EmissiveColor;
+}
+
+external
+{
+	[set(InstanceSetIndex), binding(0)] MaterialDataStruct MaterialData;
+}
+
+vec3f getEmissiveColor()
+{
+	return MaterialData.EmissiveColor.rgb;
+}
+
+MaterialFragmentParameters getMaterialFragmentParameters()
+{
+	MaterialFragmentParameters parameters = getDefaultMaterialFragmentParameters();
+	
+	parameters.EmissiveColor = getEmissiveColor();
+	
+	return parameters;
+}
+)");
+
 	ATEMA_DEFAULT_MATERIAL(Phong, R"(
 option
 {
@@ -253,6 +286,25 @@ MaterialFragmentParameters getMaterialFragmentParameters()
 }
 )");
 
+	struct DefaultEmissiveData : public ShaderData
+	{
+		Color EmissiveColor = Color::Black;
+
+		size_t getByteSize(StructLayout structLayout) const noexcept override
+		{
+			BufferLayout layout(structLayout);
+
+			layout.add(BufferElementType::Float4);
+
+			return layout.getSize();
+		}
+
+		void copyTo(void* dstData, StructLayout structLayout) const override
+		{
+			mapMemory<Vector4f>(dstData, 0) = EmissiveColor.toVector4f();
+		}
+	};
+
 	struct DefaultPhongData : public ShaderData
 	{
 		static constexpr int32_t InvalidBinding = -1;
@@ -396,6 +448,49 @@ MaterialFragmentParameters getMaterialFragmentParameters()
 				mapMemory<float>(dstData, offsets.alphaMaskThreshold) = AlphaMaskThreshold;
 		}
 	};
+}
+
+Ptr<Material> DefaultMaterials::getEmissive(const MaterialData& materialData)
+{
+	auto& graphics = Graphics::instance();
+
+	// Ensure the default shader is loaded
+	if (!graphics.uberShaderExists(EmissiveMaterial))
+		graphics.setUberShader(EmissiveMaterial, EmissiveMaterialShader);
+
+	// Build shader data
+	const DefaultPhongData phongData(materialData);
+
+	// Define shader options
+	const std::vector<UberShader::Option> shaderOptions =
+	{
+	};
+
+	// Get the raw shader
+	auto uberShader = graphics.getUberShader(EmissiveMaterial);
+
+	// Preprocess the shader with the options we just defined
+	uberShader = graphics.getUberShader(*uberShader, shaderOptions);
+
+	MaterialData metaData;
+	metaData.set(MaterialData::LightingModel, "Emissive");
+
+	return std::make_shared<Material>(uberShader, metaData);
+}
+
+Ptr<MaterialInstance> DefaultMaterials::getEmissiveInstance(const MaterialData& materialData)
+{
+	auto material = getEmissive(materialData);
+
+	auto materialInstance = std::make_shared<MaterialInstance>(material);
+
+	DefaultEmissiveData unlitData;
+	if (materialData.exists(MaterialData::EmissiveColor) && materialData.getValue(MaterialData::EmissiveColor).is<Color>())
+		unlitData.EmissiveColor = materialData.getValue(MaterialData::EmissiveColor).get<Color>();
+
+	materialInstance->setParameter("MaterialData", unlitData);
+
+	return materialInstance;
 }
 
 Ptr<Material> DefaultMaterials::getPhong(const MaterialData& materialData)

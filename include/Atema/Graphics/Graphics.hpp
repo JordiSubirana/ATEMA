@@ -22,6 +22,7 @@
 #ifndef ATEMA_GRAPHICS_GRAPHICS_HPP
 #define ATEMA_GRAPHICS_GRAPHICS_HPP
 
+#include <Atema/Core/IdManager.hpp>
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Shader/UberShader.hpp>
 #include <Atema/Renderer/Sampler.hpp>
@@ -64,6 +65,7 @@ namespace at
 		void addLightingModel(const LightingModel& lightingModel);
 
 		const LightingModel& getLightingModel(const std::string& name) const;
+		size_t getLightingModelID(const std::string& name) const;
 
 		// Default quad mesh (x & y : [-1,1], z : 0)
 		Ptr<VertexBuffer> getQuadMesh();
@@ -183,6 +185,7 @@ namespace at
 		std::vector<AbstractResourceManager*> m_resourceManagers;
 
 		std::unordered_map<std::string, LightingModel> m_lightingModels;
+		std::unordered_map<std::string, size_t> m_lightingModelIDs;
 
 		Ptr<VertexBuffer> m_quadMesh;
 

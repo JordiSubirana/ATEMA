@@ -415,6 +415,11 @@ option
 	int GBufferReadBinding = 0;
 })";
 
+	std::string getReadOptionName(const GBuffer::Texture& texture)
+	{
+		return "GBufferRead" + texture.name + "Offset";
+	}
+
 	std::string getTextureWriteShader(size_t bindingOffset, const GBuffer::Texture& texture)
 	{
 		std::string libStr = "include Atema.GBufferWrite.Options;\n";
@@ -427,9 +432,11 @@ option
 
 	std::string getTextureReadShader(size_t bindingOffset, const GBuffer::Texture& texture)
 	{
+		const std::string readOptionName = getReadOptionName(texture);
+
 		std::string libStr = "include Atema.GBufferRead.Options;\n";
-		libStr += "option\n{\n\tint GBufferRead" + texture.name + "Offset = " + std::to_string(bindingOffset) + ";\n}\n";
-		libStr += "external\n{\n\t[set(GBufferReadSet), binding(GBufferReadBinding + GBufferRead" + texture.name + "Offset)] ";
+		libStr += "option\n{\n\tint " + readOptionName + " = " + std::to_string(bindingOffset) + "; \n }\n";
+		libStr += "external\n{\n\t[set(GBufferReadSet), binding(GBufferReadBinding + " + readOptionName + ")] ";
 		libStr += "sampler2D" + getSuffixStr(getComponentType(texture.format)) + " " + texture.name + ";\n}\n";
 
 		return libStr;
@@ -607,4 +614,32 @@ bool GBuffer::isCompatible(const LightingModel& lightingModel) const
 	}
 
 	return true;
+}
+
+std::vector<GBuffer::TextureBinding> GBuffer::getTextureBindings(const LightingModel& lightingModel) const
+{
+	std::map<size_t, GBuffer::TextureBinding> sortedTextureBindings;
+	std::vector<GBuffer::TextureBinding> textureBindings;
+
+	for (const auto& parameter : lightingModel.parameters)
+	{
+		const auto it = m_componentToTextureIndex.find(parameter.name);
+
+		ATEMA_ASSERT(it != m_componentToTextureIndex.end(), "LightingModel is not compatible with the GBuffer");
+
+		if (sortedTextureBindings.find(it->second) == sortedTextureBindings.end())
+		{
+			const auto& texture = m_textures[it->second];
+
+			auto& textureBinding = sortedTextureBindings[it->second];
+			textureBinding.index = it->second;
+			textureBinding.bindingOptionName = getReadOptionName(texture);
+		}
+	}
+
+	textureBindings.reserve(sortedTextureBindings.size());
+	for (auto& [index, binding] : sortedTextureBindings)
+		textureBindings.emplace_back(std::move(binding));
+
+	return textureBindings;
 }

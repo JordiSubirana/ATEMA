@@ -276,9 +276,18 @@ Ptr<RenderMaterialInstance> RenderMaterial::createInstance(const MaterialInstanc
 	return renderMaterialInstance;
 }
 
+bool RenderMaterial::hasBinding(const std::string& name) const
+{
+	return m_bindings.find(name) != m_bindings.end();
+}
+
 const RenderMaterial::Binding& RenderMaterial::getBinding(const std::string& name) const
 {
-	return m_bindings.at(name);
+	const auto it = m_bindings.find(name);
+
+	ATEMA_ASSERT(it != m_bindings.end(), "RenderMaterial binding does not exist");
+
+	return it->second;
 }
 
 size_t RenderMaterial::getDescriptorSetLayoutCount() const noexcept

@@ -46,6 +46,7 @@ namespace at
 	public:
 		using ID = uint16_t;
 		static constexpr ID InvalidID = std::numeric_limits<ID>::max();
+		static constexpr uint32_t InvalidBindingIndex = std::numeric_limits<uint32_t>::max();
 
 		struct Settings
 		{
@@ -58,8 +59,8 @@ namespace at
 
 		struct Binding
 		{
-			uint32_t set = 0;
-			uint32_t binding = 0;
+			uint32_t set = InvalidBindingIndex;
+			uint32_t binding = InvalidBindingIndex;
 		};
 
 		RenderMaterial() = delete;
@@ -74,6 +75,7 @@ namespace at
 
 		Ptr<RenderMaterialInstance> createInstance(const MaterialInstance& materialInstance);
 
+		bool hasBinding(const std::string& name) const;
 		const Binding& getBinding(const std::string& name) const;
 		size_t getDescriptorSetLayoutCount() const noexcept;
 

@@ -20,9 +20,18 @@
 */
 
 #include <Atema/Graphics/LightingModel.hpp>
+#include <Atema/Core/IdManager.hpp>
 
 using namespace at;
 
-LightingModel::LightingModel()
+LightingModel::LightingModel() :
+	id(0)
 {
+}
+
+size_t LightingModel::generateID()
+{
+	static IdManager<size_t> s_idManager;
+
+	return s_idManager.get() + 1;
 }

@@ -29,7 +29,7 @@
 #include <Atema/Graphics/Passes/DebugFrameGraphPass.hpp>
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
-#include <Atema/Graphics/Passes/PhongLightingPass.hpp>
+#include <Atema/Graphics/Passes/LightPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 
 namespace at
@@ -78,6 +78,7 @@ namespace at
 
 		UPtr<GBuffer> m_gbuffer;
 		std::unordered_map<std::string, LightingModel> m_lightingModels;
+		std::vector<std::string> m_lightingModelNames;
 
 		bool m_updateFrameGraph;
 		Ptr<FrameGraph> m_frameGraph;
@@ -88,7 +89,7 @@ namespace at
 		std::vector<Ptr<FrameGraph>> m_oldFrameGraphs;
 
 		UPtr<GBufferPass> m_gbufferPass;
-		UPtr<PhongLightingPass> m_phongLightingPass;
+		UPtr<LightPass> m_lightPass;
 		UPtr<DebugRendererPass> m_debugRendererPass;
 		UPtr<DebugFrameGraphPass> m_debugFrameGraphPass;
 		UPtr<ScreenPass> m_screenPass;

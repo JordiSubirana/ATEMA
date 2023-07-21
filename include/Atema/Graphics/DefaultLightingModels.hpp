@@ -29,6 +29,7 @@ namespace at
 {
 	struct ATEMA_GRAPHICS_API DefaultLightingModels
 	{
+		static LightingModel getEmissive();
 		static LightingModel getPhong();
 	};
 }

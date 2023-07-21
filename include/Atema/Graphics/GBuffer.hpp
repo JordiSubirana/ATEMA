@@ -54,6 +54,12 @@ namespace at
 			std::vector<std::vector<Component>> components;
 		};
 
+		struct TextureBinding
+		{
+			size_t index = 0;
+			std::string bindingOptionName;
+		};
+
 		GBuffer() = default;
 		// Build a GBuffer from LightingModels
 		// Tries to fit all different components into the smallest GBuffer possible
@@ -69,6 +75,8 @@ namespace at
 		void generateShaderLibraries(ShaderLibraryManager& shaderLibraryManager);
 
 		bool isCompatible(const LightingModel& lightingModel) const;
+
+		std::vector<TextureBinding> getTextureBindings(const LightingModel& lightingModel) const;
 
 		GBuffer& operator=(const GBuffer& other) = default;
 		GBuffer& operator=(GBuffer&& other) noexcept = default;

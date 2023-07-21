@@ -26,7 +26,6 @@
 #include <Atema/Graphics/Material.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
-#include <Atema/Graphics/Passes/PhongLightingPass.hpp>
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/Passes/DebugFrameGraphPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
@@ -63,6 +62,8 @@ Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
 
 	const auto& lightingModelName = material->getMetaData().getValue(MaterialData::LightingModel).get<std::string>();
 
+	const auto lightingModelIndex = Graphics::instance().getLightingModelID(lightingModelName);
+
 	addLightingModel(lightingModelName);
 
 	RenderMaterial::Settings settings;
@@ -71,10 +72,10 @@ Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
 	settings.shaderLibraryManager = &m_shaderLibraryManager;
 
 	settings.pipelineState.stencil = true;
-	settings.pipelineState.stencilFront.compareOperation = CompareOperation::Equal;
-	settings.pipelineState.stencilFront.writeMask = 1;
+	settings.pipelineState.stencilFront.compareOperation = CompareOperation::Always;
 	settings.pipelineState.stencilFront.passOperation = StencilOperation::Replace;
-	settings.pipelineState.stencilFront.reference = 1;
+	settings.pipelineState.stencilFront.writeMask = 0xFF;
+	settings.pipelineState.stencilFront.reference = static_cast<uint32_t>(lightingModelIndex);
 
 	auto renderMaterial = std::make_shared<RenderMaterial>(settings);
 
@@ -221,9 +222,10 @@ void FrameRenderer::createFrameGraph()
 			}
 		}
 
-		// Phong Lighting
+		// Light
+		if (true)
 		{
-			PhongLightingPass::Settings passSettings;
+			LightPass::Settings passSettings;
 
 			passSettings.output = compositionTexture;
 			passSettings.outputClearValue = SkyColor;
@@ -231,8 +233,8 @@ void FrameRenderer::createFrameGraph()
 			passSettings.shadowMaps = shadowMaps;
 			passSettings.depthStencil = gbufferDepthTexture;
 
-			m_phongLightingPass->addToFrameGraph(frameGraphBuilder, passSettings);
-			m_activePasses.emplace_back(m_phongLightingPass.get());
+			m_lightPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_lightPass.get());
 		}
 
 		// Debug Renderer
@@ -316,6 +318,9 @@ void FrameRenderer::beginFrame()
 
 		m_updateFrameGraph = false;
 	}
+
+	if (m_lightPass)
+		m_lightPass->setLightingModels(m_lightingModelNames);
 }
 
 void FrameRenderer::addLightingModel(const std::string& name)
@@ -327,6 +332,7 @@ void FrameRenderer::addLightingModel(const std::string& name)
 	const auto& lightingModel = Graphics::instance().getLightingModel(name);
 
 	m_lightingModels[name] = lightingModel;
+	m_lightingModelNames.emplace_back(name);
 
 	if (!m_gbuffer || !m_gbuffer->isCompatible(lightingModel))
 		createGBuffer();
@@ -363,7 +369,7 @@ void FrameRenderer::createPasses()
 	// Destroy old passes
 	m_oldRenderPasses.emplace_back(std::move(m_gbufferPass));
 
-	m_oldRenderPasses.emplace_back(std::move(m_phongLightingPass));
+	m_oldRenderPasses.emplace_back(std::move(m_lightPass));
 
 	m_oldRenderPasses.emplace_back(std::move(m_debugRendererPass));
 
@@ -378,7 +384,8 @@ void FrameRenderer::createPasses()
 	{
 		m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-		m_phongLightingPass = std::make_unique<PhongLightingPass>(m_shaderLibraryManager);
+		m_lightPass = std::make_unique<LightPass>(*m_gbuffer, m_shaderLibraryManager);
+		m_lightPass->setLightingModels(m_lightingModelNames);
 
 		m_debugRendererPass = std::make_unique<DebugRendererPass>();
 
