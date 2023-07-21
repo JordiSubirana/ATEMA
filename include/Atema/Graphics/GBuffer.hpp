@@ -76,6 +76,7 @@ namespace at
 
 		bool isCompatible(const LightingModel& lightingModel) const;
 
+		std::vector<TextureBinding> getTextureBindings(const std::vector<std::string>& componentNames) const;
 		std::vector<TextureBinding> getTextureBindings(const LightingModel& lightingModel) const;
 
 		GBuffer& operator=(const GBuffer& other) = default;

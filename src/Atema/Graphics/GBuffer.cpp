@@ -616,16 +616,16 @@ bool GBuffer::isCompatible(const LightingModel& lightingModel) const
 	return true;
 }
 
-std::vector<GBuffer::TextureBinding> GBuffer::getTextureBindings(const LightingModel& lightingModel) const
+std::vector<GBuffer::TextureBinding> GBuffer::getTextureBindings(const std::vector<std::string>& componentNames) const
 {
 	std::map<size_t, GBuffer::TextureBinding> sortedTextureBindings;
 	std::vector<GBuffer::TextureBinding> textureBindings;
 
-	for (const auto& parameter : lightingModel.parameters)
+	for (const auto& componentName : componentNames)
 	{
-		const auto it = m_componentToTextureIndex.find(parameter.name);
+		const auto it = m_componentToTextureIndex.find(componentName);
 
-		ATEMA_ASSERT(it != m_componentToTextureIndex.end(), "LightingModel is not compatible with the GBuffer");
+		ATEMA_ASSERT(it != m_componentToTextureIndex.end(), "The requested GBuffer component does not exist");
 
 		if (sortedTextureBindings.find(it->second) == sortedTextureBindings.end())
 		{
@@ -642,4 +642,15 @@ std::vector<GBuffer::TextureBinding> GBuffer::getTextureBindings(const LightingM
 		textureBindings.emplace_back(std::move(binding));
 
 	return textureBindings;
+}
+
+std::vector<GBuffer::TextureBinding> GBuffer::getTextureBindings(const LightingModel& lightingModel) const
+{
+	std::vector<std::string> parameterNames;
+	parameterNames.reserve(lightingModel.parameters.size());
+
+	for (const auto& parameter : lightingModel.parameters)
+		parameterNames.emplace_back(parameter.name);
+
+	return getTextureBindings(parameterNames);
 }
