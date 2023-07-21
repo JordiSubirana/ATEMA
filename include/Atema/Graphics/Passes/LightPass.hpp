@@ -112,6 +112,8 @@ namespace at
 		bool m_useLightShadowSet;
 		Ptr<RenderMaterial> m_lightMaterial;
 		Ptr<RenderMaterial> m_lightShadowMaterial;
+		size_t m_gbufferEmissiveIndex;
+		Ptr<RenderMaterial> m_lightEmissiveMaterial;
 
 		std::map<size_t, std::string> m_gbufferOptions;
 		std::vector<uint32_t> m_gbufferBindings;

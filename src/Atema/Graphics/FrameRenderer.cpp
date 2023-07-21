@@ -223,7 +223,6 @@ void FrameRenderer::createFrameGraph()
 		}
 
 		// Light
-		if (true)
 		{
 			LightPass::Settings passSettings;
 

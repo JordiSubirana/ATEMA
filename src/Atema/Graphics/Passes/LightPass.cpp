@@ -30,6 +30,8 @@
 #include <Atema/Graphics/VertexTypes.hpp>
 #include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Shader/Atsl/AtslParser.hpp>
+#include <Atema/Shader/Atsl/AtslToAstConverter.hpp>
 
 using namespace at;
 
@@ -199,6 +201,20 @@ constexpr char LightShaderMainEnd[] = R"(
 }
 )";
 
+const std::string EmissiveShaderName = "LightPassEmissive";
+constexpr char EmissiveShader[] = R"(
+include Atema.GBufferRead.EmissiveColor;
+include Atema.PostProcess;
+
+[entry(fragment)]
+void main()
+{
+	vec3f emissiveColor = GBufferReadEmissiveColor(atPostProcessGetTexCoords());
+	
+	atPostProcessWriteOutColor(vec4f(emissiveColor, 1.0));
+}
+)";
+
 	struct FrameLayout
 	{
 		FrameLayout(StructLayout structLayout) : layout(structLayout)
@@ -233,6 +249,33 @@ LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderL
 	m_gbufferSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Nearest));
 
 	m_quadMesh = graphics.getQuadMesh();
+
+	AtslParser parser;
+
+	AtslToAstConverter converter;
+
+	auto ast = converter.createAst(parser.createTokens(EmissiveShader));
+
+	if (!graphics.uberShaderExists(EmissiveShaderName))
+		graphics.setUberShader(EmissiveShaderName, EmissiveShader);
+
+	const auto bindings = gbuffer.getTextureBindings({ "EmissiveColor" });
+	m_gbufferEmissiveIndex = bindings[0].index;
+
+	RenderMaterial::Settings renderMaterialSettings;
+	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EmissiveShaderName));
+	renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
+	renderMaterialSettings.pipelineState.depth.test = false;
+	renderMaterialSettings.pipelineState.depth.write = false;
+	renderMaterialSettings.pipelineState.colorBlend.enabled = true;
+	renderMaterialSettings.pipelineState.colorBlend.colorSrcFactor = BlendFactor::One;
+	renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
+	renderMaterialSettings.uberShaderOptions =
+	{
+		{ bindings[0].bindingOptionName, static_cast<int32_t>(0) }
+	};
+
+	m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
 }
 
 const char* LightPass::getName() const noexcept
@@ -334,8 +377,6 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 
-	context.destroyAfterUse(std::move(gbufferSet));
-
 	for (auto& renderLight : renderLights)
 	{
 		if (renderLight->getLight().castShadows())
@@ -362,6 +403,18 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
 	}
+
+	auto emissiveSet = m_lightEmissiveMaterial->createSet(0);
+	emissiveSet->update(0, *context.getImageView(settings.gbuffer[m_gbufferEmissiveIndex]), *m_gbufferSampler);
+
+	m_lightEmissiveMaterial->bindTo(commandBuffer);
+
+	commandBuffer.bindDescriptorSet(0, *emissiveSet);
+
+	commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+
+	context.destroyAfterUse(std::move(gbufferSet));
+	context.destroyAfterUse(std::move(emissiveSet));
 }
 
 void LightPass::createLightingModel(const std::string& name)

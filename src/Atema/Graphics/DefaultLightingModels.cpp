@@ -136,8 +136,7 @@ void main()
 R"(
 vec3f getEmissiveFinalColor(vec2f uv)
 {
-	float emissivePower = 4.0;
-	return GBufferReadEmissiveColor(uv) * emissivePower;
+	return vec3f(0, 0, 0);
 }
 )");
 
@@ -285,7 +284,6 @@ vec3f getPhongFinalColor(vec2f uv)
 	float ambientOcclusion = GBufferReadAmbientOcclusion(uv);
 	float metalness = GBufferReadMetalness(uv);
 	int roughness = int(GBufferReadRoughness(uv) * 255.0);
-	vec3f emissiveColor = GBufferReadEmissiveColor(uv);
 	
 	vec3f inverseLightDir = -normalize(LightData.Direction);
 	
@@ -329,7 +327,6 @@ vec3f getPhongFinalColor(vec2f uv)
 	
 	// Result
 	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * baseColor.rgb;
-	finalColor = finalColor + emissiveColor;
 	
 	return finalColor;
 }
