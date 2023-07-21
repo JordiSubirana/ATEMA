@@ -56,7 +56,7 @@ namespace at
 		{
 			const auto dot = plane.getNormal().dot(line.direction);
 
-			ATEMA_ASSERT(std::fabs(dot) >= Math::Epsilon<T>);
+			ATEMA_ASSERT(std::fabs(dot) >= Math::Epsilon<T>, "Plane and Line don't intersect");
 
 			T t = plane.getSignedDistance(line.point) / dot;
 

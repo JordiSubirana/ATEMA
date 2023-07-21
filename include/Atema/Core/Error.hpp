@@ -26,20 +26,16 @@
 
 #include <stdexcept>
 
-#define ATEMA_EXCEPTION(desc) throw std::runtime_error(desc)
+#define ATEMA_EXCEPTION(atDescription) throw std::runtime_error(atDescription)
 
-#define ATEMA_ERROR(desc) ATEMA_EXCEPTION((std::string("Error : ") + desc + " (" + ATEMA_FUNCTION + ")").c_str())
+#define ATEMA_MESSAGE(atMsgType, atDescription) (std::string(ATEMA_FUNCTION) + "\n" + (atMsgType) + " : " + (atDescription)).c_str()
+
+#define ATEMA_ERROR(atDescription) ATEMA_EXCEPTION(ATEMA_MESSAGE("Error", atDescription))
 
 #ifdef ATEMA_DISABLE_ASSERT
-#define ATEMA_ASSERT_1(condition) (void)(condition)
-#define ATEMA_ASSERT_2(condition, desc) (void)(condition)
+#define ATEMA_ASSERT(atCondition, atDescription) (void)(atCondition)
 #else
-#define ATEMA_ASSERT_1(condition) ATEMA_ASSERT_2(condition, "Assertion failed")
-#define ATEMA_ASSERT_2(condition, desc) do { if (!(condition)) { ATEMA_EXCEPTION((std::string("Assertion failed : ") + desc + " (" + ATEMA_FUNCTION + ")").c_str()); } } while (false)
+#define ATEMA_ASSERT(atCondition, atDescription) do { if (!(atCondition)) { ATEMA_EXCEPTION(ATEMA_MESSAGE("Assertion failed", atDescription)); } } while (false)
 #endif
-
-#define ATEMA_ASSERT_MACRO(_1,_2,NAME,...) NAME
-#define ATEMA_ASSERT(...) ATEMA_ASSERT_MACRO(__VA_ARGS__, ATEMA_ASSERT_2, ATEMA_ASSERT_1)(__VA_ARGS__)
-
 
 #endif

@@ -26,7 +26,7 @@
 #include <Atema/Core/Error.hpp>
 #include <Atema/Math/Vector.hpp>
 
-#define IM_ASSERT(at_expr)  ATEMA_ASSERT(at_expr)
+#define IM_ASSERT(at_expr)  ATEMA_ASSERT(at_expr, "ImGui assertion failed")
 
 #define IMGUI_API ATEMA_RENDERER_API
 
