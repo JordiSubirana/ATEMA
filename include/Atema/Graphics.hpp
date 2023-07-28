@@ -59,6 +59,7 @@
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 #include <Atema/Graphics/Passes/ShadowPass.hpp>
 #include <Atema/Graphics/PerspectiveCamera.hpp>
+#include <Atema/Graphics/PointLight.hpp>
 #include <Atema/Graphics/Primitive.hpp>
 #include <Atema/Graphics/Renderable.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
