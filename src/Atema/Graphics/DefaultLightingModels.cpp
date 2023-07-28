@@ -45,6 +45,7 @@ struct FrameDataStruct
 	mat4f proj;
 	mat4f view;
 	vec3f cameraPosition;
+	vec2u ScreenSize;
 }
 
 struct TransformDataStruct
@@ -154,6 +155,7 @@ struct FrameDataStruct
 	mat4f proj;
 	mat4f view;
 	vec3f cameraPosition;
+	vec2u ScreenSize;
 }
 
 struct TransformDataStruct
@@ -285,15 +287,31 @@ vec3f getPhongFinalColor(vec2f uv)
 	float metalness = GBufferReadMetalness(uv);
 	int roughness = int(GBufferReadRoughness(uv) * 255.0);
 	
-	vec3f inverseLightDir = -normalize(LightData.Direction);
-	
-	float cosTheta = dot(normal, inverseLightDir);
-	
 	//TODO: Add shininess/specular to material data
 	const float Pi = 3.14159265;
 	const float shininess = 16.0;
 	const float specular = metalness;
-
+	
+	vec3f lightDirection;
+	float lightAttenuation = 1.0;
+	
+	if (LightData.Type == DirectionalLightType)
+	{
+		lightDirection = LightData.Parameter0.xyz;
+	}
+	else if (LightData.Type == PointLightType)
+	{
+		lightDirection =  worldPos - LightData.Parameter0.xyz;
+		
+		float distance = length(lightDirection);
+		
+		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
+	}
+	
+	vec3f inverseLightDir = -normalize(lightDirection);
+		
+	float cosTheta = dot(normal, inverseLightDir);
+	
 	// Ambient
 	vec3f ambientColor = LightData.AmbientStrength * LightData.Color * ambientOcclusion;
 	
@@ -326,7 +344,7 @@ vec3f getPhongFinalColor(vec2f uv)
 	float visibility = getVisibility(worldPos, acos(cosTheta));
 	
 	// Result
-	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * baseColor.rgb;
+	vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * baseColor.rgb * lightAttenuation;
 	
 	return finalColor;
 }

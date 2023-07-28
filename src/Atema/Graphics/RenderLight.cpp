@@ -33,7 +33,7 @@ RenderLight::RenderLight(const Light& light) :
 {
 	Buffer::Settings bufferSettings;
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
-	bufferSettings.byteSize = DirectionalLightData::getLayout().getByteSize();
+	bufferSettings.byteSize = LightData::getLayout().getByteSize();
 
 	m_lightBuffer = Buffer::create(bufferSettings);
 
@@ -64,11 +64,8 @@ void RenderLight::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 
 		auto data = stagingBuffer->map();
 
-		DirectionalLightData lightData;
-		lightData.direction = static_cast<const DirectionalLight*>(m_light)->getDirection();
-		lightData.color = m_light->getColor();
-		lightData.ambientStrength = m_light->getAmbientStrength();
-		lightData.diffuseStrength = m_light->getDiffuseStrength();
+		LightData lightData;
+		lightData.light = m_light;
 
 		lightData.copyTo(data);
 

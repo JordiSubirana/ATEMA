@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/TaskManager.hpp>
 #include <Atema/Graphics/Passes/LightPass.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Graphics/FrameGraphContext.hpp>
@@ -27,7 +28,10 @@
 #include <Atema/Graphics/VertexBuffer.hpp>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/Material.hpp>
+#include <Atema/Graphics/PointLight.hpp>
+#include <Atema/Graphics/Primitive.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
+#include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Renderer/DescriptorSetLayout.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Shader/Atsl/AtslParser.hpp>
@@ -43,6 +47,74 @@ namespace
 	constexpr uint32_t LightSetIndex = 2;
 	constexpr uint32_t ShadowSetIndex = 3;
 
+	constexpr uint32_t StencilFrameSetIndex = 0;
+	constexpr uint32_t StencilLightSetIndex = 1;
+
+	constexpr size_t LightSphereSubdivisions = 4;
+
+	const std::string StencilShaderName = "LightPassStencil";
+	constexpr char StencilShader[] = R"(
+const uint DirectionalLightType = uint(0);
+const uint PointLightType = uint(1);
+const uint SpotLightType = uint(2);
+
+struct FrameDataStruct
+{
+	mat4f Projection;
+	mat4f View;
+	vec3f CameraPosition;
+	vec2u ScreenSize;
+}
+
+struct LightDataStruct
+{
+	uint Type;
+	mat4f Transform;
+	vec3f Color;
+	float AmbientStrength;
+	float DiffuseStrength;
+	vec4f Parameter0;
+}
+
+external
+{
+	[set(0), binding(0)] FrameDataStruct FrameData;
+
+	[set(1), binding(0)] LightDataStruct LightData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoords;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f worldPosition = LightData.Transform * vec4f(inPosition, 1.0);
+	vec4f screenPosition = worldPosition;
+	if (LightData.Type != DirectionalLightType)
+		screenPosition = FrameData.Projection * FrameData.View * worldPosition;
+
+	setVertexPosition(screenPosition);
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+[entry(fragment)]
+void main()
+{
+	//TODO: Remove this trick to make the material work
+	outColor = vec4f(0, 0, 0, 0) * LightData.AmbientStrength * FrameData.CameraPosition.x;
+}
+)";
+
 	constexpr char LightShaderDefinitions[] = R"(
 option
 {
@@ -51,20 +123,28 @@ option
 	uint MaxShadowMapCascadeCount = 16;
 }
 
+const uint DirectionalLightType = uint(0);
+const uint PointLightType = uint(1);
+const uint SpotLightType = uint(2);
+
 include Atema.GBufferRead;
 
 struct FrameDataStruct
 {
-	vec3f CameraPosition;
+	mat4f Projection;
 	mat4f View;
+	vec3f CameraPosition;
+	vec2u ScreenSize;
 }
 
 struct LightDataStruct
 {
-	vec3f Direction;
+	uint Type;
+	mat4f Transform;
 	vec3f Color;
 	float AmbientStrength;
 	float DiffuseStrength;
+	vec4f Parameter0;
 }
 
 struct CascadedShadowDataStruct
@@ -95,26 +175,15 @@ input
 	[location(1)] vec2f inTexCoords;
 }
 
-[stage(vertex)]
-output
-{
-	[location(0)] vec2f outTexCoords;
-}
-
 [entry(vertex)]
 void main()
 {
-	vec4f position = vec4f(inPosition, 1.0);
-	
-	outTexCoords = inTexCoords;
-	
-	setVertexPosition(position);
-}
+	vec4f worldPosition = LightData.Transform * vec4f(inPosition, 1.0);
+	vec4f screenPosition = worldPosition;
+	if (LightData.Type != DirectionalLightType)
+		screenPosition = FrameData.Projection * FrameData.View * worldPosition;
 
-[stage(fragment)]
-input
-{
-	[location(0)] vec2f inTexCoords;
+	setVertexPosition(screenPosition);
 }
 
 [stage(fragment)]
@@ -176,7 +245,7 @@ float getVisibility(vec3f worldPos, float angle)
 [entry(fragment)]
 void main()
 {
-	vec2f uv = inTexCoords;
+	vec2f uv = gl_FragCoord.xy / FrameData.ScreenSize;
 	vec3f finalColor;
 	uint lightingModel = uint(GBufferReadLightingModel(uv));
 
@@ -197,6 +266,7 @@ constexpr char LightShaderMainEnd[] = R"(
 	}
 	
 	// Output
+	outColor = vec4f(finalColor * 0.01 + vec3f(uv, 0), 1.0);
 	outColor = vec4f(finalColor, 1.0);
 }
 )";
@@ -214,29 +284,9 @@ void main()
 	atPostProcessWriteOutColor(vec4f(emissiveColor, 1.0));
 }
 )";
-
-	struct FrameLayout
-	{
-		FrameLayout(StructLayout structLayout) : layout(structLayout)
-		{
-			/*struct FrameData
-			{
-				vec3f cameraPosition;
-				mat4f view;
-			}*/
-
-			cameraPositionOffset = layout.add(BufferElementType::Float3);
-			viewOffset = layout.addMatrix(BufferElementType::Float, 4, 4);
-		}
-
-		BufferLayout layout;
-
-		size_t cameraPositionOffset;
-		size_t viewOffset;
-	};
 }
 
-LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager) :
+LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount) :
 	m_gbuffer(&gbuffer),
 	m_shaderLibraryManager(&shaderLibraryManager),
 	m_updateShader(false),
@@ -244,38 +294,65 @@ LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderL
 	m_useLightSet(false),
 	m_useLightShadowSet(false)
 {
+	const auto& taskManager = TaskManager::instance();
+	const auto maxThreadCount = taskManager.getSize();
+	m_threadCount = threadCount;
+	if (threadCount == 0 || threadCount > maxThreadCount)
+		m_threadCount = maxThreadCount;
+
 	auto& graphics = Graphics::instance();
 
 	m_gbufferSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Nearest));
 
 	m_quadMesh = graphics.getQuadMesh();
 
-	AtslParser parser;
+	ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV));
 
-	AtslToAstConverter converter;
+	m_sphereMesh = Primitive::createUVSphere(settings, 1.5f, LightSphereSubdivisions, LightSphereSubdivisions);
 
-	auto ast = converter.createAst(parser.createTokens(EmissiveShader));
-
-	if (!graphics.uberShaderExists(EmissiveShaderName))
-		graphics.setUberShader(EmissiveShaderName, EmissiveShader);
-
-	const auto bindings = gbuffer.getTextureBindings({ "EmissiveColor" });
-	m_gbufferEmissiveIndex = bindings[0].index;
-
-	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EmissiveShaderName));
-	renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
-	renderMaterialSettings.pipelineState.depth.test = false;
-	renderMaterialSettings.pipelineState.depth.write = false;
-	renderMaterialSettings.pipelineState.colorBlend.enabled = true;
-	renderMaterialSettings.pipelineState.colorBlend.colorSrcFactor = BlendFactor::One;
-	renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
-	renderMaterialSettings.uberShaderOptions =
+	// Stencil pass
 	{
-		{ bindings[0].bindingOptionName, static_cast<int32_t>(0) }
-	};
+		if (!graphics.uberShaderExists(StencilShaderName))
+			graphics.setUberShader(StencilShaderName, StencilShader);
 
-	m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+		RenderMaterial::Settings renderMaterialSettings;
+		renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(StencilShaderName));
+		renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
+		renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::None;
+		renderMaterialSettings.pipelineState.depth.test = true;
+		renderMaterialSettings.pipelineState.depth.write = false;
+		renderMaterialSettings.pipelineState.stencil = true;
+		renderMaterialSettings.pipelineState.stencilFront.depthFailOperation = StencilOperation::DecrementAndClamp;
+		renderMaterialSettings.pipelineState.stencilFront.writeMask = 0xFF;
+		renderMaterialSettings.pipelineState.stencilBack.depthFailOperation = StencilOperation::IncrementAndClamp;
+		renderMaterialSettings.pipelineState.stencilBack.writeMask = 0xFF;
+
+		m_meshStencilMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	}
+
+	// Emissive pass
+	{
+		if (!graphics.uberShaderExists(EmissiveShaderName))
+			graphics.setUberShader(EmissiveShaderName, EmissiveShader);
+
+		const auto bindings = gbuffer.getTextureBindings({ "EmissiveColor" });
+		m_gbufferEmissiveIndex = bindings[0].index;
+
+		RenderMaterial::Settings renderMaterialSettings;
+		renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EmissiveShaderName));
+		renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
+		renderMaterialSettings.pipelineState.depth.test = true;
+		renderMaterialSettings.pipelineState.depth.write = false;
+		renderMaterialSettings.pipelineState.colorBlend.enabled = true;
+		renderMaterialSettings.pipelineState.colorBlend.colorSrcFactor = BlendFactor::One;
+		renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
+		renderMaterialSettings.uberShaderOptions =
+		{
+			{ bindings[0].bindingOptionName, static_cast<int32_t>(0) }
+		};
+
+		m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	}
 }
 
 const char* LightPass::getName() const noexcept
@@ -294,6 +371,8 @@ FrameGraphPass& LightPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder,
 
 	for (const auto& texture : settings.gbuffer)
 		pass.addSampledTexture(texture, ShaderStage::Fragment);
+
+	pass.setDepthTexture(settings.gbufferDepthStencil);
 
 	for (const auto& texture : settings.shadowMaps)
 		pass.addSampledTexture(texture, ShaderStage::Fragment);
@@ -318,14 +397,19 @@ void LightPass::updateResources(RenderFrame& renderFrame, CommandBuffer& command
 	if (!m_useFrameSet)
 		return;
 	
-	auto& frameResources = m_frameResources[renderFrame.getFrameIndex()];
+	const auto& camera = getRenderScene().getCamera();
 
-	const FrameLayout layout(StructLayout::Default);
+	auto& frameResources = m_frameResources[renderFrame.getFrameIndex()];
+	
+	FrameData frameData;
+	frameData.cameraPosition = camera.getPosition();
+	frameData.view = camera.getViewMatrix();
+	frameData.projection = camera.getProjectionMatrix();
+	frameData.screenSize = camera.getScissor().size;
 
 	auto data = frameResources.buffer->map();
-
-	mapMemory<Vector3f>(data, layout.cameraPositionOffset) = getRenderScene().getCamera().getPosition();
-	mapMemory<Matrix4f>(data, layout.viewOffset) = getRenderScene().getCamera().getViewMatrix();
+	
+	frameData.copyTo(data);
 
 	frameResources.buffer->unmap();
 }
@@ -335,17 +419,15 @@ void LightPass::setLightingModels(const std::vector<std::string>& lightingModelN
 	for (const auto& lightingModelName : lightingModelNames)
 		createLightingModel(lightingModelName);
 
-	createShader();
+	createShaders();
 }
 
 void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 {
 	const auto& renderScene = getRenderScene();
 
-	if (!renderScene.isValid() || !m_lightMaterial)
+	if (!renderScene.isValid() || !m_meshMaterial)
 		return;
-
-	auto& renderLights = renderScene.getRenderLights();
 
 	const auto& frameResources = m_frameResources[context.getFrameIndex()];
 
@@ -358,9 +440,8 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
-	m_lightMaterial->bindTo(commandBuffer);
-
-	auto gbufferSet = m_lightMaterial->createSet(GBufferSetIndex);
+	// Update GBuffer set
+	auto gbufferSet = m_meshMaterial->createSet(GBufferSetIndex);
 
 	for (uint32_t i = 0; i < settings.gbuffer.size(); i++)
 	{
@@ -370,40 +451,104 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 			gbufferSet->update(bindingIndex, *context.getImageView(settings.gbuffer[i]), *m_gbufferSampler);
 	}
 
-	commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-
-	if (m_useFrameSet)
-		commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
-
-	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
-
-	for (auto& renderLight : renderLights)
+	// Mesh lights
+	if (!m_meshLights.empty())
 	{
-		if (renderLight->getLight().castShadows())
-			continue;
+		// Step #1 : Fill stencil buffer for mesh lights
+		m_meshStencilMaterial->bindTo(commandBuffer);
 
-		if (m_useLightSet)
-			commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *frameResources.descriptorSet);
 
-		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+		for (const auto& renderLight : m_meshLights)
+		{
+			commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+		}
+
+		// Step #2 : draw lights that don't cast any shadows
+		m_meshMaterial->bindTo(commandBuffer);
+
+		commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
+
+		if (m_useFrameSet)
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+
+		for (const auto& renderLight : m_meshLights)
+		{
+			if (renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+		}
+
+		// Step #3 : draw lights that cast shadows
+		m_meshShadowMaterial->bindTo(commandBuffer);
+
+		for (auto& renderLight : m_meshLights)
+		{
+			if (!renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			if (m_useLightShadowSet)
+				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+		}
 	}
 
-	m_lightShadowMaterial->bindTo(commandBuffer);
-
-	for (auto& renderLight : renderLights)
+	// Directional lights
+	if (!m_directionalLights.empty())
 	{
-		if (!renderLight->getLight().castShadows())
-			continue;
+		// Step #1 : draw lights that don't cast any shadows
+		m_directionalMaterial->bindTo(commandBuffer);
 
-		if (m_useLightSet)
-			commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 
-		if (m_useLightShadowSet)
-			commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+		commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
 
-		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		if (m_useFrameSet)
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+
+		for (const auto& renderLight : m_directionalLights)
+		{
+			if (renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		}
+
+		// Step #2 : draw lights that cast shadows
+		m_directionalShadowMaterial->bindTo(commandBuffer);
+
+		for (auto& renderLight : m_directionalLights)
+		{
+			if (!renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			if (m_useLightShadowSet)
+				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		}
 	}
 
+	// Add emissive lighting
 	auto emissiveSet = m_lightEmissiveMaterial->createSet(0);
 	emissiveSet->update(0, *context.getImageView(settings.gbuffer[m_gbufferEmissiveIndex]), *m_gbufferSampler);
 
@@ -411,10 +556,27 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	commandBuffer.bindDescriptorSet(0, *emissiveSet);
 
+	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 	commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
 
 	context.destroyAfterUse(std::move(gbufferSet));
 	context.destroyAfterUse(std::move(emissiveSet));
+}
+
+void LightPass::beginFrame()
+{
+	const auto& renderScene = getRenderScene();
+
+	if (!renderScene.isValid())
+		return;
+
+	frustumCull();
+}
+
+void LightPass::endFrame()
+{
+	m_directionalLights.clear();
+	m_meshLights.clear();
 }
 
 void LightPass::createLightingModel(const std::string& name)
@@ -433,7 +595,7 @@ void LightPass::createLightingModel(const std::string& name)
 	m_updateShader = true;
 }
 
-void LightPass::createShader()
+void LightPass::createShaders()
 {
 	if (!m_updateShader)
 		return;
@@ -487,6 +649,8 @@ void LightPass::createShader()
 	renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;
+	renderMaterialSettings.pipelineState.stencilBack.compareOperation = CompareOperation::Less;
+	renderMaterialSettings.pipelineState.stencilBack.compareMask = 0xFF;
 	renderMaterialSettings.pipelineState.colorBlend.enabled = true;
 	renderMaterialSettings.pipelineState.colorBlend.colorSrcFactor = BlendFactor::One;
 	renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
@@ -495,7 +659,13 @@ void LightPass::createShader()
 	renderMaterialSettings.uberShaderOptions = gbufferOptions;
 	renderMaterialSettings.uberShaderOptions.emplace_back("EnableShadows", ConstantValue(false));
 
-	m_lightMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
+	renderMaterialSettings.pipelineState.stencil = true;
+	m_meshMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+
+	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
+	renderMaterialSettings.pipelineState.stencil = false;
+	m_directionalMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
 
 	// Light + shadow material
 	renderMaterialSettings.uberShaderOptions = gbufferOptions;
@@ -503,18 +673,22 @@ void LightPass::createShader()
 	renderMaterialSettings.uberShaderOptions.emplace_back("ShowDebugCascades", ConstantValue(false));
 	renderMaterialSettings.uberShaderOptions.emplace_back("MaxShadowMapCascadeCount", ConstantValue(static_cast<uint32_t>(CascadedShadowData::MaxCascadeCount)));
 
-	m_lightShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
+	renderMaterialSettings.pipelineState.stencil = true;
+	m_meshShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
 
-	m_useFrameSet = m_lightMaterial->hasBinding("FrameData") && m_lightMaterial->getBinding("FrameData").set != RenderMaterial::InvalidBindingIndex;
-	m_useLightSet = m_lightMaterial->hasBinding("LightData") && m_lightMaterial->getBinding("LightData").set != RenderMaterial::InvalidBindingIndex;
-	m_useLightShadowSet = m_lightShadowMaterial->hasBinding("CascadedShadowData") && m_lightShadowMaterial->getBinding("CascadedShadowData").set != RenderMaterial::InvalidBindingIndex;
+	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
+	renderMaterialSettings.pipelineState.stencil = false;
+	m_directionalShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+
+	m_useFrameSet = m_meshMaterial->hasBinding("FrameData") && m_meshMaterial->getBinding("FrameData").set != RenderMaterial::InvalidBindingIndex;
+	m_useLightSet = m_meshMaterial->hasBinding("LightData") && m_meshMaterial->getBinding("LightData").set != RenderMaterial::InvalidBindingIndex;
+	m_useLightShadowSet = m_meshShadowMaterial->hasBinding("CascadedShadowData") && m_meshShadowMaterial->getBinding("CascadedShadowData").set != RenderMaterial::InvalidBindingIndex;
 	
 	// Buffers and descriptor sets (one per frame in flight)
-	FrameLayout frameLayout(StructLayout::Default);
-
 	Buffer::Settings frameBufferSettings;
 	frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
-	frameBufferSettings.byteSize = frameLayout.layout.getSize();
+	frameBufferSettings.byteSize = FrameData::getLayout().getByteSize();
 
 	for (auto& frameResources : m_frameResources)
 	{
@@ -524,7 +698,7 @@ void LightPass::createShader()
 		if (m_useFrameSet)
 		{
 			frameResources.buffer = Buffer::create(frameBufferSettings);
-			frameResources.descriptorSet = m_lightMaterial->createSet(LightSetIndex);
+			frameResources.descriptorSet = m_meshMaterial->createSet(FrameSetIndex);
 			frameResources.descriptorSet->update(0, *frameResources.buffer);
 		}
 	}
@@ -533,11 +707,123 @@ void LightPass::createShader()
 	const auto& textures = m_gbuffer->getTextures();
 	for (const auto& texture : textures)
 	{
-		if (!m_lightMaterial->hasBinding(texture.name))
+		if (!m_meshMaterial->hasBinding(texture.name))
 			m_gbufferBindings[gbufferBindingIndex] = InvalidGBufferBinding;
 
 		gbufferBindingIndex++;
 	}
 
 	m_updateShader = false;
+}
+
+void LightPass::frustumCull()
+{
+	const auto& renderLights = getRenderScene().getRenderLights();
+
+	std::vector<std::vector<const RenderLight*>> visibleLights;
+
+	if (m_threadCount == 1)
+	{
+		visibleLights.resize(1);
+
+		frustumCullElements(0, renderLights.size(), visibleLights[0]);
+	}
+	else
+	{
+		auto& taskManager = TaskManager::instance();
+
+		visibleLights.resize(m_threadCount);
+
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(m_threadCount);
+
+		size_t firstIndex = 0;
+		size_t size = renderLights.size() / m_threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < m_threadCount; taskIndex++)
+		{
+			if (taskIndex == m_threadCount - 1)
+			{
+				const auto remainingSize = renderLights.size() - m_threadCount * size;
+
+				size += remainingSize;
+			}
+
+			auto task = taskManager.createTask([this, taskIndex, firstIndex, size, &visibleLights](size_t threadIndex)
+				{
+					frustumCullElements(firstIndex, size, visibleLights[taskIndex]);
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
+		}
+
+		for (auto& task : tasks)
+			task->wait();
+
+		for (auto& lights : visibleLights)
+		{
+			for (auto& light : lights)
+			{
+				switch (light->getLight().getType())
+				{
+					case LightType::Directional:
+					{
+						m_directionalLights.emplace_back(light);
+						break;
+					}
+					case LightType::Point:
+					{
+						m_meshLights.emplace_back(light);
+						break;
+					}
+					default:
+					{
+						ATEMA_ERROR("Unhandled LightType");
+					}
+				};
+			}
+		}
+	}
+}
+
+void LightPass::frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const
+{
+	if (!count)
+		return;
+
+	const auto& renderLights = getRenderScene().getRenderLights();
+
+	const auto& frustum = getRenderScene().getCamera().getFrustum();
+
+	visibleLights.reserve(count);
+
+	for (size_t i = index; i < index + count; i++)
+	{
+		const auto& renderLight = *renderLights[i];
+
+		switch (renderLight.getLight().getType())
+		{
+			case LightType::Directional:
+			{
+				visibleLights.emplace_back(&renderLight);
+				break;
+			}
+			case LightType::Point:
+			{
+				const auto& pointLight = static_cast<const PointLight&>(renderLight.getLight());
+				Sphere<float> boundingSphere(pointLight.getPosition(), pointLight.getRadius());
+
+				if (frustum.getIntersectionType(boundingSphere) != IntersectionType::Outside)
+					visibleLights.emplace_back(&renderLight);
+
+				break;
+			}
+			default:
+			{
+				ATEMA_ERROR("Unhandled LightType");
+			}
+		}
+	}
 }

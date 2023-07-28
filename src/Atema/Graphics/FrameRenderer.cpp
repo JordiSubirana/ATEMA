@@ -229,6 +229,7 @@ void FrameRenderer::createFrameGraph()
 			passSettings.output = compositionTexture;
 			passSettings.outputClearValue = SkyColor;
 			passSettings.gbuffer = gbufferTextures;
+			passSettings.gbufferDepthStencil = gbufferDepthTexture;
 			passSettings.shadowMaps = shadowMaps;
 			passSettings.depthStencil = gbufferDepthTexture;
 
@@ -383,7 +384,7 @@ void FrameRenderer::createPasses()
 	{
 		m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-		m_lightPass = std::make_unique<LightPass>(*m_gbuffer, m_shaderLibraryManager);
+		m_lightPass = std::make_unique<LightPass>(*m_gbuffer, m_shaderLibraryManager, ThreadCount);
 		m_lightPass->setLightingModels(m_lightingModelNames);
 
 		m_debugRendererPass = std::make_unique<DebugRendererPass>();

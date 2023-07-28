@@ -36,6 +36,8 @@
 
 namespace at
 {
+	class RenderLight;
+	class Mesh;
 	class GBuffer;
 	class RenderMaterial;
 	class Light;
@@ -59,6 +61,7 @@ namespace at
 
 			// GBuffer texture handles
 			std::vector<FrameGraphTextureHandle> gbuffer;
+			FrameGraphTextureHandle gbufferDepthStencil;
 			std::vector<FrameGraphTextureHandle> shadowMaps;
 
 			// Depth texture handle for stencil mask operations
@@ -69,7 +72,7 @@ namespace at
 		};
 
 		LightPass() = delete;
-		LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager);
+		LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount);
 		LightPass(const LightPass& other) = default;
 		LightPass(LightPass&& other) noexcept = default;
 		~LightPass() = default;
@@ -85,10 +88,16 @@ namespace at
 
 		LightPass& operator=(const LightPass& other) = default;
 		LightPass& operator=(LightPass&& other) noexcept = default;
-		
+
+	protected:
+		void beginFrame() override;
+		void endFrame() override;
+
 	private:
 		void createLightingModel(const std::string& name);
-		void createShader();
+		void createShaders();
+		void frustumCull();
+		void frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const;
 
 		struct FrameResources
 		{
@@ -98,6 +107,7 @@ namespace at
 
 		const GBuffer* m_gbuffer;
 		const ShaderLibraryManager* m_shaderLibraryManager;
+		size_t m_threadCount;
 
 		Ptr<Sampler> m_gbufferSampler;
 		Ptr<VertexBuffer> m_quadMesh;
@@ -110,13 +120,21 @@ namespace at
 		bool m_useFrameSet;
 		bool m_useLightSet;
 		bool m_useLightShadowSet;
-		Ptr<RenderMaterial> m_lightMaterial;
-		Ptr<RenderMaterial> m_lightShadowMaterial;
+		Ptr<RenderMaterial> m_meshStencilMaterial;
+		Ptr<RenderMaterial> m_meshMaterial;
+		Ptr<RenderMaterial> m_meshShadowMaterial;
+		Ptr<RenderMaterial> m_directionalMaterial;
+		Ptr<RenderMaterial> m_directionalShadowMaterial;
 		size_t m_gbufferEmissiveIndex;
 		Ptr<RenderMaterial> m_lightEmissiveMaterial;
 
 		std::map<size_t, std::string> m_gbufferOptions;
 		std::vector<uint32_t> m_gbufferBindings;
+
+		Ptr<Mesh> m_sphereMesh;
+
+		std::vector<const RenderLight*> m_directionalLights;
+		std::vector<const RenderLight*> m_meshLights;
 
 		std::vector<Ptr<void>> m_oldResources;
 	};

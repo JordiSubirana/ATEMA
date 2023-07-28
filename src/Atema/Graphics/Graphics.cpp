@@ -449,7 +449,7 @@ Ptr<DescriptorSetLayout> Graphics::getLightLayout()
 		DescriptorSetLayout::Settings layoutSettings;
 		layoutSettings.bindings =
 		{
-			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Fragment }
+			{ DescriptorType::UniformBuffer, 0, 1, ShaderStage::Vertex | ShaderStage::Fragment }
 		};
 
 		m_lightLayout = getDescriptorSetLayout(layoutSettings);

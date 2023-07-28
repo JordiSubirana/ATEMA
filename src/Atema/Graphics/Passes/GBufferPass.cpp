@@ -125,6 +125,7 @@ void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 	surfaceFrameData.cameraPosition = camera.getPosition();
 	surfaceFrameData.view = camera.getViewMatrix();
 	surfaceFrameData.projection = camera.getProjectionMatrix();
+	surfaceFrameData.screenSize = camera.getScissor().size;
 
 	auto data = buffer->map();
 
@@ -283,7 +284,7 @@ void GBufferPass::frustumCullElements(std::vector<RenderElement>& renderElements
 
 	for (size_t i = index; i < index + count; i++)
 	{
-		auto& renderObject = *renderObjects[i];
+		const auto& renderObject = *renderObjects[i];
 
 		const auto intersectionType = getFrustumIntersection(frustum, renderObject.getRenderable().getAABB());
 

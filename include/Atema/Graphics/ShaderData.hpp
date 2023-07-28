@@ -31,6 +31,8 @@
 
 namespace at
 {
+	class Light;
+
 	class ATEMA_GRAPHICS_API ShaderData
 	{
 	public:
@@ -74,6 +76,7 @@ namespace at
 			size_t projectionOffset;
 			size_t viewOffset;
 			size_t cameraPositionOffset;
+			size_t screenSizeOffset;
 		};
 
 		FrameData() = default;
@@ -89,6 +92,7 @@ namespace at
 		Matrix4f projection;
 		Matrix4f view;
 		Vector3f cameraPosition;
+		Vector2<uint32_t> screenSize;
 
 		FrameData& operator=(const FrameData& other) = default;
 		FrameData& operator=(FrameData&& other) noexcept = default;
@@ -187,7 +191,7 @@ namespace at
 		CascadedShadowData& operator=(CascadedShadowData&& other) noexcept = default;
 	};
 
-	class ATEMA_GRAPHICS_API DirectionalLightData : public ShaderData
+	class ATEMA_GRAPHICS_API LightData : public ShaderData
 	{
 	public:
 		class Layout : public ShaderData::Layout
@@ -196,29 +200,28 @@ namespace at
 			Layout() = delete;
 			Layout(StructLayout structLayout = StructLayout::Default);
 
-			size_t directionOffset;
+			size_t typeOffset;
+			size_t transformOffset;
 			size_t colorOffset;
 			size_t ambientStrengthOffset;
 			size_t diffuseStrengthOffset;
+			size_t parameter0Offset;
 		};
 
-		DirectionalLightData();
-		DirectionalLightData(const DirectionalLightData& other) = default;
-		DirectionalLightData(DirectionalLightData&& other) noexcept = default;
-		virtual ~DirectionalLightData() = default;
+		LightData();
+		LightData(const LightData& other) = default;
+		LightData(LightData&& other) noexcept = default;
+		virtual ~LightData() = default;
 
 		static const Layout& getLayout(StructLayout structLayout = StructLayout::Default);
 
 		size_t getByteSize(StructLayout structLayout) const noexcept override;
 		void copyTo(void* dstData, StructLayout structLayout = StructLayout::Default) const override;
 
-		Vector3f direction;
-		Color color;
-		float ambientStrength;
-		float diffuseStrength;
+		const Light* light;
 
-		DirectionalLightData& operator=(const DirectionalLightData& other) = default;
-		DirectionalLightData& operator=(DirectionalLightData&& other) noexcept = default;
+		LightData& operator=(const LightData& other) = default;
+		LightData& operator=(LightData&& other) noexcept = default;
 	};
 }
 

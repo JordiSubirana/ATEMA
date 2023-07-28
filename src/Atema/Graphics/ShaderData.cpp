@@ -21,7 +21,11 @@
 
 #include <Atema/Core/MemoryMapper.hpp>
 #include <Atema/Core/Utils.hpp>
+#include <Atema/Graphics/DirectionalLight.hpp>
+#include <Atema/Graphics/Light.hpp>
+#include <Atema/Graphics/PointLight.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
+#include <Atema/Math/Transform.hpp>
 
 using namespace at;
 
@@ -68,6 +72,7 @@ FrameData::Layout::Layout(StructLayout structLayout)
 	projectionOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
 	viewOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
 	cameraPositionOffset = bufferLayout.add(BufferElementType::Float3);
+	screenSizeOffset = bufferLayout.add(BufferElementType::Float2);
 
 	initialize(bufferLayout);
 }
@@ -91,6 +96,7 @@ void FrameData::copyTo(void* dstData, StructLayout structLayout) const
 	mapMemory<Matrix4f>(dstData, layout.projectionOffset) = projection;
 	mapMemory<Matrix4f>(dstData, layout.viewOffset) = view;
 	mapMemory<Vector3f>(dstData, layout.cameraPositionOffset) = cameraPosition;
+	mapMemory<Vector2<uint32_t>>(dstData, layout.screenSizeOffset) = screenSize;
 }
 
 // TransformData
@@ -205,43 +211,77 @@ void CascadedShadowData::copyTo(void* dstData, StructLayout structLayout) const
 	}
 }
 
-// DirectionalLightData
-DirectionalLightData::Layout::Layout(StructLayout structLayout)
+// LightData
+LightData::Layout::Layout(StructLayout structLayout)
 {
 	BufferLayout bufferLayout(structLayout);
 
-	directionOffset = bufferLayout.add(BufferElementType::Float3);
+	typeOffset = bufferLayout.add(BufferElementType::UInt);
+	transformOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
 	colorOffset = bufferLayout.add(BufferElementType::Float3);
 	ambientStrengthOffset = bufferLayout.add(BufferElementType::Float);
 	diffuseStrengthOffset = bufferLayout.add(BufferElementType::Float);
+	parameter0Offset = bufferLayout.add(BufferElementType::Float4);
 
 	initialize(bufferLayout);
 }
 
-DirectionalLightData::DirectionalLightData() :
-	ambientStrength(0.0f),
-	diffuseStrength(0.0f)
+LightData::LightData() :
+	light(nullptr)
 {
 }
 
-const DirectionalLightData::Layout& DirectionalLightData::getLayout(StructLayout structLayout)
+const LightData::Layout& LightData::getLayout(StructLayout structLayout)
 {
 	static std::vector<Layout> s_layouts = initializeLayouts<Layout>();
 
 	return s_layouts[static_cast<size_t>(structLayout)];
 }
 
-size_t DirectionalLightData::getByteSize(StructLayout structLayout) const noexcept
+size_t LightData::getByteSize(StructLayout structLayout) const noexcept
 {
 	return getLayout(structLayout).getByteSize();
 }
 
-void DirectionalLightData::copyTo(void* dstData, StructLayout structLayout) const
+void LightData::copyTo(void* dstData, StructLayout structLayout) const
 {
+	ATEMA_ASSERT(light, "Invalid Light");
+
 	const auto& layout = getLayout(structLayout);
 
-	mapMemory<Vector3f>(dstData, layout.directionOffset) = direction;
-	mapMemory<Vector3f>(dstData, layout.colorOffset) = color.toVector3f();
-	mapMemory<float>(dstData, layout.ambientStrengthOffset) = ambientStrength;
-	mapMemory<float>(dstData, layout.diffuseStrengthOffset) = diffuseStrength;
+	mapMemory<uint32_t>(dstData, layout.typeOffset) = static_cast<uint32_t>(light->getType());
+	mapMemory<Vector3f>(dstData, layout.colorOffset) = light->getColor().toVector3f();
+	mapMemory<float>(dstData, layout.ambientStrengthOffset) = light->getAmbientStrength();
+	mapMemory<float>(dstData, layout.diffuseStrengthOffset) = light->getDiffuseStrength();
+	auto& transform = mapMemory<Matrix4f>(dstData, layout.transformOffset);
+
+	switch (light->getType())
+	{
+		case LightType::Directional:
+		{
+			const auto directionalLight = static_cast<const DirectionalLight*>(light);
+
+			mapMemory<Vector3f>(dstData, layout.parameter0Offset) = directionalLight->getDirection();
+			transform = Matrix4f::createIdentity();
+
+			break;
+		}
+		case LightType::Point:
+		{
+			const auto pointLight = static_cast<const PointLight*>(light);
+
+			mapMemory<Vector3f>(dstData, layout.parameter0Offset) = pointLight->getPosition();
+			mapMemory<float>(dstData, layout.parameter0Offset + sizeof(Vector3f)) = pointLight->getRadius();
+
+			const float r = pointLight->getRadius();
+			transform = Transform(pointLight->getPosition(), Vector3f(), Vector3f(r, r, r)).getMatrix();
+			//transform = Matrix4f::createIdentity();
+			
+			break;
+		}
+		default:
+		{
+			ATEMA_ERROR("Unhandled Light type");
+		}
+	}
 }
