@@ -242,6 +242,29 @@ namespace at
 	}
 
 	template <typename T>
+	Vector3<T> Quaternion<T>::toEulerAngles() const
+	{
+		const T T1 = static_cast<T>(1);
+		const T T2 = static_cast<T>(2);
+
+		Vector3<T> eulerAngles;
+
+		const T sxcy = T2 * (w * x + y * z);
+		const T cxcy = T1 - T2 * (x * x + y * y);
+		eulerAngles.x = std::atan2(sxcy, cxcy);
+
+		const T sy = std::sqrt(T1 + T2 * (w * y - x * z));
+		const T cy = std::sqrt(T1 - T2 * (w * y - x * z));
+		eulerAngles.y = T2 * std::atan2(sy, cy) - Math::Pi<T> / T2;
+
+		const T szcy = T2 * (w * z + x * y);
+		const T czcy = T1 - T2 * (y * y + z * z);
+		eulerAngles.z = std::atan2(szcy, czcy);
+
+		return eulerAngles;
+	}
+
+	template <typename T>
 	bool Quaternion<T>::equals(const Quaternion& other, T epsilon) const
 	{
 		if (!Math::equals(w, other.w, epsilon))

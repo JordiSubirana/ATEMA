@@ -60,6 +60,8 @@ namespace at
 		Quaternion getConjugate() const;
 		Quaternion getInverse() const;
 
+		Vector3<T> toEulerAngles() const;
+
 		bool equals(const Quaternion& other, T epsilon = Math::Epsilon<T>) const;
 
 		// Convenience method applying Q * V * Qconjugate
