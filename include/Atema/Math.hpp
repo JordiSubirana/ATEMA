@@ -29,6 +29,7 @@
 #include <Atema/Math/Math.hpp>
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/Plane.hpp>
+#include <Atema/Math/Quaternion.hpp>
 #include <Atema/Math/Rect.hpp>
 #include <Atema/Math/Sphere.hpp>
 #include <Atema/Math/Transform.hpp>

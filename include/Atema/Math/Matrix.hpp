@@ -28,6 +28,9 @@
 
 namespace at
 {
+	template <typename T>
+	class Quaternion;
+
 	template <size_t COL, size_t ROW, typename T>
 	class Matrix
 	{
@@ -164,6 +167,7 @@ namespace at
 		static Matrix4<T> createTranslation(const Vector3<T>& offset);
 
 		static Matrix4<T> createRotation(const Vector3<T>& angles);
+		static Matrix4<T> createRotation(const Quaternion<T>& quaternion);
 		
 		static Matrix4<T> createScale(const Vector3<T>& scales);
 

@@ -24,6 +24,7 @@
 
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Core/Error.hpp>
+#include <Atema/Math/Quaternion.hpp>
 
 namespace at
 {
@@ -700,6 +701,27 @@ namespace at
 		m[1] = {-c.x * s.z + s.x * s.y * c.z, c.x * c.z + s.x * s.y * s.z, s.x * c.y, 0};
 		m[2] = {s.x * s.z + c.x * s.y * c.z, -s.x * c.z + c.x * s.y * s.z, c.x * c.y, 0};
 		m[3] = {0, 0, 0, 1};
+
+		return m;
+	}
+
+	template <typename T>
+	Matrix4<T> Matrix4<T>::createRotation(const Quaternion<T>& quaternion)
+	{
+		const T w = quaternion.w;
+		const T x = quaternion.x;
+		const T y = quaternion.y;
+		const T z = quaternion.z;
+
+		const T T1 = static_cast<T>(1);
+		const T T2 = static_cast<T>(2);
+
+		Matrix4<T> m;
+
+		m[0] = { T1 - T2 * (y * y + z * z), T2 * (x * y + w * z), T2 * (-w * y + x * z), 0};
+		m[1] = { T2 * (x * y - w * z), T1 - T2 * (x * x + z * z), T2 * (w * x + y * z), 0 };
+		m[2] = { T2 * (w * y + x * z), T2 * (-w * x + y * z), T1 - T2 * (x * x + y * y), 0 };
+		m[3] = { 0, 0, 0, 1 };
 
 		return m;
 	}
