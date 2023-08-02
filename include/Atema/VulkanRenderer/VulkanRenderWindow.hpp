@@ -99,6 +99,7 @@ namespace at
 
 		size_t m_currentFrameIndex;
 		std::array<Ptr<VulkanRenderFrame>, Renderer::FramesInFlight> m_renderFrames;
+		UPtr<VulkanRenderFrame> m_invalidRenderFrame;
 	};
 }
 

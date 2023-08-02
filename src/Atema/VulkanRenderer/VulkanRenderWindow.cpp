@@ -41,6 +41,8 @@ VulkanRenderWindow::VulkanRenderWindow(VulkanDevice& device, const RenderWindow:
 	m_recreateSwapChain(false),
 	m_currentFrameIndex(0)
 {
+	m_invalidRenderFrame = std::make_unique<VulkanRenderFrame>();
+
 	createSurface();
 
 	initializePresentQueue();
@@ -75,11 +77,11 @@ ImageFormat VulkanRenderWindow::getDepthFormat() const noexcept
 RenderFrame& VulkanRenderWindow::acquireFrame()
 {
 	if (m_recreateSwapChain)
-	{
 		createSwapChainResources();
 
-		m_recreateSwapChain = false;
-	}
+	// If the swapchain couldn't be created, all resources are invalid : return an invalid RenderFrames
+	if (m_recreateSwapChain)
+		return *m_invalidRenderFrame;
 
 	auto& renderFrame = *m_renderFrames[m_currentFrameIndex];
 
@@ -294,6 +296,10 @@ void VulkanRenderWindow::createSwapChainResources()
 	// Ensure the resources are deleted
 	destroySwapChainResources();
 
+	// Only create resources when the window size is valid
+	if (windowSize.x == 0 || windowSize.y == 0)
+		return;
+
 	// Swapchain creation
 	VulkanSwapChain::Settings swapChainSettings;
 	swapChainSettings.imageFormat = m_colorFormat;
@@ -352,6 +358,8 @@ void VulkanRenderWindow::createSwapChainResources()
 
 	m_currentFrameIndex = 0;
 	m_currentSwapChainImage = 0;
+
+	m_recreateSwapChain = false;
 }
 
 void VulkanRenderWindow::destroySwapChainResources()
