@@ -79,17 +79,48 @@ namespace at
 
 		const Vector3<T> srcNormalized = src.getNormalized();
 		const Vector3<T> dstNormalized = dst.getNormalized();
-		const Vector3<T> rotationAxis = cross(srcNormalized, dstNormalized).normalize();
 
 		const T dot = srcNormalized.dot(dstNormalized);
 
-		const T halfAngleCos = std::sqrt((static_cast<T>(1) + dot) / static_cast<T>(2));
-		const T halfAngleSin = std::sqrt((static_cast<T>(1) - dot) / static_cast<T>(2));
+		// Vectors are almost identical
+		if (dot > static_cast<T>(1) - Math::Epsilon<T>)
+		{
+			operator=(createIdentity());
+		}
+		// Vectors are almost opposite
+		else if (dot < static_cast<T>(-1) + Math::Epsilon<T>)
+		{
+			// Pick a random rotation axis
+			Vector3<T> rotationAxis;
 
-		w = halfAngleCos;
-		x = halfAngleSin * rotationAxis.x;
-		y = halfAngleSin * rotationAxis.y;
-		z = halfAngleSin * rotationAxis.z;
+			// Check if src is not collinear to X axis
+			if (srcNormalized.dot(Vector3<T>(1, 0, 0)) < static_cast<T>(1) - Math::Epsilon<T> &&
+				srcNormalized.dot(Vector3<T>(1, 0, 0)) > static_cast<T>(-1) + Math::Epsilon<T>)
+			{
+				rotationAxis = cross(srcNormalized, Vector3<T>(1, 0, 0));
+			}
+			// If it is, take Y axis
+			else
+			{
+				rotationAxis = cross(srcNormalized, Vector3<T>(0, 1, 0));
+			}
+
+			operator=(Quaternionf(Math::Pi<T>, rotationAxis));
+
+		}
+		// General case
+		else
+		{
+			const Vector3<T> rotationAxis = cross(srcNormalized, dstNormalized).normalize();
+
+			const T halfAngleCos = std::sqrt((static_cast<T>(1) + dot) / static_cast<T>(2));
+			const T halfAngleSin = std::sqrt((static_cast<T>(1) - dot) / static_cast<T>(2));
+
+			w = halfAngleCos;
+			x = halfAngleSin * rotationAxis.x;
+			y = halfAngleSin * rotationAxis.y;
+			z = halfAngleSin * rotationAxis.z;
+		}
 	}
 
 	template <typename T>
