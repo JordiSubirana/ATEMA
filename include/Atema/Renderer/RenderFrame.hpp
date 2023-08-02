@@ -42,6 +42,9 @@ namespace at
 		RenderFrame();
 		~RenderFrame();
 
+		// When invalid, the RenderFrame must not be used in any way
+		virtual bool isValid() const noexcept = 0;
+
 		virtual size_t getFrameIndex() const noexcept = 0;
 
 		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType) = 0;

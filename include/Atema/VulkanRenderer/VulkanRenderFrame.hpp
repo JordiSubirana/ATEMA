@@ -35,9 +35,12 @@ namespace at
 	class ATEMA_VULKANRENDERER_API VulkanRenderFrame : public RenderFrame
 	{
 	public:
-		VulkanRenderFrame() = delete;
+		// Invalid RenderFrame
+		VulkanRenderFrame();
 		VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t frameIndex);
 		~VulkanRenderFrame();
+
+		bool isValid() const noexcept override;
 
 		void wait();
 
@@ -70,8 +73,9 @@ namespace at
 	private:
 		std::vector<Ptr<CommandPool>>& getCommandPools(QueueType queueType);
 
-		VulkanDevice& m_device;
-		VulkanRenderWindow& m_renderWindow;
+		bool m_valid;
+		VulkanDevice* m_device;
+		VulkanRenderWindow* m_renderWindow;
 		Ptr<VulkanFence> m_fence;
 		Ptr<VulkanSemaphore> m_imageAvailableSemaphore;
 		Ptr<VulkanSemaphore> m_renderFinishedSemaphore;

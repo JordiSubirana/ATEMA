@@ -29,16 +29,26 @@
 
 using namespace at;
 
+VulkanRenderFrame::VulkanRenderFrame() :
+	m_valid(false),
+	m_device(nullptr),
+	m_renderWindow(nullptr),
+	m_imageIndex(std::numeric_limits<uint32_t>::max()),
+	m_frameIndex(0)
+{
+}
+
 VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t frameIndex) :
-	m_device(renderWindow.getDevice()),
-	m_renderWindow(renderWindow),
+	m_valid(true),
+	m_device(&renderWindow.getDevice()),
+	m_renderWindow(&renderWindow),
 	m_imageIndex(std::numeric_limits<uint32_t>::max()),
 	m_frameIndex(frameIndex)
 {
-	m_fence = std::make_unique<VulkanFence>(m_device, VulkanFence::Settings({ true }));
+	m_fence = std::make_unique<VulkanFence>(*m_device, VulkanFence::Settings({ true }));
 
-	m_imageAvailableSemaphore = std::make_unique<VulkanSemaphore>(m_device);
-	m_renderFinishedSemaphore = std::make_unique<VulkanSemaphore>(m_device);
+	m_imageAvailableSemaphore = std::make_unique<VulkanSemaphore>(*m_device);
+	m_renderFinishedSemaphore = std::make_unique<VulkanSemaphore>(*m_device);
 
 	// Initialize command pools
 	const auto threadCount = TaskManager::instance().getSize();
@@ -46,9 +56,9 @@ VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t fr
 
 	const std::vector<uint32_t> queueFamilyIndices =
 	{
-		m_device.getQueueFamilyIndex(QueueType::Graphics),
-		m_device.getQueueFamilyIndex(QueueType::Compute),
-		m_device.getQueueFamilyIndex(QueueType::Transfer)
+		m_device->getQueueFamilyIndex(QueueType::Graphics),
+		m_device->getQueueFamilyIndex(QueueType::Compute),
+		m_device->getQueueFamilyIndex(QueueType::Transfer)
 	};
 
 	// Initialize other queues (try to find a unique queue family index for each requirement)
@@ -76,7 +86,7 @@ VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t fr
 			commandPoolSettings.queueType = queueType;
 
 			for (auto& commandPool : commandPools)
-				commandPool = std::make_shared<VulkanCommandPool>(m_device, queueFamilyIndex, commandPoolSettings);
+				commandPool = std::make_shared<VulkanCommandPool>(*m_device, queueFamilyIndex, commandPoolSettings);
 		}
 		// Fall back on graphics family data
 		else
@@ -88,7 +98,13 @@ VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t fr
 
 VulkanRenderFrame::~VulkanRenderFrame()
 {
-	destroyResources();
+	if (m_valid)
+		destroyResources();
+}
+
+bool VulkanRenderFrame::isValid() const noexcept
+{
+	return m_valid;
 }
 
 void VulkanRenderFrame::wait()
@@ -127,12 +143,12 @@ Ptr<CommandBuffer> VulkanRenderFrame::createCommandBuffer(const CommandBuffer::S
 
 Ptr<RenderPass> VulkanRenderFrame::getRenderPass() const noexcept
 {
-	return m_renderWindow.getRenderPass();
+	return m_renderWindow->getRenderPass();
 }
 
 Ptr<Framebuffer> VulkanRenderFrame::getFramebuffer() const noexcept
 {
-	return m_renderWindow.getFramebuffer(m_imageIndex);
+	return m_renderWindow->getFramebuffer(m_imageIndex);
 }
 
 Ptr<Semaphore> VulkanRenderFrame::getImageAvailableSemaphore() const noexcept
@@ -166,12 +182,12 @@ void VulkanRenderFrame::submit(
 	const std::vector<Ptr<Semaphore>>& signalSemaphores,
 	Ptr<Fence> fence)
 {
-	m_device.submit(commandBuffers, waitConditions, signalSemaphores, fence);
+	m_device->submit(commandBuffers, waitConditions, signalSemaphores, fence);
 }
 
 void VulkanRenderFrame::present()
 {
-	m_renderWindow.present(*this);
+	m_renderWindow->present(*this);
 }
 
 std::vector<Ptr<CommandPool>>& VulkanRenderFrame::getCommandPools(QueueType queueType)
