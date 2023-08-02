@@ -30,6 +30,7 @@
 #include <Atema/Graphics/Material.hpp>
 #include <Atema/Graphics/PointLight.hpp>
 #include <Atema/Graphics/Primitive.hpp>
+#include <Atema/Graphics/SpotLight.hpp>
 #include <Atema/Graphics/VertexTypes.hpp>
 #include <Atema/Graphics/Loaders/ModelLoader.hpp>
 #include <Atema/Renderer/DescriptorSetLayout.hpp>
@@ -51,6 +52,8 @@ namespace
 	constexpr uint32_t StencilLightSetIndex = 1;
 
 	constexpr size_t LightSphereSubdivisions = 4;
+	constexpr size_t LightConeVerticalSubdivisions = 8;
+	constexpr size_t LightConeHorizontalSubdivisions = 1;
 
 	const std::string StencilShaderName = "LightPassStencil";
 	constexpr char StencilShader[] = R"(
@@ -74,6 +77,7 @@ struct LightDataStruct
 	float AmbientStrength;
 	float DiffuseStrength;
 	vec4f Parameter0;
+	vec4f Parameter1;
 }
 
 external
@@ -145,6 +149,7 @@ struct LightDataStruct
 	float AmbientStrength;
 	float DiffuseStrength;
 	vec4f Parameter0;
+	vec4f Parameter1;
 }
 
 struct CascadedShadowDataStruct
@@ -309,6 +314,7 @@ LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderL
 	ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV));
 
 	m_sphereMesh = Primitive::createUVSphere(settings, 1.5f, LightSphereSubdivisions, LightSphereSubdivisions);
+	m_coneMesh = Primitive::createConeFromRadius(settings, Vector3f(0.0f, 0.0f, -1.0f), 1.0f, 1.0f, LightConeVerticalSubdivisions, LightConeHorizontalSubdivisions);
 
 	// Stencil pass
 	{
@@ -452,21 +458,33 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 	}
 
 	// Mesh lights
-	if (!m_meshLights.empty())
+	if (!m_pointLights.empty() || !m_spotLights.empty())
 	{
 		// Step #1 : Fill stencil buffer for mesh lights
 		m_meshStencilMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *frameResources.descriptorSet);
 
+		// PointLights
 		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
 		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
 
-		for (const auto& renderLight : m_meshLights)
+		for (const auto& renderLight : m_pointLights)
 		{
 			commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
 
 			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+		}
+
+		// SpotLights
+		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+		for (const auto& renderLight : m_spotLights)
+		{
+			commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
 		}
 
 		// Step #2 : draw lights that don't cast any shadows
@@ -477,7 +495,11 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 		if (m_useFrameSet)
 			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
 
-		for (const auto& renderLight : m_meshLights)
+		// PointLights
+		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+		for (const auto& renderLight : m_pointLights)
 		{
 			if (renderLight->getLight().castShadows())
 				continue;
@@ -488,10 +510,29 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
 		}
 
+		// SpotLights
+		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+		for (const auto& renderLight : m_spotLights)
+		{
+			if (renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
+		}
+
 		// Step #3 : draw lights that cast shadows
 		m_meshShadowMaterial->bindTo(commandBuffer);
 
-		for (auto& renderLight : m_meshLights)
+		// PointLights
+		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+		for (auto& renderLight : m_pointLights)
 		{
 			if (!renderLight->getLight().castShadows())
 				continue;
@@ -503,6 +544,24 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
 
 			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+		}
+
+		// SpotLights
+		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+		for (auto& renderLight : m_spotLights)
+		{
+			if (!renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			if (m_useLightShadowSet)
+				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
 		}
 	}
 
@@ -576,7 +635,8 @@ void LightPass::beginFrame()
 void LightPass::endFrame()
 {
 	m_directionalLights.clear();
-	m_meshLights.clear();
+	m_pointLights.clear();
+	m_spotLights.clear();
 }
 
 void LightPass::createLightingModel(const std::string& name)
@@ -775,7 +835,12 @@ void LightPass::frustumCull()
 					}
 					case LightType::Point:
 					{
-						m_meshLights.emplace_back(light);
+						m_pointLights.emplace_back(light);
+						break;
+					}
+					case LightType::Spot:
+					{
+						m_spotLights.emplace_back(light);
 						break;
 					}
 					default:
@@ -814,6 +879,16 @@ void LightPass::frustumCullElements(size_t index, size_t count, std::vector<cons
 			{
 				const auto& pointLight = static_cast<const PointLight&>(renderLight.getLight());
 				Sphere<float> boundingSphere(pointLight.getPosition(), pointLight.getRadius());
+
+				if (frustum.getIntersectionType(boundingSphere) != IntersectionType::Outside)
+					visibleLights.emplace_back(&renderLight);
+
+				break;
+			}
+			case LightType::Spot:
+			{
+				const auto& spotLight = static_cast<const SpotLight&>(renderLight.getLight());
+				Sphere<float> boundingSphere(spotLight.getPosition(), spotLight.getRange());
 
 				if (frustum.getIntersectionType(boundingSphere) != IntersectionType::Outside)
 					visibleLights.emplace_back(&renderLight);

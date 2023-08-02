@@ -206,6 +206,7 @@ namespace at
 			size_t ambientStrengthOffset;
 			size_t diffuseStrengthOffset;
 			size_t parameter0Offset;
+			size_t parameter1Offset;
 		};
 
 		LightData();

@@ -68,8 +68,8 @@ namespace
 		basisChangeMat[1] = axisY;
 		basisChangeMat[2] = axisZ;
 
-		const float oneOnHorizontalSubdivisions = 1.0f / static_cast<float>(horizontalSubdivisions);
-		const float rangeStep = range * oneOnHorizontalSubdivisions;
+		const float oneOverHorizontalSubdivisions = 1.0f / static_cast<float>(horizontalSubdivisions);
+		const float rangeStep = range * oneOverHorizontalSubdivisions;
 
 		std::vector<float> ranges;
 		std::vector<float> radii;
@@ -85,9 +85,9 @@ namespace
 		const Vector3f horizontalVectorOffset = axisZ * rangeStep;
 		const Vector3f baseCenter = topPosition + axisZ * range;
 
-		const float oneOnSubdivisions = 1.0f / static_cast<float>(verticalSubdivisions);
+		const float oneOverSubdivisions = 1.0f / static_cast<float>(verticalSubdivisions);
 
-		const float angleStep = 2.0f * Math::Pi<float> * oneOnSubdivisions;
+		const float angleStep = 2.0f * Math::Pi<float> * oneOverSubdivisions;
 		const float halfAngleStep = angleStep / 2.0f;
 
 		const float coneAngleCos = std::cos(angle);
@@ -120,7 +120,7 @@ namespace
 
 				vertex.tangent = cross(vertex.bitangent, vertex.normal);
 
-				vertex.texCoords.x = 1.0f - oneOnSubdivisions * (static_cast<float>(v) + 0.5f);
+				vertex.texCoords.x = 1.0f - oneOverSubdivisions * (static_cast<float>(v) + 0.5f);
 			}
 
 			const Vector3f normal = basisChangeMat * Vector3f(subdivisionAngleCos, subdivisionAngleSin, coneAngleSin).getNormalized();
@@ -142,8 +142,8 @@ namespace
 				vertex.tangent = tangent;
 				vertex.bitangent = bitangent;
 
-				vertex.texCoords.x = 1.0f - oneOnSubdivisions * static_cast<float>(v);
-				vertex.texCoords.y = oneOnHorizontalSubdivisions * static_cast<float>(h + 1);
+				vertex.texCoords.x = 1.0f - oneOverSubdivisions * static_cast<float>(v);
+				vertex.texCoords.y = oneOverHorizontalSubdivisions * static_cast<float>(h + 1);
 			}
 
 			// Base vertex (with base normal)

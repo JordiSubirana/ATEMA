@@ -307,6 +307,20 @@ vec3f getPhongFinalColor(vec2f uv)
 		
 		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
 	}
+	else if (LightData.Type == SpotLightType)
+	{
+		lightDirection =  worldPos - LightData.Parameter0.xyz;
+		
+		vec3f spotDirection = LightData.Parameter1.xyz;
+		float spotAngle = LightData.Parameter1.a;
+		
+		float distance = length(lightDirection);
+		
+		float fragmentAngle = max(dot(spotDirection, lightDirection) / max(distance, 0.001), 0.0);
+		
+		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
+		lightAttenuation = lightAttenuation * max((fragmentAngle - spotAngle) / (1.0 - spotAngle), 0.0);
+	}
 	
 	vec3f inverseLightDir = -normalize(lightDirection);
 		

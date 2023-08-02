@@ -25,6 +25,7 @@
 #include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/PointLight.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
+#include <Atema/Graphics/SpotLight.hpp>
 #include <Atema/Math/Transform.hpp>
 
 using namespace at;
@@ -222,6 +223,7 @@ LightData::Layout::Layout(StructLayout structLayout)
 	ambientStrengthOffset = bufferLayout.add(BufferElementType::Float);
 	diffuseStrengthOffset = bufferLayout.add(BufferElementType::Float);
 	parameter0Offset = bufferLayout.add(BufferElementType::Float4);
+	parameter1Offset = bufferLayout.add(BufferElementType::Float4);
 
 	initialize(bufferLayout);
 }
@@ -275,8 +277,29 @@ void LightData::copyTo(void* dstData, StructLayout structLayout) const
 
 			const float r = pointLight->getRadius();
 			transform = Transform(pointLight->getPosition(), Vector3f(), Vector3f(r, r, r)).getMatrix();
-			//transform = Matrix4f::createIdentity();
 			
+			break;
+		}
+		case LightType::Spot:
+		{
+			const auto spotLight = static_cast<const SpotLight*>(light);
+
+			mapMemory<Vector3f>(dstData, layout.parameter0Offset) = spotLight->getPosition();
+			mapMemory<float>(dstData, layout.parameter0Offset + sizeof(Vector3f)) = spotLight->getRange();
+
+			mapMemory<Vector3f>(dstData, layout.parameter1Offset) = spotLight->getDirection();
+			mapMemory<float>(dstData, layout.parameter1Offset + sizeof(Vector3f)) = std::cos(spotLight->getAngle() / 2.0f);
+
+			const float angle = spotLight->getAngle();
+			const float range = spotLight->getRange();
+			const float radius = range * std::tan(angle / 2.0f);
+
+			const Vector3f& translation = spotLight->getPosition();
+			const Vector3f rotation = Quaternionf(Vector3f(0.0f, 0.0f, -1.0f), spotLight->getDirection()).toEulerAngles();
+			const Vector3f scale(radius, radius, range);
+
+			transform = Transform(translation, rotation, scale).getMatrix();
+
 			break;
 		}
 		default:

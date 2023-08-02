@@ -132,9 +132,11 @@ namespace at
 		std::vector<uint32_t> m_gbufferBindings;
 
 		Ptr<Mesh> m_sphereMesh;
+		Ptr<Mesh> m_coneMesh;
 
 		std::vector<const RenderLight*> m_directionalLights;
-		std::vector<const RenderLight*> m_meshLights;
+		std::vector<const RenderLight*> m_pointLights;
+		std::vector<const RenderLight*> m_spotLights;
 
 		std::vector<Ptr<void>> m_oldResources;
 	};
