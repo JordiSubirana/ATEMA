@@ -80,7 +80,10 @@ void CameraSystem::update(TimeStep timeStep)
 	{
 		auto& camera = selection.get<CameraComponent>(entity);
 
-		camera.aspectRatio = static_cast<float>(m_size.x) / static_cast<float>(m_size.y);
+		if (m_size.x == 0 || m_size.y == 0)
+			camera.aspectRatio = 1.0f;
+		else
+			camera.aspectRatio = static_cast<float>(m_size.x) / static_cast<float>(m_size.y);
 
 		if (camera.isAuto)
 		{
