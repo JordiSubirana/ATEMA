@@ -249,17 +249,40 @@ namespace at
 
 		Vector3<T> eulerAngles;
 
-		const T sxcy = T2 * (w * x + y * z);
-		const T cxcy = T1 - T2 * (x * x + y * y);
-		eulerAngles.x = std::atan2(sxcy, cxcy);
+		// Manage singularities on poles (careful with different Euler conventions)
+		//http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/
 
-		const T sy = std::sqrt(T1 + T2 * (w * y - x * z));
-		const T cy = std::sqrt(T1 - T2 * (w * y - x * z));
-		eulerAngles.y = T2 * std::atan2(sy, cy) - Math::Pi<T> / T2;
+		T singularityTest = x * z + y * w;
 
-		const T szcy = T2 * (w * z + x * y);
-		const T czcy = T1 - T2 * (y * y + z * z);
-		eulerAngles.z = std::atan2(szcy, czcy);
+		// Singularity at north pole
+		if (singularityTest > static_cast<T>(0.499))
+		{ 
+			eulerAngles.x = T2 * std::atan2(x, w);
+			eulerAngles.y = Math::HalfPi<T>;
+			eulerAngles.z = 0;
+		}
+		// Singularity at south pole
+		else if (singularityTest < static_cast<T>(-0.499))
+		{ 
+			eulerAngles.x = -T2 * std::atan2(x, w);
+			eulerAngles.y = -Math::HalfPi<T>;
+			eulerAngles.z = 0;
+		}
+		// General case
+		else
+		{
+			const T sxcy = T2 * (w * x + y * z);
+			const T cxcy = T1 - T2 * (x * x + y * y);
+			eulerAngles.x = std::atan2(sxcy, cxcy);
+
+			const T sy = std::sqrt(T1 + T2 * (w * y - x * z));
+			const T cy = std::sqrt(T1 - T2 * (w * y - x * z));
+			eulerAngles.y = T2 * std::atan2(sy, cy) - Math::HalfPi<T>;
+
+			const T szcy = T2 * (w * z + x * y);
+			const T czcy = T1 - T2 * (y * y + z * z);
+			eulerAngles.z = std::atan2(szcy, czcy);
+		}
 
 		return eulerAngles;
 	}
