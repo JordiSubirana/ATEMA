@@ -214,9 +214,12 @@ void GraphicsSystem::updateFrame()
 
 	benchmark.stop();
 
-	destroyPendingResources(renderFrame);
+	if (renderFrame.isValid())
+	{
+		destroyPendingResources(renderFrame);
 
-	m_frameRenderer.render(renderFrame);
+		m_frameRenderer.render(renderFrame);
+	}
 }
 
 void GraphicsSystem::updateRenderables()

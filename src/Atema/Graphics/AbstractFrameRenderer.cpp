@@ -70,6 +70,9 @@ void AbstractFrameRenderer::initializeFrame()
 
 void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 {
+	if (!renderFrame.isValid())
+		return;
+
 	CommandBuffer::Settings commandBufferSettings;
 	commandBufferSettings.secondary = false;
 	commandBufferSettings.singleUse = true;
@@ -93,11 +96,12 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 		destroyResources(renderFrame);
 	}
 
+	// Execute FrameGraph if it is valid
+	if (getFrameGraph())
 	{
 		ATEMA_BENCHMARK("Execute FrameGraph");
 
-		// Execute FrameGraph
-		getFrameGraph().execute(renderFrame, *commandBuffer);
+		getFrameGraph()->execute(renderFrame, *commandBuffer);
 	}
 
 	commandBuffer->end();

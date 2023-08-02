@@ -67,7 +67,7 @@ namespace at
 
 	protected:
 		virtual void createFrameGraph() = 0;
-		virtual FrameGraph& getFrameGraph() = 0;
+		virtual FrameGraph* getFrameGraph() = 0;
 		virtual std::vector<AbstractRenderPass*>& getRenderPasses() = 0;
 		virtual void destroyResources(RenderFrame& renderFrame);
 		// Called before every AbstractRenderPass::doBeginFrame

@@ -56,7 +56,7 @@ namespace at
 
 	protected:
 		void createFrameGraph() override;
-		FrameGraph& getFrameGraph() override;
+		FrameGraph* getFrameGraph() override;
 		std::vector<AbstractRenderPass*>& getRenderPasses() override;
 		void destroyResources(RenderFrame& renderFrame) override;
 		void beginFrame() override;

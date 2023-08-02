@@ -119,9 +119,14 @@ void FrameRenderer::enableDebugShadowMaps(bool enable)
 
 void FrameRenderer::createFrameGraph()
 {
+	m_oldFrameGraphs.emplace_back(std::move(m_frameGraph));
+
 	FrameGraphBuilder frameGraphBuilder;
 
 	Vector2u targetSize = getSize();
+
+	if (targetSize.x == 0 || targetSize.y == 0)
+		return;
 
 	FrameGraphTextureSettings textureSettings;
 	textureSettings.width = targetSize.x;
@@ -280,14 +285,13 @@ void FrameRenderer::createFrameGraph()
 
 	//-----
 	// Build frame graph
-	m_oldFrameGraphs.emplace_back(std::move(m_frameGraph));
 
 	m_frameGraph = frameGraphBuilder.build();
 }
 
-FrameGraph& FrameRenderer::getFrameGraph()
+FrameGraph* FrameRenderer::getFrameGraph()
 {
-	return *m_frameGraph;
+	return m_frameGraph.get();
 }
 
 std::vector<AbstractRenderPass*>& FrameRenderer::getRenderPasses()
