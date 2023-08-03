@@ -54,20 +54,26 @@ namespace
 		vertices.reserve(vertexCount);
 		indices.reserve(indexCount);
 
+		// Build an orthogonal basis from cone direction
 		const Vector3f axisZ = direction.getNormalized();
 
-		Vector3f axisX(-axisZ.y, axisZ.x, axisZ.z);
+		const float zDotX = axisZ.dot(Vector3f(1.0f, 0.0f, 0.0f));
+		const float dotEpsilon = 0.001f;
 
-		if (Math::equals(axisZ.x, 0.0f) && Math::equals(axisZ.y, 0.0f))
-			axisX = Vector3f(axisZ.z, 0.0f, 0.0f);
+		Vector3f axisX;
+		if (!Math::equals(zDotX, 1.0f, dotEpsilon) && !Math::equals(zDotX, -1.0f, dotEpsilon))
+			axisX = cross(axisZ, Vector3f(1.0f, 0.0f, 0.0f)).getNormalized();
+		else
+			axisX = cross(axisZ, Vector3f(0.0f, 1.0f, 0.0f)).getNormalized();
 
-		const Vector3f axisY = cross(axisZ, axisX);
+		const Vector3f axisY = cross(axisZ, axisX).getNormalized();
 
 		Matrix3f basisChangeMat;
 		basisChangeMat[0] = axisX;
 		basisChangeMat[1] = axisY;
 		basisChangeMat[2] = axisZ;
 
+		// Calculate range & radius for each horizontal subdivision
 		const float oneOverHorizontalSubdivisions = 1.0f / static_cast<float>(horizontalSubdivisions);
 		const float rangeStep = range * oneOverHorizontalSubdivisions;
 
@@ -85,19 +91,19 @@ namespace
 		const Vector3f horizontalVectorOffset = axisZ * rangeStep;
 		const Vector3f baseCenter = topPosition + axisZ * range;
 
-		const float oneOverSubdivisions = 1.0f / static_cast<float>(verticalSubdivisions);
+		const float oneOverVerticalSubdivisions = 1.0f / static_cast<float>(verticalSubdivisions);
 
-		const float angleStep = 2.0f * Math::Pi<float> * oneOverSubdivisions;
+		const float angleStep = 2.0f * Math::Pi<float> * oneOverVerticalSubdivisions;
 		const float halfAngleStep = angleStep / 2.0f;
 
-		const float coneAngleCos = std::cos(angle);
-		const float coneAngleSin = std::sin(angle);
+		const float coneCos = std::cos(angle / 2.0f);
+		const float coneSin = std::sin(angle / 2.0f);
 
 		for (size_t v = 0; v <= verticalSubdivisions; v++)
 		{
 			const float subdivisionAngle = static_cast<float>(v) * angleStep;
-			const float subdivisionAngleCos = std::cos(subdivisionAngle);
-			const float subdivisionAngleSin = std::sin(subdivisionAngle);
+			const float subdivisionCos = std::cos(subdivisionAngle);
+			const float subdivisionSin = std::sin(subdivisionAngle);
 
 			// Top vertex
 			{
@@ -105,44 +111,50 @@ namespace
 
 				vertex.position = topPosition;
 
-				vertex.normal.x = std::cos(subdivisionAngle + halfAngleStep);
-				vertex.normal.y = std::sin(subdivisionAngle + halfAngleStep);
-				vertex.normal.z = coneAngleSin;
-				
-				vertex.bitangent = -vertex.normal;
-				vertex.bitangent.z = coneAngleCos;
+				vertex.normal.x = coneCos * std::cos(subdivisionAngle + halfAngleStep);
+				vertex.normal.y = coneCos * std::sin(subdivisionAngle + halfAngleStep);
+				vertex.normal.z = -coneSin;
 
-				vertex.normal.normalize();
 				vertex.normal = basisChangeMat * vertex.normal;
+				vertex.normal.normalize();
+				
+				vertex.bitangent.x = -coneSin * std::cos(subdivisionAngle + halfAngleStep);
+				vertex.bitangent.y = -coneSin * std::cos(subdivisionAngle + halfAngleStep);
+				vertex.bitangent.z = -coneCos;
 
-				vertex.bitangent.normalize();
 				vertex.bitangent = basisChangeMat * vertex.bitangent;
+				vertex.bitangent.normalize();
 
 				vertex.tangent = cross(vertex.bitangent, vertex.normal);
+				vertex.tangent.normalize();
 
-				vertex.texCoords.x = 1.0f - oneOverSubdivisions * (static_cast<float>(v) + 0.5f);
+				vertex.texCoords.x = 1.0f - oneOverVerticalSubdivisions * (static_cast<float>(v) + 0.5f);
 			}
 
-			const Vector3f normal = basisChangeMat * Vector3f(subdivisionAngleCos, subdivisionAngleSin, coneAngleSin).getNormalized();
-			const Vector3f bitangent = basisChangeMat * Vector3f(-subdivisionAngleCos, -subdivisionAngleSin, coneAngleCos).getNormalized();
-			const Vector3f tangent = cross(bitangent, normal);
+			Vector3f normal = basisChangeMat * Vector3f(coneCos * subdivisionCos, coneCos * subdivisionSin, -coneSin);
+			normal.normalize();
+
+			Vector3f bitangent = basisChangeMat * Vector3f(-coneSin * subdivisionCos, -coneSin * subdivisionSin, -coneCos);
+			bitangent.normalize();
+
+			Vector3f tangent = cross(bitangent, normal);
+			tangent.normalize();
+
+			Vector3f vertexDir = basisChangeMat * Vector3f(subdivisionCos, subdivisionSin, 0.0f);
+			vertexDir.normalize();
 
 			// Side vertices
 			for (size_t h = 0; h < horizontalSubdivisions; h++)
 			{
 				auto& vertex = vertices.emplace_back();
 
-				vertex.position.x = radii[h] * subdivisionAngleCos;
-				vertex.position.y = radii[h] * subdivisionAngleSin;
-				vertex.position.z = ranges[h];
-
-				vertex.position = basisChangeMat * vertex.position;
+				vertex.position = axisZ * ranges[h] + vertexDir * radii[h];
 
 				vertex.normal = normal;
 				vertex.tangent = tangent;
 				vertex.bitangent = bitangent;
 
-				vertex.texCoords.x = 1.0f - oneOverSubdivisions * static_cast<float>(v);
+				vertex.texCoords.x = 1.0f - oneOverVerticalSubdivisions * static_cast<float>(v);
 				vertex.texCoords.y = oneOverHorizontalSubdivisions * static_cast<float>(h + 1);
 			}
 
@@ -156,8 +168,8 @@ namespace
 				vertex.tangent = axisX;
 				vertex.bitangent = axisY;
 
-				vertex.texCoords.x = 1.0f - (subdivisionAngleCos + 1.0f) / 2.0f;
-				vertex.texCoords.y = (subdivisionAngleSin + 1.0f) / 2.0f;
+				vertex.texCoords.x = 1.0f - (subdivisionCos + 1.0f) / 2.0f;
+				vertex.texCoords.y = (subdivisionSin + 1.0f) / 2.0f;
 			}
 		}
 
@@ -213,7 +225,7 @@ namespace
 
 Ptr<Mesh> Primitive::createConeFromRadius(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float radius, size_t verticalSubdivisions, size_t horizontalSubdivisions)
 {
-	const float angle = std::atan(radius / range);
+	const float angle = std::atan(radius / range) * 2.0f;
 
 	return createCone(settings, direction, range, radius, angle, verticalSubdivisions, horizontalSubdivisions);
 }
