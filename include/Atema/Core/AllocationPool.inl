@@ -23,12 +23,15 @@
 #define ATEMA_CORE_ALLOCATIONPOOL_INL
 
 #include <Atema/Core/AllocationPool.hpp>
+#include <Atema/Core/Error.hpp>
+#include <Atema/Core/Utils.hpp>
 
 namespace at
 {
 	template <typename AllocationType, typename PageResources>
 	AllocationPool<AllocationType, PageResources>::AllocationPool(size_t pageSize, bool releaseOnClear) :
 		m_pageSize(pageSize),
+		m_pageAlignment(1),
 		m_releaseOnClear(releaseOnClear)
 	{
 	}
@@ -42,26 +45,54 @@ namespace at
 	template <typename AllocationType, typename PageResources>
 	Ptr<AllocationType> AllocationPool<AllocationType, PageResources>::allocate(size_t size)
 	{
+		Ptr<AllocationType> allocation;
+
 		// Find a page with enough remaining memory
 		for (size_t pageIndex = 0; pageIndex < m_pages.size(); pageIndex++)
 		{
-			auto& page = m_pages[pageIndex];
-
-			const auto offset = page->allocate(size);
+			const size_t offset = m_pages[pageIndex]->allocate(size);
 
 			if (offset != AllocationPage::InvalidOffset)
-				return createAllocation(*m_pageResources[pageIndex], pageIndex, offset, size);
+			{
+				allocation = createAllocation(*m_pageResources[pageIndex], pageIndex, offset, size);
+
+				break;
+			}
 		}
 
 		// No page found, create a new one capable of storing enough data
-		const auto pageSize = std::max(m_pageSize, size);
+		if (!allocation)
+		{
+			const auto pageSize = std::max(m_pageSize, size);
 
-		auto& page = m_pages.emplace_back(std::make_unique<AllocationPage>(pageSize, m_releaseOnClear));
-		auto& pageResources = m_pageResources.emplace_back(createPageResources(pageSize));
+			auto& page = m_pages.emplace_back(std::make_unique<AllocationPage>(pageSize, m_pageAlignment, m_releaseOnClear));
+			auto& pageResources = m_pageResources.emplace_back(createPageResources(pageSize));
 
-		const auto offset = page->allocate(size);
+			const size_t offset = page->allocate(size);
 
-		return createAllocation(*pageResources, m_pages.size() - 1, offset, size);
+			allocation = createAllocation(*pageResources, m_pages.size() - 1, offset, size);
+		}
+
+		// Automatically release allocation if we are not on global release on clear
+		if (!m_releaseOnClear)
+		{
+			AllocationType* allocationPtr = allocation.get();
+
+			m_connectionGuard.connect(allocation->onDestroy, [this, allocationPtr]()
+				{
+					release(*allocationPtr);
+				});
+		}
+
+		return allocation;
+	}
+
+	template <typename AllocationType, typename PageResources>
+	size_t AllocationPool<AllocationType, PageResources>::getAllocationCount(size_t pageIndex) const
+	{
+		ATEMA_ASSERT(pageIndex < m_pages.size(), "Invalid page index");
+
+		return m_pages[pageIndex]->getAllocationCount();
 	}
 
 	template <typename AllocationType, typename PageResources>
@@ -86,6 +117,18 @@ namespace at
 
 			clearResources(*m_pageResources[pageIndex]);
 		}
+
+		// We don't want previous allocations to free the current content
+		m_connectionGuard.disconnect();
+	}
+
+	template <typename AllocationType, typename PageResources>
+	void AllocationPool<AllocationType, PageResources>::initialize(size_t pageAlignment)
+	{
+		ATEMA_ASSERT(pageAlignment > 1, "Page alignment must be a at least one");
+		ATEMA_ASSERT(isPowerOfTwo(pageAlignment), "Page alignment must be a power of two");
+
+		m_pageAlignment = pageAlignment;
 	}
 }
 

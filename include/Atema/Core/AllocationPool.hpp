@@ -24,6 +24,7 @@
 
 #include <Atema/Core/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
+#include <Atema/Core/Signal.hpp>
 
 #include <map>
 #include <vector>
@@ -37,7 +38,7 @@ namespace at
 		Allocation(size_t page, size_t offset, size_t size);
 		Allocation(const Allocation& other) = default;
 		Allocation(Allocation&& other) noexcept = default;
-		~Allocation() = default;
+		virtual ~Allocation();
 
 		size_t getPage() const noexcept;
 		size_t getOffset() const noexcept;
@@ -45,6 +46,8 @@ namespace at
 
 		Allocation& operator=(const Allocation& other) = default;
 		Allocation& operator=(Allocation&& other) noexcept = default;
+
+		Signal<> onDestroy;
 
 	private:
 		size_t m_page;
@@ -58,7 +61,7 @@ namespace at
 		static constexpr size_t InvalidOffset = std::numeric_limits<size_t>::max();
 
 		AllocationPage() = delete;
-		AllocationPage(size_t size, bool releaseOnClear);
+		AllocationPage(size_t size, size_t alignment, bool releaseOnClear);
 		AllocationPage(const AllocationPage& other) = default;
 		AllocationPage(AllocationPage&& other) noexcept = default;
 		~AllocationPage() = default;
@@ -69,6 +72,8 @@ namespace at
 		void release(size_t offset, size_t size);
 
 		void clear();
+
+		size_t getAllocationCount() const noexcept;
 
 		AllocationPage& operator=(const AllocationPage& other) = default;
 		AllocationPage& operator=(AllocationPage&& other) noexcept = default;
@@ -84,10 +89,13 @@ namespace at
 		};
 
 		size_t m_size;
+		size_t m_alignment;
 		bool m_releaseOnClear;
 
 		size_t m_currentOffset;
 		size_t m_remainingSize;
+
+		size_t m_allocationCount;
 
 		// Key is the range last address
 		std::map<size_t, Range> m_availableRanges;
@@ -111,10 +119,7 @@ namespace at
 
 		Ptr<AllocationType> allocate(size_t size);
 
-		// Makes the memory available again if releaseOnClear was set to false
-		// If releaseOnClear was set to true, the memory will be available on next clear
-		// The released memory is considered not to be used anymore
-		void release(const Allocation& allocation);
+		size_t getAllocationCount(size_t pageIndex) const;
 
 		// All previously made allocations are considered to be unused and the memory is made available again
 		void clear();
@@ -123,17 +128,28 @@ namespace at
 		AllocationPool& operator=(AllocationPool&& other) noexcept = delete;
 
 	protected:
+		// pageAlignment must be at least 1, and a power of 2
+		// Default : 1
+		void initialize(size_t pageAlignment);
 		virtual UPtr<PageResources> createPageResources(size_t pageSize) = 0;
 		virtual Ptr<AllocationType> createAllocation(PageResources& pageResources, size_t page, size_t offset, size_t size) = 0;
 		virtual void releaseResources(PageResources& pageResources, size_t offset, size_t size) = 0;
 		virtual void clearResources(PageResources& pageResources) = 0;
 
 	private:
+		// Makes the memory available again if releaseOnClear was set to false
+		// If releaseOnClear was set to true, the memory will be available on next clear
+		// The released memory is considered not to be used anymore
+		void release(const Allocation& allocation);
+
 		size_t m_pageSize;
+		size_t m_pageAlignment;
 		bool m_releaseOnClear;
 
 		std::vector<UPtr<AllocationPage>> m_pages;
 		std::vector<UPtr<PageResources>> m_pageResources;
+
+		ConnectionGuard m_connectionGuard;
 	};
 }
 

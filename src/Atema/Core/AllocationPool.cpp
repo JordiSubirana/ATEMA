@@ -20,6 +20,7 @@
 */
 
 #include <Atema/Core/AllocationPool.hpp>
+#include <Atema/Core/Utils.hpp>
 
 using namespace at;
 
@@ -29,6 +30,11 @@ Allocation::Allocation(size_t page, size_t offset, size_t size) :
 	m_offset(offset),
 	m_size(size)
 {
+}
+
+Allocation::~Allocation()
+{
+	onDestroy();
 }
 
 size_t Allocation::getPage() const noexcept
@@ -59,25 +65,33 @@ AllocationPage::Range::Range(size_t offset, size_t size) :
 }
 
 // AllocationPage
-AllocationPage::AllocationPage(size_t size, bool releaseOnClear) :
+AllocationPage::AllocationPage(size_t size, size_t alignment, bool releaseOnClear) :
 	m_size(size),
+	m_alignment(alignment),
 	m_releaseOnClear(releaseOnClear),
 	m_currentOffset(0),
-	m_remainingSize(size)
+	m_remainingSize(size),
+	m_allocationCount(0)
 {
-
+	Range range(m_currentOffset, m_remainingSize);
+	m_availableRanges[range.size] = std::move(range);
 }
 
 size_t AllocationPage::allocate(size_t size)
 {
+	// Align the size
+	size = nextMultiplePowerOfTwo(size, m_alignment);
+
 	if (m_releaseOnClear)
 	{
 		if (m_remainingSize >= size)
 		{
-			const auto offset = m_currentOffset;
+			const size_t offset = m_currentOffset;
 
 			m_currentOffset += size;
 			m_remainingSize -= size;
+
+			m_allocationCount++;
 
 			return offset;
 		}
@@ -102,6 +116,8 @@ size_t AllocationPage::allocate(size_t size)
 					availableRange.offset += size;
 				}
 
+				m_allocationCount++;
+
 				return offset;
 			}
 		}
@@ -112,8 +128,13 @@ size_t AllocationPage::allocate(size_t size)
 
 void AllocationPage::release(size_t offset, size_t size)
 {
+	m_allocationCount--;
+
 	if (!m_releaseOnClear)
 		return;
+
+	// Align the size
+	size = nextMultiplePowerOfTwo(size, m_alignment);
 
 	Range newRange(offset, size);
 
@@ -148,8 +169,15 @@ void AllocationPage::clear()
 	m_currentOffset = 0;
 	m_remainingSize = m_size;
 
+	m_allocationCount = 0;
+
 	m_availableRanges.clear();
 
 	Range range(m_currentOffset, m_remainingSize);
 	m_availableRanges[range.size] = std::move(range);
+}
+
+size_t AllocationPage::getAllocationCount() const noexcept
+{
+	return m_allocationCount;
 }
