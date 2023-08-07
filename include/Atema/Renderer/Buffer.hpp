@@ -42,6 +42,7 @@ namespace at
 
 		static Ptr<Buffer> create(const Settings& settings);
 
+		virtual Flags<BufferUsage> getUsages() const = 0;
 		virtual size_t getByteSize() const = 0;
 
 		// Requires BufferUsage::Map

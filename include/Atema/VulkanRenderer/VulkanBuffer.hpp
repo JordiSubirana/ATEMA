@@ -37,6 +37,7 @@ namespace at
 
 		VkBuffer getHandle() const noexcept;
 
+		Flags<BufferUsage> getUsages() const override;
 		size_t getByteSize() const override;
 
 		void* map(size_t byteOffset, size_t byteSize) override;
@@ -48,6 +49,7 @@ namespace at
 		VmaAllocation m_allocation;
 		bool m_mappable;
 		void* m_mappedData;
+		Flags<BufferUsage> m_usages;
 		size_t m_byteSize;
 	};
 }

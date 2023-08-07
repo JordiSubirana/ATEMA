@@ -33,6 +33,7 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice& device, const Buffer::Settings& s
 	m_allocation(VK_NULL_HANDLE),
 	m_mappable(settings.usages & BufferUsage::Map),
 	m_mappedData(nullptr),
+	m_usages(settings.usages),
 	m_byteSize(settings.byteSize)
 {
 	ATEMA_ASSERT(settings.byteSize != 0, "Invalid buffer size");
@@ -66,6 +67,11 @@ VulkanBuffer::~VulkanBuffer()
 VkBuffer VulkanBuffer::getHandle() const noexcept
 {
 	return m_buffer;
+}
+
+Flags<BufferUsage> VulkanBuffer::getUsages() const
+{
+	return m_usages;
 }
 
 size_t VulkanBuffer::getByteSize() const
