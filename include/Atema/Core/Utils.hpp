@@ -26,11 +26,23 @@
 
 namespace at
 {
+	template <typename T>
+	constexpr bool isPowerOfTwo(T number);
+
+	// Finds the next multiple of a number
+	template <typename T>
+	constexpr T nextMultiple(T number, T multiple);
+
+	// Finds the next multiple of a number
+	// Faster than nextMultiple but multiple needs to be a power of 2
+	template <typename T>
+	constexpr T nextMultiplePowerOfTwo(T number, T multiple);
+
 	// Maps (data + byteOffset) to a type
 	template <typename T>
 	T& mapMemory(void* data, size_t byteOffset);
 
-	// Consider the memory as an array of blocks with similar structure
+	// Considers the memory as an array of blocks with similar structure
 	// Each block :
 	//	- is composed of one or many elements
 	//	- has a byte size of 'blockByteSize'

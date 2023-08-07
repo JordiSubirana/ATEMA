@@ -27,6 +27,26 @@
 namespace at
 {
 	template <typename T>
+	constexpr bool isPowerOfTwo(T number)
+	{
+		return (number & (number - 1)) == 0;
+	}
+
+	template <typename T>
+	constexpr T nextMultiple(T number, T multiple)
+	{
+		const T isPositive = (number >= 0) ? 1 : 0;
+
+		return ((number + isPositive * (multiple - 1)) / multiple) * multiple;
+	}
+
+	template <typename T>
+	constexpr T nextMultiplePowerOfTwo(T number, T multiple)
+	{
+		return (number + multiple - 1) & ~(multiple - 1);
+	}
+
+	template <typename T>
 	T& mapMemory(void* data, size_t byteOffset)
 	{
 		return *reinterpret_cast<T*>(static_cast<uint8_t*>(data) + byteOffset);

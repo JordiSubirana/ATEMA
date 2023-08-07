@@ -29,7 +29,7 @@ namespace at
 	{
 		static constexpr bool getValue()
 		{
-			return !(I == 0) && !(I & (I - 1));
+			return I != 0 && !(I & (I - 1));
 		}
 
 		static constexpr bool value = getValue();
