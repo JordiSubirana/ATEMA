@@ -20,6 +20,7 @@
 */
 
 #include <Atema/Renderer/BufferPool.hpp>
+#include <Atema/Renderer/Renderer.hpp>
 
 using namespace at;
 
@@ -66,6 +67,8 @@ BufferPool::BufferPool(Flags<BufferUsage> usages, size_t pageSize, bool releaseO
 	AllocationPool(pageSize, releaseOnClear),
 	m_usages(usages)
 {
+	if (m_usages & BufferUsage::Uniform)
+		initialize(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 }
 
 UPtr<BufferPageResources> BufferPool::createPageResources(size_t pageSize)
