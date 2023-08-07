@@ -64,7 +64,7 @@ namespace at
 
 		std::optional<ConstantValue> getOptionValue(const std::string& optionName);
 		
-		Type process(const Type& type);
+		AstType process(const AstType& type);
 
 		UPtr<Expression> createConstantIfPossible(UPtr<Expression>&& value);
 		UPtr<ConstantExpression> createConstantExpression(const ConstantValue& value);

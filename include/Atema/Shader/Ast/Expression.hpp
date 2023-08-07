@@ -165,7 +165,7 @@ namespace at
 		void accept(AstVisitor& visitor) override;
 		void accept(AstConstVisitor& visitor) const override;
 
-		at::Type type;
+		AstType type;
 		std::vector<UPtr<Expression>> components;
 	};
 

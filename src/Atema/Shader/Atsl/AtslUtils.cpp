@@ -108,30 +108,30 @@ namespace
 		return count;
 	}
 
-	PrimitiveType getComponentPrimitiveType(char c)
+	AstPrimitiveType getComponentPrimitiveType(char c)
 	{
 		switch (c)
 		{
-			case 'i': return PrimitiveType::Int;
-			case 'u': return PrimitiveType::UInt;
-			case 'f': return PrimitiveType::Float;
+			case 'i': return AstPrimitiveType::Int;
+			case 'u': return AstPrimitiveType::UInt;
+			case 'f': return AstPrimitiveType::Float;
 			default:
 			{
 				ATEMA_ERROR("Invalid primitive type");
 			}
 		}
 
-		return PrimitiveType::Int;
+		return AstPrimitiveType::Int;
 	}
 
-	char getPrimitiveSuffix(PrimitiveType type)
+	char getPrimitiveSuffix(AstPrimitiveType type)
 	{
 		switch (type)
 		{
-			case PrimitiveType::Bool: return 'b';
-			case PrimitiveType::Int: return 'i';
-			case PrimitiveType::UInt: return 'u';
-			case PrimitiveType::Float: return 'f';
+			case AstPrimitiveType::Bool: return 'b';
+			case AstPrimitiveType::Int: return 'i';
+			case AstPrimitiveType::UInt: return 'u';
+			case AstPrimitiveType::Float: return 'f';
 			default:
 			{
 				ATEMA_ERROR("Invalid primitive type");
@@ -141,60 +141,60 @@ namespace
 		return '\0';
 	}
 
-	ImageType getSamplerImageType(const std::string& str)
+	AstImageType getSamplerImageType(const std::string& str)
 	{
 		if (str == "1D")
-			return ImageType::Texture1D;
+			return AstImageType::Texture1D;
 
 		if (str == "2D")
-			return ImageType::Texture2D;
+			return AstImageType::Texture2D;
 
 		if (str == "3D")
-			return ImageType::Texture3D;
+			return AstImageType::Texture3D;
 
 		if (str == "Cube")
-			return ImageType::Cubemap;
+			return AstImageType::Cubemap;
 
 		if (str == "1DArray")
-			return ImageType::TextureArray1D;
+			return AstImageType::TextureArray1D;
 
 		if (str == "2DArray")
-			return ImageType::TextureArray2D;
+			return AstImageType::TextureArray2D;
 
 		ATEMA_ERROR("Invalid sampler image type");
 
-		return ImageType::Texture1D;
+		return AstImageType::Texture1D;
 	}
 
-	PrimitiveType getSamplerPrimitiveType(char c)
+	AstPrimitiveType getSamplerPrimitiveType(char c)
 	{
 		switch (c)
 		{
-			case 'i': return PrimitiveType::Int;
-			case 'u': return PrimitiveType::UInt;
-			case 'f': return PrimitiveType::Float;
+			case 'i': return AstPrimitiveType::Int;
+			case 'u': return AstPrimitiveType::UInt;
+			case 'f': return AstPrimitiveType::Float;
 			default:
 			{
 				ATEMA_ERROR("Invalid sampler primitive type");
 			}
 		}
 
-		return PrimitiveType::Int;
+		return AstPrimitiveType::Int;
 	}
 
-	std::string getTypeStr(const VoidType& type)
+	std::string getTypeStr(const AstVoidType& type)
 	{
 		return "void";
 	}
 
-	std::string getTypeStr(const PrimitiveType& type)
+	std::string getTypeStr(const AstPrimitiveType& type)
 	{
 		switch (type)
 		{
-			case PrimitiveType::Bool: return "bool";
-			case PrimitiveType::Int: return "int";
-			case PrimitiveType::UInt: return "uint";
-			case PrimitiveType::Float: return "float";
+			case AstPrimitiveType::Bool: return "bool";
+			case AstPrimitiveType::Int: return "int";
+			case AstPrimitiveType::UInt: return "uint";
+			case AstPrimitiveType::Float: return "float";
 			default:
 			{
 				ATEMA_ERROR("Invalid primitive type");
@@ -204,12 +204,12 @@ namespace
 		return "";
 	}
 
-	std::string getTypeStr(const VectorType& type)
+	std::string getTypeStr(const AstVectorType& type)
 	{
 		return "vec" + std::to_string(type.componentCount) + getPrimitiveSuffix(type.primitiveType);
 	}
 
-	std::string getTypeStr(const MatrixType& type)
+	std::string getTypeStr(const AstMatrixType& type)
 	{
 		std::string typeStr = "mat" + std::to_string(type.rowCount);
 
@@ -219,37 +219,37 @@ namespace
 		return typeStr + getPrimitiveSuffix(type.primitiveType);
 	}
 
-	std::string getTypeStr(const SamplerType& type)
+	std::string getTypeStr(const AstSamplerType& type)
 	{
 		std::string typeStr = "sampler";
 
 		switch (type.imageType)
 		{
-			case ImageType::Texture1D:
+			case AstImageType::Texture1D:
 			{
 				typeStr += "1D";
 				break;
 			}
-			case ImageType::Texture2D:
+			case AstImageType::Texture2D:
 			{
 				typeStr += "2D";
 				break;
 			}
-			case ImageType::Texture3D:
+			case AstImageType::Texture3D:
 			{
 				typeStr += "3D";
 				break;
 			}
-			case ImageType::Cubemap:
+			case AstImageType::Cubemap:
 			{
 				typeStr += "Cube";
 				break;
 			}
-			case ImageType::TextureArray1D:
+			case AstImageType::TextureArray1D:
 			{
 				return typeStr + "1DArray";
 			}
-			case ImageType::TextureArray2D:
+			case AstImageType::TextureArray2D:
 			{
 				return typeStr + "2DArray";
 			}
@@ -262,12 +262,12 @@ namespace
 		return typeStr + getPrimitiveSuffix(type.primitiveType);
 	}
 
-	std::string getTypeStr(const StructType& type)
+	std::string getTypeStr(const AstStructType& type)
 	{
 		return type.name;
 	}
 
-	std::string getTypeStr(const ArrayType& type)
+	std::string getTypeStr(const AstArrayType& type)
 	{
 		return atsl::getTypeStr(type.componentType) + "[" + atsl::getArraySizeStr(type) + "]";
 	}
@@ -401,26 +401,26 @@ bool atsl::isType(const std::string& typeStr)
 	return s_types.find(typeStr) != s_types.end();
 }
 
-Type atsl::getType(const std::string& typeStr)
+AstType atsl::getType(const std::string& typeStr)
 {
 	if (typeStr == "void")
-		return VoidType();
+		return AstVoidType();
 
 	if (typeStr == "bool")
-		return PrimitiveType::Bool;
+		return AstPrimitiveType::Bool;
 
 	if (typeStr == "int")
-		return PrimitiveType::Int;
+		return AstPrimitiveType::Int;
 
 	if (typeStr == "uint")
-		return PrimitiveType::UInt;
+		return AstPrimitiveType::UInt;
 
 	if (typeStr == "float")
-		return PrimitiveType::Float;
+		return AstPrimitiveType::Float;
 
 	if (!typeStr.compare(0, 3, "vec") && typeStr.size() == 5)
 	{
-		VectorType type;
+		AstVectorType type;
 
 		type.componentCount = getComponentCount(typeStr[3]);
 		type.primitiveType = getComponentPrimitiveType(typeStr[4]);
@@ -430,7 +430,7 @@ Type atsl::getType(const std::string& typeStr)
 
 	if (!typeStr.compare(0, 3, "mat") && typeStr.size() == 5)
 	{
-		MatrixType type;
+		AstMatrixType type;
 
 		type.rowCount = getComponentCount(typeStr[3]);
 		type.columnCount = type.rowCount;
@@ -441,13 +441,13 @@ Type atsl::getType(const std::string& typeStr)
 
 	if (!typeStr.compare(0, 7, "sampler") && typeStr.size() >= 9)
 	{
-		SamplerType type;
+		AstSamplerType type;
 
 		// Array sampler
 		if (typeStr.back() == 'y')
 		{
 			type.imageType = getSamplerImageType(typeStr.substr(7, typeStr.size() - 7));
-			type.primitiveType = PrimitiveType::Float;
+			type.primitiveType = AstPrimitiveType::Float;
 		}
 		else
 		{
@@ -458,66 +458,66 @@ Type atsl::getType(const std::string& typeStr)
 		return type;
 	}
 
-	return StructType{ typeStr };
+	return AstStructType{ typeStr };
 }
 
-std::string atsl::getTypeStr(const Type& type)
+std::string atsl::getTypeStr(const AstType& type)
 {
-	if (type.is<VoidType>())
-		return ::getTypeStr(type.get<VoidType>());
-	else if (type.is<PrimitiveType>())
-		return ::getTypeStr(type.get<PrimitiveType>());
-	else if (type.is<ArrayType>())
-		return ::getTypeStr(type.get<ArrayType>());
-	else if (type.is<VectorType>())
-		return ::getTypeStr(type.get<VectorType>());
-	else if (type.is<MatrixType>())
-		return ::getTypeStr(type.get<MatrixType>());
-	else if (type.is<SamplerType>())
-		return ::getTypeStr(type.get<SamplerType>());
-	else if (type.is<StructType>())
-		return ::getTypeStr(type.get<StructType>());
+	if (type.is<AstVoidType>())
+		return ::getTypeStr(type.get<AstVoidType>());
+	else if (type.is<AstPrimitiveType>())
+		return ::getTypeStr(type.get<AstPrimitiveType>());
+	else if (type.is<AstArrayType>())
+		return ::getTypeStr(type.get<AstArrayType>());
+	else if (type.is<AstVectorType>())
+		return ::getTypeStr(type.get<AstVectorType>());
+	else if (type.is<AstMatrixType>())
+		return ::getTypeStr(type.get<AstMatrixType>());
+	else if (type.is<AstSamplerType>())
+		return ::getTypeStr(type.get<AstSamplerType>());
+	else if (type.is<AstStructType>())
+		return ::getTypeStr(type.get<AstStructType>());
 
 	ATEMA_ERROR("Invalid type");
 
 	return "";
 }
 
-std::string atsl::getTypeStr(const ArrayType::ComponentType& type)
+std::string atsl::getTypeStr(const AstArrayType::ComponentType& type)
 {
-	if (type.is<PrimitiveType>())
-		return ::getTypeStr(type.get<PrimitiveType>());
-	else if (type.is<VectorType>())
-		return ::getTypeStr(type.get<VectorType>());
-	else if (type.is<MatrixType>())
-		return ::getTypeStr(type.get<MatrixType>());
-	else if (type.is<SamplerType>())
-		return ::getTypeStr(type.get<SamplerType>());
-	else if (type.is<StructType>())
-		return ::getTypeStr(type.get<StructType>());
+	if (type.is<AstPrimitiveType>())
+		return ::getTypeStr(type.get<AstPrimitiveType>());
+	else if (type.is<AstVectorType>())
+		return ::getTypeStr(type.get<AstVectorType>());
+	else if (type.is<AstMatrixType>())
+		return ::getTypeStr(type.get<AstMatrixType>());
+	else if (type.is<AstSamplerType>())
+		return ::getTypeStr(type.get<AstSamplerType>());
+	else if (type.is<AstStructType>())
+		return ::getTypeStr(type.get<AstStructType>());
 
 	ATEMA_ERROR("Invalid array type");
 
 	return "";
 }
 
-ATEMA_SHADER_API std::string atsl::getArraySizeStr(const ArrayType& type)
+ATEMA_SHADER_API std::string atsl::getArraySizeStr(const AstArrayType& type)
 {
 	std::string sizeStr;
 
 	switch (type.sizeType)
 	{
-		case ArrayType::SizeType::Constant:
+		case AstArrayType::SizeType::Constant:
 		{
 			sizeStr = std::to_string(type.size);
 			break;
 		}
-		case ArrayType::SizeType::Implicit:
+		case AstArrayType::SizeType::Implicit:
 		{
 			// The size is context dependent, no need to specify it
 			break;
 		}
-		case ArrayType::SizeType::Option:
+		case AstArrayType::SizeType::Option:
 		{
 			sizeStr = type.optionName;
 			break;

@@ -23,7 +23,7 @@
 
 using namespace at;
 
-AstVariable::AstVariable(const std::string& name, const Type& type) :
+AstVariable::AstVariable(const std::string& name, const AstType& type) :
 	name(name),
 	type(type)
 {
@@ -36,33 +36,33 @@ AstStruct::AstStruct(const std::string& name, const std::vector<AstVariable>& va
 }
 
 AstInput::AstInput() :
-	AstInput("", Type(), 0)
+	AstInput("", AstType(), 0)
 {
 }
 
-AstInput::AstInput(const std::string& name, const Type& type, uint32_t location) :
+AstInput::AstInput(const std::string& name, const AstType& type, uint32_t location) :
 	AstVariable(name, type),
 	location(location)
 {
 }
 
 AstOutput::AstOutput() :
-	AstOutput("", Type(), 0)
+	AstOutput("", AstType(), 0)
 {
 }
 
-AstOutput::AstOutput(const std::string& name, const Type& type, uint32_t location) :
+AstOutput::AstOutput(const std::string& name, const AstType& type, uint32_t location) :
 	AstVariable(name, type),
 	location(location)
 {
 }
 
 AstExternal::AstExternal() :
-	AstExternal("", Type(), 0, 0)
+	AstExternal("", AstType(), 0, 0)
 {
 }
 
-AstExternal::AstExternal(const std::string& name, const Type& type, uint32_t set, uint32_t binding) :
+AstExternal::AstExternal(const std::string& name, const AstType& type, uint32_t set, uint32_t binding) :
 	AstVariable(name, type),
 	set(set),
 	binding(binding)

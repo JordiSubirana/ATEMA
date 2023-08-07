@@ -23,12 +23,12 @@
 
 using namespace at;
 
-ATEMA_SHADER_API bool at::isInOutType(const Type& type)
+ATEMA_SHADER_API bool at::isInOutType(const AstType& type)
 {
-	return type.isOneOf<PrimitiveType, VectorType, MatrixType, StructType>();
+	return type.isOneOf<AstPrimitiveType, AstVectorType, AstMatrixType, AstStructType>();
 }
 
-ATEMA_SHADER_API bool at::isReturnType(const Type& type)
+ATEMA_SHADER_API bool at::isReturnType(const AstType& type)
 {
-	return type.isOneOf<VoidType, PrimitiveType, VectorType, MatrixType, StructType>();
+	return type.isOneOf<AstVoidType, AstPrimitiveType, AstVectorType, AstMatrixType, AstStructType>();
 }

@@ -98,9 +98,9 @@ namespace at
 		void writeLayout(const Ptr<Expression>& location);
 		void writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding);
 		void writeLayout(const Ptr<Expression>& set, const Ptr<Expression>& binding, StructLayout structLayout);
-		void writeType(Type type);
-		void writeType(ArrayType::ComponentType type);
-		void writeVariableDeclaration(Type type, std::string name, Expression* value = nullptr);
+		void writeType(AstType type);
+		void writeType(AstArrayType::ComponentType type);
+		void writeVariableDeclaration(AstType type, std::string name, Expression* value = nullptr);
 		void writeFunctionCall(const std::string& functionName, const std::vector<UPtr<Expression>>& arguments);
 		void writeInterfaceBlock(const std::string& blockName, const std::string& instanceName, const std::string& suffix);
 

@@ -1029,30 +1029,30 @@ AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationDat
 
 		const auto& type = variable.type;
 
-		ArrayType arrayType;
-		arrayType.sizeType = ArrayType::SizeType::Implicit;
+		AstArrayType arrayType;
+		arrayType.sizeType = AstArrayType::SizeType::Implicit;
 
 		if (get().value.is<AtslBasicValue>())
 		{
-			arrayType.sizeType = ArrayType::SizeType::Constant;
+			arrayType.sizeType = AstArrayType::SizeType::Constant;
 			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
 		}
 		else if (get().value.is<AtslIdentifier>())
 		{
-			arrayType.sizeType = ArrayType::SizeType::Option;
+			arrayType.sizeType = AstArrayType::SizeType::Option;
 			arrayType.optionName = expectType<AtslIdentifier>(iterate());
 		}
 
-		if (type.is<PrimitiveType>())
-			arrayType.componentType = type.get<PrimitiveType>();
-		else if (type.is<VectorType>())
-			arrayType.componentType = type.get<VectorType>();
-		else if (type.is<MatrixType>())
-			arrayType.componentType = type.get<MatrixType>();
-		else if (type.is<SamplerType>())
-			arrayType.componentType = type.get<SamplerType>();
-		else if (type.is<StructType>())
-			arrayType.componentType = type.get<StructType>();
+		if (type.is<AstPrimitiveType>())
+			arrayType.componentType = type.get<AstPrimitiveType>();
+		else if (type.is<AstVectorType>())
+			arrayType.componentType = type.get<AstVectorType>();
+		else if (type.is<AstMatrixType>())
+			arrayType.componentType = type.get<AstMatrixType>();
+		else if (type.is<AstSamplerType>())
+			arrayType.componentType = type.get<AstSamplerType>();
+		else if (type.is<AstStructType>())
+			arrayType.componentType = type.get<AstStructType>();
 		else
 			ATEMA_ERROR("Invalid array type");
 
@@ -1100,7 +1100,7 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				variable.type = variableData.type;
 				variable.location = getAttribute("location");
 
-				if (!variable.type.isOneOf<PrimitiveType, VectorType, MatrixType>())
+				if (!variable.type.isOneOf<AstPrimitiveType, AstVectorType, AstMatrixType>())
 				{
 					ATEMA_ERROR("Input must be a primitive, a vector or a matrix");
 				}
@@ -1132,7 +1132,7 @@ UPtr<Statement> AtslToAstConverter::parseVariableBlock()
 				if (hasAttribute("optional"))
 					variable.condition = getAttribute("optional");
 
-				if (!variable.type.isOneOf<PrimitiveType, VectorType, MatrixType>())
+				if (!variable.type.isOneOf<AstPrimitiveType, AstVectorType, AstMatrixType>())
 				{
 					ATEMA_ERROR("Output must be a primitive, a vector or a matrix");
 				}
@@ -1369,7 +1369,7 @@ UPtr<Statement> AtslToAstConverter::parseBlockStatement()
 			return std::move(statement);
 		}
 		// Identifier
-		// - Type : variable declaration or cast
+		// - AstType : variable declaration or cast
 		// - Expression (function call, cast, etc)
 		case AtslTokenType::Identifier:
 		{
@@ -1732,7 +1732,7 @@ UPtr<DiscardStatement> AtslToAstConverter::parseDiscard()
 	return std::move(statement);
 }
 
-Type AtslToAstConverter::parseType()
+AstType AtslToAstConverter::parseType()
 {
 	ATEMA_ASSERT(get().type == AtslTokenType::Identifier, "Expected variable type");
 
@@ -1743,30 +1743,30 @@ Type AtslToAstConverter::parseType()
 	{
 		iterate();
 
-		ArrayType arrayType;
-		arrayType.sizeType = ArrayType::SizeType::Implicit;
+		AstArrayType arrayType;
+		arrayType.sizeType = AstArrayType::SizeType::Implicit;
 
 		if (get().value.is<AtslBasicValue>())
 		{
-			arrayType.sizeType = ArrayType::SizeType::Constant;
+			arrayType.sizeType = AstArrayType::SizeType::Constant;
 			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
 		}
 		else if (get().value.is<AtslIdentifier>())
 		{
-			arrayType.sizeType = ArrayType::SizeType::Option;
+			arrayType.sizeType = AstArrayType::SizeType::Option;
 			arrayType.optionName = expectType<AtslIdentifier>(iterate());
 		}
 
-		if (type.is<PrimitiveType>())
-			arrayType.componentType = type.get<PrimitiveType>();
-		else if (type.is<VectorType>())
-			arrayType.componentType = type.get<VectorType>();
-		else if (type.is<MatrixType>())
-			arrayType.componentType = type.get<MatrixType>();
-		else if (type.is<SamplerType>())
-			arrayType.componentType = type.get<SamplerType>();
-		else if (type.is<StructType>())
-			arrayType.componentType = type.get<StructType>();
+		if (type.is<AstPrimitiveType>())
+			arrayType.componentType = type.get<AstPrimitiveType>();
+		else if (type.is<AstVectorType>())
+			arrayType.componentType = type.get<AstVectorType>();
+		else if (type.is<AstMatrixType>())
+			arrayType.componentType = type.get<AstMatrixType>();
+		else if (type.is<AstSamplerType>())
+			arrayType.componentType = type.get<AstSamplerType>();
+		else if (type.is<AstStructType>())
+			arrayType.componentType = type.get<AstStructType>();
 		else
 			ATEMA_ERROR("Invalid array type");
 

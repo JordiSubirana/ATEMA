@@ -709,13 +709,13 @@ void AstEvaluator::visit(CastExpression& expression)
 		components.emplace_back(constant.value());
 	}
 
-	if (expression.type.is<PrimitiveType>() && components.size() == 1)
+	if (expression.type.is<AstPrimitiveType>() && components.size() == 1)
 	{
 		optionalResult = components[0];
 	}
-	else if (expression.type.is<VectorType>())
+	else if (expression.type.is<AstVectorType>())
 	{
-		const auto& type = expression.type.get<VectorType>();
+		const auto& type = expression.type.get<AstVectorType>();
 
 		if (type.componentCount != components.size())
 			return;
@@ -724,7 +724,7 @@ void AstEvaluator::visit(CastExpression& expression)
 
 		switch (type.primitiveType)
 		{
-			case PrimitiveType::Int:
+			case AstPrimitiveType::Int:
 			{
 				int* data = nullptr;
 
@@ -760,7 +760,7 @@ void AstEvaluator::visit(CastExpression& expression)
 
 				break;
 			}
-			case PrimitiveType::UInt:
+			case AstPrimitiveType::UInt:
 			{
 				unsigned* data = nullptr;
 
@@ -796,7 +796,7 @@ void AstEvaluator::visit(CastExpression& expression)
 
 				break;
 			}
-			case PrimitiveType::Float:
+			case AstPrimitiveType::Float:
 			{
 				float* data = nullptr;
 

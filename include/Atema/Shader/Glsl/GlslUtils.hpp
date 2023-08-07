@@ -30,9 +30,9 @@
 
 namespace at::glsl
 {
-	ATEMA_SHADER_API std::string getTypeStr(const Type& type);
-	ATEMA_SHADER_API std::string getTypeStr(const ArrayType::ComponentType& type);
-	ATEMA_SHADER_API std::string getArraySizeStr(const ArrayType& type);
+	ATEMA_SHADER_API std::string getTypeStr(const AstType& type);
+	ATEMA_SHADER_API std::string getTypeStr(const AstArrayType::ComponentType& type);
+	ATEMA_SHADER_API std::string getArraySizeStr(const AstArrayType& type);
 
 	ATEMA_SHADER_API std::string getStructLayoutStr(StructLayout structLayout);
 }

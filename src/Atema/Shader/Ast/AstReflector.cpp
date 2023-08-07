@@ -184,17 +184,17 @@ void AstReflector::visit(const EntryFunctionDeclarationStatement& statement)
 
 	entry.statement = m_cloner.clone(statement);
 
-	if (statement.returnType.is<StructType>())
+	if (statement.returnType.is<AstStructType>())
 	{
-		const auto& structName = statement.returnType.get<StructType>().name;
+		const auto& structName = statement.returnType.get<AstStructType>().name;
 		entry.dependencies.structNames.emplace(structName);
 	}
 
 	for (auto& argument : statement.arguments)
 	{
-		if (argument.type.is<StructType>())
+		if (argument.type.is<AstStructType>())
 		{
-			const auto& structName = argument.type.get<StructType>().name;
+			const auto& structName = argument.type.get<AstStructType>().name;
 			entry.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -213,9 +213,9 @@ void AstReflector::visit(const InputDeclarationStatement& statement)
 
 	for (auto& variable : statement.variables)
 	{
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
-			const auto& structName = variable.type.get<StructType>().name;
+			const auto& structName = variable.type.get<AstStructType>().name;
 			entry.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -229,9 +229,9 @@ void AstReflector::visit(const OutputDeclarationStatement& statement)
 
 	for (auto& variable : statement.variables)
 	{
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
-			const auto& structName = variable.type.get<StructType>().name;
+			const auto& structName = variable.type.get<AstStructType>().name;
 			entry.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -250,9 +250,9 @@ void AstReflector::visit(const ExternalDeclarationStatement& statement)
 
 		externalData.variable = variable;
 
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
-			const auto& structName = variable.type.get<StructType>().name;
+			const auto& structName = variable.type.get<AstStructType>().name;
 			externalData.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -278,9 +278,9 @@ void AstReflector::visit(const StructDeclarationStatement& statement)
 
 	for (auto& member : statement.members)
 	{
-		if (member.type.is<StructType>())
+		if (member.type.is<AstStructType>())
 		{
-			const auto& structName = member.type.get<StructType>().name;
+			const auto& structName = member.type.get<AstStructType>().name;
 			structure.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -307,17 +307,17 @@ void AstReflector::visit(const FunctionDeclarationStatement& statement)
 
 	function.statement = m_cloner.clone(statement);
 
-	if (statement.returnType.is<StructType>())
+	if (statement.returnType.is<AstStructType>())
 	{
-		const auto& structName = statement.returnType.get<StructType>().name;
+		const auto& structName = statement.returnType.get<AstStructType>().name;
 		function.dependencies.structNames.emplace(structName);
 	}
 
 	for (auto& argument : statement.arguments)
 	{
-		if (argument.type.is<StructType>())
+		if (argument.type.is<AstStructType>())
 		{
-			const auto& structName = argument.type.get<StructType>().name;
+			const auto& structName = argument.type.get<AstStructType>().name;
 			function.dependencies.structNames.emplace(structName);
 		}
 	}
@@ -350,9 +350,9 @@ void AstReflector::visit(const VariableDeclarationStatement& statement)
 	// Register local variable struct types in the current dependencies
 	else
 	{
-		if (statement.type.is<StructType>())
+		if (statement.type.is<AstStructType>())
 		{
-			auto& typeName = statement.type.get<StructType>().name;
+			auto& typeName = statement.type.get<AstStructType>().name;
 
 			m_currentDependencies->structNames.emplace(typeName);
 		}
@@ -440,9 +440,9 @@ void AstReflector::resolveDependencies(DependencyData& dstDependencies, const De
 
 				// If the variable is a struct instance, ensure we got the struct dependency
 				const auto& variable = m_variables[name];
-				if (variable.statement->type.is<StructType>())
+				if (variable.statement->type.is<AstStructType>())
 				{
-					const auto& structName = variable.statement->type.get<StructType>().name;
+					const auto& structName = variable.statement->type.get<AstStructType>().name;
 
 					// Ensure the dependency wasn't already added
 					if (dstDependencies.structNames.find(structName) == dstDependencies.structNames.end())

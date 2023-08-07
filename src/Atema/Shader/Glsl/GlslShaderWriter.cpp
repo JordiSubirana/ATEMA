@@ -222,11 +222,11 @@ void GlslShaderWriter::visit(const InputDeclarationStatement& statement)
 		
 		m_ostream << " in ";
 
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
 			const auto suffix = "I" + getInterfaceBlockSuffix(statement.stage);
 
-			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, suffix);
+			writeInterfaceBlock(variable.type.get<AstStructType>().name, variable.name, suffix);
 
 			// Add line except for last element
 			if (&variable != &statement.variables.back())
@@ -265,11 +265,11 @@ void GlslShaderWriter::visit(const OutputDeclarationStatement& statement)
 
 		m_ostream << " out ";
 
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
 			const auto suffix = "O" + getInterfaceBlockSuffix(statement.stage);
 
-			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, suffix);
+			writeInterfaceBlock(variable.type.get<AstStructType>().name, variable.name, suffix);
 
 			// Add line except for last element
 			if (&variable != &statement.variables.back())
@@ -304,13 +304,13 @@ void GlslShaderWriter::visit(const ExternalDeclarationStatement& statement)
 			newLine();
 		}
 
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
 			writeLayout(variable.setIndex, variable.bindingIndex, variable.structLayout);
 
 			m_ostream << " uniform ";
 
-			writeInterfaceBlock(variable.type.get<StructType>().name, variable.name, "U");
+			writeInterfaceBlock(variable.type.get<AstStructType>().name, variable.name, "U");
 
 			// Add line except for last element
 			if (&variable != &statement.variables.back())
@@ -1090,30 +1090,30 @@ void GlslShaderWriter::writeLayout(const Ptr<Expression>& set, const Ptr<Express
 	m_ostream << ", " << glsl::getStructLayoutStr(structLayout) << ")";
 }
 
-void GlslShaderWriter::writeType(Type type)
+void GlslShaderWriter::writeType(AstType type)
 {
 	m_ostream << glsl::getTypeStr(type);
 }
 
-void GlslShaderWriter::writeType(ArrayType::ComponentType type)
+void GlslShaderWriter::writeType(AstArrayType::ComponentType type)
 {
 	m_ostream << glsl::getTypeStr(type);
 }
 
-void GlslShaderWriter::writeVariableDeclaration(Type type, std::string name, Expression* value)
+void GlslShaderWriter::writeVariableDeclaration(AstType type, std::string name, Expression* value)
 {
-	if (type.is<ArrayType>())
-		writeType(type.get<ArrayType>().componentType);
+	if (type.is<AstArrayType>())
+		writeType(type.get<AstArrayType>().componentType);
 	else
 		writeType(type);
 
 	m_ostream << " " << name;
 
-	if (type.is<ArrayType>())
+	if (type.is<AstArrayType>())
 	{
-		const auto& arrayType = type.get<ArrayType>();
+		const auto& arrayType = type.get<AstArrayType>();
 
-		if (arrayType.sizeType == ArrayType::SizeType::Implicit)
+		if (arrayType.sizeType == AstArrayType::SizeType::Implicit)
 			ATEMA_ERROR("Array size must be specified");
 
 		m_ostream << "[" << glsl::getArraySizeStr(arrayType) << "]";

@@ -30,12 +30,12 @@
 
 namespace at
 {
-	struct VoidType
+	struct AstVoidType
 	{
 		
 	};
 
-	enum class PrimitiveType
+	enum class AstPrimitiveType
 	{
 		Bool,
 		Int,
@@ -43,20 +43,20 @@ namespace at
 		Float
 	};
 
-	struct VectorType
+	struct AstVectorType
 	{
-		PrimitiveType primitiveType;
+		AstPrimitiveType primitiveType;
 		size_t componentCount;
 	};
 
-	struct MatrixType
+	struct AstMatrixType
 	{
-		PrimitiveType primitiveType;
+		AstPrimitiveType primitiveType;
 		size_t rowCount;
 		size_t columnCount;
 	};
 
-	enum class ImageType
+	enum class AstImageType
 	{
 		Texture1D,
 		Texture2D,
@@ -66,20 +66,20 @@ namespace at
 		TextureArray2D
 	};
 	
-	struct SamplerType
+	struct AstSamplerType
 	{
-		ImageType imageType;
-		PrimitiveType primitiveType;
+		AstImageType imageType;
+		AstPrimitiveType primitiveType;
 	};
 
-	struct StructType
+	struct AstStructType
 	{
 		std::string name;
 	};
 
-	struct ArrayType
+	struct AstArrayType
 	{
-		using ComponentType = Variant<PrimitiveType, VectorType, MatrixType, SamplerType, StructType>;
+		using ComponentType = Variant<AstPrimitiveType, AstVectorType, AstMatrixType, AstSamplerType, AstStructType>;
 
 		enum class SizeType
 		{
@@ -99,17 +99,17 @@ namespace at
 		std::string optionName;
 	};
 
-	using Type = Variant<
-		VoidType,
-		PrimitiveType,
-		ArrayType,
-		VectorType,
-		MatrixType,
-		SamplerType,
-		StructType>;
+	using AstType = Variant<
+		AstVoidType,
+		AstPrimitiveType,
+		AstArrayType,
+		AstVectorType,
+		AstMatrixType,
+		AstSamplerType,
+		AstStructType>;
 
-	ATEMA_SHADER_API bool isInOutType(const Type& type);
-	ATEMA_SHADER_API bool isReturnType(const Type& type);
+	ATEMA_SHADER_API bool isInOutType(const AstType& type);
+	ATEMA_SHADER_API bool isReturnType(const AstType& type);
 }
 
 #endif

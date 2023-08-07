@@ -49,7 +49,7 @@ namespace at
 		struct VariableData
 		{
 			Flags<VariableQualifier> qualifiers;
-			Type type;
+			AstType type;
 			std::string name;
 			UPtr<Expression> value;
 		};
@@ -97,7 +97,7 @@ namespace at
 		UPtr<DiscardStatement> parseDiscard();
 
 		// Expressions : delimiter is not known, so no parsing
-		Type parseType();
+		AstType parseType();
 		UPtr<VariableExpression> parseVariable();
 		UPtr<Expression> parseFunctionCall(); // Classic function or Built-in function
 		UPtr<CastExpression> parseCast();

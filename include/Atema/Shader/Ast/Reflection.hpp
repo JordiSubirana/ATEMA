@@ -33,10 +33,10 @@ namespace at
 	struct ATEMA_SHADER_API AstVariable
 	{
 		AstVariable() = default;
-		AstVariable(const std::string& name, const Type& type);
+		AstVariable(const std::string& name, const AstType& type);
 
 		std::string name;
-		Type type;
+		AstType type;
 	};
 
 	struct ATEMA_SHADER_API AstStruct
@@ -51,7 +51,7 @@ namespace at
 	struct ATEMA_SHADER_API AstInput : public AstVariable
 	{
 		AstInput();
-		AstInput(const std::string& name, const Type& type, uint32_t location);
+		AstInput(const std::string& name, const AstType& type, uint32_t location);
 
 		uint32_t location;
 	};
@@ -59,7 +59,7 @@ namespace at
 	struct ATEMA_SHADER_API AstOutput : public AstVariable
 	{
 		AstOutput();
-		AstOutput(const std::string& name, const Type& type, uint32_t location);
+		AstOutput(const std::string& name, const AstType& type, uint32_t location);
 
 		uint32_t location;
 	};
@@ -67,7 +67,7 @@ namespace at
 	struct ATEMA_SHADER_API AstExternal : public AstVariable
 	{
 		AstExternal();
-		AstExternal(const std::string& name, const Type& type, uint32_t set, uint32_t binding);
+		AstExternal(const std::string& name, const AstType& type, uint32_t set, uint32_t binding);
 
 		uint32_t set;
 		uint32_t binding;

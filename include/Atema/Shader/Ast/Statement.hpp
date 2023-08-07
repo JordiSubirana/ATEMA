@@ -119,7 +119,7 @@ namespace at
 		
 		std::string name;
 		Flags<VariableQualifier> qualifiers;
-		at::Type type;
+		AstType type;
 		UPtr<Expression> value;
 	};
 
@@ -133,7 +133,7 @@ namespace at
 		struct Member
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 			Ptr<Expression> condition;
 		};
 
@@ -152,7 +152,7 @@ namespace at
 		struct Variable
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 			Ptr<Expression> location;
 			Ptr<Expression> condition;
 		};
@@ -171,7 +171,7 @@ namespace at
 		struct Variable
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 			Ptr<Expression> location;
 			Ptr<Expression> condition;
 		};
@@ -190,7 +190,7 @@ namespace at
 		struct Variable
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 			Ptr<Expression> setIndex;
 			Ptr<Expression> bindingIndex;
 			StructLayout structLayout;
@@ -210,7 +210,7 @@ namespace at
 		struct Variable
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 			UPtr<Expression> value;
 		};
 
@@ -228,11 +228,11 @@ namespace at
 		struct Argument
 		{
 			std::string name;
-			at::Type type;
+			AstType type;
 		};
 
 		std::string name;
-		at::Type returnType;
+		AstType returnType;
 		std::vector<Argument> arguments;
 		// Sequence is valid only if there is a function definition
 		UPtr<SequenceStatement> sequence;

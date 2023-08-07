@@ -298,7 +298,7 @@ void AtslShaderWriter::visit(const ExternalDeclarationStatement& statement)
 			{ "binding", variable.bindingIndex }
 		};
 
-		if (variable.type.is<StructType>())
+		if (variable.type.is<AstStructType>())
 		{
 			Attribute layoutAttribute;
 			layoutAttribute.name = "layout";
@@ -954,12 +954,12 @@ void AtslShaderWriter::addDelimiter()
 	m_ostream << ";";
 }
 
-void AtslShaderWriter::writeType(Type type)
+void AtslShaderWriter::writeType(AstType type)
 {
 	m_ostream << atsl::getTypeStr(type);
 }
 
-void AtslShaderWriter::writeType(ArrayType::ComponentType type)
+void AtslShaderWriter::writeType(AstArrayType::ComponentType type)
 {
 	m_ostream << atsl::getTypeStr(type);
 }
@@ -1002,20 +1002,20 @@ void AtslShaderWriter::writeAttributes(const std::vector<Attribute>& attributes)
 	m_ostream << "]";
 }
 
-void AtslShaderWriter::writeVariableDeclaration(Type type, std::string name, Expression* value)
+void AtslShaderWriter::writeVariableDeclaration(AstType type, std::string name, Expression* value)
 {
-	if (type.is<ArrayType>())
-		writeType(type.get<ArrayType>().componentType);
+	if (type.is<AstArrayType>())
+		writeType(type.get<AstArrayType>().componentType);
 	else
 		writeType(type);
 
 	m_ostream << " " << name;
 
-	if (type.is<ArrayType>())
+	if (type.is<AstArrayType>())
 	{
-		const auto& arrayType = type.get<ArrayType>();
+		const auto& arrayType = type.get<AstArrayType>();
 
-		if (arrayType.sizeType == ArrayType::SizeType::Implicit)
+		if (arrayType.sizeType == AstArrayType::SizeType::Implicit)
 			ATEMA_ERROR("Array size must be specified");
 
 		m_ostream << "[" << atsl::getArraySizeStr(arrayType) << "]";

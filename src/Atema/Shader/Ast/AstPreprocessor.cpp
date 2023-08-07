@@ -698,18 +698,18 @@ std::optional<ConstantValue> at::AstPreprocessor::getOptionValue(const std::stri
 	return std::nullopt;
 }
 
-Type AstPreprocessor::process(const Type& type)
+AstType AstPreprocessor::process(const AstType& type)
 {
-	if (type.is<ArrayType>())
+	if (type.is<AstArrayType>())
 	{
-		const auto& oldArrayType = type.get<ArrayType>();
+		const auto& oldArrayType = type.get<AstArrayType>();
 
-		if (oldArrayType.sizeType != ArrayType::SizeType::Option)
+		if (oldArrayType.sizeType != AstArrayType::SizeType::Option)
 			return oldArrayType;
 		
-		ArrayType newArrayType;
+		AstArrayType newArrayType;
 		newArrayType.componentType = oldArrayType.componentType;
-		newArrayType.sizeType = ArrayType::SizeType::Constant;
+		newArrayType.sizeType = AstArrayType::SizeType::Constant;
 
 		const auto sizeEvaluation = getOptionValue(oldArrayType.optionName);
 

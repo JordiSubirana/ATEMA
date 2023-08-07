@@ -27,14 +27,14 @@ using namespace glsl;
 
 namespace
 {
-	std::string getPrimitivePrefix(PrimitiveType type)
+	std::string getPrimitivePrefix(AstPrimitiveType type)
 	{
 		switch (type)
 		{
-			case PrimitiveType::Bool: return "b";
-			case PrimitiveType::Int: return "i";
-			case PrimitiveType::UInt: return "u";
-			case PrimitiveType::Float: return "";
+			case AstPrimitiveType::Bool: return "b";
+			case AstPrimitiveType::Int: return "i";
+			case AstPrimitiveType::UInt: return "u";
+			case AstPrimitiveType::Float: return "";
 			default:
 			{
 				ATEMA_ERROR("Invalid primitive type");
@@ -44,19 +44,19 @@ namespace
 		return "";
 	}
 
-	std::string getTypeStr(const VoidType& type)
+	std::string getTypeStr(const AstVoidType& type)
 	{
 		return "void";
 	}
 
-	std::string getTypeStr(const PrimitiveType& type)
+	std::string getTypeStr(const AstPrimitiveType& type)
 	{
 		switch (type)
 		{
-			case PrimitiveType::Bool: return "bool";
-			case PrimitiveType::Int: return "int";
-			case PrimitiveType::UInt: return "uint";
-			case PrimitiveType::Float: return "float";
+			case AstPrimitiveType::Bool: return "bool";
+			case AstPrimitiveType::Int: return "int";
+			case AstPrimitiveType::UInt: return "uint";
+			case AstPrimitiveType::Float: return "float";
 			default:
 			{
 				ATEMA_ERROR("Invalid primitive type");
@@ -66,12 +66,12 @@ namespace
 		return "";
 	}
 
-	std::string getTypeStr(const VectorType& type)
+	std::string getTypeStr(const AstVectorType& type)
 	{
 		return getPrimitivePrefix(type.primitiveType) + "vec" + std::to_string(type.componentCount);
 	}
 
-	std::string getTypeStr(const MatrixType& type)
+	std::string getTypeStr(const AstMatrixType& type)
 	{
 		std::string typeStr = "mat" + std::to_string(type.rowCount);
 
@@ -81,37 +81,37 @@ namespace
 		return getPrimitivePrefix(type.primitiveType) + typeStr;
 	}
 
-	std::string getTypeStr(const SamplerType& type)
+	std::string getTypeStr(const AstSamplerType& type)
 	{
 		std::string typeStr = "sampler";
 
 		switch (type.imageType)
 		{
-			case ImageType::Texture1D:
+			case AstImageType::Texture1D:
 			{
 				typeStr += "1D";
 				break;
 			}
-			case ImageType::Texture2D:
+			case AstImageType::Texture2D:
 			{
 				typeStr += "2D";
 				break;
 			}
-			case ImageType::Texture3D:
+			case AstImageType::Texture3D:
 			{
 				typeStr += "3D";
 				break;
 			}
-			case ImageType::Cubemap:
+			case AstImageType::Cubemap:
 			{
 				typeStr += "Cube";
 				break;
 			}
-			case ImageType::TextureArray1D:
+			case AstImageType::TextureArray1D:
 			{
 				return typeStr + "1DArray";
 			}
-			case ImageType::TextureArray2D:
+			case AstImageType::TextureArray2D:
 			{
 				return typeStr + "2DArray";
 			}
@@ -124,74 +124,74 @@ namespace
 		return getPrimitivePrefix(type.primitiveType) + typeStr;
 	}
 
-	std::string getTypeStr(const StructType& type)
+	std::string getTypeStr(const AstStructType& type)
 	{
 		return type.name;
 	}
 
-	std::string getTypeStr(const ArrayType& type)
+	std::string getTypeStr(const AstArrayType& type)
 	{
 		return glsl::getTypeStr(type.componentType) + "[" + glsl::getArraySizeStr(type) + "]";
 	}
 }
 
-std::string glsl::getTypeStr(const Type& type)
+std::string glsl::getTypeStr(const AstType& type)
 {
-	if (type.is<VoidType>())
-		return ::getTypeStr(type.get<VoidType>());
-	else if (type.is<PrimitiveType>())
-		return ::getTypeStr(type.get<PrimitiveType>());
-	else if (type.is<ArrayType>())
-		return ::getTypeStr(type.get<ArrayType>());
-	else if (type.is<VectorType>())
-		return ::getTypeStr(type.get<VectorType>());
-	else if (type.is<MatrixType>())
-		return ::getTypeStr(type.get<MatrixType>());
-	else if (type.is<SamplerType>())
-		return ::getTypeStr(type.get<SamplerType>());
-	else if (type.is<StructType>())
-		return ::getTypeStr(type.get<StructType>());
+	if (type.is<AstVoidType>())
+		return ::getTypeStr(type.get<AstVoidType>());
+	else if (type.is<AstPrimitiveType>())
+		return ::getTypeStr(type.get<AstPrimitiveType>());
+	else if (type.is<AstArrayType>())
+		return ::getTypeStr(type.get<AstArrayType>());
+	else if (type.is<AstVectorType>())
+		return ::getTypeStr(type.get<AstVectorType>());
+	else if (type.is<AstMatrixType>())
+		return ::getTypeStr(type.get<AstMatrixType>());
+	else if (type.is<AstSamplerType>())
+		return ::getTypeStr(type.get<AstSamplerType>());
+	else if (type.is<AstStructType>())
+		return ::getTypeStr(type.get<AstStructType>());
 
 	ATEMA_ERROR("Invalid type");
 
 	return "";
 }
 
-std::string glsl::getTypeStr(const ArrayType::ComponentType& type)
+std::string glsl::getTypeStr(const AstArrayType::ComponentType& type)
 {
-	if (type.is<PrimitiveType>())
-		return ::getTypeStr(type.get<PrimitiveType>());
-	else if (type.is<VectorType>())
-		return ::getTypeStr(type.get<VectorType>());
-	else if (type.is<MatrixType>())
-		return ::getTypeStr(type.get<MatrixType>());
-	else if (type.is<SamplerType>())
-		return ::getTypeStr(type.get<SamplerType>());
-	else if (type.is<StructType>())
-		return ::getTypeStr(type.get<StructType>());
+	if (type.is<AstPrimitiveType>())
+		return ::getTypeStr(type.get<AstPrimitiveType>());
+	else if (type.is<AstVectorType>())
+		return ::getTypeStr(type.get<AstVectorType>());
+	else if (type.is<AstMatrixType>())
+		return ::getTypeStr(type.get<AstMatrixType>());
+	else if (type.is<AstSamplerType>())
+		return ::getTypeStr(type.get<AstSamplerType>());
+	else if (type.is<AstStructType>())
+		return ::getTypeStr(type.get<AstStructType>());
 
 	ATEMA_ERROR("Invalid array type");
 
 	return "";
 }
 
-ATEMA_SHADER_API std::string glsl::getArraySizeStr(const ArrayType& type)
+ATEMA_SHADER_API std::string glsl::getArraySizeStr(const AstArrayType& type)
 {
 	std::string sizeStr;
 
 	switch (type.sizeType)
 	{
-		case ArrayType::SizeType::Constant:
+		case AstArrayType::SizeType::Constant:
 		{
 			sizeStr = std::to_string(type.size);
 			break;
 		}
-		case ArrayType::SizeType::Implicit:
+		case AstArrayType::SizeType::Implicit:
 		{
 			// The size is context dependent, no need to specify it
 			break;
 		}
-		case ArrayType::SizeType::Option:
+		case AstArrayType::SizeType::Option:
 		{
 			sizeStr = type.optionName;
 			break;
