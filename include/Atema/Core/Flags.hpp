@@ -80,7 +80,9 @@ namespace std
 	{
 		size_t operator()(const at::Flags<E>& flags) const
 		{
-			return hash<int>(flags.getValue());
+			const std::hash<int> hasher;
+
+			return hasher(flags.getValue());
 		}
 	};
 }
