@@ -77,7 +77,7 @@ Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
 	settings.pipelineState.stencilFront.writeMask = 0xFF;
 	settings.pipelineState.stencilFront.reference = static_cast<uint32_t>(lightingModelIndex);
 
-	auto renderMaterial = std::make_shared<RenderMaterial>(settings);
+	auto renderMaterial = std::make_shared<RenderMaterial>(getRenderScene().getResourceManager(), settings);
 
 	m_connectionGuard.connect(renderMaterial->onDestroy, [this, materialID]()
 		{
@@ -388,7 +388,7 @@ void FrameRenderer::createPasses()
 	{
 		m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
 
-		m_lightPass = std::make_unique<LightPass>(*m_gbuffer, m_shaderLibraryManager, ThreadCount);
+		m_lightPass = std::make_unique<LightPass>(getRenderScene().getResourceManager(), *m_gbuffer, m_shaderLibraryManager, ThreadCount);
 		m_lightPass->setLightingModels(m_lightingModelNames);
 
 		m_debugRendererPass = std::make_unique<DebugRendererPass>();

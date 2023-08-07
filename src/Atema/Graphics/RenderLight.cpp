@@ -26,7 +26,8 @@
 
 using namespace at;
 
-RenderLight::RenderLight(const Light& light) :
+RenderLight::RenderLight(RenderResourceManager& resourceManager, const Light& light) :
+	RenderResource(resourceManager),
 	m_light(&light),
 	m_updateShadowMapDescriptor(false),
 	m_updateShadowData(true)
@@ -35,10 +36,10 @@ RenderLight::RenderLight(const Light& light) :
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = LightData::getLayout().getByteSize();
 
-	m_lightBuffer = Buffer::create(bufferSettings);
+	m_lightBuffer = getResourceManager().createBuffer(bufferSettings);
 
 	m_lightDescriptorSet = Graphics::instance().getLightLayout()->createSet();
-	m_lightDescriptorSet->update(0, *m_lightBuffer);
+	m_lightDescriptorSet->update(0, m_lightBuffer->getBuffer(), m_lightBuffer->getOffset(), m_lightBuffer->getSize());
 
 	if (light.castShadows())
 		updateShadowResources();
@@ -57,19 +58,18 @@ void RenderLight::setShadowData(const std::vector<ShadowData>& cascades)
 	m_updateShadowData = true;
 }
 
-void RenderLight::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderLight::updateResources()
 {
-	{
-		auto stagingBuffer = renderFrame.allocateStagingBuffer(m_lightBuffer->getByteSize());
+	auto& renderFrame = getResourceManager().getRenderFrame();
+	auto& commandBuffer = getResourceManager().getCommandBuffer();
 
-		auto data = stagingBuffer->map();
+	{
+		void* data = getResourceManager().mapBuffer(*m_lightBuffer);
 
 		LightData lightData;
 		lightData.light = m_light;
 
 		lightData.copyTo(data);
-
-		commandBuffer.copyBuffer(stagingBuffer->getBuffer(), *m_lightBuffer, stagingBuffer->getSize(), stagingBuffer->getOffset());
 	}
 
 	if (m_light->castShadows())

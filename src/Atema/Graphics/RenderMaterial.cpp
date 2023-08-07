@@ -24,9 +24,10 @@
 #include <Atema/Graphics/ShaderData.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
 #include <Atema/Renderer/Utils.hpp>
+#include <Atema/Graphics/Material.hpp>
+#include <Atema/Renderer/RenderFrame.hpp>
 
 #include <map>
-#include <Atema/Graphics/Material.hpp>
 
 using namespace at;
 
@@ -42,9 +43,11 @@ namespace
 		const MaterialParameters& srcMaterialParameters,
 		MaterialParameters& dstMaterialParameters,
 		std::vector<Ptr<DescriptorSet>>& descriptorSets,
-		RenderFrame& renderFrame,
-		CommandBuffer& commandBuffer)
+		RenderResourceManager& resourceManager)
 	{
+		auto& renderFrame = resourceManager.getRenderFrame();
+		auto& commandBuffer = resourceManager.getCommandBuffer();
+
 		// First of all, update resources
 		for (const auto& srcMaterialParameter : srcMaterialParameters.getParameters())
 		{
@@ -137,7 +140,8 @@ namespace
 }
 
 // RenderMaterial
-RenderMaterial::RenderMaterial(const Settings& settings) :
+RenderMaterial::RenderMaterial(RenderResourceManager& resourceManager, const Settings& settings) :
+	RenderResource(resourceManager),
 	m_material(settings.material),
 	m_id(settings.id),
 	m_needUpdate(false)
@@ -302,11 +306,11 @@ Ptr<DescriptorSet> RenderMaterial::createSet(size_t setIndex) const
 	return m_descriptorSetLayouts[setIndex]->createSet();
 }
 
-void RenderMaterial::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderMaterial::updateResources()
 {
 	if (m_needUpdate)
 	{
-		updateBindings(*this, m_material->getParameters(), m_parameters, m_descriptorSets, renderFrame, commandBuffer);
+		updateBindings(*this, m_material->getParameters(), m_parameters, m_descriptorSets, getResourceManager());
 
 		m_needUpdate = false;
 	}
@@ -314,6 +318,7 @@ void RenderMaterial::updateResources(RenderFrame& renderFrame, CommandBuffer& co
 
 // RenderMaterialInstance
 RenderMaterialInstance::RenderMaterialInstance(const RenderMaterial& renderMaterial, const MaterialInstance& materialInstance, RenderMaterial::ID id) :
+	RenderResource(renderMaterial.getResourceManager()),
 	m_renderMaterial(&renderMaterial),
 	m_materialInstance(&materialInstance),
 	m_id(id),
@@ -351,11 +356,11 @@ void RenderMaterialInstance::bindTo(CommandBuffer& commandBuffer) const
 	}
 }
 
-void RenderMaterialInstance::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderMaterialInstance::updateResources()
 {
 	if (m_needUpdate)
 	{
-		updateBindings(*m_renderMaterial, m_materialInstance->getParameters(), m_parameters, m_descriptorSets, renderFrame, commandBuffer);
+		updateBindings(*m_renderMaterial, m_materialInstance->getParameters(), m_parameters, m_descriptorSets, getResourceManager());
 
 		m_needUpdate = false;
 	}

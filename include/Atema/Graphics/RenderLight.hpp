@@ -27,6 +27,8 @@
 #include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/RenderResource.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
+#include <Atema/Renderer/DescriptorSet.hpp>
+#include <Atema/Renderer/Image.hpp>
 #include <Atema/Renderer/Sampler.hpp>
 
 namespace at
@@ -35,7 +37,7 @@ namespace at
 	{
 	public:
 		RenderLight() = delete;
-		RenderLight(const Light& light);
+		RenderLight(RenderResourceManager& resourceManager, const Light& light);
 		RenderLight(const RenderLight& other) = default;
 		RenderLight(RenderLight&& other) noexcept = default;
 		virtual ~RenderLight() = default;
@@ -55,7 +57,7 @@ namespace at
 		Signal<> onShadowMapUpdated;
 
 	protected:
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources() override;
 
 	private:
 		bool needShadowMapUpdate() const;
@@ -65,7 +67,7 @@ namespace at
 
 		const Light* m_light;
 
-		Ptr<Buffer> m_lightBuffer;
+		Ptr<BufferAllocation> m_lightBuffer;
 		Ptr<DescriptorSet> m_lightDescriptorSet;
 
 		Ptr<Buffer> m_shadowBuffer;

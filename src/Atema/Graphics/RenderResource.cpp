@@ -20,13 +20,25 @@
 */
 
 #include <Atema/Graphics/RenderResource.hpp>
+#include <Atema/Renderer/RenderFrame.hpp>
 
 using namespace at;
 
-void RenderResource::update(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+RenderResource::RenderResource(RenderResourceManager& resourceManager) :
+	m_resourceManager(&resourceManager)
 {
-	updateResources(renderFrame, commandBuffer);
+}
 
+RenderResourceManager& RenderResource::getResourceManager() const noexcept
+{
+	return *m_resourceManager;
+}
+
+void RenderResource::update()
+{
+	updateResources();
+
+	auto& renderFrame = getResourceManager().getRenderFrame();
 	for (auto& resource : m_resourcesToDestroy)
 		renderFrame.destroyAfterUse(std::move(resource));
 

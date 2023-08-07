@@ -23,28 +23,36 @@
 #define ATEMA_GRAPHICS_RENDERRESOURCE_HPP
 
 #include <Atema/Graphics/Config.hpp>
-#include <Atema/Renderer/RenderFrame.hpp>
+#include <Atema/Core/Pointer.hpp>
+#include <Atema/Graphics/RenderResourceManager.hpp>
+
+#include <vector>
 
 namespace at
 {
 	class ATEMA_GRAPHICS_API RenderResource
 	{
 	public:
-		RenderResource() = default;
+		RenderResource() = delete;
+		RenderResource(RenderResourceManager& resourceManager);
 		RenderResource(const RenderResource& other) = default;
 		RenderResource(RenderResource&& other) noexcept = default;
 		virtual ~RenderResource() = default;
 
-		void update(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
+		RenderResourceManager& getResourceManager() const noexcept;
+
+		void update();
 
 		RenderResource& operator=(const RenderResource& other) = default;
 		RenderResource& operator=(RenderResource&& other) noexcept = default;
 
 	protected:
-		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) = 0;
+		virtual void updateResources() = 0;
 		void destroyAfterUse(Ptr<void> resource);
 
 	private:
+		RenderResourceManager* m_resourceManager;
+
 		std::vector<Ptr<void>> m_resourcesToDestroy;
 	};
 }

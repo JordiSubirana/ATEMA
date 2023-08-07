@@ -20,10 +20,12 @@
 */
 
 #include <Atema/Graphics/RenderObject.hpp>
+#include <Atema/Graphics/RenderScene.hpp>
 
 using namespace at;
 
 RenderObject::RenderObject(RenderScene& renderScene, const Renderable& renderable) :
+	RenderResource(renderScene.getResourceManager()),
 	m_renderScene(&renderScene),
 	m_renderable(&renderable)
 {

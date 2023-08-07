@@ -64,7 +64,7 @@ namespace at
 		};
 
 		RenderMaterial() = delete;
-		RenderMaterial(const Settings& settings);
+		RenderMaterial(RenderResourceManager& resourceManager, const Settings& settings);
 		RenderMaterial(const RenderMaterial& other) = delete;
 		RenderMaterial(RenderMaterial&& other) noexcept = default;
 		~RenderMaterial();
@@ -87,7 +87,7 @@ namespace at
 		Signal<> onDestroy;
 
 	protected:
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources() override;
 
 	private:
 		Ptr<Material> m_material;
@@ -134,7 +134,7 @@ namespace at
 		Signal<> onDestroy;
 
 	protected:
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources() override;
 
 	private:
 		RenderMaterialInstance(const RenderMaterial& renderMaterial, const MaterialInstance& materialInstance, RenderMaterial::ID id);

@@ -74,6 +74,7 @@ namespace at
 		virtual void beginFrame();
 
 	private:
+		RenderResourceManager m_resourceManager;
 		RenderScene m_renderScene;
 
 		// FrameGraph

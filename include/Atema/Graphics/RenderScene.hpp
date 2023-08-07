@@ -40,7 +40,7 @@ namespace at
 	{
 	public:
 		RenderScene() = delete;
-		RenderScene(AbstractFrameRenderer& frameRenderer);
+		RenderScene(RenderResourceManager& resourceManager, AbstractFrameRenderer& frameRenderer);
 		RenderScene(const RenderScene& other) = default;
 		RenderScene(RenderScene&& other) noexcept = default;
 		~RenderScene() = default;
@@ -71,7 +71,7 @@ namespace at
 		RenderScene& operator=(RenderScene&& other) noexcept = default;
 
 	protected:
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources() override;
 
 	private:
 		AbstractFrameRenderer* m_frameRenderer;

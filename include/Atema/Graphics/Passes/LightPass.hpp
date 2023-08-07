@@ -36,6 +36,7 @@
 
 namespace at
 {
+	class RenderResourceManager;
 	class RenderLight;
 	class Mesh;
 	class GBuffer;
@@ -72,7 +73,7 @@ namespace at
 		};
 
 		LightPass() = delete;
-		LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount);
+		LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount);
 		LightPass(const LightPass& other) = default;
 		LightPass(LightPass&& other) noexcept = default;
 		~LightPass() = default;
@@ -105,6 +106,7 @@ namespace at
 			Ptr<Buffer> buffer;
 		};
 
+		RenderResourceManager* m_resourceManager;
 		const GBuffer* m_gbuffer;
 		const ShaderLibraryManager* m_shaderLibraryManager;
 		size_t m_threadCount;

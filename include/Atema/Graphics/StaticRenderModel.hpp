@@ -47,7 +47,7 @@ namespace at
 		StaticRenderModel& operator=(StaticRenderModel&& other) noexcept = default;
 
 	protected:
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources() override;
 
 	private:
 		StaticModel* m_staticModel;
@@ -58,7 +58,7 @@ namespace at
 		std::vector<Ptr<DescriptorSet>> m_transformDescriptorSets;
 
 		bool m_transformValid;
-		Ptr<Buffer> m_transformBuffer;
+		Ptr<BufferAllocation> m_transformBuffer;
 
 		ConnectionGuard m_connectionGuard;
 	};

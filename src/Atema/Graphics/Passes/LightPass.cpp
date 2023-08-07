@@ -291,7 +291,8 @@ void main()
 )";
 }
 
-LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount) :
+LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuffer, const ShaderLibraryManager& shaderLibraryManager, size_t threadCount) :
+	m_resourceManager(&resourceManager),
 	m_gbuffer(&gbuffer),
 	m_shaderLibraryManager(&shaderLibraryManager),
 	m_updateShader(false),
@@ -333,7 +334,7 @@ LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderL
 		renderMaterialSettings.pipelineState.stencilBack.depthFailOperation = StencilOperation::IncrementAndClamp;
 		renderMaterialSettings.pipelineState.stencilBack.writeMask = 0xFF;
 
-		m_meshStencilMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+		m_meshStencilMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 	}
 
 	// Emissive pass
@@ -357,13 +358,13 @@ LightPass::LightPass(const GBuffer& gbuffer, const ShaderLibraryManager& shaderL
 			{ bindings[0].bindingOptionName, static_cast<int32_t>(0) }
 		};
 
-		m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+		m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 	}
 }
 
 const char* LightPass::getName() const noexcept
 {
-	return "Phong Lighting";
+	return "Light";
 }
 
 FrameGraphPass& LightPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings)
@@ -721,11 +722,11 @@ void LightPass::createShaders()
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
 	renderMaterialSettings.pipelineState.stencil = true;
-	m_meshMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	m_meshMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
 	renderMaterialSettings.pipelineState.stencil = false;
-	m_directionalMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	m_directionalMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	// Light + shadow material
 	renderMaterialSettings.uberShaderOptions = gbufferOptions;
@@ -735,11 +736,11 @@ void LightPass::createShaders()
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
 	renderMaterialSettings.pipelineState.stencil = true;
-	m_meshShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	m_meshShadowMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
 	renderMaterialSettings.pipelineState.stencil = false;
-	m_directionalShadowMaterial = std::make_shared<RenderMaterial>(renderMaterialSettings);
+	m_directionalShadowMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	m_useFrameSet = m_meshMaterial->hasBinding("FrameData") && m_meshMaterial->getBinding("FrameData").set != RenderMaterial::InvalidBindingIndex;
 	m_useLightSet = m_meshMaterial->hasBinding("LightData") && m_meshMaterial->getBinding("LightData").set != RenderMaterial::InvalidBindingIndex;

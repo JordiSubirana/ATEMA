@@ -27,7 +27,7 @@
 using namespace at;
 
 AbstractFrameRenderer::AbstractFrameRenderer() :
-	m_renderScene(*this),
+	m_renderScene(m_resourceManager, *this),
 	m_updateFrameGraph(true)
 {
 }
@@ -86,14 +86,34 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
 
-		m_renderScene.update(renderFrame, *commandBuffer);
+		m_resourceManager.beginFrame(renderFrame, *commandBuffer);
 
-		for (auto& renderPass : getRenderPasses())
-			renderPass->updateResources(renderFrame, *commandBuffer);
+		{
+			ATEMA_BENCHMARK_TAG(b, "Scene");
+
+			m_renderScene.update();
+		}
+
+		{
+			ATEMA_BENCHMARK_TAG(b, "RenderPasses");
+
+			for (auto& renderPass : getRenderPasses())
+				renderPass->updateResources(renderFrame, *commandBuffer);
+		}
+
+		{
+			ATEMA_BENCHMARK_TAG(b, "Deferred update");
+
+			m_resourceManager.endFrame();
+		}
 
 		commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
 
-		destroyResources(renderFrame);
+		{
+			ATEMA_BENCHMARK_TAG(b, "Destroy resources");
+
+			destroyResources(renderFrame);
+		}
 	}
 
 	// Execute FrameGraph if it is valid

@@ -19,13 +19,15 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/AbstractFrameRenderer.hpp>
 #include <Atema/Graphics/Material.hpp>
-#include <Atema/Graphics/RenderScene.hpp>
+#include <Atema/Core/Benchmark.hpp>
 
 using namespace at;
 
-RenderScene::RenderScene(AbstractFrameRenderer& frameRenderer) :
+RenderScene::RenderScene(RenderResourceManager& resourceManager, AbstractFrameRenderer& frameRenderer) :
+	RenderResource(resourceManager),
 	m_frameRenderer(&frameRenderer),
 	m_camera(nullptr)
 {
@@ -45,7 +47,7 @@ void RenderScene::addLight(Light& light)
 {
 	if (m_renderLightIndices.find(&light) == m_renderLightIndices.end())
 	{
-		m_renderLights.emplace_back(std::make_shared<RenderLight>(light));
+		m_renderLights.emplace_back(std::make_shared<RenderLight>(getResourceManager(), light));
 		m_renderLightIndices[&light] = m_renderLights.size() - 1;
 	}
 }
@@ -194,17 +196,33 @@ const std::vector<Ptr<RenderLight>>& RenderScene::getRenderLights() const noexce
 	return m_renderLights;
 }
 
-void RenderScene::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderScene::updateResources()
 {
-	for (auto& resource : m_renderObjects)
-		resource->update(renderFrame, commandBuffer);
+	{
+		ATEMA_BENCHMARK("Objects");
 
-	for (auto& resource : m_renderLights)
-		resource->update(renderFrame, commandBuffer);
+		for (auto& resource : m_renderObjects)
+			resource->update();
+	}
 
-	for (auto& [id, resource] : m_renderMaterials)
-		resource->update(renderFrame, commandBuffer);
+	{
+		ATEMA_BENCHMARK("Lights");
 
-	for (auto& [id, resource] : m_renderMaterialInstances)
-		resource->update(renderFrame, commandBuffer);
+		for (auto& resource : m_renderLights)
+			resource->update();
+	}
+
+	{
+		ATEMA_BENCHMARK("Materials");
+
+		for (auto& [id, resource] : m_renderMaterials)
+			resource->update();
+	}
+
+	{
+		ATEMA_BENCHMARK("Material Instances");
+
+		for (auto& [id, resource] : m_renderMaterialInstances)
+			resource->update();
+	}
 }

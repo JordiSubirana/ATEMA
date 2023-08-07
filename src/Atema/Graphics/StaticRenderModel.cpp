@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Core/Benchmark.hpp>
 #include <Atema/Graphics/Mesh.hpp>
 #include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/StaticRenderModel.hpp>
@@ -36,7 +37,7 @@ StaticRenderModel::StaticRenderModel(RenderScene& renderScene, StaticModel& stat
 	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = TransformData::getLayout().getByteSize();
 
-	m_transformBuffer = Buffer::create(bufferSettings);
+	m_transformBuffer = getResourceManager().createBuffer(bufferSettings);
 
 	m_connectionGuard.connect(staticModel.onModelUpdate, [this]()
 		{
@@ -60,21 +61,20 @@ size_t StaticRenderModel::getRenderElementsSize() const noexcept
 	return m_renderElements.size();
 }
 
-void StaticRenderModel::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void StaticRenderModel::updateResources()
 {
+	auto& renderFrame = getResourceManager().getRenderFrame();
+	auto& commandBuffer = getResourceManager().getCommandBuffer();
+
 	if (!m_transformValid)
 	{
-		auto stagingBuffer = renderFrame.allocateStagingBuffer(m_transformBuffer->getByteSize());
-
-		auto data = stagingBuffer->map();
+		void* data = getResourceManager().mapBuffer(*m_transformBuffer);
 
 		mapMemory<Matrix4f>(data, 0) = m_staticModel->getTransform().getMatrix();
 
-		commandBuffer.copyBuffer(stagingBuffer->getBuffer(), *m_transformBuffer, stagingBuffer->getSize(), stagingBuffer->getOffset());
-
 		m_transformValid = true;
 	}
-
+	
 	if (!m_modelValid)
 	{
 		auto& renderScene = getRenderScene();
@@ -104,7 +104,7 @@ void StaticRenderModel::updateResources(RenderFrame& renderFrame, CommandBuffer&
 
 			const auto& transformBinding = renderMaterial.getBinding("TransformData");
 			auto descriptorSet = renderMaterial.createSet(transformBinding.set);
-			descriptorSet->update(transformBinding.binding, *m_transformBuffer);
+			descriptorSet->update(transformBinding.binding, m_transformBuffer->getBuffer(), m_transformBuffer->getOffset(), m_transformBuffer->getSize());
 
 			m_transformDescriptorSets.emplace_back(std::move(descriptorSet));
 			transformSetIndices.emplace_back(transformBinding.set);
