@@ -67,6 +67,7 @@
 #include <Atema/Graphics/RenderMaterial.hpp>
 #include <Atema/Graphics/RenderObject.hpp>
 #include <Atema/Graphics/RenderResource.hpp>
+#include <Atema/Graphics/RenderResourceManager.hpp>
 #include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
