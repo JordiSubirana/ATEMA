@@ -137,8 +137,8 @@ bool ModelLoader::StaticVertex::operator==(const StaticVertex& other) const
 //-----
 // ModelLoader::Settings
 ModelLoader::Settings::Settings(const VertexFormat& vertexFormat) :
-	m_vertexFormat(vertexFormat),
-	stagingBuffers(nullptr)
+	stagingBuffers(nullptr),
+	m_vertexFormat(vertexFormat)
 {
 	ensureVertexFormatValid();
 }

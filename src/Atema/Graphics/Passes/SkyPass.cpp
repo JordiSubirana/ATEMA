@@ -34,8 +34,8 @@ namespace
 	constexpr uint32_t FrameSetIndex = 0;
 	constexpr uint32_t SkySetIndex = 1;
 
-	const std::string SkyShaderName = "SkyPassShader";
-	constexpr char SkyShader[] = R"(
+	const std::string SkyBoxShaderName = "SkyPassBoxShader";
+	constexpr char SkyBoxShader[] = R"(
 struct FrameDataStruct
 {
 	mat4f ViewProjection;
@@ -76,6 +76,63 @@ void main()
 input
 {
 	[location(0)] vec3f inTexCoords;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+[entry(fragment)]
+void main()
+{
+	outColor = vec4f(sample(SkyTexture, inTexCoords).rgb, 0);
+}
+)";
+
+	const std::string SkySphereShaderName = "SkyPassSphereShader";
+	constexpr char SkySphereShader[] = R"(
+struct FrameDataStruct
+{
+	mat4f ViewProjection;
+}
+
+external
+{
+	[set(0), binding(0)] FrameDataStruct FrameData;
+	
+	[set(1), binding(0)] sampler2Df SkyTexture;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoords;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec2f outTexCoords;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f screenPosition = FrameData.ViewProjection * vec4f(inPosition, 1.0);
+	
+	outTexCoords = inTexCoords;
+	
+	// This way the depth will be fixed at max value
+	setVertexPosition(screenPosition.xyww);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec2f inTexCoords;
 }
 
 [stage(fragment)]
@@ -136,23 +193,37 @@ void main()
 
 SkyPass::SkyPass(RenderResourceManager& resourceManager)
 {
-	ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ));
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ));
 
-	m_skyMesh = Primitive::createBox(settings, 1.0f, 1.0f, 1.0f, 1, 1, 1);
+		m_boxMesh = Primitive::createBox(settings, 1.0f, 1.0f, 1.0f, 1, 1, 1);
+	}
+
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV));
+
+		m_sphereMesh = Primitive::createUVSphere(settings, 0.5f, 10, 10);
+	}
 
 	auto& graphics = Graphics::instance();
 
-	if (!graphics.uberShaderExists(SkyShaderName))
-		graphics.setUberShader(SkyShaderName, SkyShader);
+	if (!graphics.uberShaderExists(SkyBoxShaderName))
+		graphics.setUberShader(SkyBoxShaderName, SkyBoxShader);
+
+	if (!graphics.uberShaderExists(SkySphereShaderName))
+		graphics.setUberShader(SkySphereShaderName, SkySphereShader);
 
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkyShaderName));
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
 	renderMaterialSettings.pipelineState.depth.test = true;
 	renderMaterialSettings.pipelineState.depth.write = false;
 	renderMaterialSettings.pipelineState.depth.compareOperation = CompareOperation::LessOrEqual;
 
-	m_skyMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkyBoxShaderName));
+	m_skyBoxMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+
+	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkySphereShaderName));
+	m_skySphereMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
 	m_sampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));
 
@@ -164,7 +235,7 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager)
 	{
 		frameResources.buffer = Buffer::create(bufferSettings);
 
-		frameResources.set = m_skyMaterial->createSet(FrameSetIndex);
+		frameResources.set = m_skyBoxMaterial->createSet(FrameSetIndex);
 		frameResources.set->update(0, *frameResources.buffer);
 	}
 }
@@ -225,9 +296,6 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	auto& frameResources = m_frameResources[context.getFrameIndex()];
 
-	auto skyBoxSet = m_skyMaterial->createSet(SkySetIndex);
-	skyBoxSet->update(0, *skyBox->getView(), *m_sampler);
-
 	const auto& viewport = getRenderScene().getCamera().getViewport();
 	const auto& scissor = getRenderScene().getCamera().getScissor();
 
@@ -237,18 +305,37 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
-	m_skyMaterial->bindTo(commandBuffer);
+	Mesh* skyMesh = nullptr;
+	Ptr<DescriptorSet> skyTextureSet;
+	if (skyBox->getType() == ImageType::CubeMap)
+	{
+		skyMesh = m_boxMesh.get();
+
+		skyTextureSet = m_skyBoxMaterial->createSet(SkySetIndex);
+
+		m_skyBoxMaterial->bindTo(commandBuffer);
+	}
+	else
+	{
+		skyMesh = m_sphereMesh.get();
+
+		skyTextureSet = m_skySphereMaterial->createSet(SkySetIndex);
+
+		m_skySphereMaterial->bindTo(commandBuffer);
+	}
+
+	skyTextureSet->update(0, *skyBox->getView(), *m_sampler);
 
 	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.set);
-	commandBuffer.bindDescriptorSet(SkySetIndex, *skyBoxSet);
+	commandBuffer.bindDescriptorSet(SkySetIndex, *skyTextureSet);
 
-	const VertexBuffer& vertexBuffer = *m_skyMesh->getVertexBuffer();
-	const IndexBuffer& indexBuffer = *m_skyMesh->getIndexBuffer();
+	const VertexBuffer& vertexBuffer = *skyMesh->getVertexBuffer();
+	const IndexBuffer& indexBuffer = *skyMesh->getIndexBuffer();
 
 	commandBuffer.bindVertexBuffer(*vertexBuffer.getBuffer(), 0);
 	commandBuffer.bindIndexBuffer(*indexBuffer.getBuffer(), indexBuffer.getIndexType());
 
 	commandBuffer.drawIndexed(static_cast<uint32_t>(indexBuffer.getSize()));
 
-	context.destroyAfterUse(std::move(skyBoxSet));
+	context.destroyAfterUse(std::move(skyTextureSet));
 }

@@ -72,8 +72,10 @@ namespace at
 			Ptr<Buffer> buffer;
 		};
 
-		Ptr<RenderMaterial> m_skyMaterial;
-		Ptr<Mesh> m_skyMesh;
+		Ptr<RenderMaterial> m_skyBoxMaterial;
+		Ptr<RenderMaterial> m_skySphereMaterial;
+		Ptr<Mesh> m_boxMesh;
+		Ptr<Mesh> m_sphereMesh;
 		Ptr<Sampler> m_sampler;
 
 		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
