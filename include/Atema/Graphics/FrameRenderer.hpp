@@ -30,6 +30,7 @@
 #include <Atema/Graphics/Passes/DebugRendererPass.hpp>
 #include <Atema/Graphics/Passes/GBufferPass.hpp>
 #include <Atema/Graphics/Passes/LightPass.hpp>
+#include <Atema/Graphics/Passes/SkyPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
 
 namespace at
@@ -90,6 +91,7 @@ namespace at
 
 		UPtr<GBufferPass> m_gbufferPass;
 		UPtr<LightPass> m_lightPass;
+		UPtr<SkyPass> m_skyPass;
 		UPtr<DebugRendererPass> m_debugRendererPass;
 		UPtr<DebugFrameGraphPass> m_debugFrameGraphPass;
 		UPtr<ScreenPass> m_screenPass;

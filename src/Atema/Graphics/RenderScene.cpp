@@ -43,6 +43,11 @@ void RenderScene::setCamera(const Camera& camera)
 	m_camera = &camera;
 }
 
+void RenderScene::setSkyBox(Ptr<Image> skyBox)
+{
+	m_skyBox = std::move(skyBox);
+}
+
 void RenderScene::addLight(Light& light)
 {
 	if (m_renderLightIndices.find(&light) == m_renderLightIndices.end())
@@ -144,6 +149,11 @@ void RenderScene::recompileMaterials()
 const Camera& RenderScene::getCamera() const noexcept
 {
 	return *m_camera;
+}
+
+const Ptr<Image>& RenderScene::getSkyBox() const noexcept
+{
+	return m_skyBox;
 }
 
 RenderMaterial& RenderScene::getRenderMaterial(Ptr<Material> material)

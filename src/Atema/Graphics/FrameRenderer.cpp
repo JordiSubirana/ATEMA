@@ -242,6 +242,17 @@ void FrameRenderer::createFrameGraph()
 			m_activePasses.emplace_back(m_lightPass.get());
 		}
 
+		// Sky
+		{
+			SkyPass::Settings passSettings;
+
+			passSettings.output = compositionTexture;
+			passSettings.gbufferDepthStencil = gbufferDepthTexture;
+
+			m_skyPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_skyPass.get());
+		}
+
 		// Debug Renderer
 		if (m_enableDebugRenderer)
 		{
@@ -375,6 +386,8 @@ void FrameRenderer::createPasses()
 
 	m_oldRenderPasses.emplace_back(std::move(m_lightPass));
 
+	m_oldRenderPasses.emplace_back(std::move(m_skyPass));
+
 	m_oldRenderPasses.emplace_back(std::move(m_debugRendererPass));
 
 	m_oldRenderPasses.emplace_back(std::move(m_debugFrameGraphPass));
@@ -397,6 +410,8 @@ void FrameRenderer::createPasses()
 	}
 
 	// Some passes are always valid
+	m_skyPass = std::make_unique<SkyPass>(getRenderScene().getResourceManager());
+
 	m_screenPass = std::make_unique<ScreenPass>();
 }
 
