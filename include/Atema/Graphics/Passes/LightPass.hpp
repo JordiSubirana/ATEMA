@@ -62,7 +62,7 @@ namespace at
 
 			// GBuffer texture handles
 			std::vector<FrameGraphTextureHandle> gbuffer;
-			FrameGraphTextureHandle gbufferDepthStencil;
+			FrameGraphTextureHandle gbufferDepthStencil = FrameGraph::InvalidTextureHandle;
 			std::vector<FrameGraphTextureHandle> shadowMaps;
 
 			// Depth texture handle for stencil mask operations
