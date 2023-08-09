@@ -80,10 +80,10 @@ namespace
 		initializeDefaultFormat(defaultFormats[2], formats3);
 		initializeDefaultFormat(defaultFormats[3], formats4);
 
-		return std::move(defaultFormats);
+		return defaultFormats;
 	}
 
-	const Format& getDefaultFormat(ImageLoader::Format format)
+	Format getDefaultFormat(ImageLoader::Format format)
 	{
 		static const auto defaultFormats = initializeDefaultFormats();
 
@@ -93,27 +93,35 @@ namespace
 
 Ptr<Image> at::ImageLoader::loadImage(const uint8_t* data, uint32_t width, uint32_t height, Format format, const Settings& settings)
 {
-	const auto& defaultFormat = getDefaultFormat(format);
+	const auto defaultFormat = getDefaultFormat(format);
 	
 	ATEMA_ASSERT(data, "Invalid pixel data");
 	ATEMA_ASSERT(width > 0 && height > 0, "Invalid image size");
 
+	const size_t imageByteSize = getByteSize(defaultFormat.format) * width * height;
+
+	if (settings.type == ImageType::CubeMap)
+	{
+		width /= 4;
+		height /= 3;
+
+		ATEMA_ASSERT(width == height, "Cubemap image must have a 4:3 ratio");
+	}
+
 	// std::max for the largest dimension, std::log2 to find how many times we can divide by 2
 	// std::floor handles the case when the dimension is not power of 2, +1 to add a mip level to the original image
-	const auto mipLevels = settings.mipLevels == 0 ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : settings.mipLevels;
-	
-	const auto imageSize = width * height * defaultFormat.componentCount;
+	const uint32_t mipLevels = settings.mipLevels == 0 ? static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : settings.mipLevels;
 
-	auto stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, imageSize });
+	Ptr<Buffer> stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, imageByteSize });
 
 	Ptr<CommandBuffer> commandBuffer = settings.commandBuffer;
 
 	// Command buffer not provided by the user : we create one
 	if (!settings.commandBuffer)
 	{
-		auto commandPool = Renderer::instance().getCommandPool(QueueType::Graphics);
+		CommandPool& commandPool = *Renderer::instance().getCommandPool(QueueType::Graphics);
 
-		commandBuffer = commandPool->createBuffer({ true });
+		commandBuffer = commandPool.createBuffer({ true });
 
 		commandBuffer->begin();
 	}
@@ -126,24 +134,25 @@ Ptr<Image> at::ImageLoader::loadImage(const uint8_t* data, uint32_t width, uint3
 	}
 
 	// Fill staging buffer
-	auto bufferData = stagingBuffer->map();
+	void* bufferData = stagingBuffer->map();
 
-	memcpy(bufferData, data, imageSize);
+	memcpy(bufferData, data, imageByteSize);
 
 	stagingBuffer->unmap();
 
 	// Create image
 	Image::Settings imageSettings;
 	imageSettings.format = defaultFormat.format;
+	imageSettings.type = settings.type;
 	imageSettings.width = width;
 	imageSettings.height = height;
 	imageSettings.mipLevels = mipLevels;
 	imageSettings.usages = settings.usages | ImageUsage::TransferDst;
-	
+
 	if (mipLevels > 1)
 		imageSettings.usages |= ImageUsage::TransferSrc;
 
-	auto image = Image::create(imageSettings);
+	Ptr<Image> image = Image::create(imageSettings);
 
 	// Copy staging buffer to index buffer
 
@@ -151,11 +160,19 @@ Ptr<Image> at::ImageLoader::loadImage(const uint8_t* data, uint32_t width, uint3
 
 	if (mipLevels == 1)
 	{
-		commandBuffer->copyBuffer(*stagingBuffer, *image, ImageLayout::ShaderRead);
+		if (settings.type == ImageType::CubeMap)
+			commandBuffer->copyBufferToCubemap(*stagingBuffer, *image, ImageLayout::TransferDst);
+		else
+			commandBuffer->copyBufferToImage(*stagingBuffer, *image, ImageLayout::TransferDst);
+
+		commandBuffer->imageBarrier(*image, ImageBarrier::TransferDstToFragmentShaderRead);
 	}
 	else
 	{
-		commandBuffer->copyBuffer(*stagingBuffer, *image, ImageLayout::TransferDst);
+		if (settings.type == ImageType::CubeMap)
+			commandBuffer->copyBufferToCubemap(*stagingBuffer, *image, ImageLayout::TransferDst);
+		else
+			commandBuffer->copyBufferToImage(*stagingBuffer, *image, ImageLayout::TransferDst);
 
 		commandBuffer->createMipmaps(*image, PipelineStage::FragmentShader, MemoryAccess::ShaderRead, ImageLayout::ShaderRead);
 	}

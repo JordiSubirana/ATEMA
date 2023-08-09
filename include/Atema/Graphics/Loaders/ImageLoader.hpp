@@ -47,6 +47,8 @@ namespace at
 			// Default value 0 stands for automatic mip levels
 			uint32_t mipLevels = 0;
 
+			ImageType type = ImageType::Image2D;
+
 			ImageSamples samples = ImageSamples::S1;
 
 			ImageTiling tiling = ImageTiling::Optimal;
