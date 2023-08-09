@@ -223,6 +223,132 @@ namespace
 	}
 }
 
+Ptr<Mesh> Primitive::createBox(const ModelLoader::Settings& settings, float width, float height, float depth, size_t widthSubdivisions, size_t heightSubdivisions, size_t depthSubdivisions)
+{
+	ATEMA_ASSERT(widthSubdivisions > 0, "widthSubdivisions must be at least 1");
+	ATEMA_ASSERT(heightSubdivisions > 0, "heightSubdivisions must be at least 1");
+	ATEMA_ASSERT(depthSubdivisions > 0, "depthSubdivisions must be at least 1");
+
+	const Vector3f size(width, depth, height);
+	const Vector3<size_t> faceSubs(widthSubdivisions, depthSubdivisions, heightSubdivisions);
+	const Vector3<size_t> vertexSubs = faceSubs + Vector3<size_t>(1, 1, 1);
+	const Vector3f step(size.x / static_cast<float>(faceSubs.x), size.y / static_cast<float>(faceSubs.y), size.z / static_cast<float>(faceSubs.z));
+	const Vector3f halfSize = size / 2.0f;
+
+	// Subdivisions along tangent / bitangent axes
+	const std::array<Vector2<size_t>, 6> subdivisions =
+	{
+		Vector2<size_t>(faceSubs.x, faceSubs.z), // Front
+		Vector2<size_t>(faceSubs.x, faceSubs.z), // Back
+		Vector2<size_t>(faceSubs.y, faceSubs.z), // Right
+		Vector2<size_t>(faceSubs.y, faceSubs.z), // Left
+		Vector2<size_t>(faceSubs.x, faceSubs.y), // Top
+		Vector2<size_t>(faceSubs.x, faceSubs.y)  // Bottom
+	};
+
+	const std::array<Vector3f, 6> normals =
+	{
+		Vector3f(0.0f, -1.0f, 0.0f),// Front
+		Vector3f(0.0f, 1.0f, 0.0f), // Back
+		Vector3f(1.0f, 0.0f, 0.0f), // Right
+		Vector3f(-1.0f, 0.0f, 0.0f),// Left
+		Vector3f(0.0f, 0.0f, 1.0f), // Top
+		Vector3f(0.0f, 0.0f, -1.0f) // Bottom
+	};
+
+	const std::array<Vector3f, 6> tangents =
+	{
+		Vector3f(1.0f, 0.0f, 0.0f), // Front
+		Vector3f(-1.0f, 0.0f, 0.0f),// Back
+		Vector3f(0.0f, 1.0f, 0.0f), // Right
+		Vector3f(0.0f, -1.0f, 0.0f),// Left
+		Vector3f(1.0f, 0.0f, 0.0f), // Top
+		Vector3f(-1.0f, 0.0f, 0.0f) // Bottom
+	};
+
+	const std::array<Vector3f, 6> bitangents =
+	{
+		Vector3f(0.0f, 0.0f, 1.0f),// Front
+		Vector3f(0.0f, 0.0f, 1.0f),// Back
+		Vector3f(0.0f, 0.0f, 1.0f),// Right
+		Vector3f(0.0f, 0.0f, 1.0f),// Left
+		Vector3f(0.0f, 1.0f, 0.0f),// Top
+		Vector3f(0.0f, 1.0f, 0.0f) // Bottom
+	};
+
+	const size_t vertexCount = (vertexSubs.x * (vertexSubs.y + vertexSubs.z) + vertexSubs.y * vertexSubs.z) * 2;
+	const size_t indexCount = (faceSubs.x * (faceSubs.y + faceSubs.z) + faceSubs.y * faceSubs.z) * 12;
+
+	std::vector<ModelLoader::StaticVertex> vertices;
+	std::vector<uint32_t> indices;
+
+	vertices.reserve(vertexCount);
+	indices.reserve(indexCount);
+
+	// Vertices
+	for (size_t i = 0; i < 6; i++)
+	{
+		const Vector3f& normal = normals[i];
+		const Vector3f& tangent = tangents[i];
+		const Vector3f& bitangent = bitangents[i];
+		const Vector2<size_t>& subdivision = subdivisions[i];
+
+		const Vector3f origin = (normal - tangent - bitangent) * halfSize;
+
+		for (size_t t = 0; t <= subdivision.x; t++)
+		{
+			const Vector3f tangentOffset = tangent * step * static_cast<float>(t);
+			const float uvx = tangentOffset.getNorm();
+
+			for (size_t b = 0; b <= subdivision.y; b++)
+			{
+				const Vector3f bitangentOffset = bitangent * step * static_cast<float>(b);
+
+				auto& vertex = vertices.emplace_back();
+
+				vertex.position = origin + tangentOffset + bitangentOffset;
+
+				vertex.normal = normal;
+				vertex.tangent = tangent;
+				vertex.bitangent = bitangent;
+
+				vertex.texCoords.x = uvx;
+				vertex.texCoords.y = -bitangentOffset.getNorm();
+			}
+		}
+	}
+
+	// Indices
+	uint32_t faceOffset = 0;
+	for (uint32_t i = 0; i < 6; i++)
+	{
+		Vector2<uint32_t> subdivision;
+		subdivision.x = static_cast<uint32_t>(subdivisions[i].x);
+		subdivision.y = static_cast<uint32_t>(subdivisions[i].y);
+
+		for (uint32_t t = 0; t < subdivision.x; t++)
+		{
+			uint32_t line = faceOffset + t * (subdivision.y + 1);
+			uint32_t nextLine = line + (subdivision.y + 1);
+
+			for (uint32_t b = 0; b < subdivision.y; b++)
+			{
+				indices.emplace_back(line + b + 1);
+				indices.emplace_back(line + b);
+				indices.emplace_back(nextLine + b + 1);
+
+				indices.emplace_back(nextLine + b + 1);
+				indices.emplace_back(line + b);
+				indices.emplace_back(nextLine + b);
+			}
+		}
+
+		faceOffset += (subdivision.x + 1) * (subdivision.y + 1);
+	}
+
+	return ModelLoader::loadMesh(vertices, indices, settings);
+}
+
 Ptr<Mesh> Primitive::createConeFromRadius(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float radius, size_t verticalSubdivisions, size_t horizontalSubdivisions)
 {
 	const float angle = std::atan(radius / range) * 2.0f;

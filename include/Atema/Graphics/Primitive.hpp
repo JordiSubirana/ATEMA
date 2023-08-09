@@ -35,6 +35,7 @@ namespace at
 		Primitive(Primitive&& other) noexcept = default;
 		~Primitive() = default;
 
+		static Ptr<Mesh> createBox(const ModelLoader::Settings& settings, float width, float height, float depth, size_t widthSubdivisions, size_t heightSubdivisions, size_t depthSubdivisions);
 		static Ptr<Mesh> createConeFromRadius(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float radius, size_t verticalSubdivisions, size_t horizontalSubdivisions);
 		static Ptr<Mesh> createConeFromAngle(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float angle, size_t verticalSubdivisions, size_t horizontalSubdivisions);
 		static Ptr<Mesh> createUVSphere(const ModelLoader::Settings& settings, float radius, size_t verticalSliceCount, size_t horizontalSliceCount);
