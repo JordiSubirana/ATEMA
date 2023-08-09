@@ -24,25 +24,25 @@
 
 using namespace at;
 
-VertexInputFormat at::getVertexFormat(const Type& astVariableType)
+VertexInputFormat at::getVertexFormat(const AstType& astVariableType)
 {
-	if (astVariableType.is<PrimitiveType>())
+	if (astVariableType.is<AstPrimitiveType>())
 	{
-		switch (astVariableType.get<PrimitiveType>())
+		switch (astVariableType.get<AstPrimitiveType>())
 		{
-			case PrimitiveType::Int: return VertexInputFormat::R32_SINT;
-			case PrimitiveType::UInt: return VertexInputFormat::R32_UINT;
-			case PrimitiveType::Float: return VertexInputFormat::R32_SFLOAT;
+			case AstPrimitiveType::Int: return VertexInputFormat::R32_SINT;
+			case AstPrimitiveType::UInt: return VertexInputFormat::R32_UINT;
+			case AstPrimitiveType::Float: return VertexInputFormat::R32_SFLOAT;
 			default: break;
 		}
 	}
-	else if (astVariableType.is<VectorType>())
+	else if (astVariableType.is<AstVectorType>())
 	{
-		const auto& type = astVariableType.get<VectorType>();
+		const auto& type = astVariableType.get<AstVectorType>();
 
 		switch (type.primitiveType)
 		{
-			case PrimitiveType::Int:
+			case AstPrimitiveType::Int:
 			{
 				switch (type.componentCount)
 				{
@@ -54,7 +54,7 @@ VertexInputFormat at::getVertexFormat(const Type& astVariableType)
 
 				break;
 			}
-			case PrimitiveType::UInt:
+			case AstPrimitiveType::UInt:
 			{
 				switch (type.componentCount)
 				{
@@ -66,7 +66,7 @@ VertexInputFormat at::getVertexFormat(const Type& astVariableType)
 
 				break;
 			}
-			case PrimitiveType::Float:
+			case AstPrimitiveType::Float:
 			{
 				switch (type.componentCount)
 				{
@@ -87,19 +87,19 @@ VertexInputFormat at::getVertexFormat(const Type& astVariableType)
 	return VertexInputFormat::R32_SINT;
 }
 
-DescriptorType at::getDefaultDescriptorType(const Type& astVariableType)
+DescriptorType at::getDefaultDescriptorType(const AstType& astVariableType)
 {
-	if (astVariableType.is<SamplerType>())
+	if (astVariableType.is<AstSamplerType>())
 	{
 		return DescriptorType::CombinedImageSampler;
 	}
-	else if (astVariableType.isOneOf<PrimitiveType, VectorType, MatrixType, StructType>())
+	else if (astVariableType.isOneOf<AstPrimitiveType, AstVectorType, AstMatrixType, AstStructType>())
 	{
 		return DescriptorType::UniformBuffer;
 	}
-	else if (astVariableType.is<ArrayType>())
+	else if (astVariableType.is<AstArrayType>())
 	{
-		return getDefaultDescriptorType(astVariableType.get<ArrayType>().componentType);
+		return getDefaultDescriptorType(astVariableType.get<AstArrayType>().componentType);
 	}
 
 	ATEMA_ERROR("Invalid variable type");
@@ -107,13 +107,13 @@ DescriptorType at::getDefaultDescriptorType(const Type& astVariableType)
 	return DescriptorType::UniformBuffer;
 }
 
-DescriptorType at::getDefaultDescriptorType(const ArrayType::ComponentType& astVariableType)
+DescriptorType at::getDefaultDescriptorType(const AstArrayType::ComponentType& astVariableType)
 {
-	if (astVariableType.is<SamplerType>())
+	if (astVariableType.is<AstSamplerType>())
 	{
 		return DescriptorType::CombinedImageSampler;
 	}
-	else if (astVariableType.isOneOf<PrimitiveType, VectorType, MatrixType, StructType>())
+	else if (astVariableType.isOneOf<AstPrimitiveType, AstVectorType, AstMatrixType, AstStructType>())
 	{
 		return DescriptorType::UniformBuffer;
 	}
@@ -123,10 +123,10 @@ DescriptorType at::getDefaultDescriptorType(const ArrayType::ComponentType& astV
 	return DescriptorType::UniformBuffer;
 }
 
-uint32_t at::getDescriptorBindingCount(const Type& astVariableType)
+uint32_t at::getDescriptorBindingCount(const AstType& astVariableType)
 {
-	if (astVariableType.is<ArrayType>())
-		return static_cast<uint32_t>(astVariableType.get<ArrayType>().size);
+	if (astVariableType.is<AstArrayType>())
+		return static_cast<uint32_t>(astVariableType.get<AstArrayType>().size);
 
 	return 1;
 }
@@ -140,6 +140,139 @@ size_t at::getByteSize(IndexType indexType)
 	}
 
 	ATEMA_ERROR("Invalid index type");
+
+	return 0;
+}
+
+size_t at::getByteSize(ImageFormat format)
+{
+	switch (format)
+	{
+		case ImageFormat::R8_UNORM:
+		case ImageFormat::R8_SNORM:
+		case ImageFormat::R8_USCALED:
+		case ImageFormat::R8_SSCALED:
+		case ImageFormat::R8_UINT:
+		case ImageFormat::R8_SINT:
+		case ImageFormat::R8_SRGB:
+			return 1;
+		case ImageFormat::RG8_UNORM:
+		case ImageFormat::RG8_SNORM:
+		case ImageFormat::RG8_USCALED:
+		case ImageFormat::RG8_SSCALED:
+		case ImageFormat::RG8_UINT:
+		case ImageFormat::RG8_SINT:
+		case ImageFormat::RG8_SRGB:
+			return 2;
+		case ImageFormat::RGB8_UNORM:
+		case ImageFormat::RGB8_SNORM:
+		case ImageFormat::RGB8_USCALED:
+		case ImageFormat::RGB8_SSCALED:
+		case ImageFormat::RGB8_UINT:
+		case ImageFormat::RGB8_SINT:
+		case ImageFormat::RGB8_SRGB:
+		case ImageFormat::BGR8_UNORM:
+		case ImageFormat::BGR8_SNORM:
+		case ImageFormat::BGR8_USCALED:
+		case ImageFormat::BGR8_SSCALED:
+		case ImageFormat::BGR8_UINT:
+		case ImageFormat::BGR8_SINT:
+		case ImageFormat::BGR8_SRGB:
+			return 3;
+		case ImageFormat::RGBA8_UNORM:
+		case ImageFormat::RGBA8_SNORM:
+		case ImageFormat::RGBA8_USCALED:
+		case ImageFormat::RGBA8_SSCALED:
+		case ImageFormat::RGBA8_UINT:
+		case ImageFormat::RGBA8_SINT:
+		case ImageFormat::RGBA8_SRGB:
+		case ImageFormat::BGRA8_UNORM:
+		case ImageFormat::BGRA8_SNORM:
+		case ImageFormat::BGRA8_USCALED:
+		case ImageFormat::BGRA8_SSCALED:
+		case ImageFormat::BGRA8_UINT:
+		case ImageFormat::BGRA8_SINT:
+		case ImageFormat::BGRA8_SRGB:
+			return 4;
+		case ImageFormat::R16_UNORM:
+		case ImageFormat::R16_SNORM:
+		case ImageFormat::R16_USCALED:
+		case ImageFormat::R16_SSCALED:
+		case ImageFormat::R16_UINT:
+		case ImageFormat::R16_SINT:
+		case ImageFormat::R16_SFLOAT:
+			return 2;
+		case ImageFormat::RG16_UNORM:
+		case ImageFormat::RG16_SNORM:
+		case ImageFormat::RG16_USCALED:
+		case ImageFormat::RG16_SSCALED:
+		case ImageFormat::RG16_UINT:
+		case ImageFormat::RG16_SINT:
+		case ImageFormat::RG16_SFLOAT:
+			return 4;
+		case ImageFormat::RGB16_UNORM:
+		case ImageFormat::RGB16_SNORM:
+		case ImageFormat::RGB16_USCALED:
+		case ImageFormat::RGB16_SSCALED:
+		case ImageFormat::RGB16_UINT:
+		case ImageFormat::RGB16_SINT:
+		case ImageFormat::RGB16_SFLOAT:
+			return 6;
+		case ImageFormat::RGBA16_UNORM:
+		case ImageFormat::RGBA16_SNORM:
+		case ImageFormat::RGBA16_USCALED:
+		case ImageFormat::RGBA16_SSCALED:
+		case ImageFormat::RGBA16_UINT:
+		case ImageFormat::RGBA16_SINT:
+		case ImageFormat::RGBA16_SFLOAT:
+			return 8;
+		case ImageFormat::R32_UINT:
+		case ImageFormat::R32_SINT:
+		case ImageFormat::R32_SFLOAT:
+			return 4;
+		case ImageFormat::RG32_UINT:
+		case ImageFormat::RG32_SINT:
+		case ImageFormat::RG32_SFLOAT:
+			return 8;
+		case ImageFormat::RGB32_UINT:
+		case ImageFormat::RGB32_SINT:
+		case ImageFormat::RGB32_SFLOAT:
+			return 12;
+		case ImageFormat::RGBA32_UINT:
+		case ImageFormat::RGBA32_SINT:
+		case ImageFormat::RGBA32_SFLOAT:
+			return 16;
+		case ImageFormat::R64_UINT:
+		case ImageFormat::R64_SINT:
+		case ImageFormat::R64_SFLOAT:
+			return 8;
+		case ImageFormat::RG64_UINT:
+		case ImageFormat::RG64_SINT:
+		case ImageFormat::RG64_SFLOAT:
+			return 16;
+		case ImageFormat::RGB64_UINT:
+		case ImageFormat::RGB64_SINT:
+		case ImageFormat::RGB64_SFLOAT:
+			return 24;
+		case ImageFormat::RGBA64_UINT:
+		case ImageFormat::RGBA64_SINT:
+		case ImageFormat::RGBA64_SFLOAT:
+			return 32;
+		case ImageFormat::D16_UNORM:
+			return 2;
+		case ImageFormat::D32_SFLOAT:
+			return 4;
+		case ImageFormat::D16_UNORM_S8_UINT:
+			return 3;
+		case ImageFormat::D24_UNORM_S8_UINT:
+			return 4;
+		case ImageFormat::D32_SFLOAT_S8_UINT:
+			return 5;
+		default:
+		{
+			ATEMA_ERROR("Invalid image format");
+		}
+	}
 
 	return 0;
 }

@@ -29,14 +29,15 @@
 
 namespace at
 {
-	ATEMA_RENDERER_API VertexInputFormat getVertexFormat(const Type& astVariableType);
+	ATEMA_RENDERER_API VertexInputFormat getVertexFormat(const AstType& astVariableType);
 
-	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const Type& astVariableType);
-	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const ArrayType::ComponentType& astVariableType);
-	ATEMA_RENDERER_API uint32_t getDescriptorBindingCount(const Type& astVariableType);
+	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const AstType& astVariableType);
+	ATEMA_RENDERER_API DescriptorType getDefaultDescriptorType(const AstArrayType::ComponentType& astVariableType);
+	ATEMA_RENDERER_API uint32_t getDescriptorBindingCount(const AstType& astVariableType);
 
 	ATEMA_RENDERER_API size_t getByteSize(IndexType indexType);
 
+	ATEMA_RENDERER_API size_t getByteSize(ImageFormat format);
 	ATEMA_RENDERER_API size_t getComponentCount(ImageFormat format);
 	// Only valid for color formats
 	ATEMA_RENDERER_API ImageComponentType getComponentType(ImageFormat format);
