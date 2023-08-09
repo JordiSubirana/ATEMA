@@ -35,6 +35,7 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	m_allocation(VK_NULL_HANDLE),
 	m_format(settings.format),
 	m_size(settings.width, settings.height),
+	m_type(settings.type),
 	m_layers(settings.layers),
 	m_mipLevels(settings.mipLevels)
 {
@@ -47,12 +48,12 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 
 	VkImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.imageType = Vulkan::getImageType(m_type);
 	imageCreateInfo.extent.width = settings.width;
 	imageCreateInfo.extent.height = settings.height;
 	imageCreateInfo.extent.depth = 1;
 	imageCreateInfo.mipLevels = settings.mipLevels;
-	imageCreateInfo.arrayLayers = settings.layers;
+	imageCreateInfo.arrayLayers = (m_type == ImageType::CubeMap ? settings.layers * 6 : settings.layers);
 	imageCreateInfo.format = format; // Use the same format than the buffer
 	imageCreateInfo.tiling = Vulkan::getTiling(settings.tiling); // Optimal or linear if we want to change pixels client side
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -60,7 +61,7 @@ VulkanImage::VulkanImage(const VulkanDevice& device, const Image::Settings& sett
 	//TODO: Make this custom
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Here used by only one queue
 	imageCreateInfo.samples = Vulkan::getSamples(settings.samples);
-	imageCreateInfo.flags = 0; // Optional
+	imageCreateInfo.flags = Vulkan::getImageFlags(m_type);
 
 	VmaAllocationCreateInfo allocCreateInfo = {};
 	allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -78,6 +79,7 @@ VulkanImage::VulkanImage(const VulkanDevice& device, VkImage imageHandle, const 
 	m_allocation(VK_NULL_HANDLE),
 	m_format(settings.format),
 	m_size(settings.width, settings.height),
+	m_type(settings.type),
 	m_layers(settings.layers),
 	m_mipLevels(settings.mipLevels)
 {
@@ -99,7 +101,9 @@ VkImage VulkanImage::getHandle() const noexcept
 Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
 {
 	// Explicitly set remaining layers
-	if (layerCount == 0)
+	if (getType() == ImageType::CubeMap)
+		layerCount = 6;
+	else if (layerCount == 0)
 		layerCount = m_layers - baseLayer;
 
 	// Explicitly set remaining mip levels
@@ -129,6 +133,11 @@ ImageFormat VulkanImage::getFormat() const noexcept
 Vector2u VulkanImage::getSize() const noexcept
 {
 	return m_size;
+}
+
+ImageType VulkanImage::getType() const noexcept
+{
+	return m_type;
 }
 
 uint32_t VulkanImage::getLayers() const noexcept

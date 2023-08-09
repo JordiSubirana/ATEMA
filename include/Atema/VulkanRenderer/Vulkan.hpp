@@ -93,6 +93,11 @@ namespace at
 
 		static VkImageAspectFlags getAspect(ImageFormat format);
 
+		static VkImageType getImageType(ImageType type);
+		static VkImageCreateFlags getImageFlags(ImageType type);
+
+		static uint32_t getCubemapLayer(CubemapFace cubemapFace);
+
 		static VkImageTiling getTiling(ImageTiling tiling);
 
 		static VkImageUsageFlags getUsages(Flags<ImageUsage> usages, bool isDepth);

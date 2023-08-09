@@ -43,6 +43,7 @@ namespace at
 			uint32_t mipLevels = 1;
 
 			ImageFormat format = ImageFormat::RGBA8_UNORM;
+			ImageType type = ImageType::Image2D;
 			ImageSamples samples = ImageSamples::S1;
 			ImageTiling tiling = ImageTiling::Optimal;
 			Flags<ImageUsage> usages = ImageUsage::All;
@@ -60,6 +61,8 @@ namespace at
 		virtual ImageFormat getFormat() const noexcept = 0;
 
 		virtual Vector2u getSize() const noexcept = 0;
+
+		virtual ImageType getType() const noexcept = 0;
 
 		virtual uint32_t getLayers() const noexcept = 0;
 

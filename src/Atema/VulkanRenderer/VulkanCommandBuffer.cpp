@@ -19,6 +19,7 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <Atema/Renderer/Utils.hpp>
 #include <Atema/Renderer/Viewport.hpp>
 #include <Atema/VulkanRenderer/VulkanBuffer.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
@@ -32,6 +33,32 @@
 #include <Atema/VulkanRenderer/VulkanRenderPass.hpp>
 
 using namespace at;
+
+namespace
+{
+	size_t getBufferOffset(size_t imageSize, size_t pixelByteSize, CubemapFace cubemapFace)
+	{
+		static const Vector2<size_t> offsets[6] =
+		{
+			// Top
+			{ 1, 0 },
+			// Left
+			{ 0, 1 },
+			// Front
+			{ 1, 1 },
+			// Right
+			{ 2, 1 },
+			// Back
+			{ 3, 1 },
+			// Bottom
+			{ 1, 2 }
+		};
+
+		const auto& offset = offsets[static_cast<size_t>(cubemapFace)];
+		
+		return (offset.x + offset.y * 4 * imageSize) * imageSize * pixelByteSize;
+	}
+}
 
 VulkanCommandBuffer::VulkanCommandBuffer(VkCommandPool commandPool, QueueType queueType, uint32_t queueFamilyIndex, const CommandBuffer::Settings& settings) :
 	CommandBuffer(queueType),
@@ -242,7 +269,7 @@ void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Buffer& dstBuffer,
 	m_device.vkCmdCopyBuffer(m_commandBuffer, vkSrcBuffer.getHandle(), vkDstBuffer.getHandle(), 1, &copyRegion);
 }
 
-void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout)
+void VulkanCommandBuffer::copyBufferToImage(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, size_t srcOffset, uint32_t dstMipLevel, uint32_t dstLayer)
 {
 	const auto& vkBuffer = static_cast<const VulkanBuffer&>(srcBuffer);
 	const auto& vkImage = static_cast<const VulkanImage&>(dstImage);
@@ -250,17 +277,20 @@ void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Image& dstImage, I
 	const auto layout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
 	
 	ATEMA_ASSERT(layout == VK_IMAGE_LAYOUT_GENERAL || layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid image layout");
+	ATEMA_ASSERT(dstMipLevel < dstImage.getMipLevels(), "Invalid mip level");
+	ATEMA_ASSERT(dstLayer < dstImage.getLayers(), "Invalid layer");
+	ATEMA_ASSERT(srcOffset < srcBuffer.getByteSize(), "Invalid buffer offset");
 
 	const auto size = vkImage.getSize();
 	
 	VkBufferImageCopy region{};
-	region.bufferOffset = 0;
+	region.bufferOffset = srcOffset;
 	region.bufferRowLength = 0;
 	region.bufferImageHeight = 0;
 
 	region.imageSubresource.aspectMask = Vulkan::getAspect(vkImage.getFormat());
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.mipLevel = dstMipLevel;
+	region.imageSubresource.baseArrayLayer = dstLayer;
 	region.imageSubresource.layerCount = 1;
 
 	region.imageOffset = { 0, 0, 0 };
@@ -273,6 +303,58 @@ void VulkanCommandBuffer::copyBuffer(const Buffer& srcBuffer, Image& dstImage, I
 		layout,
 		1,
 		&region
+	);
+}
+
+void VulkanCommandBuffer::copyBufferToCubemap(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, uint32_t dstMipLevel)
+{
+	const auto& vkBuffer = static_cast<const VulkanBuffer&>(srcBuffer);
+	const auto& vkImage = static_cast<const VulkanImage&>(dstImage);
+	const auto format = vkImage.getFormat();
+	const auto layout = Vulkan::getLayout(dstLayout, Renderer::isDepthImageFormat(format));
+
+	ATEMA_ASSERT(layout == VK_IMAGE_LAYOUT_GENERAL || layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "Invalid image layout");
+	ATEMA_ASSERT(dstMipLevel < dstImage.getMipLevels(), "Invalid mip level");
+
+	const auto size = vkImage.getSize();
+
+	static constexpr CubemapFace cubemapFaces[6] =
+	{
+		CubemapFace::Top,
+		CubemapFace::Left,
+		CubemapFace::Front,
+		CubemapFace::Right,
+		CubemapFace::Back,
+		CubemapFace::Bottom
+	};
+	
+	std::array<VkBufferImageCopy, 6> regions;
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		auto& cubemapFace = cubemapFaces[i];
+		auto& region = regions[i];
+
+		region.bufferOffset = getBufferOffset(size.x, getByteSize(format), cubemapFace);
+		region.bufferRowLength = size.x * 4;
+		region.bufferImageHeight = size.x * 3;
+
+		region.imageSubresource.aspectMask = Vulkan::getAspect(vkImage.getFormat());
+		region.imageSubresource.mipLevel = dstMipLevel;
+		region.imageSubresource.baseArrayLayer = Vulkan::getCubemapLayer(cubemapFace);
+		region.imageSubresource.layerCount = 1;
+
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = { size.x, size.y, 1 };
+	}
+
+	m_device.vkCmdCopyBufferToImage(
+		m_commandBuffer,
+		vkBuffer.getHandle(),
+		vkImage.getHandle(),
+		layout,
+		6,
+		regions.data()
 	);
 }
 
@@ -522,66 +604,94 @@ void VulkanCommandBuffer::createMipmaps(Image& image, Flags<PipelineStage> dstPi
 		ATEMA_ERROR("Texture image format does not support linear blitting");
 	}
 
-	// Generate mip levels
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.image = imageHandle;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage.getFormat());
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.subresourceRange.levelCount = 1;
+	uint32_t layers = vkImage.getLayers();
 
-	int32_t mipWidth = static_cast<int32_t>(size.x);
-	int32_t mipHeight = static_cast<int32_t>(size.y);
+	if (vkImage.getType() == ImageType::CubeMap)
+		layers = 6;
 
-	for (uint32_t i = 1; i < mipLevels; i++)
+	for (uint32_t layer = 0; layer < layers; layer++)
 	{
-		// Transition level i-1 to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-		// Will wait for this level to be filled by previous blit or vkCmdCopyBufferToImage
-		barrier.subresourceRange.baseMipLevel = i - 1;
+		// Generate mip levels
+		VkImageMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.image = imageHandle;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.subresourceRange.aspectMask = Vulkan::getAspect(vkImage.getFormat());
+		barrier.subresourceRange.baseArrayLayer = layer;
+		barrier.subresourceRange.layerCount = 1;
+		barrier.subresourceRange.levelCount = 1;
+
+		int32_t mipWidth = static_cast<int32_t>(size.x);
+		int32_t mipHeight = static_cast<int32_t>(size.y);
+
+		for (uint32_t i = 1; i < mipLevels; i++)
+		{
+			// Transition level i-1 to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			// Will wait for this level to be filled by previous blit or vkCmdCopyBufferToImage
+			barrier.subresourceRange.baseMipLevel = i - 1;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+			m_device.vkCmdPipelineBarrier(
+				m_commandBuffer,
+				VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+
+			// Which regions will be used for the blit
+			VkImageBlit blit{};
+			blit.srcOffsets[0] = { 0, 0, 0 };
+			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.srcSubresource.mipLevel = i - 1;
+			blit.srcSubresource.baseArrayLayer = layer;
+			blit.srcSubresource.layerCount = 1;
+
+			blit.dstOffsets[0] = { 0, 0, 0 };
+			blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			blit.dstSubresource.mipLevel = i;
+			blit.dstSubresource.baseArrayLayer = layer;
+			blit.dstSubresource.layerCount = 1;
+
+			// Blit (must be submitted to a queue with graphics capability)
+			m_device.vkCmdBlitImage(
+				m_commandBuffer,
+				imageHandle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				imageHandle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				1, &blit,
+				VK_FILTER_LINEAR);
+
+			// Transition level i-1 to the desired layout
+			// Will wait on the blit command to finish
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			barrier.newLayout = newLayout;
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+			barrier.dstAccessMask = dstAccessMask;
+
+			m_device.vkCmdPipelineBarrier(
+				m_commandBuffer,
+				VK_PIPELINE_STAGE_TRANSFER_BIT, dstStages, 0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+
+			if (mipWidth > 1)
+				mipWidth /= 2;
+
+			if (mipHeight > 1)
+				mipHeight /= 2;
+		}
+
+		// Transition the last level to the desired layout
+		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-		m_device.vkCmdPipelineBarrier(
-			m_commandBuffer,
-			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			0, nullptr,
-			0, nullptr,
-			1, &barrier);
-
-		// Which regions will be used for the blit
-		VkImageBlit blit{};
-		blit.srcOffsets[0] = { 0, 0, 0 };
-		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		blit.srcSubresource.mipLevel = i - 1;
-		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = 1;
-
-		blit.dstOffsets[0] = { 0, 0, 0 };
-		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		blit.dstSubresource.mipLevel = i;
-		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = 1;
-
-		// Blit (must be submitted to a queue with graphics capability)
-		m_device.vkCmdBlitImage(
-			m_commandBuffer,
-			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			imageHandle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1, &blit,
-			VK_FILTER_LINEAR);
-
-		// Transition level i-1 to the desired layout
-		// Will wait on the blit command to finish
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier.newLayout = newLayout;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = dstAccessMask;
 
 		m_device.vkCmdPipelineBarrier(
@@ -590,27 +700,7 @@ void VulkanCommandBuffer::createMipmaps(Image& image, Flags<PipelineStage> dstPi
 			0, nullptr,
 			0, nullptr,
 			1, &barrier);
-
-		if (mipWidth > 1)
-			mipWidth /= 2;
-
-		if (mipHeight > 1)
-			mipHeight /= 2;
 	}
-
-	// Transition the last level to the desired layout
-	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier.newLayout = newLayout;
-	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier.dstAccessMask = dstAccessMask;
-
-	m_device.vkCmdPipelineBarrier(
-		m_commandBuffer,
-		VK_PIPELINE_STAGE_TRANSFER_BIT, dstStages, 0,
-		0, nullptr,
-		0, nullptr,
-		1, &barrier);
 }
 
 void VulkanCommandBuffer::executeSecondaryCommands(const std::vector<Ptr<CommandBuffer>>& commandBuffers)

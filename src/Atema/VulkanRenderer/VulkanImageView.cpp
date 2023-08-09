@@ -35,8 +35,14 @@ VulkanImageView::VulkanImageView(const VulkanDevice& device, const VulkanImage& 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image.getHandle();
-	viewInfo.viewType = layerCount == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	viewInfo.format = Vulkan::getFormat(format);
+
+	if (image.getType() == ImageType::CubeMap)
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	else if (layerCount == 1)
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	else
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 
 	// Describe what the image's purpose is and which part of the image should be accessed
 	viewInfo.subresourceRange.aspectMask = Vulkan::getAspect(format);

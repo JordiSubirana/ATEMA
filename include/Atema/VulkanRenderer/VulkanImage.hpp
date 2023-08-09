@@ -46,6 +46,8 @@ namespace at
 
 		Vector2u getSize() const noexcept override;
 
+		ImageType getType() const noexcept override;
+
 		uint32_t getLayers() const noexcept override;
 
 		uint32_t getMipLevels() const noexcept override;
@@ -57,6 +59,7 @@ namespace at
 		VmaAllocation m_allocation;
 		ImageFormat m_format;
 		Vector2u m_size;
+		ImageType m_type;
 		uint32_t m_layers;
 		uint32_t m_mipLevels;
 		std::unordered_map<Hash, Ptr<ImageView>> m_views;

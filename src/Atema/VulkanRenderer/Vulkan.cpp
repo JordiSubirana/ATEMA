@@ -373,6 +373,47 @@ VkImageAspectFlags Vulkan::getAspect(ImageFormat format)
 	return aspect;
 }
 
+VkImageType Vulkan::getImageType(ImageType type)
+{
+	switch (type)
+	{
+		case ImageType::Image2D: return VK_IMAGE_TYPE_2D;
+		case ImageType::CubeMap: return VK_IMAGE_TYPE_2D;
+		default:
+		{
+			ATEMA_ERROR("Invalid image type");
+		}
+	}
+
+	return VK_IMAGE_TYPE_2D;
+}
+
+VkImageCreateFlags Vulkan::getImageFlags(ImageType type)
+{
+	if (type == ImageType::CubeMap)
+		return VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+	return 0;
+}
+
+uint32_t Vulkan::getCubemapLayer(CubemapFace cubemapFace)
+{
+	// In Vulkan, Y is the top vector
+	switch (cubemapFace)
+	{
+		case CubemapFace::Right: return 0; // Positive X
+		case CubemapFace::Left:  return 1; // Negative X
+		case CubemapFace::Top:   return 2; // Positive Y
+		case CubemapFace::Bottom:return 3; // Negative Y
+		case CubemapFace::Front: return 4; // Positive Z
+		case CubemapFace::Back:  return 5; // Negative Z
+		default:
+		{
+			ATEMA_ERROR("Invalid cubemap face");
+		}
+	}
+}
+
 VkImageTiling Vulkan::getTiling(ImageTiling tiling)
 {
 	switch (tiling)

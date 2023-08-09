@@ -59,7 +59,9 @@ namespace at
 
 		void copyBuffer(const Buffer& srcBuffer, Buffer& dstBuffer, size_t size, size_t srcOffset, size_t dstOffset) override;
 
-		void copyBuffer(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout) override;
+		void copyBufferToImage(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, size_t srcOffset, uint32_t dstMipLevel, uint32_t dstLayer) override;
+
+		void copyBufferToCubemap(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, uint32_t dstMipLevel) override;
 
 		void copyImage(const Image& srcImage, ImageLayout srcLayout, uint32_t srcLayer, uint32_t srcMipLevel, Image& dstImage, ImageLayout dstLayout, uint32_t dstLayer, uint32_t dstMipLevel, uint32_t layerCount) override;
 

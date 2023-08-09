@@ -181,6 +181,12 @@ namespace at
 		SFLOAT64,
 	};
 
+	enum class ImageType
+	{
+		Image2D,
+		CubeMap
+	};
+
 	enum class ImageSamples
 	{
 		S1 = 0x0001,
@@ -224,6 +230,16 @@ namespace at
 		Present,
 		
 		General
+	};
+
+	enum class CubemapFace
+	{
+		Top,
+		Left,
+		Front,
+		Right,
+		Back,
+		Bottom
 	};
 
 	enum class AttachmentLoading

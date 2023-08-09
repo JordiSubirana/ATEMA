@@ -80,7 +80,11 @@ namespace at
 
 		// Copy buffer data to an image
 		// dstLayout must either be ImageLayout::TransferDst or ImageLayout::General
-		virtual void copyBuffer(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout) = 0;
+		virtual void copyBufferToImage(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, size_t srcOffset = 0, uint32_t dstMipLevel = 0, uint32_t dstLayer = 0) = 0;
+
+		// Copy buffer data to a cubemap
+		// dstLayout must either be ImageLayout::TransferDst or ImageLayout::General
+		virtual void copyBufferToCubemap(const Buffer& srcBuffer, Image& dstImage, ImageLayout dstLayout, uint32_t dstMipLevel = 0) = 0;
 
 		// Copy some image layers to another image layers
 		// srcLayout must either be ImageLayout::TransferSrc or ImageLayout::General
