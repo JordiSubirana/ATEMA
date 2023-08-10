@@ -38,6 +38,7 @@ namespace at
 		static Ptr<Mesh> createBox(const ModelLoader::Settings& settings, float width, float height, float depth, size_t widthSubdivisions, size_t heightSubdivisions, size_t depthSubdivisions);
 		static Ptr<Mesh> createConeFromRadius(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float radius, size_t verticalSubdivisions, size_t horizontalSubdivisions);
 		static Ptr<Mesh> createConeFromAngle(const ModelLoader::Settings& settings, const Vector3f& direction, float range, float angle, size_t verticalSubdivisions, size_t horizontalSubdivisions);
+		static Ptr<Mesh> createPlane(const ModelLoader::Settings& settings, const Vector3f& normal, float width, float height, size_t widthSubdivisions, size_t heightSubdivisions);
 		static Ptr<Mesh> createUVSphere(const ModelLoader::Settings& settings, float radius, size_t verticalSliceCount, size_t horizontalSliceCount);
 
 		Primitive& operator=(const Primitive& other) = default;

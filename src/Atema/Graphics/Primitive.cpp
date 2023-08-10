@@ -363,6 +363,75 @@ Ptr<Mesh> Primitive::createConeFromAngle(const ModelLoader::Settings& settings, 
 	return createCone(settings, direction, range, radius, angle, verticalSubdivisions, horizontalSubdivisions);
 }
 
+Ptr<Mesh> Primitive::createPlane(const ModelLoader::Settings& settings, const Vector3f& normal, float width, float height, size_t widthSubdivisions, size_t heightSubdivisions)
+{
+	ATEMA_ASSERT(widthSubdivisions > 0, "widthSubdivisions must be at least 1");
+	ATEMA_ASSERT(heightSubdivisions > 0, "heightSubdivisions must be at least 1");
+
+	const size_t vertexCount = (widthSubdivisions + 1) * (heightSubdivisions + 1);
+	const size_t indexCount = widthSubdivisions * heightSubdivisions * 6;
+
+	const Quaternionf quaternion(Vector3f(0.0f, 0.0f, 1.0f), normal);
+
+	const Vector3f axisX = quaternion.rotateVector(Vector3f(1.0f, 0.0f, 0.0f)).getNormalized();
+	const Vector3f axisY = quaternion.rotateVector(Vector3f(0.0f, 1.0f, 0.0f)).getNormalized();
+	const Vector3f axisZ = normal.getNormalized();
+
+	const Vector2f size(width, height);
+	const Vector2f halfSize = size / 2.0f;
+	const Vector2f step = size / Vector2f(static_cast<float>(widthSubdivisions), static_cast<float>(heightSubdivisions));
+
+	const Vector3f origin = -axisX * halfSize.x - axisY * halfSize.y;
+
+	std::vector<ModelLoader::StaticVertex> vertices;
+	std::vector<uint32_t> indices;
+
+	vertices.reserve(vertexCount);
+	indices.reserve(indexCount);
+
+	for (size_t x = 0; x <= widthSubdivisions; x++)
+	{
+		const float uvx = step.x * static_cast<float>(x);
+		const Vector3f offsetX = axisX * uvx;
+
+		for (size_t y = 0; y <= heightSubdivisions; y++)
+		{
+			const float uvy = step.y * static_cast<float>(y);
+			const Vector3f offsetY = axisY * uvy;
+
+			auto& vertex = vertices.emplace_back();
+
+			vertex.position = origin + offsetX + offsetY;
+
+			vertex.normal = axisZ;
+			vertex.tangent = axisX;
+			vertex.bitangent = axisY;
+
+			vertex.texCoords.x = uvx;
+			vertex.texCoords.y = uvy;
+		}
+	}
+
+	for (uint32_t x = 0; x < widthSubdivisions; x++)
+	{
+		const uint32_t line = x * static_cast<uint32_t>(heightSubdivisions + 1);
+		const uint32_t nextLine = (x + 1) * static_cast<uint32_t>(heightSubdivisions + 1);
+
+		for (uint32_t y = 0; y < heightSubdivisions; y++)
+		{
+			indices.emplace_back(line + y);
+			indices.emplace_back(nextLine + y + 1);
+			indices.emplace_back(line + y + 1);
+
+			indices.emplace_back(nextLine + y + 1);
+			indices.emplace_back(line + y);
+			indices.emplace_back(nextLine + y);
+		}
+	}
+
+	return ModelLoader::loadMesh(vertices, indices, settings);
+}
+
 Ptr<Mesh> Primitive::createUVSphere(const ModelLoader::Settings& settings, float radius, size_t verticalSliceCount, size_t horizontalSliceCount)
 {
 	// Adapted from http://www.songho.ca/opengl/gl_sphere.html
