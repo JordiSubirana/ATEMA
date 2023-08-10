@@ -64,6 +64,22 @@ constexpr Color::Color(float r, float g, float b, float a) noexcept :
 {
 }
 
+constexpr Color::Color(const Vector3f& rgb, float a) noexcept :
+	r(rgb.x),
+	g(rgb.y),
+	b(rgb.z),
+	a(a)
+{
+}
+
+constexpr Color::Color(const Vector4f& rgba) noexcept :
+	r(rgba.x),
+	g(rgba.y),
+	b(rgba.z),
+	a(rgba.w)
+{
+}
+
 Color Color::fromCMYK(float c, float m, float y, float k, float a)
 {
 	Color color;

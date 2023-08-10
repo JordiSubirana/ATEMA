@@ -33,6 +33,8 @@ namespace at
 		constexpr Color() noexcept;
 		constexpr Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept;
 		constexpr Color(float r, float g, float b, float a = 1.0f) noexcept;
+		constexpr Color(const Vector3f& rgb, float a = 1.0f) noexcept;
+		constexpr Color(const Vector4f& rgba) noexcept;
 		constexpr Color(const Color& other) noexcept = default;
 		Color(Color&& other) noexcept = default;
 		~Color() = default;
