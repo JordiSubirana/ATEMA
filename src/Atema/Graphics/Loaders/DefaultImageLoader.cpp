@@ -20,6 +20,7 @@
 */
 
 #include <Atema/Graphics/Loaders/DefaultImageLoader.hpp>
+#include <Atema/Renderer/Utils.hpp>
 
 #include <unordered_set>
 
@@ -37,9 +38,10 @@ namespace
 		".png",
 		".tga",
 		".bmp",
+		".hdr",
 	};
 
-	int getSTBIFormat(ImageLoader::Format format)
+	int getSTBIFormat(ImageFormat format)
 	{
 		static std::array<int, 4> stbiFormats =
 		{
@@ -49,7 +51,7 @@ namespace
 			STBI_rgb_alpha,
 		};
 
-		return stbiFormats[ImageLoader::getComponentCount(format) - 1];
+		return stbiFormats[getComponentCount(format) - 1];
 	}
 
 	ImageLoader::Format getLoaderFormat(int channels)
@@ -90,11 +92,27 @@ Ptr<Image> DefaultImageLoader::load(const std::filesystem::path& path, const Ima
 
 	const auto loaderFormat = getLoaderFormat(channels);
 
-	stbi_uc* pixels = stbi_load(filename, &width, &height, &channels, getSTBIFormat(loaderFormat));
-	
-	auto image = ImageLoader::loadImage(reinterpret_cast<uint8_t*>(pixels), width, height, loaderFormat, settings);
+	Ptr<Image> image;
+	if (stbi_is_hdr(filename))
+	{
+		const ImageFormat format = ImageLoader::getSupportedHDRFormat(loaderFormat, settings.usages);
 
-	stbi_image_free(pixels);
+		float* pixels = stbi_loadf(filename, &width, &height, &channels, getSTBIFormat(format));
+
+		image = ImageLoader::loadImage(pixels, width, height, loaderFormat, settings);
+
+		stbi_image_free(pixels);
+	}
+	else
+	{
+		const ImageFormat format = ImageLoader::getSupportedColorFormat(loaderFormat, settings.usages);
+
+		stbi_uc* pixels = stbi_load(filename, &width, &height, &channels, getSTBIFormat(format));
+
+		image = ImageLoader::loadImage(reinterpret_cast<uint8_t*>(pixels), width, height, loaderFormat, settings);
+
+		stbi_image_free(pixels);
+	}
 
 	return image;
 }

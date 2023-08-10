@@ -73,10 +73,14 @@ namespace at
 			std::list<Ptr<Buffer>>* stagingBuffers;
 		};
 
+		// Load classic images with each color channel being in the range [0,255]
 		static Ptr<Image> loadImage(const uint8_t* data, uint32_t width, uint32_t height, Format format, const Settings& settings);
+		// Load specific images without limits for the channel color range
+		// Can be used to load HDR textures
+		static Ptr<Image> loadImage(const float* data, uint32_t width, uint32_t height, Format format, const Settings& settings);
 
-		// Depending on the supported image formats detected at runtime, component count could differ the naive value of the format
-		static size_t getComponentCount(Format format);
+		static ImageFormat getSupportedColorFormat(Format format, Flags<ImageUsage> usages);
+		static ImageFormat getSupportedHDRFormat(Format format, Flags<ImageUsage> usages);
 	};
 }
 
