@@ -65,7 +65,7 @@ namespace at
 		bool equals(const Quaternion& other, T epsilon = Math::Epsilon<T>) const;
 
 		// Convenience method applying Q * V * Qconjugate
-		Vector3<T> rotateVector(const Vector3<T>& vector);
+		Vector3<T> rotateVector(const Vector3<T>& vector) const;
 
 		Quaternion operator+(const Quaternion& other) const;
 		Quaternion operator-(const Quaternion& other) const;

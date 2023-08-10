@@ -337,7 +337,7 @@ namespace at
 	}
 
 	template <typename T>
-	Vector3<T> Quaternion<T>::rotateVector(const Vector3<T>& vector)
+	Vector3<T> Quaternion<T>::rotateVector(const Vector3<T>& vector) const
 	{
 		Quaternion result = operator*(Quaternion(0, vector.x, vector.y, vector.z) * getConjugate());
 
