@@ -40,6 +40,8 @@
 #include <Atema/Renderer/Shader.hpp>
 #include <Atema/Renderer/Ui/UiContext.hpp>
 
+#include <optional>
+
 namespace at
 {
 	class ATEMA_RENDERER_API Renderer
@@ -186,6 +188,8 @@ namespace at
 
 		virtual Flags<ImageUsage> getImageFormatOptimalUsages(ImageFormat format) const noexcept = 0;
 		virtual Flags<ImageUsage> getImageFormatLinearUsages(ImageFormat format) const noexcept = 0;
+
+		std::optional<ImageFormat> getSupportedImageFormat(ImageComponentType componentType, size_t minimumComponentCount, Flags<ImageUsage> usages);
 
 		virtual void waitForIdle() = 0;
 

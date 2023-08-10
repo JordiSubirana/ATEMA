@@ -20,9 +20,52 @@
 */
 
 #include <Atema/Renderer/Renderer.hpp>
+#include <Atema/Renderer/Utils.hpp>
 #include <Atema/Window/Window.hpp>
 
 using namespace at;
+
+namespace
+{
+	constexpr size_t ImageComponentTypeCount = static_cast<size_t>(ImageComponentType::_COUNT);
+	constexpr size_t ImageUsageCount = static_cast<size_t>(ImageUsage::All) + 1;
+
+	// ImageFormatArray[ImageComponentType][ComponentCount][Usages]
+	using ImageFormatArray = std::array<std::array<std::array<std::optional<ImageFormat>, ImageUsageCount>, 4>, ImageComponentTypeCount>;
+
+	ImageFormatArray initializeFormats(Renderer& renderer)
+	{
+		ImageFormatArray formats;
+
+		// For all component types
+		for (size_t t = 0; t < ImageComponentTypeCount; t++)
+		{
+			// For all minimum component count
+			for (size_t mc = 1; mc <= 4; mc++)
+			{
+				// For all usages
+				for (size_t u = 0; u < ImageUsageCount; u++)
+				{
+					// For all component count
+					for (size_t c = mc; c <= 4; c++)
+					{
+						const ImageFormat format = getImageColorFormat(static_cast<ImageComponentType>(t), c);
+
+						const size_t usages = static_cast<size_t>(renderer.getImageFormatOptimalUsages(format).getValue());
+
+						if ((usages & u) == u)
+						{
+							formats[t][mc - 1][u] = format;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return formats;
+	}
+}
 
 Ptr<Renderer> Renderer::s_renderer = nullptr;
 
@@ -99,6 +142,13 @@ const Hash Renderer::getID() const noexcept
 const Renderer::Settings& Renderer::getSettings() const noexcept
 {
 	return m_settings;
+}
+
+std::optional<ImageFormat> Renderer::getSupportedImageFormat(ImageComponentType componentType, size_t minimumComponentCount, Flags<ImageUsage> usages)
+{
+	static const ImageFormatArray s_supportedFormats = initializeFormats(*this);
+
+	return s_supportedFormats[static_cast<size_t>(componentType)][minimumComponentCount - 1][static_cast<size_t>(usages.getValue())];
 }
 
 void Renderer::submitAndWait(const std::vector<Ptr<CommandBuffer>>& commandBuffers)

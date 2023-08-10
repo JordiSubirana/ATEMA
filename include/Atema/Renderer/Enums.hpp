@@ -179,6 +179,8 @@ namespace at
 		UINT64,
 		SINT64,
 		SFLOAT64,
+
+		_COUNT
 	};
 
 	enum class ImageType
