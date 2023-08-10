@@ -28,6 +28,12 @@
 	const std::string atName ## LightLibName("Default" #atName "LightLibrary"); \
 	constexpr const char atName ## LightLib[] = atLightLib;
 
+#define ATEMA_INITIALIZE_MODEL_RESOURCES(atName) \
+	const auto& objectLibName = atName ## ObjectLibName; \
+	const auto& objectLib = atName ## ObjectLib; \
+	const auto& lightLibName = atName ## LightLibName; \
+	const auto& lightLib = atName ## LightLib;
+
 using namespace at;
 
 namespace
@@ -303,7 +309,7 @@ vec3f getPhongFinalColor(vec2f uv)
 	{
 		lightDirection =  worldPos - LightData.Parameter0.xyz;
 		
-		float distance = length(lightDirection);
+		float distance = norm(lightDirection);
 		
 		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
 	}
@@ -314,7 +320,7 @@ vec3f getPhongFinalColor(vec2f uv)
 		vec3f spotDirection = LightData.Parameter1.xyz;
 		float spotAngle = LightData.Parameter1.a;
 		
-		float distance = length(lightDirection);
+		float distance = norm(lightDirection);
 		
 		float fragmentAngle = max(dot(spotDirection, lightDirection) / max(distance, 0.001), 0.0);
 		
@@ -327,12 +333,12 @@ vec3f getPhongFinalColor(vec2f uv)
 	float cosTheta = dot(normal, inverseLightDir);
 	
 	// Ambient
-	vec3f ambientColor = LightData.AmbientStrength * LightData.Color * ambientOcclusion;
+	vec3f ambientColor = LightData.IndirectIntensity * LightData.Color * ambientOcclusion;
 	
 	// Diffuse
 	float diffuseFactor = max(cosTheta, 0.0);
 	
-	vec3f diffuseColor = diffuseFactor * LightData.DiffuseStrength * LightData.Color;
+	vec3f diffuseColor = diffuseFactor * LightData.Intensity * LightData.Color;
 	
 	// Specular
 	vec3f viewDir = normalize(FrameData.CameraPosition - worldPos);
@@ -363,20 +369,286 @@ vec3f getPhongFinalColor(vec2f uv)
 	return finalColor;
 }
 )");
+
+ATEMA_DEFAULT_MODEL(PBR, R"(
+option
+{
+	uint LightingModel = 0;
+	bool LightModelUseOpacityMask = true;
+}
+
+include Atema.GBufferWrite;
+
+struct FrameDataStruct
+{
+	mat4f proj;
+	mat4f view;
+	vec3f cameraPosition;
+	vec2u ScreenSize;
+}
+
+struct TransformDataStruct
+{
+	mat4f model;
+}
+
+external
+{
+	[set(0), binding(0)] FrameDataStruct FrameData;
+
+	[set(1), binding(0)] TransformDataStruct TransformData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoords;
+	[location(2)] vec3f inNormal;
+	[location(3)] vec3f inTangent;
+	[location(4)] vec3f inBitangent;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec3f outPosition;
+	[location(1)] vec2f outTexCoords;
+	[location(2)] mat3f outTBN;
+	[location(5)] vec3f outTanViewDir;
+	[location(6)] vec3f outCameraPosition;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f worldPos = TransformData.model * vec4f(inPosition, 1.0);
+	vec3f worldNormal = normalize(TransformData.model * vec4f(inNormal, 0.0)).xyz;
+	vec3f worldTangent = normalize(TransformData.model * vec4f(inTangent, 0.0)).xyz;
+	vec3f worldBitangent = normalize(TransformData.model * vec4f(inBitangent, 0.0)).xyz;
+	
+	outPosition = worldPos.xyz;
+	
+	outTBN = mat3f(worldTangent, worldBitangent, worldNormal);
+	
+	outTexCoords = inTexCoords;
+	
+	outTanViewDir = outTBN * (FrameData.cameraPosition - worldPos.xyz);
+	
+	outCameraPosition = FrameData.cameraPosition;
+	
+	vec4f screenPosition = FrameData.proj * FrameData.view * worldPos;
+	
+	setVertexPosition(screenPosition);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec3f inPosition;
+	[location(1)] vec2f inTexCoords;
+	[location(2)] mat3f inTBN;
+	[location(5)] vec3f inTanViewDir;
+	[location(6)] vec3f inCameraPosition;
+}
+
+struct MaterialFragmentParameters
+{
+	vec3f BaseColor;
+	vec3f EmissiveColor;
+	float Metalness;
+	float Roughness;
+	float AmbientOcclusion;
+	float AlphaMask;
+	float AlphaMaskThreshold;
+	vec3f Normal;
+}
+
+MaterialFragmentParameters getDefaultMaterialFragmentParameters()
+{
+	MaterialFragmentParameters parameters;
+	
+	parameters.BaseColor = vec3f(1.0, 1.0, 1.0);
+	parameters.EmissiveColor = vec3f(0.0, 0.0, 0.0);
+	parameters.Metalness = 0.0;
+	parameters.Roughness = 0.0;
+	parameters.AmbientOcclusion = 1.0;
+	parameters.AlphaMask = 1.0;
+	parameters.AlphaMaskThreshold = 0.5;
+	parameters.Normal = vec3f(0.5, 0.5, 1.0);
+	
+	return parameters;
+}
+
+MaterialFragmentParameters getMaterialFragmentParameters();
+
+[entry(fragment)]
+void main()
+{
+	MaterialFragmentParameters parameters = getMaterialFragmentParameters();
+	
+	optional (UseAlphaMask)
+	{
+		if (parameters.AlphaMask < parameters.AlphaMaskThreshold)
+			discard;
+	}
+	
+	vec3f normal = (parameters.Normal * 2.0) - 1.0;
+	normal = normalize(inTBN * normal);
+	
+	GBufferWriteLightingModel(LightingModel);
+	GBufferWritePosition(inPosition);
+	GBufferWriteNormal(normal);
+	GBufferWriteBaseColor(parameters.BaseColor);
+	GBufferWriteAmbientOcclusion(parameters.AmbientOcclusion);
+	GBufferWriteEmissiveColor(parameters.EmissiveColor);
+	GBufferWriteMetalness(parameters.Metalness);
+	GBufferWriteRoughness(parameters.Roughness);
+}
+)",
+R"(
+const float Pi = 3.14159265;
+	
+vec3f fresnelSchlick(float cosTheta, vec3f F0)
+{
+	return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float DistributionGGX(vec3f N, vec3f H, float roughness)
+{
+	float a = roughness * roughness;
+	float a2 = a * a;
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
+
+	float num = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = Pi * denom * denom;
+
+	return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+
+    float num = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+
+float GeometrySmith(vec3f N, vec3f V, vec3f L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
+
+vec3f getPBRFinalColor(vec2f uv)
+{
+	vec3f worldPos = GBufferReadPosition(uv);
+	vec3f normal = GBufferReadNormal(uv);
+	vec3f baseColor = GBufferReadBaseColor(uv);
+	float ambientOcclusion = GBufferReadAmbientOcclusion(uv);
+	float metalness = GBufferReadMetalness(uv);
+	float roughness = GBufferReadRoughness(uv);
+	
+	vec3f lightDirection;
+	float lightAttenuation = 1.0;
+	
+	if (LightData.Type == DirectionalLightType)
+	{
+		lightDirection = LightData.Parameter0.xyz;
+	}
+	else if (LightData.Type == PointLightType)
+	{
+		lightDirection =  worldPos - LightData.Parameter0.xyz;
+		
+		float distance = norm(lightDirection) + 0.0001;
+		
+		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
+	}
+	else if (LightData.Type == SpotLightType)
+	{
+		lightDirection =  worldPos - LightData.Parameter0.xyz;
+		
+		vec3f spotDirection = LightData.Parameter1.xyz;
+		float spotAngle = LightData.Parameter1.a;
+		
+		float distance = norm(lightDirection);
+		
+		float fragmentAngle = max(dot(spotDirection, lightDirection) / max(distance, 0.001), 0.0);
+		
+		lightAttenuation = max(1.0 - distance / LightData.Parameter0.w, 0.0);
+		lightAttenuation = lightAttenuation * max((fragmentAngle - spotAngle) / (1.0 - spotAngle), 0.0);
+	}
+	
+	vec3f inverseLightDir = -normalize(lightDirection);
+		
+	float cosTheta = dot(normal, inverseLightDir);
+	
+	vec3f viewDir = normalize(FrameData.CameraPosition - worldPos);
+	
+	vec3f halfwayDir = normalize(inverseLightDir + viewDir);
+	
+	// Visibility
+	float visibility = getVisibility(worldPos, acos(cosTheta));
+	
+	// Ambient
+	vec3f ambientColor = LightData.IndirectIntensity * LightData.Color * baseColor.rgb * ambientOcclusion * lightAttenuation;
+	
+	// Lighting
+	vec3f radiance = LightData.Color * LightData.Intensity * lightAttenuation;
+	
+	vec3f F0 = vec3f(0.04); 
+	F0 = mix(F0, baseColor, metalness);
+	vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0), F0);
+	
+	float NDF = DistributionGGX(normal, halfwayDir, roughness);
+	float G = GeometrySmith(normal, viewDir, inverseLightDir, roughness);
+	
+	// Cook-Torrance BRDF
+	vec3f numerator = NDF * G * F;
+	float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, inverseLightDir), 0.0)  + 0.0001;
+	vec3f specular = numerator / denominator;
+	
+	vec3f kS = F;
+	vec3f kD = vec3(1.0) - kS;
+
+	kD = kD * (1.0 - metalness);
+	
+	// Irradiance
+	float NdotL = max(dot(normal, inverseLightDir), 0.0);        
+    vec3f irradiance = (kD * baseColor / Pi + specular) * radiance * NdotL;
+	
+	// Result
+	//vec3f finalColor = (ambientColor + visibility * (diffuseColor + specularColor)) * baseColor.rgb * lightAttenuation;
+	vec3f finalColor = ambientColor + irradiance * visibility;
+	
+	return finalColor;
+}
+)");
 }
 
 LightingModel DefaultLightingModels::getEmissive()
 {
 	static size_t id = LightingModel::generateID();
 
+	ATEMA_INITIALIZE_MODEL_RESOURCES(Emissive);
+
 	auto& graphics = Graphics::instance();
 
 	// Ensure the default shader is loaded
-	if (!graphics.uberShaderExists(EmissiveObjectLibName))
-		graphics.setUberShader(EmissiveObjectLibName, EmissiveObjectLib);
+	if (!graphics.uberShaderExists(objectLibName))
+		graphics.setUberShader(objectLibName, objectLib);
 
-	if (!graphics.uberShaderExists(EmissiveLightLibName))
-		graphics.setUberShader(EmissiveLightLibName, EmissiveLightLib);
+	if (!graphics.uberShaderExists(lightLibName))
+		graphics.setUberShader(lightLibName, lightLib);
 
 	LightingModel model;
 	model.id = id;
@@ -393,10 +665,10 @@ LightingModel DefaultLightingModels::getEmissive()
 	{
 		{ "LightingModel", static_cast<uint32_t>(id) }
 	};
-	const auto baseUberShader = graphics.getUberShader(EmissiveObjectLibName);
+	const auto baseUberShader = graphics.getUberShader(objectLibName);
 	model.materialLibrary = graphics.getUberShader(*baseUberShader, uberShaderOptions);
 
-	model.lightLibrary = graphics.getUberShader(EmissiveLightLibName);
+	model.lightLibrary = graphics.getUberShader(lightLibName);
 
 	return model;
 }
@@ -405,14 +677,16 @@ LightingModel DefaultLightingModels::getPhong()
 {
 	static size_t id = LightingModel::generateID();
 
+	ATEMA_INITIALIZE_MODEL_RESOURCES(Phong);
+
 	auto& graphics = Graphics::instance();
 
 	// Ensure the default shader is loaded
-	if (!graphics.uberShaderExists(PhongObjectLibName))
-		graphics.setUberShader(PhongObjectLibName, PhongObjectLib);
+	if (!graphics.uberShaderExists(objectLibName))
+		graphics.setUberShader(objectLibName, objectLib);
 
-	if (!graphics.uberShaderExists(PhongLightLibName))
-		graphics.setUberShader(PhongLightLibName, PhongLightLib);
+	if (!graphics.uberShaderExists(lightLibName))
+		graphics.setUberShader(lightLibName, lightLib);
 
 	LightingModel model;
 	model.id = id;
@@ -433,10 +707,52 @@ LightingModel DefaultLightingModels::getPhong()
 	{
 		{ "LightingModel", static_cast<uint32_t>(id) }
 	};
-	const auto baseUberShader = graphics.getUberShader(PhongObjectLibName);
+	const auto baseUberShader = graphics.getUberShader(objectLibName);
 	model.materialLibrary = graphics.getUberShader(*baseUberShader, uberShaderOptions);
 
-	model.lightLibrary = graphics.getUberShader(PhongLightLibName);
+	model.lightLibrary = graphics.getUberShader(lightLibName);
+
+	return model;
+}
+
+LightingModel DefaultLightingModels::getPBR()
+{
+	static size_t id = LightingModel::generateID();
+
+	ATEMA_INITIALIZE_MODEL_RESOURCES(PBR);
+
+	auto& graphics = Graphics::instance();
+
+	// Ensure the default shader is loaded
+	if (!graphics.uberShaderExists(objectLibName))
+		graphics.setUberShader(objectLibName, objectLib);
+
+	if (!graphics.uberShaderExists(lightLibName))
+		graphics.setUberShader(lightLibName, lightLib);
+
+	LightingModel model;
+	model.id = id;
+	model.name = "PBR";
+	model.parameters =
+	{
+		{ "LightingModel", ImageFormat::R16_SFLOAT },
+		{ "Position", ImageFormat::RGB32_SFLOAT },
+		{ "Normal", ImageFormat::RGB16_SFLOAT },
+		{ "BaseColor", ImageFormat::RGB8_UNORM },
+		{ "EmissiveColor", ImageFormat::RGB8_UNORM },
+		{ "Metalness", ImageFormat::R8_UNORM },
+		{ "Roughness", ImageFormat::R8_UNORM },
+		{ "AmbientOcclusion", ImageFormat::R8_UNORM },
+	};
+
+	const std::vector<UberShader::Option> uberShaderOptions =
+	{
+		{ "LightingModel", static_cast<uint32_t>(id) }
+	};
+	const auto baseUberShader = graphics.getUberShader(objectLibName);
+	model.materialLibrary = graphics.getUberShader(*baseUberShader, uberShaderOptions);
+
+	model.lightLibrary = graphics.getUberShader(lightLibName);
 
 	return model;
 }

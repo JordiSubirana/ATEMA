@@ -74,8 +74,8 @@ struct LightDataStruct
 	uint Type;
 	mat4f Transform;
 	vec3f Color;
-	float AmbientStrength;
-	float DiffuseStrength;
+	float Intensity;
+	float IndirectIntensity;
 	vec4f Parameter0;
 	vec4f Parameter1;
 }
@@ -115,7 +115,7 @@ output
 void main()
 {
 	//TODO: Remove this trick to make the material work
-	outColor = vec4f(0, 0, 0, 0) * LightData.AmbientStrength * FrameData.CameraPosition.x;
+	outColor = vec4f(0, 0, 0, 0) * LightData.IndirectIntensity * FrameData.CameraPosition.x;
 }
 )";
 
@@ -146,8 +146,8 @@ struct LightDataStruct
 	uint Type;
 	mat4f Transform;
 	vec3f Color;
-	float AmbientStrength;
-	float DiffuseStrength;
+	float Intensity;
+	float IndirectIntensity;
 	vec4f Parameter0;
 	vec4f Parameter1;
 }
@@ -250,7 +250,7 @@ float getVisibility(vec3f worldPos, float angle)
 [entry(fragment)]
 void main()
 {
-	vec2f uv = gl_FragCoord.xy / FrameData.ScreenSize;
+	vec2f uv = getFragmentCoordinates().xy / FrameData.ScreenSize;
 	vec3f finalColor;
 	uint lightingModel = uint(GBufferReadLightingModel(uv));
 

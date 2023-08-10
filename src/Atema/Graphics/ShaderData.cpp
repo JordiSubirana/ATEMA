@@ -220,8 +220,8 @@ LightData::Layout::Layout(StructLayout structLayout)
 	typeOffset = bufferLayout.add(BufferElementType::UInt);
 	transformOffset = bufferLayout.addMatrix(BufferElementType::Float, 4, 4);
 	colorOffset = bufferLayout.add(BufferElementType::Float3);
-	ambientStrengthOffset = bufferLayout.add(BufferElementType::Float);
-	diffuseStrengthOffset = bufferLayout.add(BufferElementType::Float);
+	intensityOffset = bufferLayout.add(BufferElementType::Float);
+	indirectIntensityOffset = bufferLayout.add(BufferElementType::Float);
 	parameter0Offset = bufferLayout.add(BufferElementType::Float4);
 	parameter1Offset = bufferLayout.add(BufferElementType::Float4);
 
@@ -253,8 +253,8 @@ void LightData::copyTo(void* dstData, StructLayout structLayout) const
 
 	mapMemory<uint32_t>(dstData, layout.typeOffset) = static_cast<uint32_t>(light->getType());
 	mapMemory<Vector3f>(dstData, layout.colorOffset) = light->getColor().toVector3f();
-	mapMemory<float>(dstData, layout.ambientStrengthOffset) = light->getAmbientStrength();
-	mapMemory<float>(dstData, layout.diffuseStrengthOffset) = light->getDiffuseStrength();
+	mapMemory<float>(dstData, layout.intensityOffset) = light->getIntensity();
+	mapMemory<float>(dstData, layout.indirectIntensityOffset) = light->getIndirectIntensity();
 	auto& transform = mapMemory<Matrix4f>(dstData, layout.transformOffset);
 
 	switch (light->getType())

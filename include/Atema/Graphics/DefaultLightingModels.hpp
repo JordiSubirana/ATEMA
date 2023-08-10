@@ -31,6 +31,7 @@ namespace at
 	{
 		static LightingModel getEmissive();
 		static LightingModel getPhong();
+		static LightingModel getPBR();
 	};
 }
 

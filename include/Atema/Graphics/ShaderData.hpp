@@ -26,7 +26,6 @@
 #include <Atema/Math/Matrix.hpp>
 #include <Atema/Math/Vector.hpp>
 #include <Atema/Renderer/BufferLayout.hpp>
-#include <Atema/Renderer/Color.hpp>
 #include <Atema/Shader/Ast/Enums.hpp>
 
 namespace at
@@ -203,8 +202,8 @@ namespace at
 			size_t typeOffset;
 			size_t transformOffset;
 			size_t colorOffset;
-			size_t ambientStrengthOffset;
-			size_t diffuseStrengthOffset;
+			size_t intensityOffset;
+			size_t indirectIntensityOffset;
 			size_t parameter0Offset;
 			size_t parameter1Offset;
 		};

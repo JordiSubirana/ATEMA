@@ -35,6 +35,9 @@ namespace at
 
 		static Ptr<Material> getPhong(const MaterialData& materialData);
 		static Ptr<MaterialInstance> getPhongInstance(const MaterialData& materialData);
+
+		static Ptr<Material> getPBR(const MaterialData& materialData);
+		static Ptr<MaterialInstance> getPBRInstance(const MaterialData& materialData);
 	};
 }
 

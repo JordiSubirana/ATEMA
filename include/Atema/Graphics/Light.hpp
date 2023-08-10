@@ -45,10 +45,10 @@ namespace at
 		void setColor(const Color& color);
 		const Color& getColor() const noexcept;
 
-		void setAmbientStrength(float strength);
-		void setDiffuseStrength(float strength);
-		float getAmbientStrength() const noexcept;
-		float getDiffuseStrength() const noexcept;
+		void setIntensity(float intensity);
+		void setIndirectIntensity(float intensity);
+		float getIntensity() const noexcept;
+		float getIndirectIntensity() const noexcept;
 
 		void setCastShadows(bool castShadows);
 		bool castShadows() const noexcept;
@@ -76,8 +76,8 @@ namespace at
 
 	private:
 		Color m_color;
-		float m_ambientStrength;
-		float m_diffuseStrength;
+		float m_intensity;
+		float m_indirectIntensity;
 		bool m_castShadows;
 		uint32_t m_shadowMapSize;
 		ImageFormat m_shadowMapFormat;

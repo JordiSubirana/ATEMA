@@ -26,8 +26,8 @@ using namespace at;
 
 Light::Light() :
 	m_color(1.0f, 1.0f, 1.0f),
-	m_ambientStrength(0.5f),
-	m_diffuseStrength(0.5f),
+	m_intensity(1.0f),
+	m_indirectIntensity(0.2f),
 	m_castShadows(false),
 	m_shadowMapSize(DefaultShadowMapSize),
 	m_shadowMapFormat(ImageFormat::D16_UNORM),
@@ -46,24 +46,24 @@ const Color& Light::getColor() const noexcept
 	return m_color;
 }
 
-void Light::setAmbientStrength(float strength)
+void Light::setIntensity(float intensity)
 {
-	m_ambientStrength = strength;
+	m_intensity = intensity;
 }
 
-void Light::setDiffuseStrength(float strength)
+void Light::setIndirectIntensity(float intensity)
 {
-	m_diffuseStrength = strength;
+	m_indirectIntensity = intensity;
 }
 
-float Light::getAmbientStrength() const noexcept
+float Light::getIntensity() const noexcept
 {
-	return m_ambientStrength;
+	return m_intensity;
 }
 
-float Light::getDiffuseStrength() const noexcept
+float Light::getIndirectIntensity() const noexcept
 {
-	return m_diffuseStrength;
+	return m_indirectIntensity;
 }
 
 void Light::setCastShadows(bool castShadows)
