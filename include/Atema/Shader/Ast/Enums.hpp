@@ -71,7 +71,9 @@ namespace at
 		
 		Sample, // Arguments : sampler, index (primitive type or vector)
 
-		SetVertexPosition // Arguments : position (vector4f)
+		SetVertexPosition, // Arguments : position (vector4f)
+
+		GetFragmentCoordinates
 	};
 
 	enum class VariableQualifier

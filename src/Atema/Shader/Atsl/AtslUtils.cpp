@@ -82,6 +82,7 @@ namespace
 		{ BuiltInFunction::Normalize, "normalize" },
 		{ BuiltInFunction::Sample, "sample" },
 		{ BuiltInFunction::SetVertexPosition, "setVertexPosition" },
+		{ BuiltInFunction::GetFragmentCoordinates, "getFragmentCoordinates" },
 	};
 
 	std::unordered_map<std::string, BuiltInFunction> s_strToBuiltInFunction =
@@ -94,6 +95,7 @@ namespace
 		{ "normalize", BuiltInFunction::Normalize },
 		{ "sample", BuiltInFunction::Sample },
 		{ "setVertexPosition", BuiltInFunction::SetVertexPosition },
+		{ "getFragmentCoordinates", BuiltInFunction::GetFragmentCoordinates },
 	};
 
 	size_t getComponentCount(char c)

@@ -856,6 +856,10 @@ void GlslShaderWriter::visit(const BuiltInFunctionCallExpression& expression)
 
 		expression.arguments[0]->accept(*this);
 	}
+	else if (expression.function == BuiltInFunction::GetFragmentCoordinates)
+	{
+		m_ostream << "gl_FragCoord";
+	}
 	// Classic function calls
 	else
 	{
