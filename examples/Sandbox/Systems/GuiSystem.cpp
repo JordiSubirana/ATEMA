@@ -302,6 +302,21 @@ void GuiSystem::showSettings()
 				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
 			}
 
+			// Move objects
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Move objects");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Move objects", &settings.moveObjects);
+			}
+
 			ImGui::EndTable();
 		}
 

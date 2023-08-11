@@ -21,6 +21,7 @@
 
 #include "SceneUpdateSystem.hpp"
 #include "../Components/VelocityComponent.hpp"
+#include "../Settings.hpp"
 
 using namespace at;
 
@@ -41,6 +42,9 @@ SceneUpdateSystem::~SceneUpdateSystem()
 
 void SceneUpdateSystem::update(TimeStep timeStep)
 {
+	if (!Settings::instance().moveObjects)
+		return;
+
 	auto& entityManager = getEntityManager();
 
 	auto entities = entityManager.getUnion<Transform, VelocityComponent>();

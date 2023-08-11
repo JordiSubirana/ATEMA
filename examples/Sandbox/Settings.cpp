@@ -26,6 +26,7 @@ Settings::Settings() :
 	fpsLimit(60),
 	cameraSpeed(20.0f),
 	objectRows(20),
+	moveObjects(true),
 	customFrustumCulling(false),
 	shadowMapSize(2048),
 	baseDepthBias(0.07f),

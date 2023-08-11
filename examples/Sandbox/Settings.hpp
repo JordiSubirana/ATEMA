@@ -71,6 +71,8 @@ public:
 	//Scene
 	uint32_t objectRows;
 
+	bool moveObjects;
+
 	// Culling
 	bool customFrustumCulling;
 
