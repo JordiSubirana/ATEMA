@@ -37,7 +37,7 @@ using namespace at;
 
 namespace
 {
-	constexpr size_t targetThreadCount = 8;
+	constexpr size_t targetThreadCount = 16;
 
 	const size_t threadCount = std::min(targetThreadCount, TaskManager::instance().getSize());
 }
