@@ -289,6 +289,13 @@ namespace at
 	}
 
 	template <typename T>
+	Matrix2<T>::Matrix2(const Vector2<T>& c0, const Vector2<T>& c1)
+	{
+		Matrix<2, 2, T>::operator[](0) = c0;
+		Matrix<2, 2, T>::operator[](1) = c1;
+	}
+
+	template <typename T>
 	Matrix2<T>::~Matrix2()
 	{
 	}
@@ -402,6 +409,14 @@ namespace at
 	template <typename T>
 	Matrix3<T>::Matrix3(T value) : Matrix<3, 3, T>(value)
 	{
+	}
+
+	template <typename T>
+	Matrix3<T>::Matrix3(const Vector3<T>& c0, const Vector3<T>& c1, const Vector3<T>& c2)
+	{
+		Matrix<3, 3, T>::operator[](0) = c0;
+		Matrix<3, 3, T>::operator[](1) = c1;
+		Matrix<3, 3, T>::operator[](2) = c2;
 	}
 
 	template <typename T>
@@ -545,6 +560,15 @@ namespace at
 	template <typename T>
 	Matrix4<T>::Matrix4(T value) : Matrix<4, 4, T>(value)
 	{
+	}
+
+	template <typename T>
+	Matrix4<T>::Matrix4(const Vector4<T>& c0, const Vector4<T>& c1, const Vector4<T>& c2, const Vector4<T>& c3)
+	{
+		Matrix<4, 4, T>::operator[](0) = c0;
+		Matrix<4, 4, T>::operator[](1) = c1;
+		Matrix<4, 4, T>::operator[](2) = c2;
+		Matrix<4, 4, T>::operator[](3) = c3;
 	}
 
 	template <typename T>

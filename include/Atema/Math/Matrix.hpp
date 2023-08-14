@@ -92,6 +92,7 @@ namespace at
 		Matrix2(Matrix2&& other) noexcept;
 		Matrix2(Matrix<2, 2, T>&& other) noexcept;
 		Matrix2(T value);
+		Matrix2(const Vector2<T>& c0, const Vector2<T>& c1);
 		~Matrix2();
 
 		Matrix2& operator=(const Matrix2& other);
@@ -120,6 +121,7 @@ namespace at
 		Matrix3(Matrix3&& other) noexcept;
 		Matrix3(Matrix<3, 3, T>&& other) noexcept;
 		Matrix3(T value);
+		Matrix3(const Vector3<T>& c0, const Vector3<T>& c1, const Vector3<T>& c2);
 		~Matrix3();
 
 		Matrix3& operator=(const Matrix3& other);
@@ -150,6 +152,7 @@ namespace at
 		Matrix4(Matrix4&& other) noexcept;
 		Matrix4(Matrix<4, 4, T>&& other) noexcept;
 		Matrix4(T value);
+		Matrix4(const Vector4<T>& c0, const Vector4<T>& c1, const Vector4<T>& c2, const Vector4<T>& c3);
 		~Matrix4();
 
 		Matrix4& operator=(const Matrix4& other);
