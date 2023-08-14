@@ -213,14 +213,23 @@ namespace at
 	template <typename T>
 	AABB<T> operator*(const Matrix4<T>& matrix, const AABB<T>& aabb)
 	{
-		AABB<T> newAABB(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.min.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.min.y, aabb.max.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.min.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.min.x, aabb.max.y, aabb.max.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.min.y, aabb.min.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.min.y, aabb.max.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.max.y, aabb.min.z }));
-		newAABB.extend(matrix.transformPosition({ aabb.max.x, aabb.max.y, aabb.max.z }));
+		// https://gist.github.com/cmf028/81e8d3907035640ee0e3fdd69ada543f
+
+		// Use the center/size representation
+		Vector3f center = aabb.getCenter();
+		Vector3f halfSize = aabb.max - center;
+
+		// Transform center
+		center = (matrix * Vector4f(center, 1.0)).xyz();
+
+		// Transform extents
+		const Matrix3f absMat = Matrix3f(matrix[0].xyz().getAbs(), matrix[1].xyz().getAbs(), matrix[2].xyz().getAbs());
+		halfSize = absMat * halfSize;
+
+		// Back to min/max representation
+		AABBf newAABB;
+		newAABB.min = center - halfSize;
+		newAABB.max = center + halfSize;
 
 		return newAABB;
 	}
