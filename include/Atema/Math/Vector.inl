@@ -231,6 +231,25 @@ namespace at
 	}
 
 	template <size_t N, typename T>
+	Vector<N, T>& Vector<N, T>::abs()
+	{
+		for (size_t i = 0; i < N; i++)
+			this->data[i] = std::abs(this->data[i]);
+
+		return *this;
+	}
+
+	template <size_t N, typename T>
+	Vector<N, T> Vector<N, T>::getAbs() const
+	{
+		Vector<N, T> tmp(*this);
+
+		tmp.abs();
+
+		return tmp;
+	}
+
+	template <size_t N, typename T>
 	Vector<N, T> Vector<N, T>::operator +(const Vector<N, T>& arg) const
 	{
 		Vector<N, T> tmp;

@@ -237,6 +237,8 @@ namespace at
 		T getNorm() const noexcept;
 		T getSquaredNorm() const noexcept;
 		Vector<N, T> getNormalized() const noexcept;
+		Vector<N, T>& abs();
+		Vector<N, T> getAbs() const;
 
 		Vector<N, T> operator +(const Vector<N, T>& arg) const;
 		Vector<N, T> operator -(const Vector<N, T>& arg) const;
