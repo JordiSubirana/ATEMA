@@ -37,6 +37,8 @@ LightType SpotLight::getType() const noexcept
 void SpotLight::setPosition(const Vector3f& position)
 {
 	m_position = position;
+
+	onLightDataUpdated();
 }
 
 const Vector3f& SpotLight::getPosition() const noexcept
@@ -47,6 +49,8 @@ const Vector3f& SpotLight::getPosition() const noexcept
 void SpotLight::setDirection(const Vector3f& direction)
 {
 	m_direction = direction.getNormalized();
+
+	onLightDataUpdated();
 }
 
 const Vector3f& SpotLight::getDirection() const noexcept
@@ -57,6 +61,8 @@ const Vector3f& SpotLight::getDirection() const noexcept
 void SpotLight::setRange(float range)
 {
 	m_range = range;
+
+	onLightDataUpdated();
 }
 
 float SpotLight::getRange() const noexcept
@@ -67,6 +73,8 @@ float SpotLight::getRange() const noexcept
 void SpotLight::setAngle(float angle)
 {
 	m_angle = angle;
+
+	onLightDataUpdated();
 }
 
 float SpotLight::getAngle() const noexcept

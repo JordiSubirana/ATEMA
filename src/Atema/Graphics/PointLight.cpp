@@ -36,6 +36,8 @@ LightType PointLight::getType() const noexcept
 void PointLight::setPosition(const Vector3f& position)
 {
 	m_position = position;
+
+	onLightDataUpdated();
 }
 
 const Vector3f& PointLight::getPosition() const noexcept
@@ -46,6 +48,8 @@ const Vector3f& PointLight::getPosition() const noexcept
 void PointLight::setRadius(float radius)
 {
 	m_radius = radius;
+
+	onLightDataUpdated();
 }
 
 float PointLight::getRadius() const noexcept

@@ -70,12 +70,14 @@ namespace at
 		Ptr<BufferAllocation> m_lightBuffer;
 		Ptr<DescriptorSet> m_lightDescriptorSet;
 
-		Ptr<Buffer> m_shadowBuffer;
+		Ptr<BufferAllocation> m_shadowBuffer;
 		Ptr<DescriptorSet> m_shadowDescriptorSet;
 
 		bool m_updateShadowMapDescriptor;
 		Ptr<Image> m_shadowMap;
 		Ptr<Sampler> m_sampler;
+
+		bool m_lightDataValid;
 
 		bool m_updateShadowData;
 		CascadedShadowData m_shadowData;

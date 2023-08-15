@@ -39,6 +39,8 @@ Light::Light() :
 void Light::setColor(const Color& color)
 {
 	m_color = color;
+
+	onLightDataUpdated();
 }
 
 const Color& Light::getColor() const noexcept
@@ -49,11 +51,15 @@ const Color& Light::getColor() const noexcept
 void Light::setIntensity(float intensity)
 {
 	m_intensity = intensity;
+
+	onLightDataUpdated();
 }
 
 void Light::setIndirectIntensity(float intensity)
 {
 	m_indirectIntensity = intensity;
+
+	onLightDataUpdated();
 }
 
 float Light::getIntensity() const noexcept
@@ -72,7 +78,7 @@ void Light::setCastShadows(bool castShadows)
 	{
 		m_castShadows = castShadows;
 
-		onShadowMapDataChanged();
+		onShadowMapDataUpdated();
 	}
 }
 
@@ -87,7 +93,7 @@ void Light::setShadowMapSize(uint32_t size)
 	{
 		m_shadowMapSize = size;
 
-		onShadowMapDataChanged();
+		onShadowMapDataUpdated();
 	}
 }
 
@@ -104,7 +110,7 @@ void Light::setShadowMapFormat(ImageFormat format)
 	{
 		m_shadowMapFormat = format;
 
-		onShadowMapDataChanged();
+		onShadowMapDataUpdated();
 	}
 }
 
@@ -119,7 +125,7 @@ void Light::setShadowCascadeCount(size_t cascadeCount)
 	{
 		m_shadowCascadeCount = cascadeCount;
 
-		onShadowMapDataChanged();
+		onShadowMapDataUpdated();
 	}
 }
 
@@ -131,6 +137,8 @@ size_t Light::getShadowCascadeCount() const noexcept
 void Light::setShadowDepthBias(float depthBias)
 {
 	m_shadowDepthBias = depthBias;
+
+	onShadowDataUpdated();
 }
 
 float Light::getShadowDepthBias() const noexcept

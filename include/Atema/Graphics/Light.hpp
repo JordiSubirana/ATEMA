@@ -72,7 +72,9 @@ namespace at
 		Light& operator=(const Light& other) = default;
 		Light& operator=(Light&& other) noexcept = default;
 
-		Signal<> onShadowMapDataChanged;
+		Signal<> onLightDataUpdated;
+		Signal<> onShadowDataUpdated;
+		Signal<> onShadowMapDataUpdated;
 
 	private:
 		Color m_color;

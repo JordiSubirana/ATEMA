@@ -37,6 +37,8 @@ LightType DirectionalLight::getType() const noexcept
 void DirectionalLight::setDirection(const Vector3f& direction)
 {
 	m_direction = direction.getNormalized();
+
+	onLightDataUpdated();
 }
 
 const Vector3f& DirectionalLight::getDirection() const noexcept
@@ -47,6 +49,8 @@ const Vector3f& DirectionalLight::getDirection() const noexcept
 void DirectionalLight::setShadowMaxDepth(float maxDepth)
 {
 	m_shadowMaxDepth = maxDepth;
+
+	onShadowDataUpdated();
 }
 
 float DirectionalLight::getShadowMaxDepth() const noexcept
