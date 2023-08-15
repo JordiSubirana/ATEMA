@@ -95,16 +95,17 @@ namespace at
 		void endFrame() override;
 
 	private:
-		void createLightingModel(const std::string& name);
-		void createShaders();
-		void frustumCull();
-		void frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const;
-
 		struct FrameResources
 		{
 			Ptr<DescriptorSet> descriptorSet;
 			Ptr<Buffer> buffer;
 		};
+
+		void createLightingModel(const std::string& name);
+		void createShaders();
+		void frustumCull();
+		void frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const;
+		void drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyEmissive, size_t directionalIndex, size_t directionalCount, size_t pointIndex, size_t pointCount, size_t spotIndex, size_t spotCount);
 
 		RenderResourceManager* m_resourceManager;
 		const GBuffer* m_gbuffer;
@@ -139,6 +140,9 @@ namespace at
 		std::vector<const RenderLight*> m_directionalLights;
 		std::vector<const RenderLight*> m_pointLights;
 		std::vector<const RenderLight*> m_spotLights;
+
+		const DescriptorSet* m_gbufferSet;
+		const DescriptorSet* m_emissiveSet;
 
 		std::vector<Ptr<void>> m_oldResources;
 	};

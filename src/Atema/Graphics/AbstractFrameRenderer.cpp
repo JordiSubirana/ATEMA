@@ -49,16 +49,22 @@ const RenderScene& AbstractFrameRenderer::getRenderScene() const noexcept
 
 void AbstractFrameRenderer::initializeFrame()
 {
-	ATEMA_BENCHMARK_TAG(_1, "Begin frame");
+	ATEMA_BENCHMARK_TAG(_1, "Initialize frame");
 
 	if (m_updateFrameGraph)
 	{
+		ATEMA_BENCHMARK_TAG(_2, "Update frame graph");
+
 		createFrameGraph();
 
 		m_updateFrameGraph = false;
 	}
-	
-	beginFrame();
+
+	{
+		ATEMA_BENCHMARK_TAG(_2, "Begin frame");
+
+		beginFrame();
+	}
 
 	for (auto& renderPass : getRenderPasses())
 	{

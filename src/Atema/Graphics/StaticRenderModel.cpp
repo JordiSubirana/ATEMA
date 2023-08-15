@@ -63,9 +63,6 @@ size_t StaticRenderModel::getRenderElementsSize() const noexcept
 
 void StaticRenderModel::updateResources()
 {
-	auto& renderFrame = getResourceManager().getRenderFrame();
-	auto& commandBuffer = getResourceManager().getCommandBuffer();
-
 	if (!m_transformValid)
 	{
 		void* data = getResourceManager().mapBuffer(*m_transformBuffer);

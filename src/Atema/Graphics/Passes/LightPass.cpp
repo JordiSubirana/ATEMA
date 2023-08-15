@@ -298,7 +298,9 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 	m_updateShader(false),
 	m_useFrameSet(false),
 	m_useLightSet(false),
-	m_useLightShadowSet(false)
+	m_useLightShadowSet(false),
+	m_gbufferSet(nullptr),
+	m_emissiveSet(nullptr)
 {
 	const auto& taskManager = TaskManager::instance();
 	const auto maxThreadCount = taskManager.getSize();
@@ -389,6 +391,8 @@ FrameGraphPass& LightPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder,
 	else
 		pass.setDepthTexture(settings.depthStencil);
 
+	pass.enableSecondaryCommandBuffers(m_threadCount != 1);
+
 	Settings settingsCopy = settings;
 
 	pass.setExecutionCallback([this, settingsCopy](FrameGraphContext& context)
@@ -438,14 +442,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	const auto& frameResources = m_frameResources[context.getFrameIndex()];
 
-	const auto& viewport = getRenderScene().getCamera().getViewport();
-	const auto& scissor = getRenderScene().getCamera().getScissor();
-
 	auto& commandBuffer = context.getCommandBuffer();
-
-	commandBuffer.setViewport(viewport);
-
-	commandBuffer.setScissor(scissor.pos, scissor.size);
 
 	// Update GBuffer set
 	auto gbufferSet = m_meshMaterial->createSet(GBufferSetIndex);
@@ -458,169 +455,129 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 			gbufferSet->update(bindingIndex, *context.getImageView(settings.gbuffer[i]), *m_gbufferSampler);
 	}
 
-	// Mesh lights
-	if (!m_pointLights.empty() || !m_spotLights.empty())
-	{
-		// Step #1 : Fill stencil buffer for mesh lights
-		m_meshStencilMaterial->bindTo(commandBuffer);
+	m_gbufferSet = gbufferSet.get();
 
-		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *frameResources.descriptorSet);
-
-		// PointLights
-		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
-
-		for (const auto& renderLight : m_pointLights)
-		{
-			commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
-		}
-
-		// SpotLights
-		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
-
-		for (const auto& renderLight : m_spotLights)
-		{
-			commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
-		}
-
-		// Step #2 : draw lights that don't cast any shadows
-		m_meshMaterial->bindTo(commandBuffer);
-
-		commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-
-		if (m_useFrameSet)
-			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
-
-		// PointLights
-		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
-
-		for (const auto& renderLight : m_pointLights)
-		{
-			if (renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
-		}
-
-		// SpotLights
-		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
-
-		for (const auto& renderLight : m_spotLights)
-		{
-			if (renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
-		}
-
-		// Step #3 : draw lights that cast shadows
-		m_meshShadowMaterial->bindTo(commandBuffer);
-
-		// PointLights
-		commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
-
-		for (auto& renderLight : m_pointLights)
-		{
-			if (!renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			if (m_useLightShadowSet)
-				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
-		}
-
-		// SpotLights
-		commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
-		commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
-
-		for (auto& renderLight : m_spotLights)
-		{
-			if (!renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			if (m_useLightShadowSet)
-				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
-
-			commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
-		}
-	}
-
-	// Directional lights
-	if (!m_directionalLights.empty())
-	{
-		// Step #1 : draw lights that don't cast any shadows
-		m_directionalMaterial->bindTo(commandBuffer);
-
-		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
-
-		commandBuffer.bindDescriptorSet(GBufferSetIndex, *gbufferSet);
-
-		if (m_useFrameSet)
-			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
-
-		for (const auto& renderLight : m_directionalLights)
-		{
-			if (renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
-		}
-
-		// Step #2 : draw lights that cast shadows
-		m_directionalShadowMaterial->bindTo(commandBuffer);
-
-		for (auto& renderLight : m_directionalLights)
-		{
-			if (!renderLight->getLight().castShadows())
-				continue;
-
-			if (m_useLightSet)
-				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
-
-			if (m_useLightShadowSet)
-				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
-
-			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
-		}
-	}
-
-	// Add emissive lighting
+	// Update emissive set
 	auto emissiveSet = m_lightEmissiveMaterial->createSet(0);
 	emissiveSet->update(0, *context.getImageView(settings.gbuffer[m_gbufferEmissiveIndex]), *m_gbufferSampler);
 
-	m_lightEmissiveMaterial->bindTo(commandBuffer);
+	m_emissiveSet = emissiveSet.get();
 
-	commandBuffer.bindDescriptorSet(0, *emissiveSet);
+	if (m_threadCount == 1)
+	{
+		drawElements(commandBuffer, frameResources, true, 0, m_directionalLights.size(), 0, m_pointLights.size(), 0, m_spotLights.size());
+	}
+	else
+	{
+		const size_t directionalSize = m_directionalLights.size();
+		const size_t pointSize = m_pointLights.size();
+		const size_t spotSize = m_spotLights.size();
+		const size_t elementSize = directionalSize + pointSize + spotSize;
+		const size_t pointBegin = directionalSize;
+		const size_t spotBegin = pointBegin + pointSize;
 
-	commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
-	commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		// At least one thread to apply emissive lighting
+		const size_t threadCount = std::max(std::min(elementSize, m_threadCount), static_cast<size_t>(1));
+
+		auto& taskManager = TaskManager::instance();
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(threadCount);
+
+		std::vector<Ptr<CommandBuffer>> commandBuffers;
+		commandBuffers.resize(threadCount);
+
+		size_t firstIndex = 0;
+		size_t size = elementSize / threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+		{
+			bool applyEmissive = false;
+
+			if (taskIndex == threadCount - 1)
+			{
+				const auto remainingSize = elementSize - threadCount * size;
+
+				size += remainingSize;
+
+				applyEmissive = true;
+			}
+
+			size_t directionalIndex = 0;
+			size_t directionalCount = 0;
+
+			size_t pointIndex = 0;
+			size_t pointCount = 0;
+
+			size_t spotIndex = 0;
+			size_t spotCount = 0;
+
+			if (firstIndex < pointBegin)
+			{
+				directionalIndex = firstIndex;
+				directionalCount = std::min(size, directionalSize - directionalIndex);
+
+				size_t remainingSize = size - directionalCount;
+
+				if (remainingSize > 0)
+				{
+					pointIndex = 0;
+					pointCount = std::min(remainingSize, pointSize - pointIndex);
+
+					remainingSize -= pointCount;
+
+					if (remainingSize > 0)
+					{
+						spotIndex = 0;
+						spotCount = remainingSize;
+					}
+				}
+			}
+			else if (firstIndex < spotBegin)
+			{
+				pointIndex = firstIndex - pointBegin;
+				pointCount = std::min(size, pointSize - pointIndex);
+
+				const size_t remainingSize = size - pointCount;
+
+				if (remainingSize > 0)
+				{
+					spotIndex = 0;
+					spotCount = remainingSize;
+				}
+			}
+			else
+			{
+				spotIndex = firstIndex - spotBegin;
+				spotCount = size;
+			}
+
+			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, applyEmissive, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount](size_t threadIndex)
+				{
+					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
+
+					drawElements(*commandBuffer, frameResources, applyEmissive, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount);
+
+					commandBuffer->end();
+
+					commandBuffers[taskIndex] = commandBuffer;
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
+		}
+
+		for (auto& task : tasks)
+			task->wait();
+
+		commandBuffer.executeSecondaryCommands(commandBuffers);
+	}
 
 	context.destroyAfterUse(std::move(gbufferSet));
 	context.destroyAfterUse(std::move(emissiveSet));
+
+	m_gbufferSet = nullptr;
+	m_emissiveSet = nullptr;
 }
 
 void LightPass::beginFrame()
@@ -901,5 +858,213 @@ void LightPass::frustumCullElements(size_t index, size_t count, std::vector<cons
 				ATEMA_ERROR("Unhandled LightType");
 			}
 		}
+	}
+}
+
+void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyEmissive,
+	size_t directionalIndex, size_t directionalCount,
+	size_t pointIndex, size_t pointCount,
+	size_t spotIndex, size_t spotCount)
+{
+	const auto& viewport = getRenderScene().getCamera().getViewport();
+	const auto& scissor = getRenderScene().getCamera().getScissor();
+
+	commandBuffer.setViewport(viewport);
+
+	commandBuffer.setScissor(scissor.pos, scissor.size);
+
+	// Mesh lights
+	if (pointCount > 0 || spotCount > 0)
+	{
+		// Step #1 : Fill stencil buffer for mesh lights
+		m_meshStencilMaterial->bindTo(commandBuffer);
+
+		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *frameResources.descriptorSet);
+
+		// PointLights
+		if (pointCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = pointIndex; i < pointIndex + pointCount; i++)
+			{
+				const auto& renderLight = m_pointLights[i];
+
+				commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+			}
+		}
+
+		// SpotLights
+		if (spotCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = spotIndex; i < spotIndex + spotCount; i++)
+			{
+				const auto& renderLight = m_spotLights[i];
+
+				commandBuffer.bindDescriptorSet(StencilLightSetIndex, renderLight->getLightDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
+			}
+		}
+
+		// Step #2 : draw lights that don't cast any shadows
+		m_meshMaterial->bindTo(commandBuffer);
+
+		commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
+
+		if (m_useFrameSet)
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+
+		// PointLights
+		if (pointCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = pointIndex; i < pointIndex + pointCount; i++)
+			{
+				const auto& renderLight = m_pointLights[i];
+
+				if (renderLight->getLight().castShadows())
+					continue;
+
+				if (m_useLightSet)
+					commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+			}
+		}
+
+		// SpotLights
+		if (spotCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = spotIndex; i < spotIndex + spotCount; i++)
+			{
+				const auto& renderLight = m_spotLights[i];
+
+				if (renderLight->getLight().castShadows())
+					continue;
+
+				if (m_useLightSet)
+					commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
+			}
+		}
+
+		// Step #3 : draw lights that cast shadows
+		m_meshShadowMaterial->bindTo(commandBuffer);
+
+		// PointLights
+		if (pointCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_sphereMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_sphereMesh->getIndexBuffer()->getBuffer(), m_sphereMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = pointIndex; i < pointIndex + pointCount; i++)
+			{
+				const auto& renderLight = m_pointLights[i];
+
+				if (!renderLight->getLight().castShadows())
+					continue;
+
+				if (m_useLightSet)
+					commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+				if (m_useLightShadowSet)
+					commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_sphereMesh->getIndexBuffer()->getSize()));
+			}
+		}
+
+		// SpotLights
+		if (spotCount > 0)
+		{
+			commandBuffer.bindVertexBuffer(*m_coneMesh->getVertexBuffer()->getBuffer(), 0);
+			commandBuffer.bindIndexBuffer(*m_coneMesh->getIndexBuffer()->getBuffer(), m_coneMesh->getIndexBuffer()->getIndexType());
+
+			for (size_t i = spotIndex; i < spotIndex + spotCount; i++)
+			{
+				const auto& renderLight = m_spotLights[i];
+
+				if (!renderLight->getLight().castShadows())
+					continue;
+
+				if (m_useLightSet)
+					commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+				if (m_useLightShadowSet)
+					commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+				commandBuffer.drawIndexed(static_cast<uint32_t>(m_coneMesh->getIndexBuffer()->getSize()));
+			}
+		}
+	}
+
+	// Directional lights
+	if (directionalCount > 0)
+	{
+		// Step #1 : draw lights that don't cast any shadows
+		m_directionalMaterial->bindTo(commandBuffer);
+
+		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
+
+		commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
+
+		if (m_useFrameSet)
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+
+		for (size_t i = directionalIndex; i < directionalIndex + directionalCount; i++)
+		{
+			const auto& renderLight = m_directionalLights[i];
+
+			if (renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		}
+
+		// Step #2 : draw lights that cast shadows
+		m_directionalShadowMaterial->bindTo(commandBuffer);
+
+		for (size_t i = directionalIndex; i < directionalIndex + directionalCount; i++)
+		{
+			const auto& renderLight = m_directionalLights[i];
+
+			if (!renderLight->getLight().castShadows())
+				continue;
+
+			if (m_useLightSet)
+				commandBuffer.bindDescriptorSet(LightSetIndex, renderLight->getLightDescriptorSet());
+
+			if (m_useLightShadowSet)
+				commandBuffer.bindDescriptorSet(ShadowSetIndex, renderLight->getShadowDescriptorSet());
+
+			commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+		}
+	}
+
+	// Add emissive lighting
+	if (applyEmissive)
+	{
+		m_lightEmissiveMaterial->bindTo(commandBuffer);
+
+		commandBuffer.bindDescriptorSet(0, *m_emissiveSet);
+
+		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
+		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
 	}
 }
