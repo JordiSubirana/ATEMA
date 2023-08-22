@@ -32,6 +32,7 @@ namespace at
 	struct ATEMA_GRAPHICS_API DefaultImageLoader
 	{
 		static Ptr<Image> load(const std::filesystem::path& path, const ImageLoader::Settings& settings);
+		static Ptr<Image> load(const uint8_t* data, size_t size, const ImageLoader::Settings& settings);
 		static bool isExtensionSupported(const std::filesystem::path& extension);
 	};
 }

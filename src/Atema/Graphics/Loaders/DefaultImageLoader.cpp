@@ -117,6 +117,26 @@ Ptr<Image> DefaultImageLoader::load(const std::filesystem::path& path, const Ima
 	return image;
 }
 
+Ptr<Image> DefaultImageLoader::load(const uint8_t* data, size_t size, const ImageLoader::Settings& settings)
+{
+	int width, height, channels;
+
+	if (stbi_info_from_memory(data, static_cast<int>(size), &width, &height, &channels) != 1)
+		ATEMA_ERROR("Failed to load the image");
+
+	const auto loaderFormat = getLoaderFormat(channels);
+
+	const ImageFormat format = ImageLoader::getSupportedColorFormat(loaderFormat, settings.usages);
+
+	stbi_uc* pixels = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, getSTBIFormat(format));
+
+	Ptr<Image> image = ImageLoader::loadImage(reinterpret_cast<uint8_t*>(pixels), width, height, loaderFormat, settings);
+
+	stbi_image_free(pixels);
+
+	return image;
+}
+
 bool DefaultImageLoader::isExtensionSupported(const std::filesystem::path& extension)
 {
 	return extensions.count(extension.string()) > 0;
