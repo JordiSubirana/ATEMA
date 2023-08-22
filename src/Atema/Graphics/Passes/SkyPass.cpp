@@ -144,7 +144,82 @@ output
 [entry(fragment)]
 void main()
 {
-	outColor = vec4f(sample(SkyTexture, inTexCoords).rgb, 0);
+	vec3f envColor = sample(SkyTexture, inTexCoords).rgb;
+	
+	envColor = envColor / (envColor + vec3f(1.0));
+    envColor = pow(envColor, vec3f(1.0/2.2));
+	
+	outColor = vec4f(envColor, 1);
+}
+)";
+
+	const std::string SkySphereToBoxShaderName = "SkyPassSphereToBoxShader";
+	constexpr char SkySphereToBoxShader[] = R"(
+struct FrameDataStruct
+{
+	mat4f ViewProjection;
+}
+
+external
+{
+	[set(0), binding(0)] FrameDataStruct FrameData;
+	
+	[set(1), binding(0)] sampler2Df SkyTexture;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+}
+
+[stage(vertex)]
+output
+{
+	[location(0)] vec3f outTexCoords;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec4f screenPosition = FrameData.ViewProjection * vec4f(inPosition, 1.0);
+	
+	// Y is the top vector in Vulkan, but it's Z in Atema
+	outTexCoords = inPosition.xyz;
+	
+	// This way the depth will be fixed at max value
+	setVertexPosition(screenPosition.xyww);
+}
+
+[stage(fragment)]
+input
+{
+	[location(0)] vec3f inTexCoords;
+}
+
+[stage(fragment)]
+output
+{
+	[location(0)] vec4f outColor;
+}
+
+const vec2f invAtan = vec2f(0.1591, 0.3183);
+vec2f SampleSphericalMap(vec3f v)
+{
+	vec2f uv = vec2f(atan(v.y, v.x), -asin(v.z));
+	uv = uv * invAtan;
+	uv = uv + 0.5;
+	return uv;
+}
+
+[entry(fragment)]
+void main()
+{
+	vec2f uv = SampleSphericalMap(normalize(inTexCoords));
+	
+	outColor = vec4f(uv.x, uv.y, 0, 0);
+	outColor = vec4f(0, uv.y, 0, 0);
+	outColor = vec4f(sample(SkyTexture, uv).rgb, 0);
 }
 )";
 
@@ -202,7 +277,7 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager)
 	{
 		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV));
 
-		m_sphereMesh = Primitive::createUVSphere(settings, 0.5f, 10, 10);
+		m_sphereMesh = Primitive::createUVSphere(settings, 0.5f, 100, 100);
 	}
 
 	auto& graphics = Graphics::instance();
@@ -212,6 +287,9 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager)
 
 	if (!graphics.uberShaderExists(SkySphereShaderName))
 		graphics.setUberShader(SkySphereShaderName, SkySphereShader);
+
+	if (!graphics.uberShaderExists(SkySphereToBoxShaderName))
+		graphics.setUberShader(SkySphereToBoxShaderName, SkySphereToBoxShader);
 
 	RenderMaterial::Settings renderMaterialSettings;
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
@@ -224,6 +302,9 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager)
 
 	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkySphereShaderName));
 	m_skySphereMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+
+	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkySphereToBoxShaderName));
+	m_skySphereToBoxMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
 	m_sampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));
 
@@ -289,10 +370,11 @@ void SkyPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBu
 void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 {
 	const auto& renderScene = getRenderScene();
-	const auto& skyBox = renderScene.getSkyBox();
 
-	if (!renderScene.isValid() || !skyBox)
+	if (!renderScene.isValid() || !renderScene.getSkyBox())
 		return;
+
+	Image& skyBox = *renderScene.getSkyBox()->environmentMap;
 
 	auto& frameResources = m_frameResources[context.getFrameIndex()];
 
@@ -307,7 +389,7 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	Mesh* skyMesh = nullptr;
 	Ptr<DescriptorSet> skyTextureSet;
-	if (skyBox->getType() == ImageType::CubeMap)
+	if (skyBox.getType() == ImageType::CubeMap)
 	{
 		skyMesh = m_boxMesh.get();
 
@@ -317,14 +399,24 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 	}
 	else
 	{
+		/*
+		skyMesh = m_boxMesh.get();
+
+		skyTextureSet = m_skySphereToBoxMaterial->createSet(SkySetIndex);
+
+		m_skySphereToBoxMaterial->bindTo(commandBuffer);
+		//*/
+
+		//*
 		skyMesh = m_sphereMesh.get();
 
 		skyTextureSet = m_skySphereMaterial->createSet(SkySetIndex);
 
 		m_skySphereMaterial->bindTo(commandBuffer);
+		//*/
 	}
 
-	skyTextureSet->update(0, *skyBox->getView(), *m_sampler);
+	skyTextureSet->update(0, *skyBox.getView(), *m_sampler);
 
 	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.set);
 	commandBuffer.bindDescriptorSet(SkySetIndex, *skyTextureSet);

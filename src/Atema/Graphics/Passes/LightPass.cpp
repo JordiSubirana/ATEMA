@@ -297,7 +297,9 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 	m_useLightSet(false),
 	m_useLightShadowSet(false),
 	m_gbufferSet(nullptr),
-	m_emissiveSet(nullptr)
+	m_emissiveSet(nullptr),
+	m_iblFrameSet(nullptr),
+	m_iblEnvironmentSet(nullptr)
 {
 	const auto& taskManager = TaskManager::instance();
 	const auto maxThreadCount = taskManager.getSize();
@@ -308,13 +310,15 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 	auto& graphics = Graphics::instance();
 
 	m_gbufferSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Nearest));
+	m_iblSampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));
 
 	m_quadMesh = graphics.getQuadMesh();
 
 	ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV));
 
 	m_sphereMesh = Primitive::createUVSphere(settings, 1.5f, LightSphereSubdivisions, LightSphereSubdivisions);
-	m_coneMesh = Primitive::createConeFromRadius(settings, Vector3f(0.0f, 0.0f, -1.0f), 1.0f, 1.0f, LightConeVerticalSubdivisions, LightConeHorizontalSubdivisions);
+	m_coneMesh = Primitive::createConeFromRadius(settings, Vector3f(0.0f, 0.0f, -1.0f), 1.0f, 1.0f,
+												LightConeVerticalSubdivisions, LightConeHorizontalSubdivisions);
 
 	// Stencil pass
 	{
@@ -341,7 +345,7 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 		if (!graphics.uberShaderExists(EmissiveShaderName))
 			graphics.setUberShader(EmissiveShaderName, EmissiveShader);
 
-		const auto bindings = gbuffer.getTextureBindings({ "EmissiveColor" });
+		const auto bindings = gbuffer.getTextureBindings({"EmissiveColor"});
 		m_gbufferEmissiveIndex = bindings[0].index;
 
 		RenderMaterial::Settings renderMaterialSettings;
@@ -354,7 +358,7 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 		renderMaterialSettings.pipelineState.colorBlend.colorDstFactor = BlendFactor::One;
 		renderMaterialSettings.uberShaderOptions =
 		{
-			{ bindings[0].bindingOptionName, static_cast<int32_t>(0) }
+			{bindings[0].bindingOptionName, static_cast<int32_t>(0)}
 		};
 
 		m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
@@ -420,6 +424,9 @@ void LightPass::updateResources(RenderFrame& renderFrame, CommandBuffer& command
 	frameData.copyTo(data);
 
 	frameResources.buffer->unmap();
+
+	for (auto& iblMaterial : m_iblMaterials)
+		iblMaterial->update();
 }
 
 void LightPass::setLightingModels(const std::vector<std::string>& lightingModelNames)
@@ -460,6 +467,26 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	m_emissiveSet = emissiveSet.get();
 
+	// Update IBL sets
+	if (!m_iblMaterials.empty() && renderScene.getSkyBox())
+	{
+		const auto& skyBox = renderScene.getSkyBox();
+
+		auto iblFrameSet = m_iblMaterials[0]->createSet(1);
+		iblFrameSet->update(0, *frameResources.buffer);
+
+		m_iblFrameSet = iblFrameSet.get();
+
+		auto iblEnvironmentSet = m_iblMaterials[0]->createSet(2);
+		iblEnvironmentSet->update(0, *skyBox->irradianceMap->getView(), *m_iblSampler);
+		iblEnvironmentSet->update(1, *skyBox->prefilteredMap->getView(), *m_iblSampler);
+
+		m_iblEnvironmentSet = iblEnvironmentSet.get();
+
+		context.destroyAfterUse(std::move(iblFrameSet));
+		context.destroyAfterUse(std::move(iblEnvironmentSet));
+	}
+
 	if (m_threadCount == 1)
 	{
 		drawElements(commandBuffer, frameResources, true, 0, m_directionalLights.size(), 0, m_pointLights.size(), 0, m_spotLights.size());
@@ -488,7 +515,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
 		{
-			bool applyEmissive = false;
+			bool applyPostProcess = false;
 
 			if (taskIndex == threadCount - 1)
 			{
@@ -496,7 +523,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 				size += remainingSize;
 
-				applyEmissive = true;
+				applyPostProcess = true;
 			}
 
 			size_t directionalIndex = 0;
@@ -548,11 +575,11 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 				spotCount = size;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, applyEmissive, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameResources, applyEmissive, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount);
+					drawElements(*commandBuffer, frameResources, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount);
 
 					commandBuffer->end();
 
@@ -575,6 +602,8 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	m_gbufferSet = nullptr;
 	m_emissiveSet = nullptr;
+	m_iblFrameSet = nullptr;
+	m_iblEnvironmentSet = nullptr;
 }
 
 void LightPass::beginFrame()
@@ -596,10 +625,10 @@ void LightPass::endFrame()
 
 void LightPass::createLightingModel(const std::string& name)
 {
-	if (m_lightingModels.find(name) != m_lightingModels.end())
+	if (m_lightingModelNames.find(name) != m_lightingModelNames.end())
 		return;
 
-	m_lightingModels.emplace(name);
+	m_lightingModelNames.emplace(name);
 
 	const auto& lightingModel = Graphics::instance().getLightingModel(name);
 
@@ -632,7 +661,7 @@ void LightPass::createShaders()
 
 	std::string shader = LightShaderDefinitions;
 
-	for (const auto& lightingModelName : m_lightingModels)
+	for (const auto& lightingModelName : m_lightingModelNames)
 	{
 		shader += "include Atema.LightingModel." + lightingModelName + "LightMaterial;\n";
 	}
@@ -641,7 +670,7 @@ void LightPass::createShaders()
 
 	bool useElse = false;
 
-	for (const auto& lightingModelName : m_lightingModels)
+	for (const auto& lightingModelName : m_lightingModelNames)
 	{
 		const size_t lightingModelId = graphics.getLightingModelID(lightingModelName);
 
@@ -681,6 +710,21 @@ void LightPass::createShaders()
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
 	renderMaterialSettings.pipelineState.stencil = false;
 	m_directionalMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+
+	// Image Based Lighting materials
+	m_iblMaterials.clear();
+	for (const auto& lightingModelName : m_lightingModelNames)
+	{
+		const LightingModel& lightingModel = graphics.getLightingModel(lightingModelName);
+
+		if (lightingModel.environmentLightMaterial)
+		{
+			RenderMaterial::Settings materialSettings = renderMaterialSettings;
+			materialSettings.material = lightingModel.environmentLightMaterial;
+
+			m_iblMaterials.emplace_back(std::make_shared<RenderMaterial>(*m_resourceManager, materialSettings));
+		}
+	}
 
 	// Light + shadow material
 	renderMaterialSettings.uberShaderOptions = gbufferOptions;
@@ -858,7 +902,7 @@ void LightPass::frustumCullElements(size_t index, size_t count, std::vector<cons
 	}
 }
 
-void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyEmissive,
+void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyPostProcess,
 	size_t directionalIndex, size_t directionalCount,
 	size_t pointIndex, size_t pointCount,
 	size_t spotIndex, size_t spotCount)
@@ -1054,14 +1098,31 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources&
 		}
 	}
 
-	// Add emissive lighting
-	if (applyEmissive)
+	// Add post process (emissive lighting + ibl)
+	if (applyPostProcess)
 	{
+		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
+
+		// Image Based Lighting
+		if (m_iblFrameSet && m_iblEnvironmentSet)
+		{
+			for (auto& iblMaterial : m_iblMaterials)
+			{
+				iblMaterial->bindTo(commandBuffer);
+
+				commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
+				commandBuffer.bindDescriptorSet(FrameSetIndex, *m_iblFrameSet);
+				commandBuffer.bindDescriptorSet(2, *m_iblEnvironmentSet);
+
+				commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
+			}
+		}
+
+		// Emissive lighting
 		m_lightEmissiveMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindDescriptorSet(0, *m_emissiveSet);
 
-		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 		commandBuffer.draw(static_cast<uint32_t>(m_quadMesh->getSize()));
 	}
 }

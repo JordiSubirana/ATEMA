@@ -72,6 +72,7 @@
 #include <Atema/Graphics/RenderScene.hpp>
 #include <Atema/Graphics/ShaderBinding.hpp>
 #include <Atema/Graphics/ShaderData.hpp>
+#include <Atema/Graphics/SkyBox.hpp>
 #include <Atema/Graphics/SpotLight.hpp>
 #include <Atema/Graphics/StaticModel.hpp>
 #include <Atema/Graphics/StaticRenderModel.hpp>

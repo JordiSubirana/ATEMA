@@ -69,6 +69,8 @@ namespace at
 		// Must define the function : vec3f get[LightingModelName]FinalColor(vec2f uv)
 		Ptr<UberShader> lightLibrary;
 
+		Ptr<Material> environmentLightMaterial;
+
 		// Parameters defining the LightingModel
 		// Represent both outputs of materialLibrary and inputs of lightMaterial
 		// Will be used to create the GBuffer textures

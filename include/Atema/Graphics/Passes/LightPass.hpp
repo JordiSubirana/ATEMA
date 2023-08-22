@@ -36,6 +36,7 @@
 
 namespace at
 {
+	struct LightingModel;
 	class RenderResourceManager;
 	class RenderLight;
 	class Mesh;
@@ -105,7 +106,7 @@ namespace at
 		void createShaders();
 		void frustumCull();
 		void frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const;
-		void drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyEmissive, size_t directionalIndex, size_t directionalCount, size_t pointIndex, size_t pointCount, size_t spotIndex, size_t spotCount);
+		void drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyPostProcess, size_t directionalIndex, size_t directionalCount, size_t pointIndex, size_t pointCount, size_t spotIndex, size_t spotCount);
 
 		RenderResourceManager* m_resourceManager;
 		const GBuffer* m_gbuffer;
@@ -113,11 +114,14 @@ namespace at
 		size_t m_threadCount;
 
 		Ptr<Sampler> m_gbufferSampler;
+		Ptr<Sampler> m_iblSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 
 		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
 
-		std::unordered_set<std::string> m_lightingModels;
+		std::unordered_set<std::string> m_lightingModelNames;
+		std::vector<const LightingModel*> m_lightingModels;
+		std::vector<Ptr<RenderMaterial>> m_iblMaterials;
 
 		bool m_updateShader;
 		bool m_useFrameSet;
@@ -143,6 +147,8 @@ namespace at
 
 		const DescriptorSet* m_gbufferSet;
 		const DescriptorSet* m_emissiveSet;
+		const DescriptorSet* m_iblFrameSet;
+		const DescriptorSet* m_iblEnvironmentSet;
 
 		std::vector<Ptr<void>> m_oldResources;
 	};

@@ -43,7 +43,7 @@ void RenderScene::setCamera(const Camera& camera)
 	m_camera = &camera;
 }
 
-void RenderScene::setSkyBox(Ptr<Image> skyBox)
+void RenderScene::setSkyBox(Ptr<SkyBox> skyBox)
 {
 	m_skyBox = std::move(skyBox);
 }
@@ -151,7 +151,7 @@ const Camera& RenderScene::getCamera() const noexcept
 	return *m_camera;
 }
 
-const Ptr<Image>& RenderScene::getSkyBox() const noexcept
+const Ptr<SkyBox>& RenderScene::getSkyBox() const noexcept
 {
 	return m_skyBox;
 }

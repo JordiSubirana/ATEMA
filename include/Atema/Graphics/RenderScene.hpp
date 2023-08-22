@@ -28,6 +28,7 @@
 #include <Atema/Graphics/Light.hpp>
 #include <Atema/Graphics/RenderLight.hpp>
 #include <Atema/Graphics/RenderObject.hpp>
+#include <Atema/Graphics/SkyBox.hpp>
 
 #include <vector>
 #include <unordered_map>
@@ -49,7 +50,7 @@ namespace at
 
 		void setCamera(const Camera& camera);
 
-		void setSkyBox(Ptr<Image> skyBox);
+		void setSkyBox(Ptr<SkyBox> skyBox);
 
 		void addLight(Light& light);
 		void addRenderable(Renderable& renderable);
@@ -64,7 +65,7 @@ namespace at
 		void recompileMaterials();
 
 		const Camera& getCamera() const noexcept;
-		const Ptr<Image>& getSkyBox() const noexcept;
+		const Ptr<SkyBox>& getSkyBox() const noexcept;
 		RenderMaterial& getRenderMaterial(Ptr<Material> material);
 		RenderMaterialInstance& getRenderMaterialInstance(const MaterialInstance& materialInstance);
 		const std::vector<Ptr<RenderObject>>& getRenderObjects() const noexcept;
@@ -81,7 +82,7 @@ namespace at
 
 		const Camera* m_camera;
 
-		Ptr<Image> m_skyBox;
+		Ptr<SkyBox> m_skyBox;
 		
 		std::vector<Ptr<RenderObject>> m_renderObjects;
 		std::unordered_map<const Renderable*, size_t> m_renderObjectIndices;

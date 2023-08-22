@@ -74,6 +74,7 @@ namespace at
 
 		Ptr<RenderMaterial> m_skyBoxMaterial;
 		Ptr<RenderMaterial> m_skySphereMaterial;
+		Ptr<RenderMaterial> m_skySphereToBoxMaterial;
 		Ptr<Mesh> m_boxMesh;
 		Ptr<Mesh> m_sphereMesh;
 		Ptr<Sampler> m_sampler;
