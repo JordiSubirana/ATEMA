@@ -144,7 +144,7 @@ RenderMaterial::RenderMaterial(RenderResourceManager& resourceManager, const Set
 	RenderResource(resourceManager),
 	m_material(settings.material),
 	m_id(settings.id),
-	m_needUpdate(false)
+	m_needUpdate(true)
 {
 	auto& graphics = Graphics::instance();
 
