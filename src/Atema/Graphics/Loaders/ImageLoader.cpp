@@ -86,6 +86,8 @@ namespace
 		ATEMA_ASSERT(data, "Invalid pixel data");
 		ATEMA_ASSERT(width > 0 && height > 0, "Invalid image size");
 
+		const size_t pixelCount = static_cast<size_t>(width) * static_cast<size_t>(height);
+
 		if (settings.type == ImageType::CubeMap)
 		{
 			width /= 4;
@@ -110,7 +112,7 @@ namespace
 		else
 			imageFormat = ImageLoader::getSupportedColorFormat(format, imageUsages);
 
-		const size_t imageByteSize = getByteSize(imageFormat) * width * height;
+		const size_t imageByteSize = getByteSize(imageFormat) * pixelCount;
 
 		Ptr<Buffer> stagingBuffer = Buffer::create({ BufferUsage::TransferSrc | BufferUsage::Map, imageByteSize });
 
