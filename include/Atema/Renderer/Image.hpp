@@ -56,7 +56,7 @@ namespace at
 		// Returns a view containing all the required layers and mip levels
 		// If layerCount is 0, then the view contains all the remaining layers
 		// If mipLevelCount is 0, then the view contains all the remaining mip levels
-		virtual Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) = 0;
+		virtual Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) const = 0;
 
 		virtual ImageFormat getFormat() const noexcept = 0;
 

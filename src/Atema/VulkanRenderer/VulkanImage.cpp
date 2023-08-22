@@ -98,7 +98,7 @@ VkImage VulkanImage::getHandle() const noexcept
 	return m_image;
 }
 
-Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount)
+Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount) const
 {
 	// Explicitly set remaining layers
 	if (getType() == ImageType::CubeMap)

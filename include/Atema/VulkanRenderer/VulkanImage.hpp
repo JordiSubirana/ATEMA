@@ -40,7 +40,7 @@ namespace at
 
 		VkImage getHandle() const noexcept;
 
-		Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) override;
+		Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) const override;
 
 		ImageFormat getFormat() const noexcept override;
 
@@ -62,7 +62,7 @@ namespace at
 		ImageType m_type;
 		uint32_t m_layers;
 		uint32_t m_mipLevels;
-		std::unordered_map<Hash, Ptr<ImageView>> m_views;
+		mutable std::unordered_map<Hash, Ptr<ImageView>> m_views;
 	};
 }
 
