@@ -36,17 +36,16 @@ namespace
 	constexpr char* ShaderName = "AtemaScreenPass";
 	
 	const char ShaderCode[] = R"(
+include Atema.PostProcess;
+
 external
 {
 	[set(0), binding(0)] sampler2Df colorTexture;
 }
 
-include Atema.PostProcess;
-
-[entry(fragment)]
-void main()
+vec4f getPostProcessColor(vec2f uv)
 {
-	atPostProcessWriteOutColor(sample(colorTexture, atPostProcessGetTexCoords()));
+	return sample(colorTexture, uv);
 }
 )";
 }

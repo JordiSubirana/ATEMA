@@ -80,14 +80,12 @@ output
 	[location(AtPostProcessOutColorLocation)] vec4f _atPostProcessOutColor;
 }
 
-vec2f atPostProcessGetTexCoords()
-{
-	return _atPostProcessInTexCoords;
-}
+vec4f getPostProcessColor(vec2f uv);
 
-void atPostProcessWriteOutColor(vec4f value)
+[entry(fragment)]
+void main()
 {
-	_atPostProcessOutColor = value;
+	_atPostProcessOutColor = getPostProcessColor(_atPostProcessInTexCoords);
 }
 )";
 
@@ -313,6 +311,9 @@ void Graphics::clearUnused()
 
 void Graphics::clear()
 {
+	m_lightingModels.clear();
+	m_lightingModelIDs.clear();
+
 	m_quadMesh.reset();
 
 	m_frameLayout.reset();

@@ -281,12 +281,9 @@ constexpr char EmissiveShader[] = R"(
 include Atema.GBufferRead.EmissiveColor;
 include Atema.PostProcess;
 
-[entry(fragment)]
-void main()
+vec4f getPostProcessColor(vec2f uv)
 {
-	vec3f emissiveColor = GBufferReadEmissiveColor(atPostProcessGetTexCoords());
-	
-	atPostProcessWriteOutColor(vec4f(emissiveColor, 1.0));
+	return vec4f(GBufferReadEmissiveColor(uv), 1.0);
 }
 )";
 }
