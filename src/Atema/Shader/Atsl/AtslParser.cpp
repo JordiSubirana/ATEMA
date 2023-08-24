@@ -28,6 +28,30 @@ using namespace at;
 
 namespace
 {
+	enum class AtslNumberSuffix
+	{
+		Unspecified,
+		Unsigned,
+		Float,
+	};
+
+	AtslNumberSuffix getNumberSuffix(char c)
+	{
+		switch (c)
+		{
+			case 'u':
+			case 'U':
+				return AtslNumberSuffix::Unsigned;
+			case 'f':
+			case 'F':
+				return AtslNumberSuffix::Float;
+			default:
+				break;
+		}
+
+		return AtslNumberSuffix::Unspecified;
+	}
+
 	bool isAlphabetic(char c)
 	{
 		return std::isalpha(c) || c == '_';
@@ -36,6 +60,16 @@ namespace
 	bool isDigit(char c)
 	{
 		return std::isdigit(c);
+	}
+
+	bool isHexadecimal(char c)
+	{
+		return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+	}
+
+	bool isNumberSuffix(char c)
+	{
+		return getNumberSuffix(c) != AtslNumberSuffix::Unspecified;
 	}
 
 	bool isAlphaNumeric(char c)
@@ -185,7 +219,7 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 				}
 			}
 
-			tokens.push_back({ atsl::getSymbol(c) });
+			tokens.emplace_back(atsl::getSymbol(c));
 		}
 		// Alphabetic
 		else if (isAlphabetic(c))
@@ -212,15 +246,15 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 
 			if (isBooleanValue(identifier))
 			{
-				tokens.push_back({ getBooleanValue(identifier) });
+				tokens.emplace_back(getBooleanValue(identifier));
 			}
 			else if (atsl::isKeyword(identifier))
 			{
-				tokens.push_back({ atsl::getKeyword(identifier) });
+				tokens.emplace_back(atsl::getKeyword(identifier));
 			}
 			else
 			{
-				tokens.push_back({ identifier });
+				tokens.emplace_back(identifier);
 			}
 		}
 		// Numbers
@@ -229,7 +263,29 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 			std::string strValue;
 			strValue += c;
 
+			AtslNumberSuffix numberSuffix = AtslNumberSuffix::Unspecified;
+
 			bool isFloat = false;
+			bool isFloatExponent = false;
+
+			// Check if this is an hexadecimal number
+			bool isHex = false;
+			int base = 10;
+			if (c == '0')
+			{
+				const auto n = getNext();
+
+				if (n == 'x' || n == 'X')
+				{
+					isHex = true;
+					base = 16;
+					strValue += n;
+				}
+				else
+				{
+					gotoLastChar();
+				}
+			}
 
 			// Get full number
 			while (hasNext())
@@ -240,19 +296,63 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 				{
 					strValue += n;
 				}
-				else if (n == '.')
+				else if (!isFloatExponent)
 				{
-					// Check if it was already a float
-					if (isFloat)
+					if (isHex && isHexadecimal(n))
+					{
+						strValue += n;
+					}
+					else if (n == '.')
+					{
+						if (isHex)
+						{
+							ATEMA_ERROR("Invalid '.' character in hex number");
+						}
+
+						// Check if it was already a float
+						if (isFloat)
+						{
+							// The char was not part of the number : get back !
+							gotoLastChar();
+							break;
+						}
+
+						strValue += n;
+
+						isFloat = true;
+					}
+					else if (n == 'e' || n == 'E')
+					{
+						strValue += n;
+
+						isFloat = true;
+						isFloatExponent = true; // For now we only look for digits
+
+						const char sign = getNext();
+
+						if (sign == '-' || sign == '+')
+							strValue += sign;
+						else
+							gotoLastChar();
+					}
+					else if (isNumberSuffix(n))
+					{
+						numberSuffix = getNumberSuffix(n);
+
+						break;
+					}
+					else
 					{
 						// The char was not part of the number : get back !
 						gotoLastChar();
 						break;
 					}
+				}
+				else if (isNumberSuffix(n))
+				{
+					numberSuffix = getNumberSuffix(n);
 
-					strValue += n;
-
-					isFloat = true;
+					break;
 				}
 				else
 				{
@@ -262,13 +362,17 @@ std::vector<AtslToken> AtslParser::createTokens(const std::string& code)
 				}
 			}
 
-			if (isFloat)
+			if (isFloat || numberSuffix == AtslNumberSuffix::Float)
 			{
-				tokens.push_back({ std::stof(strValue) });
+				tokens.emplace_back(std::stof(strValue));
+			}
+			else if (numberSuffix == AtslNumberSuffix::Unsigned)
+			{
+				tokens.emplace_back(static_cast<uint32_t>(std::stoll(strValue, nullptr, base)));
 			}
 			else
 			{
-				tokens.push_back({ static_cast<int32_t>(std::stol(strValue)) });
+				tokens.emplace_back(static_cast<int32_t>(std::stoll(strValue, nullptr, base)));
 			}
 		}
 		// End of file
