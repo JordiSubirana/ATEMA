@@ -526,7 +526,7 @@ void GlslShaderWriter::visit(const ConstantExpression& expression)
 	}
 	else if (value.is<uint32_t>())
 	{
-		m_ostream << value.get<uint32_t>();
+		m_ostream << value.get<uint32_t>() << "u";
 	}
 	else if (value.is<float>())
 	{

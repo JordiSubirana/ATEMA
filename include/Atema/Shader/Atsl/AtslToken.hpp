@@ -101,6 +101,7 @@ namespace at
 	using AtslBasicValue = Variant<
 		bool,
 		int32_t,
+		uint32_t,
 		float>;
 
 	using AtslTokenValue = Variant<
@@ -117,6 +118,7 @@ namespace at
 		AtslToken(const AtslIdentifier& identifier);
 		AtslToken(bool value);
 		AtslToken(int32_t value);
+		AtslToken(uint32_t value);
 		AtslToken(float value);
 
 		bool is(AtslSymbol symbol) const noexcept;
@@ -124,6 +126,7 @@ namespace at
 		bool is(const AtslIdentifier& identifier) const noexcept;
 		bool is(bool value) const noexcept;
 		bool is(int32_t value) const noexcept;
+		bool is(uint32_t value) const noexcept;
 		bool is(float value) const noexcept;
 
 		std::string toString() const;
@@ -142,6 +145,8 @@ namespace at
 			os << value.get<bool>();
 		else if (value.is<int32_t>())
 			os << value.get<int32_t>();
+		else if (value.is<uint32_t>())
+			os << value.get<uint32_t>();
 		else if (value.is<float>())
 			os << value.get<float>();
 		else

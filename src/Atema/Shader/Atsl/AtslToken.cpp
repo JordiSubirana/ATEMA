@@ -26,50 +26,58 @@
 using namespace at;
 
 AtslToken::AtslToken(AtslSymbol symbol) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Symbol),
-	value(symbol)
+	value(symbol),
+	line(0),
+	column(0)
 {
 }
 
 AtslToken::AtslToken(AtslKeyword keyword) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Keyword),
-	value(keyword)
+	value(keyword),
+	line(0),
+	column(0)
 {
 }
 
 AtslToken::AtslToken(const AtslIdentifier& identifier) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Identifier),
-	value(identifier)
+	value(identifier),
+	line(0),
+	column(0)
 {
 }
 
 AtslToken::AtslToken(bool value) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Value),
-	value(AtslBasicValue(value))
+	value(AtslBasicValue(value)),
+	line(0),
+	column(0)
 {
 }
 
 AtslToken::AtslToken(int32_t value) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Value),
-	value(AtslBasicValue(value))
+	value(AtslBasicValue(value)),
+	line(0),
+	column(0)
+{
+}
+
+AtslToken::AtslToken(uint32_t value) :
+	type(AtslTokenType::Value),
+	value(AtslBasicValue(value)),
+	line(0),
+	column(0)
 {
 }
 
 AtslToken::AtslToken(float value) :
-	line(0),
-	column(0),
 	type(AtslTokenType::Value),
-	value(AtslBasicValue(value))
+	value(AtslBasicValue(value)),
+	line(0),
+	column(0)
 {
 }
 
@@ -106,6 +114,16 @@ bool AtslToken::is(int32_t basicValue) const noexcept
 	auto& val = value.get<AtslBasicValue>();
 
 	return val.is<int32_t>() && val.get<int32_t>() == basicValue;
+}
+
+bool AtslToken::is(uint32_t basicValue) const noexcept
+{
+	if (!value.is<AtslBasicValue>())
+		return false;
+
+	auto& val = value.get<AtslBasicValue>();
+
+	return val.is<uint32_t>() && val.get<uint32_t>() == basicValue;
 }
 
 bool AtslToken::is(float basicValue) const noexcept

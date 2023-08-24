@@ -532,6 +532,10 @@ UPtr<Expression> AtslToAstConverter::parsePrimaryExpression()
 				{
 					constantExpression->value = value.get<int32_t>();
 				}
+				else if (value.is<uint32_t>())
+				{
+					constantExpression->value = value.get<uint32_t>();
+				}
 				else if (value.is<float>())
 				{
 					constantExpression->value = value.get<float>();
@@ -1060,8 +1064,14 @@ AtslToAstConverter::VariableData AtslToAstConverter::parseVariableDeclarationDat
 
 		if (get().value.is<AtslBasicValue>())
 		{
+			const auto& basicValue = expectType<AtslBasicValue>(iterate());
+
 			arrayType.sizeType = AstArrayType::SizeType::Constant;
-			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+
+			if (basicValue.is<int32_t>())
+				arrayType.size = static_cast<size_t>(basicValue.get<int32_t>());
+			else if (basicValue.is<uint32_t>())
+				arrayType.size = static_cast<size_t>(basicValue.get<uint32_t>());
 		}
 		else if (get().value.is<AtslIdentifier>())
 		{
@@ -1774,8 +1784,14 @@ AstType AtslToAstConverter::parseType()
 
 		if (get().value.is<AtslBasicValue>())
 		{
+			const auto& basicValue = expectType<AtslBasicValue>(iterate());
+
 			arrayType.sizeType = AstArrayType::SizeType::Constant;
-			arrayType.size = static_cast<size_t>(expectType<AtslBasicValue>(iterate()).get<int32_t>());
+
+			if (basicValue.is<int32_t>())
+				arrayType.size = static_cast<size_t>(basicValue.get<int32_t>());
+			else if (basicValue.is<uint32_t>())
+				arrayType.size = static_cast<size_t>(basicValue.get<uint32_t>());
 		}
 		else if (get().value.is<AtslIdentifier>())
 		{
