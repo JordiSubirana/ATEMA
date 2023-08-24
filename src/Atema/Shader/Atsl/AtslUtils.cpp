@@ -295,6 +295,7 @@ char atsl::getSymbol(AtslSymbol symbol)
 		case AtslSymbol::Comma: return ',';
 		case AtslSymbol::Colon: return ':';
 		case AtslSymbol::Semicolon: return ';';
+		case AtslSymbol::QuestionMark: return '?';
 		case AtslSymbol::LeftBrace: return '{';
 		case AtslSymbol::RightBrace: return '}';
 		case AtslSymbol::LeftBracket: return '[';
@@ -331,6 +332,7 @@ AtslSymbol atsl::getSymbol(char symbol)
 		case ',': return AtslSymbol::Comma;
 		case ':': return AtslSymbol::Colon;
 		case ';': return AtslSymbol::Semicolon;
+		case '?': return AtslSymbol::QuestionMark;
 		case '{': return AtslSymbol::LeftBrace;
 		case '}': return AtslSymbol::RightBrace;
 		case '[': return AtslSymbol::LeftBracket;
