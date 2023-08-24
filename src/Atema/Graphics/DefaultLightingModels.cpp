@@ -695,13 +695,13 @@ vec4f getPostProcessColor(vec2f uv)
     vec3f kS = F;
     vec3f kD = (vec3f(1.0) - kS) * (1.0 - metalness);
     
-    vec3f irradiance = texture(IrradianceMap, N.xzy).rgb;
+    vec3f irradiance = sample(IrradianceMap, N.xzy).rgb;
     vec3f diffuse = irradiance * baseColor;
 	
 	// Specular
 	const float MAX_REFLECTION_LOD = 3.0;
     vec3 prefilteredColor = textureLod(PrefilteredMap, R.xzy,  roughness * MAX_REFLECTION_LOD).rgb;
-    vec2 brdf = texture(BRDF_LUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec2 brdf = sample(BRDF_LUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 	
 	// Final color
