@@ -650,6 +650,7 @@ UPtr<Expression> AstPreprocessor::process(const SwizzleExpression& expression)
 UPtr<Expression> AstPreprocessor::process(const TernaryExpression& expression)
 {
 	auto ternary = std::make_unique<TernaryExpression>();
+	ternary->condition = m_cloner.clone(expression.condition);
 	ternary->trueValue = process(*expression.trueValue);
 	ternary->falseValue = process(*expression.falseValue);
 
