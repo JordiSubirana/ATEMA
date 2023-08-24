@@ -725,11 +725,6 @@ void AtslShaderWriter::visit(const BinaryExpression& expression)
 			operatorStr = "/";
 			break;
 		}
-		case BinaryOperator::Power:
-		{
-			operatorStr = "^";
-			break;
-		}
 		case BinaryOperator::Modulo:
 		{
 			operatorStr = "%";
@@ -739,10 +734,35 @@ void AtslShaderWriter::visit(const BinaryExpression& expression)
 		{
 			operatorStr = "&&";
 			break;
-		};
+		}
 		case BinaryOperator::Or:
 		{
 			operatorStr = "||";
+			break;
+		}
+		case BinaryOperator::BitwiseAnd:
+		{
+			operatorStr = "&";
+			break;
+		}
+		case BinaryOperator::BitwiseOr:
+		{
+			operatorStr = "|";
+			break;
+		}
+		case BinaryOperator::BitwiseXor:
+		{
+			operatorStr = "^";
+			break;
+		}
+		case BinaryOperator::BitwiseLeftShift:
+		{
+			operatorStr = "<<";
+			break;
+		}
+		case BinaryOperator::BitwiseRightShift:
+		{
+			operatorStr = ">>";
 			break;
 		}
 		case BinaryOperator::Less:

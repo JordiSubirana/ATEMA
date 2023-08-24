@@ -811,9 +811,9 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 
 				break;
 			}
-			case AtslSymbol::Power:
+			case AtslSymbol::Caret:
 			{
-				operation = BinaryOperator::Power;
+				operation = BinaryOperator::BitwiseXor;
 
 				break;
 			}
@@ -825,17 +825,31 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 			}
 			case AtslSymbol::And:
 			{
-				expect(iterate(), AtslSymbol::And);
+				if (get().is(AtslSymbol::And))
+				{
+					iterate();
 
-				operation = BinaryOperator::And;
+					operation = BinaryOperator::And;
+				}
+				else
+				{
+					operation = BinaryOperator::BitwiseAnd;
+				}
 
 				break;
 			}
 			case AtslSymbol::Or:
 			{
-				expect(iterate(), AtslSymbol::Or);
+				if (get().is(AtslSymbol::Or))
+				{
+					iterate();
 
-				operation = BinaryOperator::Or;
+					operation = BinaryOperator::Or;
+				}
+				else
+				{
+					operation = BinaryOperator::BitwiseOr;
+				}
 
 				break;
 			}
@@ -846,11 +860,17 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 					iterate();
 
 					operation = BinaryOperator::LessOrEqual;
-
-					break;
 				}
+				else if (get().is(AtslSymbol::Less))
+				{
+					iterate();
 
-				operation = BinaryOperator::Less;
+					operation = BinaryOperator::BitwiseLeftShift;
+				}
+				else
+				{
+					operation = BinaryOperator::Less;
+				}
 
 				break;
 			}
@@ -861,11 +881,17 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 					iterate();
 
 					operation = BinaryOperator::GreaterOrEqual;
-
-					break;
 				}
+				else if (get().is(AtslSymbol::Greater))
+				{
+					iterate();
 
-				operation = BinaryOperator::Greater;
+					operation = BinaryOperator::BitwiseRightShift;
+				}
+				else
+				{
+					operation = BinaryOperator::Greater;
+				}
 
 				break;
 			}

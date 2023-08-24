@@ -24,13 +24,16 @@
 using namespace at;
 
 // Precedence
-// 10	- Postfix
-// 9	- Prefix / Sign / Not
-// 8	- Power
-// 7	- Multiply / Divide / Modulo
-// 6	- Add / Subtract
-// 5	- Comparison (Less or Greater)
-// 4	- Equality
+// 13	- Postfix
+// 12	- Prefix / Sign / Not
+// 11	- Multiply / Divide / Modulo
+// 10	- Add / Subtract
+// 9	- Bitwise shift (Left / Right)
+// 8	- Comparison (Less or Greater)
+// 7	- Equality
+// 6	- Bitwise AND
+// 5	- Bitwise XOR
+// 4	- Bitwise OR
 // 3	- Logical AND
 // 2	- Logical OR
 
@@ -39,13 +42,13 @@ int at::getOperatorPrecedence(UnaryOperator op)
 	switch (op)
 	{
 		case UnaryOperator::IncrementPostfix:
-		case UnaryOperator::DecrementPostfix: return 10;
+		case UnaryOperator::DecrementPostfix: return 13;
 
 		case UnaryOperator::Positive:
 		case UnaryOperator::Negative:
 		case UnaryOperator::LogicalNot:
 		case UnaryOperator::IncrementPrefix:
-		case UnaryOperator::DecrementPrefix: return 9;
+		case UnaryOperator::DecrementPrefix: return 12;
 
 		default: break;
 	}
@@ -57,28 +60,46 @@ int at::getOperatorPrecedence(BinaryOperator op)
 {
 	switch (op)
 	{
-		case BinaryOperator::Power: return 8;
-
 		case BinaryOperator::Multiply:
 		case BinaryOperator::Divide:
-		case BinaryOperator::Modulo: return 7;
+		case BinaryOperator::Modulo:
+			return 11;
 
 		case BinaryOperator::Add:
-		case BinaryOperator::Subtract: return 6;
+		case BinaryOperator::Subtract:
+			return 10;
+
+		case BinaryOperator::BitwiseLeftShift:
+		case BinaryOperator::BitwiseRightShift:
+			return 9;
 
 		case BinaryOperator::Less:
 		case BinaryOperator::Greater:
 		case BinaryOperator::LessOrEqual:
-		case BinaryOperator::GreaterOrEqual: return 5;
+		case BinaryOperator::GreaterOrEqual:
+			return 8;
 
 		case BinaryOperator::Equal:
-		case BinaryOperator::NotEqual: return 4;
+		case BinaryOperator::NotEqual:
+			return 7;
 
-		case BinaryOperator::And: return 3;
+		case BinaryOperator::BitwiseAnd:
+			return 6;
 
-		case BinaryOperator::Or: return 2;
+		case BinaryOperator::BitwiseXor:
+			return 5;
 
-		default: break;
+		case BinaryOperator::BitwiseOr:
+			return 4;
+
+		case BinaryOperator::And:
+			return 3;
+
+		case BinaryOperator::Or:
+			return 2;
+
+		default:
+			break;
 	}
 
 	return -1;

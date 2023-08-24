@@ -141,7 +141,7 @@ namespace
 	}
 
 	template <typename T>
-	std::optional<ConstantValue> scalarBinary(BinaryOperator op, T a, T b)
+	std::optional<ConstantValue> scalarBinaryIntegral(BinaryOperator op, T a, T b)
 	{
 		switch (op)
 		{
@@ -149,7 +149,33 @@ namespace
 			case BinaryOperator::Subtract: return a - b;
 			case BinaryOperator::Multiply: return a * b;
 			case BinaryOperator::Divide: return a / b;
-			case BinaryOperator::Power: return Math::pow(a, b);
+			case BinaryOperator::Modulo: return Math::mod(a, b);
+			case BinaryOperator::BitwiseAnd: return a & b;
+			case BinaryOperator::BitwiseOr: return a | b;
+			case BinaryOperator::BitwiseXor: return a ^ b;
+			case BinaryOperator::BitwiseLeftShift: return a << b;
+			case BinaryOperator::BitwiseRightShift: return a >> b;
+			case BinaryOperator::Less: return a < b;
+			case BinaryOperator::Greater: return a > b;
+			case BinaryOperator::Equal: return a == b;
+			case BinaryOperator::NotEqual: return a != b;
+			case BinaryOperator::LessOrEqual: return a <= b;
+			case BinaryOperator::GreaterOrEqual: return a >= b;
+			default: break;
+		}
+
+		return {};
+	}
+
+	template <typename T>
+	std::optional<ConstantValue> scalarBinaryFloat(BinaryOperator op, T a, T b)
+	{
+		switch (op)
+		{
+			case BinaryOperator::Add: return a + b;
+			case BinaryOperator::Subtract: return a - b;
+			case BinaryOperator::Multiply: return a * b;
+			case BinaryOperator::Divide: return a / b;
 			case BinaryOperator::Modulo: return Math::mod(a, b);
 			case BinaryOperator::Less: return a < b;
 			case BinaryOperator::Greater: return a > b;
@@ -487,7 +513,7 @@ void AstEvaluator::visit(BinaryExpression& expression)
 			const auto r = getFloat(right);
 
 			if (l && r)
-				optionalResult = scalarBinary(expression.op, l.value(), r.value());
+				optionalResult = scalarBinaryFloat(expression.op, l.value(), r.value());
 		}
 		else if (left.is<int32_t>() || right.is<int32_t>())
 		{
@@ -495,7 +521,7 @@ void AstEvaluator::visit(BinaryExpression& expression)
 			const auto r = getInt(right);
 
 			if (l && r)
-				optionalResult = scalarBinary(expression.op, l.value(), r.value());
+				optionalResult = scalarBinaryIntegral(expression.op, l.value(), r.value());
 		}
 		else
 		{
@@ -503,7 +529,7 @@ void AstEvaluator::visit(BinaryExpression& expression)
 			const auto r = getUInt(right);
 
 			if (l && r)
-				optionalResult = scalarBinary(expression.op, l.value(), r.value());
+				optionalResult = scalarBinaryIntegral(expression.op, l.value(), r.value());
 		}
 	}
 	else if (leftVector && rightVector)

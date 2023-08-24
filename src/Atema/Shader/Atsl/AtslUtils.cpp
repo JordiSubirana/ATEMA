@@ -283,7 +283,7 @@ char atsl::getSymbol(AtslSymbol symbol)
 		case AtslSymbol::Minus: return '-';
 		case AtslSymbol::Multiply: return '*';
 		case AtslSymbol::Divide: return '/';
-		case AtslSymbol::Power: return '^';
+		case AtslSymbol::Caret: return '^';
 		case AtslSymbol::Modulo: return '%';
 		case AtslSymbol::Equal: return '=';
 		case AtslSymbol::Less: return '<';
@@ -320,7 +320,7 @@ AtslSymbol atsl::getSymbol(char symbol)
 		case '-': return AtslSymbol::Minus;
 		case '*': return AtslSymbol::Multiply;
 		case '/': return AtslSymbol::Divide;
-		case '^': return AtslSymbol::Power;
+		case '^': return AtslSymbol::Caret;
 		case '%': return AtslSymbol::Modulo;
 		case '=': return AtslSymbol::Equal;
 		case '<': return AtslSymbol::Less;

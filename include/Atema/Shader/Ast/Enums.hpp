@@ -41,22 +41,27 @@ namespace at
 
 	enum class BinaryOperator
 	{
-		Add,		// a + b
-		Subtract,	// a - b
-		Multiply,	// a * b
-		Divide,		// a / b
-		Power,		// a ^ b
-		Modulo,		// a % b
+		Add,				// a + b
+		Subtract,			// a - b
+		Multiply,			// a * b
+		Divide,				// a / b
+		Modulo,				// a % b
 
-		And,			// a && b
-		Or,				// a || b
+		And,				// a && b
+		Or,					// a || b
+
+		BitwiseAnd,			// a & b
+		BitwiseOr,			// a | b
+		BitwiseXor,			// a ^ b
+		BitwiseLeftShift,	// a << b
+		BitwiseRightShift,	// a >> b
 		
-		Less,			// a < b
-		Greater,		// a > b
-		Equal,			// a == b
-		NotEqual,		// a != b
-		LessOrEqual,	// a <= b
-		GreaterOrEqual	// a >= b
+		Less,				// a < b
+		Greater,			// a > b
+		Equal,				// a == b
+		NotEqual,			// a != b
+		LessOrEqual,		// a <= b
+		GreaterOrEqual		// a >= b
 	};
 
 	enum class BuiltInFunction

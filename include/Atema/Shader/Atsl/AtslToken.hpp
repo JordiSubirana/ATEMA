@@ -44,7 +44,7 @@ namespace at
 		Minus,
 		Multiply,
 		Divide,
-		Power,
+		Caret,
 		Modulo,
 
 		Equal,

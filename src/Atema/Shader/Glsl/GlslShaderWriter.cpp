@@ -700,20 +700,6 @@ void GlslShaderWriter::visit(const BinaryExpression& expression)
 	switch (expression.op)
 	{
 		// Specific case
-		case BinaryOperator::Power:
-		{
-			m_ostream << "pow(";
-
-			expression.left->accept(*this);
-
-			m_ostream << ", ";
-
-			expression.right->accept(*this);
-
-			m_ostream << ")";
-
-			return;
-		}
 		case BinaryOperator::Modulo:
 		{
 			m_ostream << "mod(";
@@ -756,6 +742,31 @@ void GlslShaderWriter::visit(const BinaryExpression& expression)
 		case BinaryOperator::Or:
 		{
 			operatorStr = "||";
+			break;
+		}
+		case BinaryOperator::BitwiseAnd:
+		{
+			operatorStr = "&";
+			break;
+		}
+		case BinaryOperator::BitwiseOr:
+		{
+			operatorStr = "|";
+			break;
+		}
+		case BinaryOperator::BitwiseXor:
+		{
+			operatorStr = "^";
+			break;
+		}
+		case BinaryOperator::BitwiseLeftShift:
+		{
+			operatorStr = "<<";
+			break;
+		}
+		case BinaryOperator::BitwiseRightShift:
+		{
+			operatorStr = ">>";
 			break;
 		}
 		case BinaryOperator::Less:
