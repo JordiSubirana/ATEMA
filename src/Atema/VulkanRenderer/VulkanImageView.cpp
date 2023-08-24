@@ -37,10 +37,10 @@ VulkanImageView::VulkanImageView(const VulkanDevice& device, const VulkanImage& 
 	viewInfo.image = image.getHandle();
 	viewInfo.format = Vulkan::getFormat(format);
 
-	if (image.getType() == ImageType::CubeMap)
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-	else if (layerCount == 1)
+	if (layerCount == 1)
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	else if (image.getType() == ImageType::CubeMap)
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	else
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 

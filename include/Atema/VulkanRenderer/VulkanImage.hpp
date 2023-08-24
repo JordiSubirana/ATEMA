@@ -41,6 +41,7 @@ namespace at
 		VkImage getHandle() const noexcept;
 
 		Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) const override;
+		Ptr<ImageView> getView(CubemapFace face, uint32_t baseMipLevel, uint32_t mipLevelCount) const override;
 
 		ImageFormat getFormat() const noexcept override;
 

@@ -101,10 +101,18 @@ VkImage VulkanImage::getHandle() const noexcept
 Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uint32_t baseMipLevel, uint32_t mipLevelCount) const
 {
 	// Explicitly set remaining layers
-	if (getType() == ImageType::CubeMap)
-		layerCount = 6;
-	else if (layerCount == 0)
-		layerCount = m_layers - baseLayer;
+	if (layerCount == 0)
+	{
+		if (getType() == ImageType::CubeMap)
+		{
+			baseLayer = 0;
+			layerCount = 6;
+		}
+		else
+		{
+			layerCount = m_layers - baseLayer;
+		}
+	}
 
 	// Explicitly set remaining mip levels
 	if (mipLevelCount == 0)
@@ -123,6 +131,11 @@ Ptr<ImageView> VulkanImage::getView(uint32_t baseLayer, uint32_t layerCount, uin
 	m_views[hash] = imageView;
 
 	return imageView;
+}
+
+Ptr<ImageView> VulkanImage::getView(CubemapFace face, uint32_t baseMipLevel, uint32_t mipLevelCount) const
+{
+	return getView(Vulkan::getCubemapLayer(face), 1, baseMipLevel, mipLevelCount);
 }
 
 ImageFormat VulkanImage::getFormat() const noexcept

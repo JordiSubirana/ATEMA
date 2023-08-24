@@ -58,6 +58,10 @@ namespace at
 		// If mipLevelCount is 0, then the view contains all the remaining mip levels
 		virtual Ptr<ImageView> getView(uint32_t baseLayer = 0, uint32_t layerCount = 0, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) const = 0;
 
+		// Returns a view containing the required mip levels for a specific cubemap face
+		// Only valid for images created with ImageType::CubeMap
+		virtual Ptr<ImageView> getView(CubemapFace face, uint32_t baseMipLevel = 0, uint32_t mipLevelCount = 0) const = 0;
+
 		virtual ImageFormat getFormat() const noexcept = 0;
 
 		virtual Vector2u getSize() const noexcept = 0;
