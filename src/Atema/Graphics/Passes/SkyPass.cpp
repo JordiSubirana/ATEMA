@@ -217,8 +217,6 @@ void main()
 {
 	vec2f uv = SampleSphericalMap(normalize(inTexCoords));
 	
-	outColor = vec4f(uv.x, uv.y, 0, 0);
-	outColor = vec4f(0, uv.y, 0, 0);
 	outColor = vec4f(sample(SkyTexture, uv).rgb, 0);
 }
 )";
@@ -266,7 +264,8 @@ void main()
 	};
 }
 
-SkyPass::SkyPass(RenderResourceManager& resourceManager)
+SkyPass::SkyPass(RenderResourceManager& resourceManager) :
+	m_resourceManager(&resourceManager)
 {
 	{
 		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ));
@@ -309,16 +308,13 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager)
 	m_sampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));
 
 	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = SkyFrameData().getByteSize();
 
-	for (auto& frameResources : m_frameResources)
-	{
-		frameResources.buffer = Buffer::create(bufferSettings);
+	m_frameDataBuffer = m_resourceManager->createBuffer(bufferSettings);
 
-		frameResources.set = m_skyBoxMaterial->createSet(FrameSetIndex);
-		frameResources.set->update(0, *frameResources.buffer);
-	}
+	m_frameDataDescriptorSet = m_skyBoxMaterial->createSet(FrameSetIndex);
+	m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 }
 
 const char* SkyPass::getName() const noexcept
@@ -347,7 +343,7 @@ FrameGraphPass& SkyPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, c
 	return pass;
 }
 
-void SkyPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void SkyPass::updateResources(CommandBuffer& commandBuffer)
 {
 	const auto& camera = getRenderScene().getCamera();
 
@@ -358,13 +354,9 @@ void SkyPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBu
 	SkyFrameData frameData;
 	frameData.viewProjection = camera.getProjectionMatrix() * viewMatrix;
 
-	auto& frameResources = m_frameResources[renderFrame.getFrameIndex()];
-
-	auto data = frameResources.buffer->map();
+	void* data = m_resourceManager->mapBuffer(*m_frameDataBuffer);
 
 	frameData.copyTo(data);
-
-	frameResources.buffer->unmap();
 }
 
 void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
@@ -374,9 +366,9 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 	if (!renderScene.isValid() || !renderScene.getSkyBox())
 		return;
 
-	Image& skyBox = *renderScene.getSkyBox()->environmentMap;
-
-	auto& frameResources = m_frameResources[context.getFrameIndex()];
+	//Image& skyBox = *renderScene.getSkyBox()->environmentMap;
+	//Image& skyBox = *renderScene.getSkyBox()->irradianceMap;
+	Image& skyBox = *renderScene.getSkyBox()->prefilteredMap;
 
 	const auto& viewport = getRenderScene().getCamera().getViewport();
 	const auto& scissor = getRenderScene().getCamera().getScissor();
@@ -418,7 +410,7 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	skyTextureSet->update(0, *skyBox.getView(), *m_sampler);
 
-	commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.set);
+	commandBuffer.bindDescriptorSet(FrameSetIndex, *m_frameDataDescriptorSet);
 	commandBuffer.bindDescriptorSet(SkySetIndex, *skyTextureSet);
 
 	const VertexBuffer& vertexBuffer = *skyMesh->getVertexBuffer();

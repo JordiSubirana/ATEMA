@@ -392,6 +392,9 @@ FrameGraphPass& LightPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder,
 	else
 		pass.setDepthTexture(settings.depthStencil);
 
+	for (auto& texture : settings.environmentTextures)
+		pass.addSampledTexture(texture, ShaderStage::Fragment);
+
 	pass.enableSecondaryCommandBuffers(m_threadCount != 1);
 
 	Settings settingsCopy = settings;
@@ -404,14 +407,12 @@ FrameGraphPass& LightPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder,
 	return pass;
 }
 
-void LightPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void LightPass::updateResources(CommandBuffer& commandBuffer)
 {
 	if (!m_useFrameSet)
 		return;
 	
 	const auto& camera = getRenderScene().getCamera();
-
-	auto& frameResources = m_frameResources[renderFrame.getFrameIndex()];
 	
 	FrameData frameData;
 	frameData.cameraPosition = camera.getPosition();
@@ -419,11 +420,9 @@ void LightPass::updateResources(RenderFrame& renderFrame, CommandBuffer& command
 	frameData.projection = camera.getProjectionMatrix();
 	frameData.screenSize = camera.getScissor().size;
 
-	auto data = frameResources.buffer->map();
+	void* data = m_resourceManager->mapBuffer(*m_frameDataBuffer);
 	
 	frameData.copyTo(data);
-
-	frameResources.buffer->unmap();
 
 	for (auto& iblMaterial : m_iblMaterials)
 		iblMaterial->update();
@@ -443,8 +442,6 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	if (!renderScene.isValid() || !m_meshMaterial)
 		return;
-
-	const auto& frameResources = m_frameResources[context.getFrameIndex()];
 
 	auto& commandBuffer = context.getCommandBuffer();
 
@@ -473,7 +470,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 		const auto& skyBox = renderScene.getSkyBox();
 
 		auto iblFrameSet = m_iblMaterials[0]->createSet(1);
-		iblFrameSet->update(0, *frameResources.buffer);
+		iblFrameSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 
 		m_iblFrameSet = iblFrameSet.get();
 
@@ -489,7 +486,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 
 	if (m_threadCount == 1)
 	{
-		drawElements(commandBuffer, frameResources, true, 0, m_directionalLights.size(), 0, m_pointLights.size(), 0, m_spotLights.size());
+		drawElements(commandBuffer, true, 0, m_directionalLights.size(), 0, m_pointLights.size(), 0, m_spotLights.size());
 	}
 	else
 	{
@@ -575,11 +572,11 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 				spotCount = size;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &commandBuffers, taskIndex, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameResources, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount);
+					drawElements(*commandBuffer, applyPostProcess, directionalIndex, directionalCount, pointIndex, pointCount, spotIndex, spotCount);
 
 					commandBuffer->end();
 
@@ -746,20 +743,18 @@ void LightPass::createShaders()
 	
 	// Buffers and descriptor sets (one per frame in flight)
 	Buffer::Settings frameBufferSettings;
-	frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+	frameBufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	frameBufferSettings.byteSize = FrameData::getLayout().getByteSize();
 
-	for (auto& frameResources : m_frameResources)
-	{
-		m_oldResources.emplace_back(std::move(frameResources.buffer));
-		m_oldResources.emplace_back(std::move(frameResources.descriptorSet));
+	m_oldResources.emplace_back(std::move(m_frameDataBuffer));
+	m_oldResources.emplace_back(std::move(m_frameDataDescriptorSet));
 
-		if (m_useFrameSet)
-		{
-			frameResources.buffer = Buffer::create(frameBufferSettings);
-			frameResources.descriptorSet = m_meshMaterial->createSet(FrameSetIndex);
-			frameResources.descriptorSet->update(0, *frameResources.buffer);
-		}
+	if (m_useFrameSet)
+	{
+		m_frameDataBuffer = m_resourceManager->createBuffer(frameBufferSettings);
+
+		m_frameDataDescriptorSet = m_meshMaterial->createSet(FrameSetIndex);
+		m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 	}
 
 	gbufferBindingIndex = 0;
@@ -902,7 +897,7 @@ void LightPass::frustumCullElements(size_t index, size_t count, std::vector<cons
 	}
 }
 
-void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyPostProcess,
+void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess,
 	size_t directionalIndex, size_t directionalCount,
 	size_t pointIndex, size_t pointCount,
 	size_t spotIndex, size_t spotCount)
@@ -920,7 +915,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources&
 		// Step #1 : Fill stencil buffer for mesh lights
 		m_meshStencilMaterial->bindTo(commandBuffer);
 
-		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *frameResources.descriptorSet);
+		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *m_frameDataDescriptorSet);
 
 		// PointLights
 		if (pointCount > 0)
@@ -960,7 +955,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources&
 		commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
 
 		if (m_useFrameSet)
-			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *m_frameDataDescriptorSet);
 
 		// PointLights
 		if (pointCount > 0)
@@ -1063,7 +1058,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, const FrameResources&
 		commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
 
 		if (m_useFrameSet)
-			commandBuffer.bindDescriptorSet(FrameSetIndex, *frameResources.descriptorSet);
+			commandBuffer.bindDescriptorSet(FrameSetIndex, *m_frameDataDescriptorSet);
 
 		for (size_t i = directionalIndex; i < directionalIndex + directionalCount; i++)
 		{

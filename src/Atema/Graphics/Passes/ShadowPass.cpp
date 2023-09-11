@@ -133,7 +133,8 @@ void main()
 )";
 }
 
-ShadowPass::ShadowPass(size_t threadCount)
+ShadowPass::ShadowPass(RenderResourceManager& resourceManager, size_t threadCount) :
+	m_resourceManager(&resourceManager)
 {
 	const auto& taskManager = TaskManager::instance();
 	const auto maxThreadCount = taskManager.getSize();
@@ -168,15 +169,13 @@ ShadowPass::ShadowPass(size_t threadCount)
 	ShadowLayoutData layoutData(StructLayout::Default);
 
 	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = layoutData.bufferLayout.getSize();
 
-	for (auto& frameResources : m_frameResources)
-	{
-		frameResources.buffer = Buffer::create(bufferSettings);
-		frameResources.descriptorSet = m_setLayout->createSet();
-		frameResources.descriptorSet->update(0, *frameResources.buffer);
-	}
+	m_frameDataBuffer = m_resourceManager->createBuffer(bufferSettings);
+
+	m_frameDataDescriptorSet = m_setLayout->createSet();
+	m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 }
 
 const char* ShadowPass::getName() const noexcept
@@ -205,15 +204,11 @@ FrameGraphPass& ShadowPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilder
 	return pass;
 }
 
-void ShadowPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void ShadowPass::updateResources(CommandBuffer& commandBuffer)
 {
-	auto& buffer = m_frameResources[renderFrame.getFrameIndex()].buffer;
-
-	auto data = buffer->map();
+	void* data = m_resourceManager->mapBuffer(*m_frameDataBuffer);
 
 	mapMemory<Matrix4f>(data, 0) = m_viewProjection;
-
-	buffer->unmap();
 }
 
 void ShadowPass::setViewProjection(const Matrix4f& viewProjection)
@@ -233,17 +228,13 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 	if (!renderScene.isValid())
 		return;
 
-	const auto frameIndex = context.getFrameIndex();
-
-	auto& frameResources = m_frameResources[frameIndex];
-
 	auto& commandBuffer = context.getCommandBuffer();
 
 	const auto shadowMapSize = settings.shadowMapSize;
 
 	if (m_threadCount == 1)
 	{
-		drawElements(commandBuffer, frameResources, 0, m_renderElements.size(), shadowMapSize);
+		drawElements(commandBuffer, 0, m_renderElements.size(), shadowMapSize);
 	}
 	else
 	{
@@ -267,11 +258,11 @@ void ShadowPass::execute(FrameGraphContext& context, const Settings& settings)
 				size += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, firstIndex, size, shadowMapSize](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &commandBuffers, taskIndex, firstIndex, size, shadowMapSize](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameResources, firstIndex, size, shadowMapSize);
+					drawElements(*commandBuffer, firstIndex, size, shadowMapSize);
 
 					commandBuffer->end();
 
@@ -402,7 +393,7 @@ void ShadowPass::frustumCullElements(std::vector<RenderElement>& renderElements,
 	}
 }
 
-void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count, uint32_t shadowMapSize)
+void ShadowPass::drawElements(CommandBuffer& commandBuffer, size_t index, size_t count, uint32_t shadowMapSize)
 {
 	if (!count)
 		return;
@@ -416,22 +407,19 @@ void ShadowPass::drawElements(CommandBuffer& commandBuffer, FrameResources& fram
 
 	commandBuffer.setScissor(Vector2i(), { shadowMapSize, shadowMapSize });
 
-	commandBuffer.bindDescriptorSet(ShadowSetIndex, *frameResources.descriptorSet);
+	commandBuffer.bindDescriptorSet(ShadowSetIndex, *m_frameDataDescriptorSet);
 
 	for (size_t i = index; i < index + count; i++)
 	{
 		const auto& renderElement = m_renderElements[i];
 
-		//*
 		if (renderElement.transformDescriptorSet)
 			commandBuffer.bindDescriptorSet(ObjectSetIndex, *renderElement.transformDescriptorSet);
-			//commandBuffer.bindDescriptorSet(ObjectSetIndex, *binding->descriptorSet, binding->dynamicBufferOffsets.data(), binding->dynamicBufferOffsets.size());
-		//*/
 
 		commandBuffer.bindVertexBuffer(*renderElement.vertexBuffer->getBuffer(), 0);
 
 		commandBuffer.bindIndexBuffer(*renderElement.indexBuffer->getBuffer(), renderElement.indexBuffer->getIndexType());
 
-		commandBuffer.drawIndexed(renderElement.indexBuffer->getSize());
+		commandBuffer.drawIndexed(static_cast<uint32_t>(renderElement.indexBuffer->getSize()));
 	}
 }

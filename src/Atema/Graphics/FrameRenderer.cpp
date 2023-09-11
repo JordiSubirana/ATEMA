@@ -310,15 +310,15 @@ std::vector<AbstractRenderPass*>& FrameRenderer::getRenderPasses()
 	return m_activePasses;
 }
 
-void FrameRenderer::destroyResources(RenderFrame& renderFrame)
+void FrameRenderer::destroyResources(RenderContext& renderContext)
 {
 	for (auto& renderPass : m_oldRenderPasses)
-		renderFrame.destroyAfterUse(std::move(renderPass));
+		renderContext.destroyAfterUse(std::move(renderPass));
 
 	m_oldRenderPasses.clear();
 
 	for (auto& frameGraph : m_oldFrameGraphs)
-		renderFrame.destroyAfterUse(std::move(frameGraph));
+		renderContext.destroyAfterUse(std::move(frameGraph));
 
 	m_oldFrameGraphs.clear();
 }
@@ -395,11 +395,12 @@ void FrameRenderer::createPasses()
 	m_oldRenderPasses.emplace_back(std::move(m_screenPass));
 
 	// Create new ones
+	RenderResourceManager& renderResourceManager = getRenderScene().getResourceManager();
 
 	// Some passes require a valid GBuffer
 	if (m_gbuffer)
 	{
-		m_gbufferPass = std::make_unique<GBufferPass>(ThreadCount);
+		m_gbufferPass = std::make_unique<GBufferPass>(renderResourceManager, ThreadCount);
 
 		m_lightPass = std::make_unique<LightPass>(getRenderScene().getResourceManager(), *m_gbuffer, m_shaderLibraryManager, ThreadCount);
 		m_lightPass->setLightingModels(m_lightingModelNames);
@@ -410,7 +411,7 @@ void FrameRenderer::createPasses()
 	}
 
 	// Some passes are always valid
-	m_skyPass = std::make_unique<SkyPass>(getRenderScene().getResourceManager());
+	m_skyPass = std::make_unique<SkyPass>(renderResourceManager);
 
 	m_screenPass = std::make_unique<ScreenPass>();
 }
@@ -464,11 +465,13 @@ void FrameRenderer::updateLightResources()
 
 void FrameRenderer::createShadowData(RenderLight& renderLight)
 {
+	RenderResourceManager& renderResourceManager = getRenderScene().getResourceManager();
+
 	auto shadowData = std::make_shared<ShadowPassData>();
 	shadowData->passes.resize(renderLight.getLight().getShadowCascadeCount());
 
 	for (auto& pass : shadowData->passes)
-		pass = std::make_unique<ShadowPass>(ThreadCount);
+		pass = std::make_unique<ShadowPass>(renderResourceManager, ThreadCount);
 
 	updateShadowData(renderLight, *shadowData);
 
@@ -486,6 +489,8 @@ void FrameRenderer::createShadowData(RenderLight& renderLight)
 
 void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& shadowPassData)
 {
+	RenderResourceManager& renderResourceManager = getRenderScene().getResourceManager();
+
 	const auto& camera = getRenderScene().getCamera();
 	const auto& cameraPos = camera.getPosition();
 
@@ -494,7 +499,7 @@ void FrameRenderer::updateShadowData(RenderLight& renderLight, ShadowPassData& s
 	if (shadowPassData.passes.size() < light.getShadowCascadeCount())
 	{
 		for (size_t i = shadowPassData.passes.size(); i < light.getShadowCascadeCount(); i++)
-			shadowPassData.passes.emplace_back(std::make_unique<ShadowPass>(ThreadCount));
+			shadowPassData.passes.emplace_back(std::make_unique<ShadowPass>(renderResourceManager, ThreadCount));
 
 		m_updateFrameGraph = true;
 	}

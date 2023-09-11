@@ -58,7 +58,7 @@ namespace at
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources(CommandBuffer& commandBuffer) override;
 
 		void execute(FrameGraphContext& context, const Settings& settings);
 
@@ -66,11 +66,7 @@ namespace at
 		SkyPass& operator=(SkyPass&& other) noexcept = default;
 
 	private:
-		struct FrameResources
-		{
-			Ptr<DescriptorSet> set;
-			Ptr<Buffer> buffer;
-		};
+		RenderResourceManager* m_resourceManager;
 
 		Ptr<RenderMaterial> m_skyBoxMaterial;
 		Ptr<RenderMaterial> m_skySphereMaterial;
@@ -79,7 +75,8 @@ namespace at
 		Ptr<Mesh> m_sphereMesh;
 		Ptr<Sampler> m_sampler;
 
-		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
+		Ptr<BufferAllocation> m_frameDataBuffer;
+		Ptr<DescriptorSet> m_frameDataDescriptorSet;
 	};
 }
 

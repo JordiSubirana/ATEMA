@@ -71,6 +71,10 @@ namespace at
 			// Optional clear values
 			// If unspecified or null, the attachment won't be cleared
 			std::optional<DepthStencil> depthStencilClearValue;
+
+			// Environment texture handles that will be sampled
+			// Can be irradiance maps, prefiltered environment maps
+			std::vector<FrameGraphTextureHandle> environmentTextures;
 		};
 
 		LightPass() = delete;
@@ -83,7 +87,7 @@ namespace at
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources(CommandBuffer& commandBuffer) override;
 
 		void setLightingModels(const std::vector<std::string>& lightingModelNames);
 		void execute(FrameGraphContext& context, const Settings& settings);
@@ -96,19 +100,14 @@ namespace at
 		void endFrame() override;
 
 	private:
-		struct FrameResources
-		{
-			Ptr<DescriptorSet> descriptorSet;
-			Ptr<Buffer> buffer;
-		};
-
 		void createLightingModel(const std::string& name);
 		void createShaders();
 		void frustumCull();
 		void frustumCullElements(size_t index, size_t count, std::vector<const RenderLight*>& visibleLights) const;
-		void drawElements(CommandBuffer& commandBuffer, const FrameResources& frameResources, bool applyPostProcess, size_t directionalIndex, size_t directionalCount, size_t pointIndex, size_t pointCount, size_t spotIndex, size_t spotCount);
+		void drawElements(CommandBuffer& commandBuffer, bool applyPostProcess, size_t directionalIndex, size_t directionalCount, size_t pointIndex, size_t pointCount, size_t spotIndex, size_t spotCount);
 
 		RenderResourceManager* m_resourceManager;
+
 		const GBuffer* m_gbuffer;
 		const ShaderLibraryManager* m_shaderLibraryManager;
 		size_t m_threadCount;
@@ -117,7 +116,8 @@ namespace at
 		Ptr<Sampler> m_iblSampler;
 		Ptr<VertexBuffer> m_quadMesh;
 
-		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
+		Ptr<BufferAllocation> m_frameDataBuffer;
+		Ptr<DescriptorSet> m_frameDataDescriptorSet;
 
 		std::unordered_set<std::string> m_lightingModelNames;
 		std::vector<const LightingModel*> m_lightingModels;

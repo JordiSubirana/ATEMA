@@ -58,7 +58,8 @@ namespace
 	}
 }
 
-GBufferPass::GBufferPass(size_t threadCount)
+GBufferPass::GBufferPass(RenderResourceManager& resourceManager, size_t threadCount) :
+	m_resourceManager(&resourceManager)
 {
 	const auto& taskManager = TaskManager::instance();
 	const auto maxThreadCount = taskManager.getSize();
@@ -67,17 +68,13 @@ GBufferPass::GBufferPass(size_t threadCount)
 		m_threadCount = maxThreadCount;
 
 	Buffer::Settings bufferSettings;
-	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::Map;
+	bufferSettings.usages = BufferUsage::Uniform | BufferUsage::TransferDst;
 	bufferSettings.byteSize = FrameData::getLayout().getByteSize();
 
-	auto frameLayout = Graphics::instance().getFrameLayout();
+	m_frameDataBuffer = m_resourceManager->createBuffer(bufferSettings);
 
-	for (auto& frameResources : m_frameResources)
-	{
-		frameResources.buffer = Buffer::create(bufferSettings);
-		frameResources.descriptorSet = frameLayout->createSet();
-		frameResources.descriptorSet->update(0, *frameResources.buffer);
-	}
+	m_frameDataDescriptorSet = Graphics::instance().getFrameLayout()->createSet();
+	m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 }
 
 const char* GBufferPass::getName() const noexcept
@@ -115,11 +112,9 @@ FrameGraphPass& GBufferPass::addToFrameGraph(FrameGraphBuilder& frameGraphBuilde
 	return pass;
 }
 
-void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void GBufferPass::updateResources(CommandBuffer& commandBuffer)
 {
 	const auto& camera = getRenderScene().getCamera();
-
-	auto& buffer = m_frameResources[renderFrame.getFrameIndex()].buffer;
 
 	FrameData surfaceFrameData;
 	surfaceFrameData.cameraPosition = camera.getPosition();
@@ -127,11 +122,9 @@ void GBufferPass::updateResources(RenderFrame& renderFrame, CommandBuffer& comma
 	surfaceFrameData.projection = camera.getProjectionMatrix();
 	surfaceFrameData.screenSize = camera.getScissor().size;
 
-	auto data = buffer->map();
+	auto data = m_resourceManager->mapBuffer(*m_frameDataBuffer);
 
 	surfaceFrameData.copyTo(data);
-
-	buffer->unmap();
 }
 
 void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
@@ -141,15 +134,11 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 	if (!renderScene.isValid())
 		return;
 
-	const auto frameIndex = context.getFrameIndex();
-
-	auto& frameResources = m_frameResources[frameIndex];
-
 	auto& commandBuffer = context.getCommandBuffer();
 
 	if (m_threadCount == 1)
 	{
-		drawElements(commandBuffer, frameResources, 0, m_renderElements.size());
+		drawElements(commandBuffer, 0, m_renderElements.size());
 	}
 	else
 	{
@@ -172,11 +161,11 @@ void GBufferPass::execute(FrameGraphContext& context, const Settings& settings)
 				size += remainingSize;
 			}
 
-			auto task = taskManager.createTask([this, &context, &frameResources, &commandBuffers, taskIndex, firstIndex, size](size_t threadIndex)
+			auto task = taskManager.createTask([this, &context, &commandBuffers, taskIndex, firstIndex, size](size_t threadIndex)
 				{
 					auto commandBuffer = context.createSecondaryCommandBuffer(threadIndex);
 
-					drawElements(*commandBuffer, frameResources, firstIndex, size);
+					drawElements(*commandBuffer, firstIndex, size);
 
 					commandBuffer->end();
 
@@ -338,7 +327,7 @@ void GBufferPass::sortElements()
 		});
 }
 
-void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count)
+void GBufferPass::drawElements(CommandBuffer& commandBuffer, size_t index, size_t count)
 {
 	const auto& viewport = getRenderScene().getCamera().getViewport();
 	const auto& scissor = getRenderScene().getCamera().getScissor();
@@ -365,7 +354,7 @@ void GBufferPass::drawElements(CommandBuffer& commandBuffer, FrameResources& fra
 		currentMaterialInstanceID = renderMaterialInstance.getID();
 	}
 
-	commandBuffer.bindDescriptorSet(0, *frameResources.descriptorSet);
+	commandBuffer.bindDescriptorSet(0, *m_frameDataDescriptorSet);
 
 	for (size_t i = index; i < index + count; i++)
 	{

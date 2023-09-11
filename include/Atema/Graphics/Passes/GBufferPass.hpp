@@ -58,7 +58,7 @@ namespace at
 		GBufferPass() = delete;
 		// threadCount : Number of threads this pass is allowed to use
 		// 0 means as much as possible
-		GBufferPass(size_t threadCount);
+		GBufferPass(RenderResourceManager& resourceManager, size_t threadCount);
 		GBufferPass(const GBufferPass& other) = default;
 		GBufferPass(GBufferPass&& other) noexcept = default;
 		~GBufferPass() = default;
@@ -67,7 +67,7 @@ namespace at
 
 		FrameGraphPass& addToFrameGraph(FrameGraphBuilder& frameGraphBuilder, const Settings& settings);
 
-		void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer) override;
+		void updateResources(CommandBuffer& commandBuffer) override;
 
 		void execute(FrameGraphContext& context, const Settings& settings);
 
@@ -79,22 +79,19 @@ namespace at
 		void endFrame() override;
 
 	private:
-		struct FrameResources
-		{
-			Ptr<Buffer> buffer;
-			Ptr<DescriptorSet> descriptorSet;
-		};
-
 		void frustumCull();
 		void frustumCullElements(std::vector<RenderElement>& renderElements, size_t index, size_t count) const;
 		void sortElements();
-		void drawElements(CommandBuffer& commandBuffer, FrameResources& frameResources, size_t index, size_t count);
+		void drawElements(CommandBuffer& commandBuffer, size_t index, size_t count);
+
+		RenderResourceManager* m_resourceManager;
 
 		size_t m_threadCount;
 		
 		std::vector<RenderElement> m_renderElements;
-	
-		std::array<FrameResources, Renderer::FramesInFlight> m_frameResources;
+
+		Ptr<BufferAllocation> m_frameDataBuffer;
+		Ptr<DescriptorSet> m_frameDataDescriptorSet;
 	};
 }
 
