@@ -54,7 +54,7 @@ namespace at
 		// Renders the current frame
 		// beginFrame must have been called before that
 		// RenderPass::endFrame will be called in this method for every pass
-		void render(RenderFrame& renderFrame);
+		void render(CommandBuffer& commandBuffer, RenderContext& renderContext, RenderFrame* renderFrame = nullptr);
 
 		void resize(const Vector2u& size);
 
@@ -69,7 +69,7 @@ namespace at
 		virtual void createFrameGraph() = 0;
 		virtual FrameGraph* getFrameGraph() = 0;
 		virtual std::vector<AbstractRenderPass*>& getRenderPasses() = 0;
-		virtual void destroyResources(RenderFrame& renderFrame);
+		virtual void destroyResources(RenderContext& renderContext);
 		// Called before every AbstractRenderPass::doBeginFrame
 		virtual void beginFrame();
 

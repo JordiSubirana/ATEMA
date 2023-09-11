@@ -54,7 +54,7 @@ private:
 	void updateCamera();
 
 	void destroyAfterUse(at::Ptr<void> resource);
-	void destroyPendingResources(at::RenderFrame& renderFrame);
+	void destroyPendingResources(at::RenderContext& renderContext);
 
 	at::WPtr<at::RenderWindow> m_renderWindow;
 
@@ -69,6 +69,8 @@ private:
 	at::PerspectiveCamera m_camera;
 
 	std::vector<at::Ptr<void>> m_resourcesToDestroy;
+
+	std::array<at::UPtr<at::RenderContext>, at::Renderer::FramesInFlight> m_renderContexts;
 };
 
 #endif

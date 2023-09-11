@@ -29,6 +29,7 @@
 #include <Atema/Renderer/Color.hpp>
 #include <Atema/Math/Frustum.hpp>
 #include <Atema/Graphics/VertexFormat.hpp>
+#include <Atema/Graphics/RenderContext.hpp>
 
 #include <vector>
 
@@ -37,8 +38,6 @@ namespace at
 	class DescriptorSet;
 	class DescriptorSetLayout;
 	class Buffer;
-	class FrameGraphContext;
-	class CommandBuffer;
 	class RenderFrame;
 	class GraphicsPipeline;
 	class VertexBuffer;
@@ -57,7 +56,7 @@ namespace at
 		void draw(const AABBf& aabb, const Color& color = Color::White);
 		void draw(const Frustumf& frustum, const Color& color = Color::White);
 
-		void render(FrameGraphContext& frameGraphContext, CommandBuffer& commandBuffer, const Matrix4f& viewProjection);
+		void render(CommandBuffer& commandBuffer, RenderContext& renderContext, const Matrix4f& viewProjection);
 
 		DebugRenderer& operator=(const DebugRenderer& other) = default;
 		DebugRenderer& operator=(DebugRenderer&& other) noexcept = default;

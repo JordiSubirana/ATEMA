@@ -52,8 +52,12 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 {
 	ATEMA_ASSERT(renderWindow, "Invalid RenderWindow");
 
+	for (auto& renderContext : m_renderContexts)
+		renderContext = std::make_unique<RenderContext>();
+
 	Graphics::instance().addLightingModel(DefaultLightingModels::getPhong());
 	Graphics::instance().addLightingModel(DefaultLightingModels::getEmissive());
+	Graphics::instance().addLightingModel(DefaultLightingModels::getPBR());
 
 	m_frameRenderer.getRenderScene().setCamera(m_camera);
 
@@ -210,16 +214,50 @@ void GraphicsSystem::updateFrame()
 
 	Benchmark benchmark("RenderWindow::acquireFrame");
 
-	auto& renderFrame = m_renderWindow.lock()->acquireFrame();
+	RenderFrame& renderFrame = m_renderWindow.lock()->acquireFrame();
 
 	benchmark.stop();
 
-	if (renderFrame.isValid())
-	{
-		destroyPendingResources(renderFrame);
+	if (!renderFrame.isValid())
+		return;
 
-		m_frameRenderer.render(renderFrame);
+	RenderContext& renderContext = *m_renderContexts[renderFrame.getFrameIndex()];
+
+	renderContext.destroyPendingResources();
+
+	CommandBuffer::Settings commandBufferSettings;
+	commandBufferSettings.secondary = false;
+	commandBufferSettings.singleUse = true;
+
+	auto commandBuffer = renderContext.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+
+	commandBuffer->begin();
+
+	destroyPendingResources(renderContext);
+
+	m_frameRenderer.render(*commandBuffer, renderContext, &renderFrame);
+
+	commandBuffer->end();
+
+	renderFrame.getFence()->reset();
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::submit");
+
+		renderFrame.submit(
+			{ commandBuffer },
+			{ renderFrame.getImageAvailableWaitCondition() },
+			{ renderFrame.getRenderFinishedSemaphore() },
+			renderFrame.getFence());
 	}
+
+	{
+		ATEMA_BENCHMARK("RenderFrame::present");
+
+		renderFrame.present();
+	}
+
+	renderContext.destroyAfterUse(std::move(commandBuffer));
 }
 
 void GraphicsSystem::updateRenderables()
@@ -308,10 +346,10 @@ void GraphicsSystem::destroyAfterUse(Ptr<void> resource)
 	m_resourcesToDestroy.emplace_back(std::move(resource));
 }
 
-void GraphicsSystem::destroyPendingResources(RenderFrame& renderFrame)
+void GraphicsSystem::destroyPendingResources(RenderContext& renderContext)
 {
 	for (auto& resource : m_resourcesToDestroy)
-		renderFrame.destroyAfterUse(std::move(resource));
+		renderContext.destroyAfterUse(std::move(resource));
 
 	m_resourcesToDestroy.clear();
 }

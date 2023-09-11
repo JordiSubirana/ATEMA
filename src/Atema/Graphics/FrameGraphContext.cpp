@@ -20,19 +20,18 @@
 */
 
 #include <Atema/Graphics/FrameGraphContext.hpp>
-#include <Atema/Renderer/RenderFrame.hpp>
 
 using namespace at;
 
 FrameGraphContext::FrameGraphContext(
-	RenderFrame& renderFrame,
+	RenderContext& renderContext,
 	CommandBuffer& commandBuffer,
 	std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& textureMap,
 	std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& viewMap,
 	Ptr<RenderPass> renderPass,
 	Ptr<Framebuffer> framebuffer) :
 	NonCopyable(),
-	m_renderFrame(renderFrame),
+	m_renderContext(renderContext),
 	m_commandBuffer(commandBuffer),
 	m_textureMap(textureMap),
 	m_viewMap(viewMap),
@@ -45,9 +44,9 @@ FrameGraphContext::~FrameGraphContext()
 {
 }
 
-size_t FrameGraphContext::getFrameIndex() const noexcept
+RenderContext& FrameGraphContext::getRenderContext() const noexcept
 {
-	return m_renderFrame.getFrameIndex();
+	return m_renderContext;
 }
 
 CommandBuffer& FrameGraphContext::getCommandBuffer() const noexcept
@@ -67,26 +66,26 @@ Ptr<ImageView> FrameGraphContext::getImageView(FrameGraphTextureHandle textureHa
 
 Ptr<CommandBuffer> FrameGraphContext::createSecondaryCommandBuffer()
 {
-	auto commandBuffer = m_renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics);
+	auto commandBuffer = m_renderContext.createCommandBuffer({ true, true }, QueueType::Graphics);
 
 	commandBuffer->beginSecondary(*m_renderPass, *m_framebuffer);
 
 	auto commandBufferResource = commandBuffer;
 
-	destroyAfterUse(std::move(commandBufferResource));
+	m_renderContext.destroyAfterUse(std::move(commandBufferResource));
 
 	return commandBuffer;
 }
 
 Ptr<CommandBuffer> FrameGraphContext::createSecondaryCommandBuffer(size_t threadIndex)
 {
-	auto commandBuffer = m_renderFrame.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
+	auto commandBuffer = m_renderContext.createCommandBuffer({ true, true }, QueueType::Graphics, threadIndex);
 
 	commandBuffer->beginSecondary(*m_renderPass, *m_framebuffer);
 
 	auto commandBufferResource = commandBuffer;
 
-	destroyAfterUse(std::move(commandBufferResource));
+	m_renderContext.destroyAfterUse(std::move(commandBufferResource));
 
 	return commandBuffer;
 }

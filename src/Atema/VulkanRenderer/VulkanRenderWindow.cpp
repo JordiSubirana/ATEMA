@@ -120,9 +120,6 @@ RenderFrame& VulkanRenderWindow::acquireFrame()
 
 	m_currentFrameIndex = (m_currentFrameIndex + 1) % Renderer::FramesInFlight;
 
-	destroyResources(renderFrame);
-	initializeFrame(renderFrame);
-
 	return renderFrame;
 }
 

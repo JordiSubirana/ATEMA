@@ -28,6 +28,7 @@
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Graphics/FrameGraphPass.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
+#include <Atema/Graphics/RenderContext.hpp>
 
 #include <limits>
 #include <unordered_map>
@@ -51,9 +52,12 @@ namespace at
 		FrameGraph();
 		~FrameGraph();
 
-		void execute(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
+		// renderFrame is required if a pass renders to it
+		void execute(CommandBuffer& commandBuffer, RenderContext& renderContext, RenderFrame* renderFrame = nullptr);
 		
 	private:
+		void initialize();
+
 		struct TextureBarrier
 		{
 			// The barrier is valid (used)
@@ -101,6 +105,8 @@ namespace at
 
 		std::vector<Pass> m_passes;
 		std::vector<Texture> m_textures;
+
+		bool m_usesRenderFrame;
 	};
 }
 

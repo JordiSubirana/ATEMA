@@ -38,9 +38,9 @@ void RenderResource::update()
 {
 	updateResources();
 
-	auto& renderFrame = getResourceManager().getRenderFrame();
+	RenderContext& renderContext = getResourceManager().getRenderContext();
 	for (auto& resource : m_resourcesToDestroy)
-		renderFrame.destroyAfterUse(std::move(resource));
+		renderContext.destroyAfterUse(std::move(resource));
 
 	m_resourcesToDestroy.clear();
 }

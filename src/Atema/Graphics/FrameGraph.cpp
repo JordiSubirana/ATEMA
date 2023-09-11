@@ -26,7 +26,8 @@
 
 using namespace at;
 
-FrameGraph::FrameGraph()
+FrameGraph::FrameGraph() :
+	m_usesRenderFrame(false)
 {
 }
 
@@ -34,17 +35,34 @@ FrameGraph::~FrameGraph()
 {
 }
 
-void FrameGraph::execute(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void FrameGraph::initialize()
 {
+	for (auto& pass : m_passes)
+	{
+		if (pass.useRenderFrameOutput)
+		{
+			m_usesRenderFrame = true;
+			break;
+		}
+	}
+}
+
+void FrameGraph::execute(CommandBuffer& commandBuffer, RenderContext& renderContext, RenderFrame* renderFrame)
+{
+	if (m_usesRenderFrame && !renderFrame)
+	{
+		ATEMA_ERROR("At least one pass requires a valid RenderFrame to render on");
+	}
+
 	size_t passIndex = 0;
 	for (auto& pass : m_passes)
 	{
 		ATEMA_BENCHMARK(pass.name);
 
-		FrameGraphContext context(renderFrame, commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
+		FrameGraphContext context(renderContext, commandBuffer, pass.textures, pass.views, pass.renderPass, pass.framebuffer);
 
 		if (pass.useRenderFrameOutput)
-			commandBuffer.beginRenderPass(*renderFrame.getRenderPass(), *renderFrame.getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
+			commandBuffer.beginRenderPass(*renderFrame->getRenderPass(), *renderFrame->getFramebuffer(), pass.clearValues, pass.useSecondaryCommandBuffers);
 		else
 			commandBuffer.beginRenderPass(*pass.renderPass, *pass.framebuffer, pass.clearValues, pass.useSecondaryCommandBuffers);
 

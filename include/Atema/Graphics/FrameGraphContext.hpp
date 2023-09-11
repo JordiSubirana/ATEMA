@@ -22,25 +22,24 @@
 #ifndef ATEMA_GRAPHICS_FRAMEGRAPHCONTEXT_HPP
 #define ATEMA_GRAPHICS_FRAMEGRAPHCONTEXT_HPP
 
-#include <unordered_map>
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Core/Pointer.hpp>
 #include <Atema/Core/NonCopyable.hpp>
 #include <Atema/Graphics/FrameGraphTexture.hpp>
+#include <Atema/Graphics/RenderContext.hpp>
 #include <Atema/Renderer/CommandBuffer.hpp>
-#include <Atema/Renderer/RenderFrame.hpp>
+#include <Atema/Renderer/ImageView.hpp>
+
+#include <unordered_map>
 
 namespace at
 {
-	class ImageView;
-	class RenderFrame;
-
 	class ATEMA_GRAPHICS_API FrameGraphContext : public NonCopyable
 	{
 	public:
 		FrameGraphContext() = delete;
 		FrameGraphContext(
-			RenderFrame& renderFrame,
+			RenderContext& renderContext,
 			CommandBuffer& commandBuffer,
 			std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& textureMap,
 			std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& viewMap,
@@ -48,8 +47,7 @@ namespace at
 			Ptr<Framebuffer> framebuffer);
 		~FrameGraphContext();
 
-		size_t getFrameIndex() const noexcept;
-
+		RenderContext& getRenderContext() const noexcept;
 		CommandBuffer& getCommandBuffer() const noexcept;
 
 		Ptr<Image> getTexture(FrameGraphTextureHandle textureHandle) const;
@@ -67,12 +65,13 @@ namespace at
 		void destroyAfterUse(T&& resource);
 
 	private:
-		RenderFrame& m_renderFrame;
+		RenderContext& m_renderContext;
 		CommandBuffer& m_commandBuffer;
 		std::unordered_map<FrameGraphTextureHandle, WPtr<Image>>& m_textureMap;
 		std::unordered_map<FrameGraphTextureHandle, WPtr<ImageView>>& m_viewMap;
 		Ptr<RenderPass> m_renderPass;
 		Ptr<Framebuffer> m_framebuffer;
+		std::vector<std::vector<Ptr<CommandPool>>> m_commandPools;
 	};
 }
 

@@ -24,6 +24,7 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/FrameGraph.hpp>
+#include <Atema/Graphics/RenderResourceManager.hpp>
 
 namespace at
 {
@@ -39,7 +40,7 @@ namespace at
 		virtual const char* getName() const noexcept = 0;
 
 		void initializeFrame(const RenderScene& renderScene);
-		virtual void updateResources(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
+		virtual void updateResources(CommandBuffer& commandBuffer);
 		void finalizeFrame();
 
 		AbstractRenderPass& operator=(const AbstractRenderPass& other) = default;

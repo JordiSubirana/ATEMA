@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,15 +19,28 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <Atema/Renderer/RenderFrame.hpp>
+#ifndef ATEMA_GRAPHICS_RENDERCONTEXT_INL
+#define ATEMA_GRAPHICS_RENDERCONTEXT_INL
 
-using namespace at;
+#include <Atema/Graphics/RenderContext.hpp>
 
-WaitCondition RenderFrame::getImageAvailableWaitCondition() const noexcept
+namespace at
 {
-	WaitCondition waitCondition;
-	waitCondition.semaphore = getImageAvailableSemaphore();
-	waitCondition.pipelineStages = PipelineStage::ColorAttachmentOutput;
+	template <typename T>
+	void RenderContext::destroyAfterUse(T&& resource)
+	{
+		std::lock_guard lockGuard(m_resourceMutex);
 
-	return waitCondition;
+		auto resourceHandler = std::make_shared<ResourceHandler<T>>(std::forward<T>(resource));
+
+		m_resources.emplace_back(std::static_pointer_cast<AbstractResourceHandler>(resourceHandler));
+	}
+
+	template <typename T>
+	RenderContext::ResourceHandler<T>::ResourceHandler(T&& resource) :
+		resource(std::forward<T>(resource))
+	{
+	}
 }
+
+#endif

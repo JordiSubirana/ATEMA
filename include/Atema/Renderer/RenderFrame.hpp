@@ -39,19 +39,13 @@ namespace at
 		friend class RenderWindow;
 
 	public:
-		RenderFrame();
-		~RenderFrame();
+		RenderFrame() = default;
+		~RenderFrame() = default;
 
 		// When invalid, the RenderFrame must not be used in any way
 		virtual bool isValid() const noexcept = 0;
 
 		virtual size_t getFrameIndex() const noexcept = 0;
-
-		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType) = 0;
-		virtual Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType, size_t threadIndex) = 0;
-
-		// Create transient staging buffer that will be destroyed when the frame ends
-		Ptr<BufferAllocation> allocateStagingBuffer(size_t byteSize);
 
 		virtual Ptr<RenderPass> getRenderPass() const noexcept = 0;
 		virtual Ptr<Framebuffer> getFramebuffer() const noexcept = 0;
@@ -71,39 +65,8 @@ namespace at
 
 		virtual void present() = 0;
 
-		template <typename T>
-		void destroyAfterUse(T&& resource);
-
-	protected:
-		void destroyResources();
-		virtual void initializeFrame();
-
 	private:
-		class AbstractResourceHandler
-		{
-		public:
-			AbstractResourceHandler() = default;
-			virtual ~AbstractResourceHandler() = default;
-		};
-
-		template <typename T>
-		class ResourceHandler : public AbstractResourceHandler
-		{
-		public:
-			ResourceHandler() = delete;
-			ResourceHandler(T&& resource);
-			virtual ~ResourceHandler() = default;
-
-		private:
-			T resource;
-		};
-
-		std::vector<Ptr<AbstractResourceHandler>> m_resources;
-		std::shared_mutex m_resourceMutex;
-		BufferPool m_stagingBufferPool;
 	};
 }
-
-#include <Atema/Renderer/RenderFrame.inl>
 
 #endif

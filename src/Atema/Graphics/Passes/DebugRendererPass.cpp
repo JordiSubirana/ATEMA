@@ -78,7 +78,7 @@ void DebugRendererPass::execute(FrameGraphContext& context, const Settings& sett
 
 	commandBuffer.setScissor(scissor.pos, scissor.size);
 
-	m_debugRenderer->render(context, commandBuffer, getRenderScene().getCamera().getMatrix());
+	m_debugRenderer->render(commandBuffer, context.getRenderContext(), getRenderScene().getCamera().getMatrix());
 }
 
 void DebugRendererPass::beginFrame()

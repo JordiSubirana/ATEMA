@@ -29,7 +29,7 @@ namespace at
 	template <typename T>
 	void FrameGraphContext::destroyAfterUse(T&& resource)
 	{
-		m_renderFrame.destroyAfterUse(std::forward<T>(resource));
+		m_renderContext.destroyAfterUse(std::forward<T>(resource));
 	}
 }
 

@@ -24,7 +24,7 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Renderer/BufferPool.hpp>
-#include <Atema/Renderer/RenderFrame.hpp>
+#include <Atema/Graphics/RenderContext.hpp>
 
 #include <unordered_map>
 
@@ -38,17 +38,18 @@ namespace at
 		// Default : 1MB
 		RenderResourceManager(size_t bufferPoolPageSize);
 		RenderResourceManager(const RenderResourceManager& other) = delete;
-		RenderResourceManager(RenderResourceManager&& other) noexcept = default;
+		RenderResourceManager(RenderResourceManager&& other) noexcept = delete;
 		virtual ~RenderResourceManager() = default;
 
 		Ptr<BufferAllocation> createBuffer(const Buffer::Settings& settings);
+		
+		void beginTransfer(CommandBuffer& commandBuffer, RenderContext& renderContext);
 
-		void beginFrame(RenderFrame& renderFrame, CommandBuffer& commandBuffer);
-
-		// Only valid between beginFrame & endFrame
-		RenderFrame& getRenderFrame() const;
-		// Only valid between beginFrame & endFrame
+		// Only valid between beginTransfer & endTransfer
 		CommandBuffer& getCommandBuffer() const;
+
+		// Only valid between beginTransfer & endTransfer
+		RenderContext& getRenderContext() const;
 
 		// Returns a writable memory block used to fill the buffer allocation
 		// For device local buffers, uninitialized staging buffers will be created
@@ -59,10 +60,10 @@ namespace at
 		// Size of 0 means the whole buffer
 		void* mapBuffer(Buffer& buffer, size_t offset = 0, size_t size = 0);
 
-		void endFrame();
+		void endTransfer();
 
 		RenderResourceManager& operator=(const RenderResourceManager& other) = delete;
-		RenderResourceManager& operator=(RenderResourceManager&& other) noexcept = default;
+		RenderResourceManager& operator=(RenderResourceManager&& other) noexcept = delete;
 
 	private:
 		struct Range
@@ -94,9 +95,9 @@ namespace at
 		void updateResources();
 
 		void destroyPendingResources();
-
-		RenderFrame* m_renderFrame;
+		
 		CommandBuffer* m_commandBuffer;
+		RenderContext* m_renderContext;
 
 		size_t m_bufferPageSize;
 

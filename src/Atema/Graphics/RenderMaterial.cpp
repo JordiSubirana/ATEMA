@@ -45,8 +45,8 @@ namespace
 		std::vector<Ptr<DescriptorSet>>& descriptorSets,
 		RenderResourceManager& resourceManager)
 	{
-		auto& renderFrame = resourceManager.getRenderFrame();
-		auto& commandBuffer = resourceManager.getCommandBuffer();
+		CommandBuffer& commandBuffer = resourceManager.getCommandBuffer();
+		RenderContext& renderContext = resourceManager.getRenderContext();
 
 		// First of all, update resources
 		for (const auto& srcMaterialParameter : srcMaterialParameters.getParameters())
@@ -90,8 +90,8 @@ namespace
 				{
 					auto& dstTextureParameter = dstMaterialParameters.get(srcMaterialParameter.name).value.get<MaterialParameter::Texture>();
 
-					renderFrame.destroyAfterUse(std::move(dstTextureParameter.image));
-					renderFrame.destroyAfterUse(std::move(dstTextureParameter.sampler));
+					renderContext.destroyAfterUse(std::move(dstTextureParameter.image));
+					renderContext.destroyAfterUse(std::move(dstTextureParameter.sampler));
 				}
 
 				dstMaterialParameters.set(srcMaterialParameter);

@@ -63,6 +63,7 @@
 #include <Atema/Graphics/PointLight.hpp>
 #include <Atema/Graphics/Primitive.hpp>
 #include <Atema/Graphics/Renderable.hpp>
+#include <Atema/Graphics/RenderContext.hpp>
 #include <Atema/Graphics/RenderElement.hpp>
 #include <Atema/Graphics/RenderLight.hpp>
 #include <Atema/Graphics/RenderMaterial.hpp>

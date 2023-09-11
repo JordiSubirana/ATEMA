@@ -54,8 +54,8 @@ RenderResourceManager::RenderResourceManager() :
 }
 
 RenderResourceManager::RenderResourceManager(size_t bufferPoolPageSize) :
-	m_renderFrame(nullptr),
 	m_commandBuffer(nullptr),
+	m_renderContext(nullptr),
 	m_bufferPageSize(std::max(bufferPoolPageSize, MinimumBufferPageSize))
 {
 }
@@ -65,27 +65,20 @@ Ptr<BufferAllocation> RenderResourceManager::createBuffer(const Buffer::Settings
 	return getBufferPool(settings.usages).allocate(settings.byteSize);
 }
 
-void RenderResourceManager::beginFrame(RenderFrame& renderFrame, CommandBuffer& commandBuffer)
+void RenderResourceManager::beginTransfer(CommandBuffer& commandBuffer, RenderContext& renderContext)
 {
-	m_renderFrame = &renderFrame;
 	m_commandBuffer = &commandBuffer;
+	m_renderContext = &renderContext;
 }
 
-void RenderResourceManager::endFrame()
+void RenderResourceManager::endTransfer()
 {
 	updateResources();
 
 	destroyPendingResources();
 
-	m_renderFrame = nullptr;
 	m_commandBuffer = nullptr;
-}
-
-RenderFrame& RenderResourceManager::getRenderFrame() const
-{
-	ATEMA_ASSERT(m_renderFrame, "RenderResourceManager::getRenderFrame must only be called between beginFrame & endFrame");
-
-	return *m_renderFrame;
+	m_renderContext = nullptr;
 }
 
 CommandBuffer& RenderResourceManager::getCommandBuffer() const
@@ -93,6 +86,13 @@ CommandBuffer& RenderResourceManager::getCommandBuffer() const
 	ATEMA_ASSERT(m_commandBuffer, "RenderResourceManager::getCommandBuffer must only be called between beginFrame & endFrame");
 
 	return *m_commandBuffer;
+}
+
+RenderContext& RenderResourceManager::getRenderContext() const
+{
+	ATEMA_ASSERT(m_renderContext, "RenderResourceManager::getRenderContext must only be called between beginFrame & endFrame");
+
+	return *m_renderContext;
 }
 
 void* RenderResourceManager::mapBuffer(BufferAllocation& bufferAllocation)
@@ -145,7 +145,7 @@ RenderResourceManager::StagingData& RenderResourceManager::createBufferStagingDa
 RenderResourceManager::StagingData& RenderResourceManager::createBufferStagingData(Buffer& buffer)
 {
 	UPtr<StagingData> stagingData = std::make_unique<StagingData>();
-	stagingData->stagingBuffer = getRenderFrame().allocateStagingBuffer(buffer.getByteSize());
+	stagingData->stagingBuffer = m_renderContext->createStagingBuffer(buffer.getByteSize());
 
 	StagingData* stagingDataPtr = stagingData.get();
 

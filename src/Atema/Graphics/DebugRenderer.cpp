@@ -250,7 +250,7 @@ void DebugRenderer::draw(const Frustumf& frustum, const Color& color)
 	m_vertices.emplace_back(ftl, c);
 }
 
-void DebugRenderer::render(FrameGraphContext& frameGraphContext, CommandBuffer& commandBuffer, const Matrix4f& viewProjection)
+void DebugRenderer::render(CommandBuffer& commandBuffer, RenderContext& renderContext, const Matrix4f& viewProjection)
 {
 	if (!m_vertices.empty())
 	{
@@ -291,7 +291,7 @@ void DebugRenderer::render(FrameGraphContext& frameGraphContext, CommandBuffer& 
 	}
 
 	for (auto& vertexBuffer : m_obsoleteVertexBuffers)
-		frameGraphContext.destroyAfterUse(std::move(vertexBuffer));
-
+		renderContext.destroyAfterUse(std::move(vertexBuffer));
+	
 	m_obsoleteVertexBuffers.clear();
 }

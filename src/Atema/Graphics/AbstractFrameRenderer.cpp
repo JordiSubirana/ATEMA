@@ -74,25 +74,14 @@ void AbstractFrameRenderer::initializeFrame()
 	}
 }
 
-void AbstractFrameRenderer::render(RenderFrame& renderFrame)
+void AbstractFrameRenderer::render(CommandBuffer& commandBuffer, RenderContext& renderContext, RenderFrame* renderFrame)
 {
-	if (!renderFrame.isValid())
-		return;
-
-	CommandBuffer::Settings commandBufferSettings;
-	commandBufferSettings.secondary = false;
-	commandBufferSettings.singleUse = true;
-
-	auto commandBuffer = renderFrame.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
-
-	commandBuffer->begin();
-
 	{
 		ATEMA_BENCHMARK("Transfer data");
 
-		commandBuffer->memoryBarrier(MemoryBarrier::TransferBegin);
+		commandBuffer.memoryBarrier(MemoryBarrier::TransferBegin);
 
-		m_resourceManager.beginFrame(renderFrame, *commandBuffer);
+		m_resourceManager.beginTransfer(commandBuffer, renderContext);
 
 		{
 			ATEMA_BENCHMARK_TAG(b, "Scene");
@@ -104,21 +93,21 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 			ATEMA_BENCHMARK_TAG(b, "RenderPasses");
 
 			for (auto& renderPass : getRenderPasses())
-				renderPass->updateResources(renderFrame, *commandBuffer);
+				renderPass->updateResources(commandBuffer);
 		}
 
 		{
 			ATEMA_BENCHMARK_TAG(b, "Deferred update");
 
-			m_resourceManager.endFrame();
+			m_resourceManager.endTransfer();
 		}
 
-		commandBuffer->memoryBarrier(MemoryBarrier::TransferEnd);
+		commandBuffer.memoryBarrier(MemoryBarrier::TransferEnd);
 
 		{
 			ATEMA_BENCHMARK_TAG(b, "Destroy resources");
 
-			destroyResources(renderFrame);
+			destroyResources(renderContext);
 		}
 	}
 
@@ -127,30 +116,8 @@ void AbstractFrameRenderer::render(RenderFrame& renderFrame)
 	{
 		ATEMA_BENCHMARK("Execute FrameGraph");
 
-		getFrameGraph()->execute(renderFrame, *commandBuffer);
+		getFrameGraph()->execute(commandBuffer, renderContext, renderFrame);
 	}
-
-	commandBuffer->end();
-
-	renderFrame.getFence()->reset();
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::submit");
-
-		renderFrame.submit(
-			{ commandBuffer },
-			{ renderFrame.getImageAvailableWaitCondition() },
-			{ renderFrame.getRenderFinishedSemaphore() },
-			renderFrame.getFence());
-	}
-
-	{
-		ATEMA_BENCHMARK("RenderFrame::present");
-
-		renderFrame.present();
-	}
-
-	renderFrame.destroyAfterUse(std::move(commandBuffer));
 
 	// End frame
 	for (auto& renderPass : getRenderPasses())
@@ -174,7 +141,7 @@ Vector2u AbstractFrameRenderer::getSize() const noexcept
 	return m_size;
 }
 
-void AbstractFrameRenderer::destroyResources(RenderFrame& renderFrame)
+void AbstractFrameRenderer::destroyResources(RenderContext& renderContext)
 {
 }
 

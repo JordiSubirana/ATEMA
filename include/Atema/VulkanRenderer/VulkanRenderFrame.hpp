@@ -38,7 +38,7 @@ namespace at
 		// Invalid RenderFrame
 		VulkanRenderFrame();
 		VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t frameIndex);
-		~VulkanRenderFrame();
+		~VulkanRenderFrame() = default;
 
 		bool isValid() const noexcept override;
 
@@ -48,9 +48,6 @@ namespace at
 		uint32_t getImageIndex() const noexcept;
 
 		size_t getFrameIndex() const noexcept override;
-
-		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType) override;
-		Ptr<CommandBuffer> createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType, size_t threadIndex) override;
 
 		Ptr<RenderPass> getRenderPass() const noexcept override;
 		Ptr<Framebuffer> getFramebuffer() const noexcept override;
@@ -71,15 +68,12 @@ namespace at
 		void present() override;
 
 	private:
-		std::vector<Ptr<CommandPool>>& getCommandPools(QueueType queueType);
-
 		bool m_valid;
 		VulkanDevice* m_device;
 		VulkanRenderWindow* m_renderWindow;
 		Ptr<VulkanFence> m_fence;
 		Ptr<VulkanSemaphore> m_imageAvailableSemaphore;
 		Ptr<VulkanSemaphore> m_renderFinishedSemaphore;
-		std::vector<std::vector<Ptr<CommandPool>>> m_commandPools;
 		uint32_t m_imageIndex;
 		size_t m_frameIndex;
 	};

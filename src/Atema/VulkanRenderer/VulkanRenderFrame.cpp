@@ -24,7 +24,6 @@
 #include <Atema/VulkanRenderer/VulkanRenderWindow.hpp>
 #include <Atema/Core/TaskManager.hpp>
 #include <Atema/VulkanRenderer/VulkanCommandBuffer.hpp>
-#include <Atema/VulkanRenderer/VulkanCommandPool.hpp>
 #include <Atema/VulkanRenderer/VulkanDevice.hpp>
 
 using namespace at;
@@ -49,57 +48,6 @@ VulkanRenderFrame::VulkanRenderFrame(VulkanRenderWindow& renderWindow, size_t fr
 
 	m_imageAvailableSemaphore = std::make_unique<VulkanSemaphore>(*m_device);
 	m_renderFinishedSemaphore = std::make_unique<VulkanSemaphore>(*m_device);
-
-	// Initialize command pools
-	const auto threadCount = TaskManager::instance().getSize();
-	constexpr uint32_t invalidIndex = std::numeric_limits<uint32_t>::max();
-
-	const std::vector<uint32_t> queueFamilyIndices =
-	{
-		m_device->getQueueFamilyIndex(QueueType::Graphics),
-		m_device->getQueueFamilyIndex(QueueType::Compute),
-		m_device->getQueueFamilyIndex(QueueType::Transfer)
-	};
-
-	// Initialize other queues (try to find a unique queue family index for each requirement)
-	const std::vector<QueueType> queueTypes =
-	{
-		QueueType::Graphics,
-		QueueType::Compute,
-		QueueType::Transfer
-	};
-
-	m_commandPools.resize(queueFamilyIndices.size());
-
-	for (size_t i = 0; i < queueFamilyIndices.size(); i++)
-	{
-		auto& queueFamilyIndex = queueFamilyIndices[i];
-		auto& queueType = queueTypes[i];
-		auto& commandPools = m_commandPools[i];
-
-		// Create unique queue family, queue and command pools
-		if (i == 0 || queueFamilyIndex != queueFamilyIndices[0])
-		{
-			commandPools.resize(threadCount + 1);
-
-			CommandPool::Settings commandPoolSettings;
-			commandPoolSettings.queueType = queueType;
-
-			for (auto& commandPool : commandPools)
-				commandPool = std::make_shared<VulkanCommandPool>(*m_device, queueFamilyIndex, commandPoolSettings);
-		}
-		// Fall back on graphics family data
-		else
-		{
-			commandPools = m_commandPools[0];
-		}
-	}
-}
-
-VulkanRenderFrame::~VulkanRenderFrame()
-{
-	if (m_valid)
-		destroyResources();
 }
 
 bool VulkanRenderFrame::isValid() const noexcept
@@ -125,20 +73,6 @@ uint32_t VulkanRenderFrame::getImageIndex() const noexcept
 size_t VulkanRenderFrame::getFrameIndex() const noexcept
 {
 	return m_frameIndex;
-}
-
-Ptr<CommandBuffer> VulkanRenderFrame::createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType)
-{
-	return getCommandPools(queueType).back()->createBuffer(settings);
-}
-
-Ptr<CommandBuffer> VulkanRenderFrame::createCommandBuffer(const CommandBuffer::Settings& settings, QueueType queueType, size_t threadIndex)
-{
-	const auto& commandPool = getCommandPools(queueType);
-
-	ATEMA_ASSERT(threadIndex < commandPool.size() - 1, "Invalid thread index");
-
-	return commandPool[threadIndex]->createBuffer(settings);
 }
 
 Ptr<RenderPass> VulkanRenderFrame::getRenderPass() const noexcept
@@ -188,9 +122,4 @@ void VulkanRenderFrame::submit(
 void VulkanRenderFrame::present()
 {
 	m_renderWindow->present(*this);
-}
-
-std::vector<Ptr<CommandPool>>& VulkanRenderFrame::getCommandPools(QueueType queueType)
-{
-	return m_commandPools[static_cast<size_t>(queueType)];
 }
