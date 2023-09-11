@@ -78,6 +78,8 @@ namespace at
 		BufferPool(BufferPool&& other) noexcept = delete;
 		~BufferPool() = default;
 
+		Flags<BufferUsage> getUsages() const noexcept;
+
 		BufferPool& operator=(const BufferPool& other) = delete;
 		BufferPool& operator=(BufferPool&& other) noexcept = delete;
 

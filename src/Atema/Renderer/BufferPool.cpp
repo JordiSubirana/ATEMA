@@ -71,6 +71,11 @@ BufferPool::BufferPool(Flags<BufferUsage> usages, size_t pageSize, bool releaseO
 		initialize(Renderer::instance().getLimits().minUniformBufferOffsetAlignment);
 }
 
+Flags<BufferUsage> BufferPool::getUsages() const noexcept
+{
+	return m_usages;
+}
+
 UPtr<BufferPageResources> BufferPool::createPageResources(size_t pageSize)
 {
 	return std::make_unique<BufferPageResources>(m_usages, pageSize);
