@@ -168,30 +168,15 @@ FrameGraphTextureHandle FrameGraphBuilder::importTexture(const Ptr<Image>& image
 	ATEMA_ASSERT(layer < image->getLayers(), "Invalid image layer");
 	ATEMA_ASSERT(mipLevel < image->getMipLevels(), "Invalid image mip level");
 
-	auto imageSize = image->getSize();
+	return importTexture(image, image->getView(layer, 1, mipLevel, 1));
+}
 
-	if (mipLevel > 0)
-	{
-		imageSize /= 1 << mipLevel;
+FrameGraphTextureHandle FrameGraphBuilder::importTexture(const Ptr<Image>& image, CubemapFace face, uint32_t mipLevel)
+{
+	ATEMA_ASSERT(image, "Invalid image");
+	ATEMA_ASSERT(mipLevel < image->getMipLevels(), "Invalid image mip level");
 
-		if (imageSize.x < 1)
-			imageSize.x = 1;
-
-		if (imageSize.y < 1)
-			imageSize.y = 1;
-	}
-
-	FrameGraphTextureSettings textureSettings;
-	textureSettings.width = static_cast<uint32_t>(imageSize.x);
-	textureSettings.height = static_cast<uint32_t>(imageSize.y);
-	textureSettings.format = image->getFormat();
-
-	const auto textureHandle = createTexture(textureSettings);
-
-	m_importedTextures[textureHandle] = image;
-	m_importedViews[textureHandle] = image->getView(layer, 1, mipLevel, 1);
-
-	return textureHandle;
+	return importTexture(image, image->getView(face, mipLevel, 1));
 }
 
 FrameGraphPass& FrameGraphBuilder::createPass(const std::string& name)
@@ -299,12 +284,44 @@ Ptr<FrameGraph> FrameGraphBuilder::build()
 		texture.barriers = std::move(physicalTexture->barriers);
 	}
 
+	frameGraph->initialize();
+
 	return frameGraph;
 }
 
 const FrameGraphTextureSettings& FrameGraphBuilder::getTextureSettings(FrameGraphTextureHandle textureHandle) const
 {
 	return m_textures[textureHandle];
+}
+
+FrameGraphTextureHandle FrameGraphBuilder::importTexture(const Ptr<Image>& image, const Ptr<ImageView>& imageView)
+{
+	Vector2u imageSize = image->getSize();
+
+	const uint32_t mipLevel = imageView->getBaseMipLevel();
+
+	if (mipLevel > 0)
+	{
+		imageSize /= 1 << mipLevel;
+
+		if (imageSize.x < 1)
+			imageSize.x = 1;
+
+		if (imageSize.y < 1)
+			imageSize.y = 1;
+	}
+
+	FrameGraphTextureSettings textureSettings;
+	textureSettings.width = static_cast<uint32_t>(imageSize.x);
+	textureSettings.height = static_cast<uint32_t>(imageSize.y);
+	textureSettings.format = image->getFormat();
+
+	const FrameGraphTextureHandle textureHandle = createTexture(textureSettings);
+
+	m_importedTextures[textureHandle] = image;
+	m_importedViews[textureHandle] = imageView;
+
+	return textureHandle;
 }
 
 void FrameGraphBuilder::clearTempData()
@@ -763,6 +780,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 			physicalTexture = std::make_shared<PhysicalTexture>();
 
 			physicalTexture->imageSettings = textureAlias.imageSettings;
+			physicalTexture->imported = true;
 
 			// We will use RenderFrame's image when rendering
 			if (!isRenderFrameOutput(textureAlias.textureHandle))

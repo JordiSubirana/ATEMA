@@ -47,6 +47,8 @@ namespace at
 
 		FrameGraphTextureHandle createTexture(const FrameGraphTextureSettings& settings);
 		FrameGraphTextureHandle importTexture(const Ptr<Image>& image, uint32_t layer = 0, uint32_t mipLevel = 0);
+		// Only for Cubemaps
+		FrameGraphTextureHandle importTexture(const Ptr<Image>& image, CubemapFace face, uint32_t mipLevel = 0);
 
 		FrameGraphPass& createPass(const std::string& name);
 
@@ -219,6 +221,8 @@ namespace at
 			Ptr<Framebuffer> framebuffer;
 			std::vector<CommandBuffer::ClearValue> clearValues;
 		};
+
+		FrameGraphTextureHandle importTexture(const Ptr<Image>& image, const Ptr<ImageView>& imageView);
 
 		void clearTempData();
 
