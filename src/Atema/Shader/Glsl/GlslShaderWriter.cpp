@@ -810,16 +810,11 @@ void GlslShaderWriter::visit(const BinaryExpression& expression)
 	// Check if we need to protect the operand with parenthesis
 	if (expression.left->getType() == Expression::Type::Binary)
 	{
-		const auto op = static_cast<BinaryExpression&>(*expression.left).op;
-		const auto precedence = getOperatorPrecedence(op);
-
-		if (precedence < currentPrecedence)
-			m_ostream << "(";
+		m_ostream << "(";
 
 		expression.left->accept(*this);
 
-		if (precedence < currentPrecedence)
-			m_ostream << ")";
+		m_ostream << ")";
 	}
 	else
 	{
@@ -831,19 +826,11 @@ void GlslShaderWriter::visit(const BinaryExpression& expression)
 	// Check if we need to protect the operand with parenthesis
 	if (expression.right->getType() == Expression::Type::Binary)
 	{
-		const auto op = static_cast<BinaryExpression&>(*expression.right).op;
-		auto precedence = getOperatorPrecedence(op);
-
-		if (expression.op == BinaryOperator::Subtract && precedence == currentPrecedence)
-			precedence--;
-
-		if (precedence < currentPrecedence)
-			m_ostream << "(";
+		m_ostream << "(";
 
 		expression.right->accept(*this);
 
-		if (precedence < currentPrecedence)
-			m_ostream << ")";
+		m_ostream << ")";
 	}
 	else
 	{
