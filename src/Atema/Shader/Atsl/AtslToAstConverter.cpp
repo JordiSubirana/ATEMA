@@ -943,18 +943,18 @@ UPtr<Expression> AtslToAstConverter::parseOperation(int precedence, UPtr<Express
 		// Check for next operation precedence
 		auto nextPrecedence = getOperatorPrecedence(operation.get<BinaryOperator>());
 
-		// Current operation has a higher priority : execute it first
+		// Current operation has a higher (or same) priority : execute it first
 		// a * b + c * d
 		// lhs = b ; rhs = c ; precedence = * ; nextPrecedence = +
 		// return lhs to execute the priority operation, and reset the parsing index
-		if (precedence > nextPrecedence)
+		if (precedence >= nextPrecedence)
 		{
 			// We reset the index because we didn't process this part : the parent loop will
 			m_currentIndex = currentIndex;
 
 			return std::move(lhs);
 		}
-		// Next operation has a higher (or same) priority : execute it first
+		// Next operation has a higher priority : execute it first
 		// a + b * c + d
 		// lhs = b ; rhs = c ; precedence = + ; nextPrecedence = *
 		// 
