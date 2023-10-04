@@ -19,7 +19,6 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <sstream>
 #include <Atema/Graphics/Graphics.hpp>
 #include <Atema/Graphics/RenderMaterial.hpp>
 #include <Atema/Graphics/RenderScene.hpp>
@@ -222,13 +221,6 @@ EnvironmentPrefilterPass::EnvironmentPrefilterPass(RenderResourceManager& resour
 	if (!graphics.uberShaderExists(EnvironmentPrefilterShaderName))
 		graphics.setUberShader(EnvironmentPrefilterShaderName, EnvironmentPrefilterShader);
 	
-	std::ostringstream stream;
-	auto uber = graphics.getUberShader(EnvironmentPrefilterShaderName);
-	uber = graphics.getUberShader(*uber, {}, &ShaderLibraryManager::instance());
-	GlslShaderWriter glsl(stream);
-	glsl.visit(*uber->getAst());
-	auto code = stream.str();
-
 	RenderMaterial::Settings renderMaterialSettings;
 	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EnvironmentPrefilterShaderName));
 	renderMaterialSettings.shaderLibraryManager = &ShaderLibraryManager::instance();
