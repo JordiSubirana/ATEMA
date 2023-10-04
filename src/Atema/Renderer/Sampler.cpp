@@ -28,8 +28,8 @@ using namespace at;
 Sampler::Settings::Settings(SamplerFilter filter, bool anisotropy) :
 	minFilter(filter),
 	magFilter(filter),
-	mipmapFilter(filter),
-	anisotropyEnable(anisotropy)
+	anisotropyEnable(anisotropy),
+	mipmapFilter(filter)
 {
 }
 

@@ -40,7 +40,7 @@ using namespace at;
 
 namespace
 {
-	const char atPostProcess[] = R"(
+	const char PostProcessShader[] = R"(
 option
 {
 	int AtPostProcessTexCoordsLocation = 0;
@@ -89,9 +89,99 @@ void main()
 }
 )";
 
+	const char CubemapPassShader[] = R"(
+option
+{
+	int CubemapTopIndex = 0;
+	int CubemapLeftIndex = 1;
+	int CubemapFrontIndex = 2;
+	int CubemapRightIndex = 3;
+	int CubemapBackIndex = 4;
+	int CubemapBottomIndex = 5;
+}
+
+struct CubeDataStruct
+{
+	mat4f Transforms[6];
+}
+
+external
+{
+	[set(0), binding(0)] CubeDataStruct CubeData;
+}
+
+[stage(vertex)]
+input
+{
+	[location(0)] vec3f inPosition;
+}
+
+[stage(vertex)]
+output
+{
+	[location(CubemapTopIndex)] vec3f uvwTop;
+	[location(CubemapLeftIndex)] vec3f uvwLeft;
+	[location(CubemapFrontIndex)] vec3f uvwFront;
+	[location(CubemapRightIndex)] vec3f uvwRight;
+	[location(CubemapBackIndex)] vec3f uvwBack;
+	[location(CubemapBottomIndex)] vec3f uvwBottom;
+}
+
+[entry(vertex)]
+void main()
+{
+	vec3f pos = vec3f(inPosition.x, inPosition.z, inPosition.y);
+	
+	uvwTop = (CubeData.Transforms[0] * vec4f(pos, 1.0)).xzy;
+	uvwLeft = (CubeData.Transforms[1] * vec4f(pos, 1.0)).xzy;
+	uvwFront = (CubeData.Transforms[2] * vec4f(pos, 1.0)).xzy;
+	uvwRight = (CubeData.Transforms[3] * vec4f(pos, 1.0)).xzy;
+	uvwBack = (CubeData.Transforms[4] * vec4f(pos, 1.0)).xzy;
+	uvwBottom = (CubeData.Transforms[5] * vec4f(pos, 1.0)).xzy;
+	
+	setVertexPosition(vec4f(inPosition.x, inPosition.y, 0.0, 1.0));
+}
+
+[stage(fragment)]
+input
+{
+	[location(CubemapTopIndex)] vec3f uvwTop;
+	[location(CubemapLeftIndex)] vec3f uvwLeft;
+	[location(CubemapFrontIndex)] vec3f uvwFront;
+	[location(CubemapRightIndex)] vec3f uvwRight;
+	[location(CubemapBackIndex)] vec3f uvwBack;
+	[location(CubemapBottomIndex)] vec3f uvwBottom;
+}
+
+[stage(fragment)]
+output
+{
+	[location(CubemapTopIndex)] vec4f FaceTop;
+	[location(CubemapLeftIndex)] vec4f FaceLeft;
+	[location(CubemapFrontIndex)] vec4f FaceFront;
+	[location(CubemapRightIndex)] vec4f FaceRight;
+	[location(CubemapBackIndex)] vec4f FaceBack;
+	[location(CubemapBottomIndex)] vec4f FaceBottom;
+}
+
+vec4f getCubemapFaceColor(int faceIndex, vec3f uvw);
+
+[entry(fragment)]
+void main()
+{
+	FaceTop = getCubemapFaceColor(CubemapTopIndex, normalize(uvwTop));
+	FaceLeft = getCubemapFaceColor(CubemapLeftIndex, normalize(uvwLeft));
+	FaceFront = getCubemapFaceColor(CubemapFrontIndex, normalize(uvwFront));
+	FaceRight = getCubemapFaceColor(CubemapRightIndex, normalize(uvwRight));
+	FaceBack = getCubemapFaceColor(CubemapBackIndex, normalize(uvwBack));
+	FaceBottom = getCubemapFaceColor(CubemapBottomIndex, normalize(uvwBottom));
+}
+)";
+
 	const std::unordered_map<std::string, const char*> s_shaderLibraries =
 	{
-		{ "Atema.PostProcess", atPostProcess },
+		{ "Atema.PostProcess", PostProcessShader },
+		{ "Atema.CubemapPass", CubemapPassShader },
 	};
 
 	struct SurfaceMaterialParameter
