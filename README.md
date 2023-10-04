@@ -1,16 +1,18 @@
 # ATEMA
 
-**ATEMA** (_**A**dvanced **T**ools **E**ngine for **M**ultimedia **A**pplications_) is a portable and modular C++17 library providing many tools for the development of multimedia programs.
-
-The goal of **ATEMA** is to offer a simple, intuitive and efficient API to allow developers to easily create multimedia programs, such as 2D/3D games, parallel computations on GPU, and more. 
+**ATEMA** is a modular C++17 library providing many tools for the development of 2D/3D applications.
 
 This software is provided under MIT license. See [this website](https://opensource.org/licenses/MIT) or the file [LICENSE.txt](https://github.com/JordiSubirana/ATEMA/blob/master/LICENSE.txt) for more informations.
 
 ## Features
 
-* 3D rendering based on an abstraction of multiple back-ends (Vulkan back-end is implemented, DirectX/Metal/OpenGL may follow)
-* Custom shading language (atsl) and AST representation
+* 3D rendering with graphics API abstractions (only Vulkan for now)
+* Shader representation using Abstract Syntax Trees
+* Shader preprocessor (libraries management, uber shader instances)
+* Custom shading language (atsl)
 * Converters from atsl to other shading languages (SPIR-V and glsl for now)
+* Customizable render pipelines (with pre-built deferred rendering and PBR)
+* Multi-threading
 
 ## Developers
 
@@ -20,12 +22,12 @@ Contact: [jordi.subirana@yahoo.fr](mailto:jordi.subirana@yahoo.fr)
 
 ## Dependencies
 
-As many dependencies as possible are header-only libraries. The exhaustive list is :  
+As many dependencies as possible are header-only libraries. The exhaustive list is:  
 * [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) : manage Vulkan memory allocations for buffers and images
 * [stb_image](https://github.com/nothings/stb) : image loading
 * [tinyobjloader](https://github.com/syoyo/tinyobjloader) : obj mesh loader
 
-The rest is provided by [xmake](https://xmake.io) package dependencies :
+The rest is provided by [xmake](https://xmake.io) package dependencies:
 * [glfw](https://github.com/glfw/glfw) : portable window library and event manager
 * [glslang](https://github.com/KhronosGroup/glslang) : SPIR-V generation from glsl
 
@@ -59,7 +61,7 @@ _Some screenshots will appear there soon._
 
 ## Thanks
 
-I'm working on **ATEMA** during my spare time to learn how rendering engines are made, and create my own implementation on various systems (yes, I enjoy reinventing the wheel sometimes). I've been inspired by other persons doing the same thing, and by some projects or papers I found online. Here is some of my inspiration sources I'd like to thank :
+I'm working on **ATEMA** during my spare time to learn how rendering engines are made, and create my own implementation on various systems (yes, I enjoy reinventing the wheel sometimes). I've been inspired by other persons doing the same thing, and by some projects or papers I found online. Here are some of my sources of inspiration I'd like to thank:
 
 * [Nazara Engine](https://github.com/NazaraEngine/NazaraEngine)
 * [Banshee](https://github.com/ValtoGameEngines/Banshee-Engine)
@@ -68,4 +70,4 @@ I'm working on **ATEMA** during my spare time to learn how rendering engines are
 * [Riccardo Loggini posts](https://logins.github.io/)
 * [entt](https://github.com/skypjack/entt)
 * All open source libraries I'm using (see [Dependencies](https://github.com/JordiSubirana/ATEMA#dependencies) section)
-* And sooo much more
+* And sooo much more!
