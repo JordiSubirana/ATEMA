@@ -24,14 +24,12 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/AbstractRenderPass.hpp>
-#include <Atema/Graphics/RenderResourceManager.hpp>
 
 #include <optional>
 #include <Atema/Graphics/FrameGraphContext.hpp>
 
 namespace at
 {
-	class Sampler;
 	class RenderMaterial;
 	class Mesh;
 

@@ -28,6 +28,8 @@
 
 namespace at
 {
+	class Sampler;
+
 	struct EquirectangularToCubemapFrameGraphSettings : public AbstractCubemapPass::BaseFrameGraphSettings
 	{
 		FrameGraphTextureHandle environmentMap = FrameGraph::InvalidTextureHandle;
