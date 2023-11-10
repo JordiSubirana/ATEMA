@@ -366,9 +366,7 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 	if (!renderScene.isValid() || !renderScene.getSkyBox())
 		return;
 
-	//Image& skyBox = *renderScene.getSkyBox()->environmentMap;
-	//Image& skyBox = *renderScene.getSkyBox()->irradianceMap;
-	Image& skyBox = *renderScene.getSkyBox()->prefilteredMap;
+	Image& skyBox = *renderScene.getSkyBox()->environmentMap;
 
 	const auto& viewport = getRenderScene().getCamera().getViewport();
 	const auto& scissor = getRenderScene().getCamera().getScissor();
