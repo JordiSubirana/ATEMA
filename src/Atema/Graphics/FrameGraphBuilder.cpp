@@ -19,7 +19,6 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <algorithm>
 #include <Atema/Core/Error.hpp>
 #include <Atema/Graphics/FrameGraphBuilder.hpp>
 #include <Atema/Renderer/Framebuffer.hpp>
@@ -27,6 +26,8 @@
 #include <Atema/Renderer/ImageView.hpp>
 #include <Atema/Renderer/Renderer.hpp>
 #include <Atema/Renderer/RenderPass.hpp>
+
+#include <algorithm>
 
 using namespace at;
 
@@ -834,6 +835,8 @@ void FrameGraphBuilder::createPhysicalTextures()
 		auto currentPassIndex = firstTextureData.useRange.first;
 		auto currentUsage = firstTextureData.usages[currentPassIndex];
 		auto currentPass = m_passDatas[currentPassIndex].pass;
+		// The same physical texture can have different handles, we need to use it for the source sampling
+		auto currentTextureHandle = FrameGraph::InvalidTextureHandle;
 
 		for (size_t index = 0; index < physicalTexture.textureHandles.size(); index++)
 		{
@@ -849,6 +852,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 
 				if (newUsage == TextureUsage::None || passIndex == currentPassIndex)
 				{
+					currentTextureHandle = textureHandle;
 					continue;
 				}
 
@@ -860,6 +864,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 					currentPassIndex = passIndex;
 					currentUsage = newUsage;
 					currentPass = newPass;
+					currentTextureHandle = textureHandle;
 					continue;
 				}
 
@@ -882,7 +887,7 @@ void FrameGraphBuilder::createPhysicalTextures()
 				}
 				else if (currentUsage & TextureUsage::Sampled)
 				{
-					const auto shaderStages = currentPass->getSamplingStages(textureHandle);
+					const auto shaderStages = currentPass->getSamplingStages(currentTextureHandle);
 
 					barrier.srcPipelineStages |= getShaderPipelineStages(shaderStages);
 					barrier.srcLayout = ImageLayout::ShaderRead;
@@ -931,11 +936,13 @@ void FrameGraphBuilder::createPhysicalTextures()
 				barrier.valid = !barrier.insideRenderPass;
 
 				// Render passes will already set the correct final layout so no need to change it
-				barrier.srcLayout = barrier.dstLayout;
+				if (barrier.insideRenderPass)
+					barrier.srcLayout = barrier.dstLayout;
 
 				currentPassIndex = passIndex;
 				currentUsage = newUsage;
 				currentPass = newPass;
+				currentTextureHandle = textureHandle;
 			}
 		}
 	}
