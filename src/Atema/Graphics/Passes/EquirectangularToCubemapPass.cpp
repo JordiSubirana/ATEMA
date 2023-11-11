@@ -43,7 +43,7 @@ vec2f getEquirectangularUV(vec3f uvw)
 {
 	const vec2f invAtan = vec2f(0.1591, 0.3183);
 
-	vec2f uv = vec2f(atan(uvw.z, uvw.x), -asin(uvw.y));
+	vec2f uv = vec2f(atan(uvw.x, uvw.z), -asin(uvw.y));
 	uv = uv * invAtan;
 	uv = uv + 0.5;
 	return uv;
