@@ -61,6 +61,83 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	m_frameRenderer.getRenderScene().setCamera(m_camera);
 
+	{
+		const std::filesystem::path texPath = rscPath / "Textures";
+		//const std::filesystem::path env = texPath / "graveyard_pathways_4k.hdr";
+		const std::filesystem::path env = texPath / "kloppenheim_02_4k.hdr";
+
+		Ptr<SkyBox> skyBox = std::make_shared<SkyBox>();
+
+		ImageLoader::Settings imageLoaderSettings;
+		//imageLoaderSettings.type = ImageType::CubeMap;
+
+		auto baseEnvironmentMap = DefaultImageLoader::load(env, imageLoaderSettings);
+
+		Image::Settings imageSettings;
+		imageSettings.format = ImageFormat::RGBA16_SFLOAT;
+		imageSettings.type = ImageType::CubeMap;
+		imageSettings.usages = ImageUsage::RenderTarget | ImageUsage::ShaderSampling;
+
+		imageSettings.width = imageSettings.height = 64;
+		imageSettings.mipLevels = 1;
+		skyBox->irradianceMap = Image::create(imageSettings);
+
+		imageSettings.width = imageSettings.height = 1024;
+		imageSettings.mipLevels = 5;
+		skyBox->prefilteredMap = Image::create(imageSettings);
+
+		Ptr<Image> environmentMap;
+		if (baseEnvironmentMap->getType() == ImageType::CubeMap)
+		{
+			skyBox->environmentMap = baseEnvironmentMap;
+		}
+		else
+		{
+			const Vector2u imageSize = baseEnvironmentMap->getSize();
+
+			imageSettings.usages |= ImageUsage::TransferSrc | ImageUsage::TransferDst;
+			imageSettings.width = imageSettings.height = std::min(imageSize.x, imageSize.y);
+			imageSettings.mipLevels = static_cast<uint32_t>(std::floor(std::log2(imageSettings.width))) + 1;
+			skyBox->environmentMap = Image::create(imageSettings);
+
+			environmentMap = skyBox->environmentMap;
+		}
+
+		EnvironmentPipeline environmentPipeline;
+		environmentPipeline.setInput(baseEnvironmentMap);
+		environmentPipeline.setOutput(environmentMap, skyBox->irradianceMap, skyBox->prefilteredMap);
+
+		RenderContext renderContext;
+
+		CommandBuffer::Settings commandBufferSettings;
+		commandBufferSettings.secondary = false;
+		commandBufferSettings.singleUse = true;
+
+		auto commandBuffer = renderContext.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
+
+		commandBuffer->begin();
+
+		environmentPipeline.beginRender();
+		environmentPipeline.updateResources(*commandBuffer, renderContext);
+		environmentPipeline.render(*commandBuffer, renderContext);
+
+		commandBuffer->imageBarrier(*skyBox->irradianceMap,
+			PipelineStage::BottomOfPipe, PipelineStage::FragmentShader,
+			0, MemoryAccess::ShaderRead,
+			ImageLayout::Attachment, ImageLayout::ShaderRead);
+
+		commandBuffer->imageBarrier(*skyBox->prefilteredMap,
+			PipelineStage::BottomOfPipe, PipelineStage::FragmentShader,
+			0, MemoryAccess::ShaderRead,
+			ImageLayout::Attachment, ImageLayout::ShaderRead);
+
+		commandBuffer->end();
+
+		Renderer::instance().submitAndWait({ commandBuffer });
+
+		m_frameRenderer.getRenderScene().setSkyBox(skyBox);
+	}
+
 	// Remove unused resources if they are not used during 3 cycles (arbitrary)
 	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(Renderer::FramesInFlight) * 3);
 
