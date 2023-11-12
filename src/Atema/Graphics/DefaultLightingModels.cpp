@@ -151,7 +151,7 @@ vec3f getEmissiveFinalColor(vec2f uv)
 option
 {
 	uint LightingModel = 0;
-	bool LightModelUseOpacityMask = true;
+	bool UseAlphaMask = true;
 }
 
 include Atema.GBufferWrite;
@@ -376,7 +376,7 @@ vec3f getPhongFinalColor(vec2f uv)
 option
 {
 	uint LightingModel = 0;
-	bool LightModelUseOpacityMask = true;
+	bool UseAlphaMask = true;
 }
 
 include Atema.GBufferWrite;
@@ -699,13 +699,15 @@ vec4f getPostProcessColor(vec2f uv)
     vec3f diffuse = irradiance * baseColor;
 	
 	// Specular
-	const float MAX_REFLECTION_LOD = 3.0;
+	const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(PrefilteredMap, R.xzy,  roughness * MAX_REFLECTION_LOD).rgb;
     vec2 brdf = sample(BRDF_LUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 	
 	// Final color
-	return vec4f((kD * diffuse + specular) * ambientOcclusion, 1.0);
+	vec3f finalColor = (kD * diffuse + specular) * ambientOcclusion;
+
+	return vec4f(finalColor, 1.0);
 }
 )");
 
