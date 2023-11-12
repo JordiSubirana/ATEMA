@@ -198,8 +198,33 @@ SandboxApplication::SandboxApplication():
 		*m_modelData->model->getMaterialData()[0] = *loadMaterialData(modelTexturePath, modelTextureExtension);
 	}
 
+	//if (true)
+	if (false)
+	{
+		m_modelData->model = std::make_shared<Model>();
+
+		auto& model = *m_modelData->model;
+
+		ModelLoader::Settings modelSettings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+
+		auto mesh = Primitive::createBox(modelSettings, 1.0f, 5.0f, 1.0f, 1, 1, 1);
+		mesh->setMaterialID(0);
+
+		auto materialData = std::make_shared<MaterialData>();
+		//materialData->set(MaterialData::BaseColorMap, MaterialData::Texture(rscPath / "Textures/uv-checker_color.png"));
+		materialData->set(MaterialData::BaseColor, Color::White);
+		materialData->set(MaterialData::Metalness, 0.5f);
+		materialData->set(MaterialData::Roughness, 0.0f);
+
+		model.addMesh(mesh);
+		model.addMaterialData(materialData);
+	}
+
 	for (auto& materialData : m_modelData->model->getMaterialData())
-		m_modelData->model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+	{
+		//m_modelData->model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		m_modelData->model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
+	}
 
 	// Create entities
 	createScene();
@@ -300,12 +325,17 @@ void SandboxApplication::createScene()
 {
 	updateScene();
 
-	// Create ground
+	// Ground
+
+	//if (false)
 	{
 		// Resources
 		auto materialData = loadMaterialData(groundTexturePath, groundTextureExtension);
 
-		const Vector2f planeSize(1000.0f, 1000.0f);
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+		
+		auto mesh = Primitive::createPlane(settings, Vector3f(0.0f, 0.0f, 1.0), 1000.0f, 1000.0f, 1, 1);
+		mesh->setMaterialID(0);
 
 		// Entity
 		auto entity = m_entityManager.createEntity();
@@ -313,14 +343,16 @@ void SandboxApplication::createScene()
 		// Transform component
 		auto& transform = m_entityManager.createComponent<Transform>(entity);
 
-		transform.setTranslation({ 0.0f, 0.0f, -2.0f });
+		//transform.setTranslation({ 0.0f, 0.0f, -2.0f });
 
 		// Graphics component
 		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
 
-		auto model = createPlaneModel({ 0, 0, 0 }, planeSize);
+		auto model = std::make_shared<Model>();
+		model->addMesh(mesh);
 		model->addMaterialData(materialData);
-		model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
 
 		graphics.staticModel = std::make_shared<StaticModel>();
 		graphics.staticModel->setModel(model);
@@ -330,6 +362,143 @@ void SandboxApplication::createScene()
 		onEntityAdded(entity);
 	}
 
+	// Cube
+
+	if (false)
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+
+		//auto mesh = Primitive::createConeFromRadius(settings, Vector3f(0.0f, 0.0f, -1.0f), 5.0f, 2.0f, 4, 1);
+		auto mesh = Primitive::createBox(settings, 1.0f, 1.0f, 1.0f, 4, 3, 2);
+		mesh->setMaterialID(0);
+
+		// Entity
+		auto entity = m_entityManager.createEntity();
+
+		// Transform component
+		auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+		transform.setTranslation({ 0.0f, 0.0f, 12.0f });
+
+		// Graphics component
+		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+		auto materialData = std::make_shared<MaterialData>();
+		//materialData->set(MaterialData::BaseColorMap, MaterialData::Texture(rscPath / "Textures/uv-checker_color.png"));
+		materialData->set(MaterialData::BaseColor, Color::White);
+		materialData->set(MaterialData::Roughness, 0.7f);
+		materialData->set(MaterialData::Metalness, 0.4f);
+
+		auto model = std::make_shared<Model>();
+		model->addMesh(mesh);
+		model->addMaterialData(materialData);
+		//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
+
+		graphics.staticModel = std::make_shared<StaticModel>();
+		graphics.staticModel->setModel(model);
+		graphics.staticModel->setTransform(transform);
+		graphics.staticModel->setCastShadows(true);
+
+		onEntityAdded(entity);
+	}
+
+	// Sphere (UV texture)
+
+	if (false)
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+
+		auto mesh = Primitive::createUVSphere(settings, 2.0f, 10, 10);
+		mesh->setMaterialID(0);
+
+		// Entity
+		auto entity = m_entityManager.createEntity();
+
+		// Transform component
+		auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+		transform.setTranslation({ 0.0f, 0.0f, 8.0f });
+
+		// Graphics component
+		auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+		auto materialData = std::make_shared<MaterialData>();
+		materialData->set(MaterialData::BaseColor, Color::White);
+		materialData->set(MaterialData::BaseColorMap, MaterialData::Texture(rscPath / "Textures/uv-checker_color.png"));
+
+		auto model = std::make_shared<Model>();
+		model->addMesh(mesh);
+		model->addMaterialData(materialData);
+		//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
+
+		graphics.staticModel = std::make_shared<StaticModel>();
+		graphics.staticModel->setModel(model);
+		graphics.staticModel->setTransform(transform);
+		graphics.staticModel->setCastShadows(true);
+
+		onEntityAdded(entity);
+	}
+
+	// PBR Spheres
+
+	//if (false)
+	{
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+
+		float radius = 1.0f;
+		float space = 3.0f * radius;
+		float z = 20.0f;
+
+		size_t subdivisions = 50;
+
+		size_t count = 5;
+
+		float step = 1.0f / static_cast<float>(count - 1);
+
+		float xbegin = -space * static_cast<float>(count - 1) / 2.0f;
+		xbegin = 0;
+
+		auto mesh = Primitive::createUVSphere(settings, radius, subdivisions, subdivisions);
+		mesh->setMaterialID(0);
+
+		for (size_t x = 0; x < count; x++)
+		{
+			for (size_t y = 0; y < count; y++)
+			{
+				// Entity
+				auto entity = m_entityManager.createEntity();
+
+				// Transform component
+				auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+				transform.setTranslation({ xbegin + space * x, 0.0f, z + space * y });
+
+				// Graphics component
+				auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+				auto materialData = std::make_shared<MaterialData>();
+				materialData->set(MaterialData::BaseColor, Color::White);
+				materialData->set(MaterialData::Metalness, step * static_cast<float>(y));
+				materialData->set(MaterialData::Roughness, step * static_cast<float>(x));
+
+				auto model = std::make_shared<Model>();
+				model->addMesh(mesh);
+				model->addMaterialData(materialData);
+				//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+				model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
+
+				graphics.staticModel = std::make_shared<StaticModel>();
+				graphics.staticModel->setModel(model);
+				graphics.staticModel->setTransform(transform);
+				graphics.staticModel->setCastShadows(true);
+
+				onEntityAdded(entity);
+			}
+		}
+	}
+	return;
 	// Create Spheres
 	{
 		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
@@ -370,7 +539,8 @@ void SandboxApplication::createScene()
 					auto model = std::make_shared<Model>();
 					model->addMesh(mesh);
 					model->addMaterialData(materialData);
-					model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+					//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+					model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
 					
 					graphics.staticModel = std::make_shared<StaticModel>();
 					graphics.staticModel->setModel(model);
@@ -422,22 +592,26 @@ void SandboxApplication::createPlayer()
 
 void SandboxApplication::createLights()
 {
+	return;
 	DirectionalLight refLight;
 	refLight.setShadowMaxDepth(1000.0f);
 	refLight.setColor(Color(1.0f, 1.0f, 1.0f));
-	refLight.setAmbientStrength(0.05f);
-	refLight.setDiffuseStrength(0.2f);
+	refLight.setIntensity(8.0f);
+	refLight.setIndirectIntensity(0.1f);
 	refLight.setCastShadows(true);
 	refLight.setShadowMapSize(4096);
 	refLight.setShadowCascadeCount(8);
 	refLight.setShadowDepthBias(0.07f);
 
+	// Directional light #1
+
+	//if (false)
 	{
 		auto entity = m_entityManager.createEntity();
 
 		auto light = std::make_shared<DirectionalLight>();
 		*light = refLight;
-		light->setDirection({ 1.0f, 1.2f, -1.0f });
+		light->setDirection({ -1.0f, -1.0f, -1.0f });
 		light->setColor(Color(1.0f, 1.0f, 1.0f));
 
 		auto& lightComponent = m_entityManager.createComponent<LightComponent>(entity);
@@ -446,6 +620,9 @@ void SandboxApplication::createLights()
 		onEntityAdded(entity);
 	}
 
+	// Directional light #2
+
+	if (false)
 	{
 		auto entity = m_entityManager.createEntity();
 
@@ -459,51 +636,151 @@ void SandboxApplication::createLights()
 
 		onEntityAdded(entity);
 	}
+	
+	// Point lights
 
+	//if (false)
 	{
+		// Parameters
+		const float lightRadius = 2.0f;
+		const float lightIntensity = 10.0f;
+		const float lightZ = 1.0f;
+
+		const float meshRadius = .02f;
+		const size_t meshSubdivisions = 6;
+
+		const int rows = 20;
+		const int height = 15;
+		const float offset = 2.0f * lightRadius;
+		const float zoffset = 1.0f * lightRadius;
+
+		//-----
 		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
-
-		float radius = .05f;
-		size_t subdivisions = 6;
-
-		auto mesh = Primitive::createUVSphere(settings, radius, subdivisions, subdivisions);
+		auto mesh = Primitive::createUVSphere(settings, meshRadius, meshSubdivisions, meshSubdivisions);
 		mesh->setMaterialID(0);
 
 		PointLight refPointLight;
 		refPointLight.setColor(Color(1.0f, 1.0f, 1.0f));
-		refPointLight.setAmbientStrength(0.05f);
-		refPointLight.setDiffuseStrength(0.8f);
+		refPointLight.setIntensity(lightIntensity);
+		refPointLight.setIndirectIntensity(0.05f);
 		refPointLight.setCastShadows(false);
 		refPointLight.setShadowMapSize(4096);
 		refPointLight.setShadowCascadeCount(8);
 		refPointLight.setShadowDepthBias(0.07f);
 
-		const int rows = 20;
-		const float lightRadius = 15.0f;
-		const float intensity = 4.0f;
-		const float space = 1.5f * lightRadius;
+		const int halfRows = rows / 2;
+
+		for (int x = -halfRows; x <= halfRows; x++)
+		{
+			for (int y = -halfRows; y <= halfRows; y++)
+			{
+				for (int z = 0; z < height; z++)
+				{
+					auto entity = m_entityManager.createEntity();
+
+					Vector3f position;
+					position.x = offset * static_cast<float>(x);
+					position.y = offset * static_cast<float>(y);
+					position.z = lightZ + zoffset * static_cast<float>(z);
+
+					Color color;
+					color.r = (static_cast<float>(rand() % 255) / 255.0f);
+					color.g = (static_cast<float>(rand() % 255) / 255.0f);
+					color.b = (static_cast<float>(rand() % 255) / 255.0f);
+
+					// Light component
+					auto light = std::make_shared<PointLight>();
+					*light = refPointLight;
+					light->setPosition(position);
+					light->setRadius(lightRadius);
+					light->setColor(color);
+
+					auto& lightComponent = m_entityManager.createComponent<LightComponent>(entity);
+					lightComponent.light = std::move(light);
+
+					// Transform component
+					auto& transform = m_entityManager.createComponent<Transform>(entity);
+
+					transform.setTranslation(position);
+
+					// Graphics component
+					//*
+					auto& graphics = m_entityManager.createComponent<GraphicsComponent>(entity);
+
+					auto materialData = std::make_shared<MaterialData>();
+					materialData->set(MaterialData::EmissiveColor, Color(color.toVector4f() * lightIntensity));
+
+					auto model = std::make_shared<Model>();
+					model->addMesh(mesh);
+					model->addMaterialData(materialData);
+					model->addMaterialInstance(DefaultMaterials::getEmissiveInstance(*materialData));
+
+					graphics.staticModel = std::make_shared<StaticModel>();
+					graphics.staticModel->setModel(model);
+					graphics.staticModel->setTransform(transform);
+					graphics.staticModel->setCastShadows(false);
+					//*/
+
+					onEntityAdded(entity);
+				}
+			}
+		}
+	}
+
+	// Spot lights
+
+	if (false)
+	{
+		// Parameters
+		const Vector3f lightDir = Vector3f(-1.0f, 0.0f, -1.0f).getNormalized();
+		const float lightRange = 30.0f;
+		const float lightAngle = Math::toRadians(90.0f);
+		const float lightIntensity = 4.0f;
+		const float lightZ = 3.0f;
+
+		const float meshRange = 0.5f;
+		const size_t meshVerticalSubdivisions = 4;
+		const size_t meshHorizontalSubdivisions = 1;
+
+		const int rows = 50;
+		const float offset = 1.0f * lightRange;
+
+		//-----
+		ModelLoader::Settings settings(VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB));
+		auto mesh = Primitive::createConeFromAngle(settings, lightDir, meshRange, lightAngle, meshVerticalSubdivisions, meshHorizontalSubdivisions);
+		mesh->setMaterialID(0);
+
+		SpotLight refSpotLight;
+		refSpotLight.setColor(Color(1.0f, 1.0f, 1.0f));
+		refSpotLight.setIndirectIntensity(0.05f);
+		refSpotLight.setIntensity(0.8f);
+		refSpotLight.setCastShadows(false);
+		refSpotLight.setShadowMapSize(4096);
+		refSpotLight.setShadowCascadeCount(8);
+		refSpotLight.setShadowDepthBias(0.07f);
 
 		const int halfRows = rows / 2;
 
-		for (int x = -halfRows; x < halfRows; x++)
+		for (int x = -halfRows; x <= halfRows; x++)
 		{
-			for (int y = -halfRows; y < halfRows; y++)
+			for (int y = -halfRows; y <= halfRows; y++)
 			{
 				auto entity = m_entityManager.createEntity();
 
-				Vector3f position(space * x, space * y, 0.05f);
+				Vector3f position(offset * static_cast<float>(x), offset* static_cast<float>(y), lightZ);
 
 				Color color;
-				color.r = intensity * (static_cast<float>(rand() % 255) / 255.0f);
-				color.g = intensity * (static_cast<float>(rand() % 255) / 255.0f);
-				color.b = intensity * (static_cast<float>(rand() % 255) / 255.0f);
+				color.r = lightIntensity * (static_cast<float>(rand() % 255) / 255.0f);
+				color.g = lightIntensity * (static_cast<float>(rand() % 255) / 255.0f);
+				color.b = lightIntensity * (static_cast<float>(rand() % 255) / 255.0f);
 
 				// Light component
-				auto light = std::make_shared<PointLight>();
-				*light = refPointLight;
+				auto light = std::make_shared<SpotLight>();
+				*light = refSpotLight;
 				light->setPosition(position);
-				light->setRadius(lightRadius);
-				//light->setColor(Color(1.0f, 1.0f, 1.0f));
+				light->setDirection(lightDir);
+				light->setRange(lightRange);
+				light->setAngle(lightAngle);
 				light->setColor(color);
 
 				auto& lightComponent = m_entityManager.createComponent<LightComponent>(entity);
@@ -600,10 +877,15 @@ void SandboxApplication::updateScene()
 		auto& sceneAABB = Scene::instance().getAABB();
 		sceneAABB = AABBf();
 
-		auto aabbSize = m_modelData->model->getAABB().getSize();
+		auto aabb = m_modelData->model->getAABB();
+
+		auto aabbSize = aabb.getSize();
 		aabbSize.z = 0.0f;
 		const auto radius = (aabbSize.getNorm() / 2.0f) * 3.0f;
-		const auto origin = -radius * (static_cast<float>(newObjectRows) / 2.0f);
+
+		Vector2f origin;
+		origin.x = - aabb.getCenter().x - radius * (static_cast<float>(newObjectRows - 1) / 2.0f);
+		origin.y = - aabb.getCenter().y - radius * (static_cast<float>(newObjectRows - 1) / 2.0f);
 
 		const Vector2f velocityReference(newObjectRows / 2, newObjectRows / 2);
 		const auto maxDistance = velocityReference.getNorm();
@@ -621,25 +903,23 @@ void SandboxApplication::updateScene()
 				auto& transform = m_entityManager.getComponent<Transform>(entity);
 
 				Vector3f position;
-				position.x = origin + radius * static_cast<float>(i);
-				position.y = origin + radius * static_cast<float>(j);
+				position.x = origin.x + radius * static_cast<float>(i);
+				position.y = origin.y + radius * static_cast<float>(j);
 
 				transform.setTranslation(position);
+				transform.setRotation(Vector3f(0.0f, 0.0f, 0.0f));
 
 				// Update Scene aabb
 				sceneAABB.extend(transform.getMatrix() * graphics.staticModel->getModel()->getAABB());
 
 				// Velocity component
 				auto& velocity = m_entityManager.getComponent<VelocityComponent>(entity);
-
-				//const auto distance = Vector2f(i, j).getNorm();
+				
 				const auto distance = (Vector2f(i, j) - velocityReference).getNorm();
 
 				const auto percent = (newObjectRows == 1) ? 0.0f : distance / maxDistance;
-
-				velocity.speed = percent * 3.14159f * 2.0f;
+				
 				velocity.speed = percent * 3.14159f * 0.25f;
-				//velocity.speed = 0.0f;
 			}
 		}
 	}
