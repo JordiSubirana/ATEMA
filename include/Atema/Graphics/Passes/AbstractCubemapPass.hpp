@@ -24,9 +24,9 @@
 
 #include <Atema/Graphics/Config.hpp>
 #include <Atema/Graphics/AbstractRenderPass.hpp>
+#include <Atema/Graphics/FrameGraphContext.hpp>
 
 #include <optional>
-#include <Atema/Graphics/FrameGraphContext.hpp>
 
 namespace at
 {

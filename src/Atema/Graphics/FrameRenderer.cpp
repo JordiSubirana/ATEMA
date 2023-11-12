@@ -34,7 +34,8 @@ using namespace at;
 
 namespace
 {
-	constexpr ImageFormat ColorFormat = ImageFormat::RGBA8_SRGB;
+	constexpr ImageFormat HDRColorFormat = ImageFormat::RGBA32_SFLOAT;
+	constexpr ImageFormat LDRColorFormat = ImageFormat::RGBA8_SRGB;
 	constexpr ImageFormat DepthFormat = ImageFormat::D32_SFLOAT_S8_UINT;
 
 	const DepthStencil DepthClearValue = DepthStencil(1.0f, 0);
@@ -49,7 +50,10 @@ FrameRenderer::FrameRenderer() :
 	m_updateFrameGraph(false),
 	m_enableDebugRenderer(false),
 	m_enableDebugGBuffer(false),
-	m_enableDebugShadowMaps(false)
+	m_enableDebugShadowMaps(false),
+	m_enableToneMapping(true),
+	m_exposure(1.0f),
+	m_gamma(2.2f)
 {
 	createGBuffer();
 }
@@ -117,6 +121,32 @@ void FrameRenderer::enableDebugShadowMaps(bool enable)
 	}
 }
 
+void FrameRenderer::enableToneMapping(bool enable)
+{
+	if (m_enableToneMapping != enable)
+	{
+		m_enableToneMapping = enable;
+
+		updateFrameGraph();
+	}
+}
+
+void FrameRenderer::setExposure(float exposure)
+{
+	m_exposure = exposure;
+
+	if (m_toneMappingPass)
+		m_toneMappingPass->setExposure(exposure);
+}
+
+void FrameRenderer::setGamma(float gamma)
+{
+	m_gamma = gamma;
+
+	if (m_toneMappingPass)
+		m_toneMappingPass->setGamma(gamma);
+}
+
 void FrameRenderer::createFrameGraph()
 {
 	m_oldFrameGraphs.emplace_back(std::move(m_frameGraph));
@@ -135,7 +165,7 @@ void FrameRenderer::createFrameGraph()
 	// Basic FrameGraph : only shows UI if GBuffer is not valid
 	if (!m_gbuffer)
 	{
-		textureSettings.format = ColorFormat;
+		textureSettings.format = LDRColorFormat;
 		auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
 
 		// Empty pass only here to clear attachments
@@ -180,8 +210,16 @@ void FrameRenderer::createFrameGraph()
 		textureSettings.format = DepthFormat;
 		auto gbufferDepthTexture = frameGraphBuilder.createTexture(textureSettings);
 
-		textureSettings.format = ColorFormat;
+		textureSettings.format = HDRColorFormat;
 		auto compositionTexture = frameGraphBuilder.createTexture(textureSettings);
+
+		FrameGraphTextureHandle toneMappingOutputTexture = compositionTexture;
+
+		if (m_enableToneMapping)
+		{
+			textureSettings.format = LDRColorFormat;
+			toneMappingOutputTexture = frameGraphBuilder.createTexture(textureSettings);
+		}
 
 		// Pass setup
 
@@ -253,12 +291,25 @@ void FrameRenderer::createFrameGraph()
 			m_activePasses.emplace_back(m_skyPass.get());
 		}
 
+		// Tone Mapping
+		if (m_enableToneMapping)
+		{
+			ToneMappingPass::Settings passSettings;
+
+			passSettings.input = compositionTexture;
+			passSettings.output = toneMappingOutputTexture;
+			passSettings.outputClearColor = Color::Black;
+
+			m_toneMappingPass->addToFrameGraph(frameGraphBuilder, passSettings);
+			m_activePasses.emplace_back(m_toneMappingPass.get());
+		}
+
 		// Debug Renderer
 		if (m_enableDebugRenderer)
 		{
 			DebugRendererPass::Settings passSettings;
 
-			passSettings.output = compositionTexture;
+			passSettings.output = toneMappingOutputTexture;
 			passSettings.depthStencil = gbufferDepthTexture;
 
 			m_debugRendererPass->addToFrameGraph(frameGraphBuilder, passSettings);
@@ -270,7 +321,7 @@ void FrameRenderer::createFrameGraph()
 		{
 			DebugFrameGraphPass::Settings passSettings;
 
-			passSettings.output = compositionTexture;
+			passSettings.output = toneMappingOutputTexture;
 			passSettings.columnCount = 0;
 
 			if (m_enableDebugGBuffer)
@@ -287,7 +338,7 @@ void FrameRenderer::createFrameGraph()
 		{
 			ScreenPass::Settings passSettings;
 
-			passSettings.input = compositionTexture;
+			passSettings.input = toneMappingOutputTexture;
 
 			m_screenPass->addToFrameGraph(frameGraphBuilder, passSettings);
 			m_activePasses.emplace_back(m_screenPass.get());
@@ -388,6 +439,8 @@ void FrameRenderer::createPasses()
 
 	m_oldRenderPasses.emplace_back(std::move(m_skyPass));
 
+	m_oldRenderPasses.emplace_back(std::move(m_toneMappingPass));
+
 	m_oldRenderPasses.emplace_back(std::move(m_debugRendererPass));
 
 	m_oldRenderPasses.emplace_back(std::move(m_debugFrameGraphPass));
@@ -412,6 +465,10 @@ void FrameRenderer::createPasses()
 
 	// Some passes are always valid
 	m_skyPass = std::make_unique<SkyPass>(renderResourceManager);
+
+	m_toneMappingPass = std::make_unique<ToneMappingPass>(renderResourceManager);
+	m_toneMappingPass->setExposure(m_exposure);
+	m_toneMappingPass->setGamma(m_gamma);
 
 	m_screenPass = std::make_unique<ScreenPass>();
 }

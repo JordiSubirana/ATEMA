@@ -73,13 +73,15 @@ public:
 
 	bool moveObjects;
 
-	// Culling
-	bool customFrustumCulling;
-
 	// ShadowMap
 	uint32_t shadowMapSize;
 	float baseDepthBias;
 	uint32_t shadowCascadeCount;
+
+	// ToneMapping
+	bool enableToneMapping;
+	float toneMappingExposure;
+	float toneMappingGamma;
 
 	// Debug views
 	bool enableDebugRenderer;

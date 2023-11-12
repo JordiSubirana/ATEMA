@@ -298,7 +298,8 @@ void GuiSystem::showSettings()
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
 				static uint32_t step = 1;
-				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step);
+				static uint32_t stepFast = 2;
+				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step, &stepFast);
 				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
 			}
 
@@ -315,31 +316,6 @@ void GuiSystem::showSettings()
 				ImGui::SetNextItemWidth(-FLT_MIN);
 
 				ImGui::Checkbox("##Move objects", &settings.moveObjects);
-			}
-
-			ImGui::EndTable();
-		}
-
-		// Rendering
-		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-		if (ImGui::CollapsingHeader("Rendering"))
-		{
-			ImGui::BeginTable("Properties", 2);
-
-			// Object rows
-			{
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Enable Custom Frustum");
-
-				ImGui::TableNextColumn();
-
-				ImGui::SetNextItemWidth(-FLT_MIN);
-
-				ImGui::Checkbox("##Enable Custom Frustum", &settings.customFrustumCulling);
 			}
 
 			ImGui::EndTable();
@@ -417,6 +393,63 @@ void GuiSystem::showSettings()
 
 				ImGui::InputFloat("##Base depth bias", &settings.baseDepthBias, 0.01f, 0.1f, "%.3f");
 				settings.baseDepthBias = std::clamp(settings.baseDepthBias, 0.0f, 1000.0f);
+			}
+
+			ImGui::EndTable();
+		}
+
+		// Tone Mapping
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Tone Mapping"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			// Enable Tone Mapping
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Enable");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Enable", &settings.enableToneMapping);
+			}
+
+			// Exposure
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Exposure");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Exposure", &settings.toneMappingExposure, 0.1f, 0.2f, "%.2f");
+				settings.toneMappingExposure = std::clamp(settings.toneMappingExposure, 0.0f, 10.0f);
+			}
+
+			// Gamma
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Gamma");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::InputFloat("##Gamma", &settings.toneMappingGamma, 0.1f, 0.2f, "%.2f");
+				settings.toneMappingGamma = std::clamp(settings.toneMappingGamma, 0.0f, 10.0f);
 			}
 
 			ImGui::EndTable();

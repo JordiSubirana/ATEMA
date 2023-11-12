@@ -32,6 +32,7 @@
 #include <Atema/Graphics/Passes/LightPass.hpp>
 #include <Atema/Graphics/Passes/SkyPass.hpp>
 #include <Atema/Graphics/Passes/ScreenPass.hpp>
+#include <Atema/Graphics/Passes/ToneMappingPass.hpp>
 
 namespace at
 {
@@ -51,6 +52,10 @@ namespace at
 
 		void enableDebugGBuffer(bool enable);
 		void enableDebugShadowMaps(bool enable);
+		void enableToneMapping(bool enable);
+
+		void setExposure(float exposure);
+		void setGamma(float gamma);
 
 		FrameRenderer& operator=(const FrameRenderer& other) = delete;
 		FrameRenderer& operator=(FrameRenderer&& other) noexcept = default;
@@ -92,6 +97,7 @@ namespace at
 		UPtr<GBufferPass> m_gbufferPass;
 		UPtr<LightPass> m_lightPass;
 		UPtr<SkyPass> m_skyPass;
+		UPtr<ToneMappingPass> m_toneMappingPass;
 		UPtr<DebugRendererPass> m_debugRendererPass;
 		UPtr<DebugFrameGraphPass> m_debugFrameGraphPass;
 		UPtr<ScreenPass> m_screenPass;
@@ -99,6 +105,10 @@ namespace at
 		bool m_enableDebugRenderer;
 		bool m_enableDebugGBuffer;
 		bool m_enableDebugShadowMaps;
+		bool m_enableToneMapping;
+
+		float m_exposure;
+		float m_gamma;
 
 		// Shadows
 		std::unordered_map<const RenderLight*, Ptr<ShadowPassData>> m_shadowData;

@@ -192,6 +192,9 @@ void GraphicsSystem::checkSettings()
 	m_frameRenderer.enableDebugRenderer(settings.enableDebugRenderer);
 	m_frameRenderer.enableDebugGBuffer(settings.enableDebugGBuffer);
 	m_frameRenderer.enableDebugShadowMaps(settings.enableDebugShadowMaps);
+	m_frameRenderer.enableToneMapping(settings.enableToneMapping);
+	m_frameRenderer.setExposure(settings.toneMappingExposure);
+	m_frameRenderer.setGamma(settings.toneMappingGamma);
 }
 
 void GraphicsSystem::onResize(const Vector2u& size)
@@ -225,6 +228,8 @@ void GraphicsSystem::updateFrame()
 
 	renderContext.destroyPendingResources();
 
+	destroyPendingResources(renderContext);
+
 	CommandBuffer::Settings commandBufferSettings;
 	commandBufferSettings.secondary = false;
 	commandBufferSettings.singleUse = true;
@@ -232,8 +237,6 @@ void GraphicsSystem::updateFrame()
 	auto commandBuffer = renderContext.createCommandBuffer(commandBufferSettings, QueueType::Graphics);
 
 	commandBuffer->begin();
-
-	destroyPendingResources(renderContext);
 
 	m_frameRenderer.render(*commandBuffer, renderContext, &renderFrame);
 
