@@ -30,6 +30,7 @@ namespace
 {
 	const Vector3f frontVector(1.0f, 0.0f, 0.0f);
 	const Vector3f rightVector(0.0f, -1.0f, 0.0f);
+	const Vector3f upVector(0.0f, 0.0f, 1.0f);
 }
 
 FirstPersonCameraSystem::FirstPersonCameraSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
@@ -39,6 +40,8 @@ FirstPersonCameraSystem::FirstPersonCameraSystem(const at::Ptr<at::RenderWindow>
 	m_back(false),
 	m_right(false),
 	m_left(false),
+	m_up(false),
+	m_down(false),
 	m_cameraRotationEnabled(false),
 	m_initMousePosition(false)
 {
@@ -74,19 +77,21 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 	// Update components
 	const auto rotationMatrix = Matrix4f::createRotation(transform->getRotation());
 
-	Vector3f frontOffset;
-	if (m_front)
-		frontOffset += frontVector;
-	if (m_back)
-		frontOffset -= frontVector;
+	Vector3f offset;
 
-	Vector3f sideOffset;
+	if (m_front)
+		offset += frontVector;
+	if (m_back)
+		offset -= frontVector;
 	if (m_right)
-		sideOffset += rightVector;
+		offset += rightVector;
 	if (m_left)
-		sideOffset -= rightVector;
-	
-	auto offset = frontOffset + sideOffset;
+		offset -= rightVector;
+	if (m_up)
+		offset += upVector;
+	if (m_down)
+		offset -= upVector;
+
 	if (offset.getNorm() > 1e-6)
 		offset.normalize();
 	offset *= timeStep.getSeconds() * Settings::instance().cameraSpeed;
@@ -139,6 +144,12 @@ void FirstPersonCameraSystem::onEvent(Event& event)
 		// Right
 		else if (keyEvent.key == Key::D)
 			m_right = pressed;
+		// Up
+		else if (keyEvent.key == Key::E)
+			m_up = pressed;
+		// Down
+		else if (keyEvent.key == Key::Q)
+			m_down = pressed;
 	}
 	else if (event.is<MouseButtonEvent>())
 	{

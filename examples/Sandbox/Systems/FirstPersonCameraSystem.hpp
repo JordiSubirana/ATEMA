@@ -38,7 +38,7 @@ private:
 	void rotate(at::Transform& transform, const at::Vector2f& mousePosition);
 
 	at::RenderWindow* m_window;
-	bool m_front, m_back, m_right, m_left;
+	bool m_front, m_back, m_right, m_left, m_up, m_down;
 	bool m_cameraRotationEnabled;
 	bool m_initMousePosition;
 	at::Vector2f m_lastPosition;
