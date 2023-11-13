@@ -60,14 +60,20 @@ namespace at
 			VkDescriptorPool getHandle() const;
 
 		private:
+			struct AvailableData
+			{
+				VkDescriptorSet descriptorSetHandle = VK_NULL_HANDLE;
+				size_t connectionIndex = 0;
+			};
+
 			const VulkanDevice& m_device;
 			VkDescriptorPool m_pool;
 			VkDescriptorSetLayout m_layout;
 			const SparseSet<VkDescriptorType>& m_bindingTypes;
-			std::queue<VkDescriptorSet> m_unusedSets;
+			std::queue<AvailableData> m_availableData;
 			uint32_t m_size;
 			uint32_t m_maxSize;
-			ConnectionGuard m_connectionGuard;
+			std::vector<Connection> m_connections;
 		};
 		
 		void addPool();

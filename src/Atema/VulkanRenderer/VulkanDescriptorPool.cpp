@@ -41,6 +41,9 @@ VulkanDescriptorPool::Pool::Pool(const VulkanDevice& device, VkDescriptorSetLayo
 VulkanDescriptorPool::Pool::~Pool()
 {
 	ATEMA_VK_DESTROY(m_device, vkDestroyDescriptorPool, m_pool);
+
+	for (auto& connection : m_connections)
+		connection.disconnect();
 }
 
 bool VulkanDescriptorPool::Pool::isFull() const noexcept
@@ -51,12 +54,16 @@ bool VulkanDescriptorPool::Pool::isFull() const noexcept
 Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 {
 	VkDescriptorSet handle = VK_NULL_HANDLE;
+	size_t connectionIndex;
 
 	// Recycle an unused set if any
-	if (!m_unusedSets.empty())
+	if (!m_availableData.empty())
 	{
-		handle = m_unusedSets.front();
-		m_unusedSets.pop();
+		auto& availableData = m_availableData.front();
+		handle = availableData.descriptorSetHandle;
+		connectionIndex = availableData.connectionIndex;
+
+		m_availableData.pop();
 	}
 	// Allocate a new set
 	else
@@ -68,18 +75,27 @@ Ptr<DescriptorSet> VulkanDescriptorPool::Pool::createSet()
 		allocInfo.pSetLayouts = &m_layout;
 
 		ATEMA_VK_CHECK(m_device.vkAllocateDescriptorSets(m_device, &allocInfo, &handle));
+
+		connectionIndex = m_connections.size();
+		m_connections.emplace_back();
 	}
 
 	m_size++;
 
 	auto descriptorSet = std::make_shared<VulkanDescriptorSet>(m_device, handle, m_bindingTypes);
 
-	m_connectionGuard.connect(descriptorSet->onDestroy, [this, handle]()
-	{
-		m_unusedSets.push(handle);
-		m_size--;
-	});
-	
+	// Here we directly store connections instead of using a ConnectionGuard
+	// This is because a lot of transient sets are created then destroyed on the fly
+	// When destroyed, their onDestroy signal is also destroyed but the ConnectionGuard can't know
+	// So when new sets are created, a ConnectionGuard would grow in size, because it stores all the previous (invalid) signals
+	//TODO: Maybe create a method to clear invalid connections in ConnectionGuard?
+	m_connections[connectionIndex] = descriptorSet->onDestroy.connect([this, handle, connectionIndex]()
+		{
+			m_connections[connectionIndex].disconnect();
+			m_availableData.push({ handle, connectionIndex });
+			m_size--;
+		});
+
 	return std::static_pointer_cast<DescriptorSet>(descriptorSet);
 }
 
