@@ -352,45 +352,106 @@ void GraphicsSystem::updateRenderables()
 {
 	ATEMA_BENCHMARK("Update renderables");
 
-	auto entities = getEntityManager().getUnion<Transform, GraphicsComponent>();
-
-	auto& taskManager = TaskManager::instance();
-
-	std::vector<Ptr<Task>> tasks;
-	tasks.reserve(threadCount);
-
-	size_t firstIndex = 0;
-	const size_t size = entities.size() / threadCount;
-
-	for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+	// Graphics
 	{
-		auto lastIndex = firstIndex + size;
+		auto entities = getEntityManager().getUnion<Transform, GraphicsComponent>();
 
-		if (taskIndex == threadCount - 1)
+		auto& taskManager = TaskManager::instance();
+
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(threadCount);
+
+		size_t firstIndex = 0;
+		const size_t size = entities.size() / threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
 		{
-			const auto remainingSize = entities.size() - lastIndex;
+			auto lastIndex = firstIndex + size;
 
-			lastIndex += remainingSize;
+			if (taskIndex == threadCount - 1)
+			{
+				const auto remainingSize = entities.size() - lastIndex;
+
+				lastIndex += remainingSize;
+			}
+
+			auto task = taskManager.createTask([this, &entities, firstIndex, lastIndex](size_t threadIndex)
+				{
+					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+					{
+						auto& transform = entities.get<Transform>(*it);
+						auto& graphics = entities.get<GraphicsComponent>(*it);
+
+						graphics.staticModel->setTransform(transform);
+					}
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
 		}
 
-		auto task = taskManager.createTask([this, &entities, firstIndex, lastIndex](size_t threadIndex)
-			{
-				for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
-				{
-					auto& transform = entities.get<Transform>(*it);
-					auto& graphics = entities.get<GraphicsComponent>(*it);
-
-					graphics.staticModel->setTransform(transform);
-				}
-			});
-
-		tasks.push_back(task);
-
-		firstIndex += size;
+		for (auto& task : tasks)
+			task->wait();
 	}
 
-	for (auto& task : tasks)
-		task->wait();
+	// Lights
+	{
+		auto entities = getEntityManager().getUnion<Transform, LightComponent>();
+
+		auto& taskManager = TaskManager::instance();
+
+		std::vector<Ptr<Task>> tasks;
+		tasks.reserve(threadCount);
+
+		size_t firstIndex = 0;
+		const size_t size = entities.size() / threadCount;
+
+		for (size_t taskIndex = 0; taskIndex < threadCount; taskIndex++)
+		{
+			auto lastIndex = firstIndex + size;
+
+			if (taskIndex == threadCount - 1)
+			{
+				const auto remainingSize = entities.size() - lastIndex;
+
+				lastIndex += remainingSize;
+			}
+
+			auto task = taskManager.createTask([this, &entities, firstIndex, lastIndex](size_t threadIndex)
+				{
+					for (auto it = entities.begin() + firstIndex; it != entities.begin() + lastIndex; it++)
+					{
+						auto& transform = entities.get<Transform>(*it);
+						auto& light = entities.get<LightComponent>(*it);
+
+						switch (light.light->getType())
+						{
+							case LightType::Point:
+							{
+								auto& pointLight = static_cast<PointLight&>(*light.light.get());
+								pointLight.setPosition(transform.getTranslation());
+								break;
+							}
+							case LightType::Spot:
+							{
+								auto& spotLight = static_cast<SpotLight&>(*light.light.get());
+								spotLight.setPosition(transform.getTranslation());
+								break;
+							}
+							default: ;
+						}
+					}
+				});
+
+			tasks.push_back(task);
+
+			firstIndex += size;
+		}
+
+		for (auto& task : tasks)
+			task->wait();
+	}
 }
 
 void GraphicsSystem::updateCamera()
