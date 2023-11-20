@@ -33,6 +33,7 @@
 #include "Components/CameraComponent.hpp"
 #include "Components/LightComponent.hpp"
 #include "Systems/SceneUpdateSystem.hpp"
+#include "Systems/RandomMoveSystem.hpp"
 #include "Systems/GraphicsSystem.hpp"
 #include "Systems/CameraSystem.hpp"
 #include "Systems/FirstPersonCameraSystem.hpp"
@@ -52,6 +53,7 @@ namespace
 	std::vector<std::string> systemNames =
 	{
 		"SceneUpdateSystem",
+		"RandomMoveSystem",
 		"CameraSystem",
 		"FirstPersonCameraSystem",
 		"GuiSystem",
@@ -141,7 +143,8 @@ namespace
 SandboxApplication::SandboxApplication():
 	Application(),
 	m_frameCount(0),
-	m_frameDuration(0.0f)
+	m_frameDuration(0.0f),
+	m_sceneType(Settings::SceneType::None)
 {
 	// Let default settings for now
 	Renderer::Settings settings;
@@ -169,6 +172,11 @@ SandboxApplication::SandboxApplication():
 
 	m_systems.push_back(sceneUpdateSystem);
 
+	auto randomMoveSystem = std::make_shared<RandomMoveSystem>();
+	randomMoveSystem->setEntityManager(m_entityManager);
+
+	m_systems.push_back(randomMoveSystem);
+
 	auto cameraSystem = std::make_shared<CameraSystem>(m_window);
 	cameraSystem->setEntityManager(m_entityManager);
 
@@ -183,6 +191,8 @@ SandboxApplication::SandboxApplication():
 	guiSystem->setEntityManager(m_entityManager);
 
 	m_systems.push_back(guiSystem);
+
+	m_guiSystem = guiSystem.get();
 
 	auto graphicsSystem = std::make_shared<GraphicsSystem>(m_window);
 	graphicsSystem->setEntityManager(m_entityManager);
@@ -252,7 +262,7 @@ void SandboxApplication::update(at::TimeStep ms)
 
 	if (m_frameDuration >= Settings::instance().metricsUpdateTime)
 	{
-		auto& guiSystem = static_cast<GuiSystem&>(*m_systems[3]);
+		auto& guiSystem = static_cast<GuiSystem&>(*m_guiSystem);
 
 		guiSystem.updateBenchmarks(m_frameCount);
 		guiSystem.updateStats(m_frameCount);

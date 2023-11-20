@@ -19,56 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_RANDOMMOVECOMPONENT_HPP
+#define ATEMA_SANDBOX_RANDOMMOVECOMPONENT_HPP
 
-#include <Atema/Atema.hpp>
-#include "Settings.hpp"
+#include <Atema/Math/Vector.hpp>
 
-class GraphicsSystem;
-class Scene;
-class System;
-struct ModelData;
-
-class SandboxApplication : public at::Application
+struct RandomMoveComponent
 {
-public:
-	SandboxApplication();
-	~SandboxApplication();
-
-	void onEvent(at::Event& event) override;
-
-	void update(at::TimeStep ms) override;
-
-private:
-	void checkSettings();
-
-	void updateScene();
-
-	void onEntityAdded(at::EntityHandle entity);
-	void onEntityRemoved(at::EntityHandle entity);
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::UPtr<Scene> m_scene;
-
-	//at::Ptr<ModelData> m_modelData;
-
-	//std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	//uint32_t m_objectRows;
-
-	System* m_guiSystem;
-	GraphicsSystem* m_graphicsSystem;
-	Settings::SceneType m_sceneType;
+	at::Vector3f origin;
+	at::Vector3f direction;
+	float radius = 1.0f;
+	float speed = 1.0f;
+	float strength = 0.0f; // 0: don't move, 1: move a lot
 };
 
 #endif

@@ -19,56 +19,18 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_RANDOMMOVESYSTEM_HPP
+#define ATEMA_SANDBOX_RANDOMMOVESYSTEM_HPP
 
-#include <Atema/Atema.hpp>
-#include "Settings.hpp"
+#include "System.hpp"
 
-class GraphicsSystem;
-class Scene;
-class System;
-struct ModelData;
-
-class SandboxApplication : public at::Application
+class RandomMoveSystem : public System
 {
 public:
-	SandboxApplication();
-	~SandboxApplication();
+	RandomMoveSystem();
+	virtual ~RandomMoveSystem();
 
-	void onEvent(at::Event& event) override;
-
-	void update(at::TimeStep ms) override;
-
-private:
-	void checkSettings();
-
-	void updateScene();
-
-	void onEntityAdded(at::EntityHandle entity);
-	void onEntityRemoved(at::EntityHandle entity);
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::UPtr<Scene> m_scene;
-
-	//at::Ptr<ModelData> m_modelData;
-
-	//std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	//uint32_t m_objectRows;
-
-	System* m_guiSystem;
-	GraphicsSystem* m_graphicsSystem;
-	Settings::SceneType m_sceneType;
+	void update(at::TimeStep timeStep) override;
 };
 
 #endif
