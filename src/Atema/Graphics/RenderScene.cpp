@@ -256,14 +256,6 @@ void RenderScene::updateResources()
 
 		for (auto& resource : m_renderObjects)
 			resource->update();
-
-		static size_t i = 0;
-		if (i != m_renderObjects.size())
-		{
-			i = m_renderObjects.size();
-
-			std::cout << "Objects : " << i << "\n";
-		}
 	}
 
 	{
@@ -271,14 +263,6 @@ void RenderScene::updateResources()
 
 		for (auto& resource : m_renderLights)
 			resource->update();
-
-		static size_t i = 0;
-		if (i != m_renderLights.size())
-		{
-			i = m_renderLights.size();
-
-			std::cout << "Lights : " << i << "\n";
-		}
 	}
 
 	{
@@ -286,14 +270,6 @@ void RenderScene::updateResources()
 
 		for (auto& [id, renderData] : m_renderMaterials)
 			renderData.resource->update();
-
-		static size_t i = 0;
-		if (i != m_renderMaterials.size())
-		{
-			i = m_renderMaterials.size();
-
-			std::cout << "Materials : " << i << "\n";
-		}
 	}
 
 	{
@@ -301,13 +277,5 @@ void RenderScene::updateResources()
 
 		for (auto& [id, renderData] : m_renderMaterialInstances)
 			renderData.resource->update();
-
-		static size_t i = 0;
-		if (i != m_renderMaterialInstances.size())
-		{
-			i = m_renderMaterialInstances.size();
-
-			std::cout << "Material Instances : " << i << "\n";
-		}
 	}
 }
