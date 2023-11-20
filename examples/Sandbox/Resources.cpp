@@ -27,25 +27,69 @@
 
 using namespace at;
 
-ModelData::ModelData(const std::filesystem::path& path)
+namespace
+{
+	struct MaterialTextureParameter
+	{
+		const char* name;
+		std::string imageSuffix;
+	};
+}
+
+std::filesystem::path ResourcePath::resources() noexcept
+{
+	return "../../examples/Sandbox/Resources";
+}
+
+std::filesystem::path ResourcePath::fonts() noexcept
+{
+	return resources() / "Fonts";
+}
+
+std::filesystem::path ResourcePath::models() noexcept
+{
+	return resources() / "Models";
+}
+
+std::filesystem::path ResourcePath::shaders() noexcept
+{
+	return resources() / "Shaders";
+}
+
+std::filesystem::path ResourcePath::textures() noexcept
+{
+	return resources() / "Textures";
+}
+
+at::Ptr<at::Model> ResourceLoader::loadModel(const ModelSettings& modelSettings)
 {
 	const auto vertexFormat = VertexFormat::create(DefaultVertexFormat::XYZ_UV_NTB);
 
-	ModelLoader::Settings settings(vertexFormat);
-	settings.flipTexCoords = true;
-	settings.vertexTransformation = modelTransform.getMatrix();
-	settings.textureDir = rscPath / "Textures";
+	ModelLoader::Settings loaderSettings(vertexFormat);
+	loaderSettings.flipTexCoords = true;
+	loaderSettings.vertexTransformation = modelSettings.vertexTransformation;
+	loaderSettings.textureDir = ResourcePath::textures();
 
-	model = ObjLoader::load(path, settings);
+	auto model = ObjLoader::load(modelSettings.modelPath, loaderSettings);
+
+	if (modelSettings.overrideMaterial)
+	{
+		for (auto& mesh : model->getMeshes())
+			mesh->setMaterialID(0);
+
+		*model->getMaterialData()[0] = *loadMaterialData(modelSettings.modelTexturePath, modelSettings.modelTextureExtension);
+	}
+
+	for (auto& materialData : model->getMaterialData())
+	{
+		//model->addMaterialInstance(DefaultMaterials::getPhongInstance(*materialData));
+		model->addMaterialInstance(DefaultMaterials::getPBRInstance(*materialData));
+	}
+
+	return model;
 }
 
-struct MaterialTextureParameter
-{
-	const char* name;
-	std::string imageSuffix;
-};
-
-at::Ptr<at::MaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension)
+at::Ptr<at::MaterialData> ResourceLoader::loadMaterialData(const std::filesystem::path& path, const std::string& extension)
 {
 	static const std::vector<MaterialTextureParameter> materialParameters =
 	{

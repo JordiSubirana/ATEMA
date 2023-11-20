@@ -44,7 +44,62 @@ CameraSystem::~CameraSystem()
 
 void CameraSystem::update(TimeStep timeStep)
 {
-	AABBf sceneAABB = Scene::instance().getAABB();
+	// Update automatic cameras
+	auto selection = getEntityManager().getUnion<Transform, CameraComponent>();
+
+	for (auto& entity : selection)
+	{
+		auto& camera = selection.get<CameraComponent>(entity);
+
+		if (m_size.x == 0 || m_size.y == 0)
+			camera.aspectRatio = 1.0f;
+		else
+			camera.aspectRatio = static_cast<float>(m_size.x) / static_cast<float>(m_size.y);
+
+		if (camera.isAuto)
+		{
+			float rmin = camera.minRadius;
+			float rmax = camera.maxRadius;
+
+			auto& transform = selection.get<Transform>(entity);
+
+			const float secsPerLoop = 5.0f;
+
+			const auto loopsPerSec = 1.0f / secsPerLoop;
+
+			/*
+			const auto metersPerSec = 10.0f;
+			auto perimeter = rmax * 2.0f * Math::Pi<float>;
+			perimeter = std::sqrt(perimeter * 2.0f);
+			const auto loopsPerSec = metersPerSec / perimeter * 0.5f;
+			//*/
+
+			const auto angle = m_totalTime * loopsPerSec * Math::Pi<float>;
+
+			const auto sin = std::sin(angle);
+			const auto sinSlow = std::sin(angle / 2.0f);
+
+			const auto percent = (sin + 1.0f) / 2.0f;
+			const auto percentSlow = (sinSlow + 1.0f) / 2.0f;
+
+			const auto radius = Math::lerp(rmin, rmax, percent);
+
+			const auto radiusPercent = (radius - rmin) / (rmax * 2.0f - rmin);
+
+			const auto pos = toCartesian({ radius, angle });
+
+			//auto z = percentSlow * objectAABB.max.z * 2.0f + (1.0f - percentSlow) * sceneRadius;
+
+			//z = Math::lerp(objectAABB.max.z * 1.0f, z, radiusPercent);
+
+			transform.setTranslation({ pos.x + camera.target.x, pos.y + camera.target.y, camera.cameraZ });
+		}
+	}
+
+	m_totalTime += timeStep.getSeconds();
+
+	/*
+	AABBf sceneAABB = Scene::getCurrent().getAABB();
 	AABBf objectAABB;
 	{
 		auto& entityManager = getEntityManager();
@@ -119,6 +174,7 @@ void CameraSystem::update(TimeStep timeStep)
 	}
 
 	m_totalTime += timeStep.getSeconds();
+	//*/
 }
 
 void CameraSystem::onEvent(Event& event)

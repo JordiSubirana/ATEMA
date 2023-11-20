@@ -56,6 +56,14 @@ public:
 		ShadowCascade8,
 	};
 
+	enum class SceneType
+	{
+		None,
+		Default,
+		Test,
+		PBRSpheres,
+	};
+
 	Settings();
 	~Settings();
 
@@ -69,6 +77,8 @@ public:
 	float cameraSpeed;
 
 	//Scene
+	SceneType sceneType;
+
 	uint32_t objectRows;
 
 	bool moveObjects;

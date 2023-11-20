@@ -61,6 +61,8 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 	m_frameRenderer.getRenderScene().setCamera(m_camera);
 
+	/*
+	if (false)
 	{
 		const std::filesystem::path texPath = rscPath / "Textures";
 		//const std::filesystem::path env = texPath / "graveyard_pathways_4k.hdr";
@@ -137,6 +139,7 @@ GraphicsSystem::GraphicsSystem(const Ptr<RenderWindow>& renderWindow) :
 
 		m_frameRenderer.getRenderScene().setSkyBox(skyBox);
 	}
+	//*/
 
 	// Remove unused resources if they are not used during 3 cycles (arbitrary)
 	Graphics::instance().setMaxUnusedCounter(static_cast<uint32_t>(Renderer::FramesInFlight) * 3);
@@ -221,6 +224,11 @@ void GraphicsSystem::onEntityRemoved(at::EntityHandle entity)
 
 		destroyAfterUse(std::move(light.light));
 	}
+}
+
+at::RenderScene& GraphicsSystem::getRenderScene() noexcept
+{
+	return m_frameRenderer.getRenderScene();
 }
 
 void GraphicsSystem::checkSettings()

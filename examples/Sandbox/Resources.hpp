@@ -27,42 +27,32 @@
 
 #include <filesystem>
 
-const std::filesystem::path rscPath = "../../examples/Sandbox/Resources";
-const auto shaderPath = rscPath / "Shaders";
-const auto fontPath = rscPath / "Fonts";
+struct ResourcePath
+{
+	static std::filesystem::path resources() noexcept;
+	static std::filesystem::path fonts() noexcept;
+	static std::filesystem::path models() noexcept;
+	static std::filesystem::path shaders() noexcept;
+	static std::filesystem::path textures() noexcept;
+};
 
-const float cameraScale = 0.001f;
+struct ResourceLoader
+{
+	struct ModelSettings
+	{
+		std::filesystem::path modelPath;
 
-// LampPost
-/*
-const bool overrideMaterial = false;
-const std::filesystem::path modelMeshPath = rscPath / "Models/LampPost.obj";
-const std::filesystem::path modelTexturePath = rscPath / "Textures/LampPost";
-const std::string modelTextureExtension = "png";
-const at::Transform modelTransform({ 0.0f, 0.0f, -2.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 0.1f, 0.1f, 0.1f });
-//*/
+		bool overrideMaterial = false;
+		std::filesystem::path modelTexturePath;
+		std::string modelTextureExtension;
 
-// Tardis
-/*
-const bool overrideMaterial = true;
-const std::filesystem::path modelMeshPath = rscPath / "Models/tardis.obj";
-const std::filesystem::path modelTexturePath = rscPath / "Textures/tardis";
-const std::string modelTextureExtension = "png";
-const at::Transform modelTransform({ 0.0f, 0.0f, 0.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
-//*/
+		std::optional<at::Matrix4f> vertexTransformation;
+	};
 
-// Sponza
-//*
-const bool overrideMaterial = false;
-const std::filesystem::path modelMeshPath = rscPath / "Models/sponza.obj"; // StMaryAbbots
-const std::filesystem::path modelTexturePath = rscPath / "Textures/uzv-checker";
-const std::string modelTextureExtension = "png";
-const at::Transform modelTransform({ 0.0f, 0.0f, -1.0f }, { at::Math::HalfPi<float>, 0.0f, 0.0f }, { 0.01f, 0.01f, 0.01f });
-//*/
+	static at::Ptr<at::Model> loadModel(const ModelSettings& modelSettings);
 
-// Ground
-const std::filesystem::path groundTexturePath = rscPath / "Textures/Rocks";
-const std::string groundTextureExtension = "png";
+	static at::Ptr<at::MaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension);
+};
 
 inline at::Vector2f toPolar(const at::Vector2f& cartesian)
 {
@@ -87,14 +77,5 @@ inline at::Vector2f toCartesian(const at::Vector2f& polar)
 
 	return value;
 }
-
-struct ModelData
-{
-	ModelData(const std::filesystem::path& path);
-
-	at::Ptr<at::Model> model;
-};
-
-at::Ptr<at::MaterialData> loadMaterialData(const std::filesystem::path& path, const std::string& extension);
 
 #endif

@@ -28,9 +28,11 @@ using namespace at;
 
 namespace
 {
-	const Vector3f frontVector(1.0f, 0.0f, 0.0f);
-	const Vector3f rightVector(0.0f, -1.0f, 0.0f);
-	const Vector3f upVector(0.0f, 0.0f, 1.0f);
+	const Vector3f FrontVector(1.0f, 0.0f, 0.0f);
+	const Vector3f RightVector(0.0f, -1.0f, 0.0f);
+	const Vector3f UpVector(0.0f, 0.0f, 1.0f);
+
+	const float CameraScale = 0.001f;
 }
 
 FirstPersonCameraSystem::FirstPersonCameraSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
@@ -80,17 +82,17 @@ void FirstPersonCameraSystem::update(TimeStep timeStep)
 	Vector3f offset;
 
 	if (m_front)
-		offset += frontVector;
+		offset += FrontVector;
 	if (m_back)
-		offset -= frontVector;
+		offset -= FrontVector;
 	if (m_right)
-		offset += rightVector;
+		offset += RightVector;
 	if (m_left)
-		offset -= rightVector;
+		offset -= RightVector;
 	if (m_up)
-		offset += upVector;
+		offset += UpVector;
 	if (m_down)
-		offset -= upVector;
+		offset -= UpVector;
 
 	if (offset.getNorm() > 1e-6)
 		offset.normalize();
@@ -191,7 +193,7 @@ void FirstPersonCameraSystem::rotate(at::Transform& transform, const at::Vector2
 
 	const auto delta = mousePosition - m_lastPosition;
 
-	transform.rotate({ 0.0f, delta.y * cameraScale, -delta.x * cameraScale });
+	transform.rotate({ 0.0f, delta.y * CameraScale, -delta.x * CameraScale });
 
 	m_lastPosition = mousePosition;
 }

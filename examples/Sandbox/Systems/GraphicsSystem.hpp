@@ -45,6 +45,9 @@ public:
 	void onEntityAdded(at::EntityHandle entity) override;
 	void onEntityRemoved(at::EntityHandle entity) override;
 
+	//TODO: Remove this once SkyBox is implemented as a complete entity
+	at::RenderScene& getRenderScene() noexcept;
+
 private:
 	void checkSettings();
 	void onResize(const at::Vector2u& size);

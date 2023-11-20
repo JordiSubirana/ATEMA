@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Jordi SUBIRANA
+	Copyright 2023 Jordi SUBIRANA
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy of
 	this software and associated documentation files (the "Software"), to deal in
@@ -19,55 +19,39 @@
 	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
-#define ATEMA_SANDBOX_SANDBOXAPPLICATION_HPP
+#ifndef ATEMA_SANDBOX_TESTSCENE_HPP
+#define ATEMA_SANDBOX_TESTSCENE_HPP
 
-#include <Atema/Atema.hpp>
-#include "Settings.hpp"
+#include "../Scene.hpp"
 
-class GraphicsSystem;
-class Scene;
-class System;
-struct ModelData;
+namespace at
+{
+	class Model;
+}
 
-class SandboxApplication : public at::Application
+class TestScene : public Scene
 {
 public:
-	SandboxApplication();
-	~SandboxApplication();
+	TestScene();
+	TestScene(const TestScene& other) = default;
+	TestScene(TestScene&& other) noexcept = default;
+	~TestScene();
 
-	void onEvent(at::Event& event) override;
+	void update() override;
 
-	void update(at::TimeStep ms) override;
+	TestScene& operator=(const TestScene& other) = default;
+	TestScene& operator=(TestScene&& other) noexcept = default;
+
+protected:
+	void createModels() override;
+	void createLights() override;
 
 private:
-	void checkSettings();
+	void updateModels();
 
-	void updateScene();
-
-	void onEntityAdded(at::EntityHandle entity);
-	void onEntityRemoved(at::EntityHandle entity);
-	
-	at::Ptr<at::RenderWindow> m_window;
-
-	at::EntityManager m_entityManager;
-
-	std::vector<at::Ptr<System>> m_systems;
-
-	at::UPtr<Scene> m_scene;
-
-	//at::Ptr<ModelData> m_modelData;
-
-	//std::vector<at::EntityHandle> m_objects;
-
-	int m_frameCount;
-	float m_frameDuration;
-
-	// Settings
-	//uint32_t m_objectRows;
-
-	GraphicsSystem* m_graphicsSystem;
-	Settings::SceneType m_sceneType;
+	at::Ptr<at::Model> m_model;
+	uint32_t m_objectRows;
+	std::vector<at::EntityHandle> m_objects;
 };
 
 #endif

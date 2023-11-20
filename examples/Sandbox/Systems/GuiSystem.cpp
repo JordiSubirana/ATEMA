@@ -115,7 +115,7 @@ GuiSystem::GuiSystem(const at::Ptr<at::RenderWindow>& renderWindow) :
 {
 	UiContext::Settings uiSettings;
 	uiSettings.renderWindow = renderWindow.get();
-	uiSettings.defaultFont = fontPath / "Roboto-Medium.ttf";
+	uiSettings.defaultFont = ResourcePath::fonts() / "Roboto-Medium.ttf";
 	uiSettings.defaultFontSize = 16.0f;
 
 	m_uiContext = UiContext::create(uiSettings);
@@ -206,6 +206,74 @@ void GuiSystem::showSettings()
 
 	if (ImGui::Begin("Settings", nullptr, windowFlags))
 	{
+		// Scene
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
+		if (ImGui::CollapsingHeader("Scene"))
+		{
+			ImGui::BeginTable("Properties", 2);
+
+			// Scene selection
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Scene");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static const std::vector<const char*> shadowMapSizeItems =
+				{
+					"None",
+					"Default",
+					"Test Scene",
+					"PBR Spheres"
+				};
+				static int shadowMapCurrentItem = static_cast<int>(settings.sceneType);
+				ImGui::Combo("##Scene", &shadowMapCurrentItem, shadowMapSizeItems.data(), static_cast<int>(shadowMapSizeItems.size()));
+
+				settings.sceneType = static_cast<Settings::SceneType>(shadowMapCurrentItem);
+			}
+
+			// Object rows
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Object rows");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				static uint32_t step = 1;
+				static uint32_t stepFast = 2;
+				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step, &stepFast);
+				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
+			}
+
+			// Move objects
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Move objects");
+
+				ImGui::TableNextColumn();
+
+				ImGui::SetNextItemWidth(-FLT_MIN);
+
+				ImGui::Checkbox("##Move objects", &settings.moveObjects);
+			}
+
+			ImGui::EndTable();
+		}
+
 		// Application
 		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
@@ -273,49 +341,6 @@ void GuiSystem::showSettings()
 
 				ImGui::InputFloat("##Speed (m/s)", &settings.cameraSpeed, 1.0f, 10.0f, "%.3f");
 				settings.cameraSpeed = std::clamp(settings.cameraSpeed, 0.0f, 1000.0f);
-			}
-
-			ImGui::EndTable();
-		}
-
-		// Scene
-		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-		if (ImGui::CollapsingHeader("Scene"))
-		{
-			ImGui::BeginTable("Properties", 2);
-
-			// Object rows
-			{
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Object rows");
-
-				ImGui::TableNextColumn();
-
-				ImGui::SetNextItemWidth(-FLT_MIN);
-
-				static uint32_t step = 1;
-				static uint32_t stepFast = 2;
-				ImGui::InputScalar("##Object rows", ImGuiDataType_U32, &settings.objectRows, &step, &stepFast);
-				settings.objectRows = std::clamp(settings.objectRows, 1u, 500u);
-			}
-
-			// Move objects
-			{
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Move objects");
-
-				ImGui::TableNextColumn();
-
-				ImGui::SetNextItemWidth(-FLT_MIN);
-
-				ImGui::Checkbox("##Move objects", &settings.moveObjects);
 			}
 
 			ImGui::EndTable();

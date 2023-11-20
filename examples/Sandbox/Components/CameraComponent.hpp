@@ -28,6 +28,9 @@ struct CameraComponent
 	bool isAuto = false;
 	bool useTarget = false;
 	at::Vector3f target;
+	float cameraZ = 0.0f; // Used for auto cameras (default camera Z)
+	float minRadius = 1.0f; // Used for auto cameras (min distance to target)
+	float maxRadius = 10.0f; // Used for auto cameras (max distance to target)
 	float fov = 45.0f;
 	float aspectRatio = 1.0f;
 	float nearPlane = 0.1f;
