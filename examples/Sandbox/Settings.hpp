@@ -62,6 +62,7 @@ public:
 		Default,
 		Test,
 		Tardis,
+		Sponza,
 		PBRSpheres,
 	};
 

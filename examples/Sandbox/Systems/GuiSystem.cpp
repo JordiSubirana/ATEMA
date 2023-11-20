@@ -231,6 +231,7 @@ void GuiSystem::showSettings()
 					"Default",
 					"Test Scene",
 					"Tardis",
+					"Sponza",
 					"PBR Spheres"
 				};
 				static int shadowMapCurrentItem = static_cast<int>(settings.sceneType);

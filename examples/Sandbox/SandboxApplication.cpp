@@ -42,6 +42,7 @@
 #include "Scene.hpp"
 #include "Scenes/TestScene.hpp"
 #include "Scenes/TardisScene.hpp"
+#include "Scenes/SponzaScene.hpp"
 #include "Scenes/PBRSpheresScene.hpp"
 
 #include <fstream>
@@ -312,6 +313,11 @@ void SandboxApplication::updateScene()
 			case Settings::SceneType::Tardis:
 			{
 				m_scene = std::make_unique<TardisScene>();
+				break;
+			}
+			case Settings::SceneType::Sponza:
+			{
+				m_scene = std::make_unique<SponzaScene>();
 				break;
 			}
 			case Settings::SceneType::PBRSpheres:

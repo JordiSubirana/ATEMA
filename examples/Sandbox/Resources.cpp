@@ -34,6 +34,25 @@ namespace
 		const char* name;
 		std::string imageSuffix;
 	};
+
+	// Random Marsaglia's xorshf generator
+	// https://stackoverflow.com/questions/1046714/what-is-a-good-random-number-generator-for-a-game
+	unsigned long xorshf96()
+	{
+		thread_local unsigned long x = 123456789, y = 362436069, z = 521288629;
+
+		unsigned long t;
+		x ^= x << 16;
+		x ^= x >> 5;
+		x ^= x << 1;
+
+		t = x;
+		x = y;
+		y = z;
+		z = t ^ x ^ y;
+
+		return z;
+	}
 }
 
 std::filesystem::path ResourcePath::resources() noexcept
@@ -114,4 +133,9 @@ at::Ptr<at::MaterialData> ResourceLoader::loadMaterialData(const std::filesystem
 	}
 
 	return materialData;
+}
+
+float randFloat()
+{
+	return (static_cast<float>(xorshf96() % 1024ul) / 1023.0f) * 2.0f - 1.0f;
 }

@@ -78,4 +78,7 @@ inline at::Vector2f toCartesian(const at::Vector2f& polar)
 	return value;
 }
 
+// Between -1 & 1
+float randFloat();
+
 #endif
