@@ -839,7 +839,7 @@ Ptr<Material> DefaultMaterials::getEmissive(const MaterialData& materialData)
 	MaterialData metaData;
 	metaData.set(MaterialData::LightingModel, "Emissive");
 
-	return std::make_shared<Material>(uberShader, metaData);
+	return graphics.getMaterial(*uberShader, metaData);
 }
 
 Ptr<MaterialInstance> DefaultMaterials::getEmissiveInstance(const MaterialData& materialData)
@@ -892,7 +892,7 @@ Ptr<Material> DefaultMaterials::getPhong(const MaterialData& materialData)
 	MaterialData metaData;
 	metaData.set(MaterialData::LightingModel, "Phong");
 
-	return std::make_shared<Material>(uberShader, metaData);
+	return graphics.getMaterial(*uberShader, metaData);
 }
 
 Ptr<MaterialInstance> DefaultMaterials::getPhongInstance(const MaterialData& materialData)
@@ -968,7 +968,7 @@ Ptr<Material> DefaultMaterials::getPBR(const MaterialData& materialData)
 	MaterialData metaData;
 	metaData.set(MaterialData::LightingModel, "PBR");
 
-	return std::make_shared<Material>(uberShader, metaData);
+	return graphics.getMaterial(*uberShader, metaData);
 }
 
 Ptr<MaterialInstance> DefaultMaterials::getPBRInstance(const MaterialData& materialData)

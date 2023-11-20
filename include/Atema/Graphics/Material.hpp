@@ -39,7 +39,7 @@ namespace at
 	{
 	public:
 		Material() = delete;
-		Material(Ptr<UberShader> uberShader, const MaterialData& metaData = {});
+		Material(const UberShader& uberShader, const MaterialData& metaData = {});
 		Material(const Material& other) = delete;
 		Material(Material&& other) noexcept = default;
 		~Material();
@@ -59,7 +59,7 @@ namespace at
 		Signal<> onParameterUpdated;
 
 	private:
-		Ptr<UberShader> m_uberShader;
+		const UberShader* m_uberShader;
 		MaterialData m_metaData;
 
 		MaterialParameters m_parameters;

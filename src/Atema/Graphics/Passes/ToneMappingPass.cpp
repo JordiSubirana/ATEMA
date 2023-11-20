@@ -142,8 +142,10 @@ ToneMappingPass::ToneMappingPass(RenderResourceManager& resourceManager) :
 	if (!graphics.uberShaderExists(ToneMappingShaderName))
 		graphics.setUberShader(ToneMappingShaderName, ToneMappingShader);
 
+	m_material = graphics.getMaterial(*graphics.getUberShader(ToneMappingShaderName));
+
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(ToneMappingShaderName));
+	renderMaterialSettings.material = m_material.get();
 	renderMaterialSettings.shaderLibraryManager = &ShaderLibraryManager::instance();
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;

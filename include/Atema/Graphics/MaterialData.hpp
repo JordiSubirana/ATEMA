@@ -27,7 +27,7 @@
 #include <Atema/Renderer/Color.hpp>
 
 #include <filesystem>
-#include <unordered_map>
+#include <map>
 
 #define ATEMA_DEFINE_MATERIAL_DATA(atMatName) static constexpr const char* atMatName = #atMatName;
 
@@ -93,12 +93,53 @@ namespace at
 
 		const std::vector<Parameter>& getParameters() const noexcept;
 
+		Hash getHash() const;
+
 		MaterialData& operator=(const MaterialData& other) = default;
 		MaterialData& operator=(MaterialData&& other) noexcept = default;
 
 	private:
-		std::unordered_map<std::string, size_t> m_indices;
+		std::map<std::string, size_t> m_indices;
 		std::vector<Parameter> m_parameters;
+	};
+
+	template <>
+	struct HashOverload<MaterialData::Parameter>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const MaterialData::Parameter& object)
+		{
+			Hash hash = 0;
+
+			Hasher::hashCombine(hash, object.name);
+
+			if (object.value.is<int32_t>())
+				Hasher::hashCombine(hash, object.value.get<int32_t>());
+			else if (object.value.is<uint32_t>())
+				Hasher::hashCombine(hash, object.value.get<uint32_t>());
+			else if (object.value.is<float>())
+				Hasher::hashCombine(hash, object.value.get<float>());
+			else if (object.value.is<double>())
+				Hasher::hashCombine(hash, object.value.get<double>());
+			else if (object.value.is<Color>())
+				Hasher::hashCombine(hash, object.value.get<Color>());
+			else if (object.value.is<std::string>())
+				Hasher::hashCombine(hash, object.value.get<std::string>());
+			else if (object.value.is<MaterialData::Texture>())
+				Hasher::hashCombine(hash, object.value.get<MaterialData::Texture>().path);
+
+			return hash;
+		}
+	};
+
+	template <>
+	struct HashOverload<MaterialData>
+	{
+		template <typename Hasher>
+		static constexpr auto hash(const MaterialData& object)
+		{
+			return Hasher::hash(object.getHash());
+		}
 	};
 }
 

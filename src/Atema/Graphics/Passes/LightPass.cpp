@@ -325,8 +325,10 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 		if (!graphics.uberShaderExists(StencilShaderName))
 			graphics.setUberShader(StencilShaderName, StencilShader);
 
+		auto material = graphics.getMaterial(*graphics.getUberShader(StencilShaderName));
+
 		RenderMaterial::Settings renderMaterialSettings;
-		renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(StencilShaderName));
+		renderMaterialSettings.material = material.get();
 		renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
 		renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::None;
 		renderMaterialSettings.pipelineState.depth.test = true;
@@ -337,7 +339,8 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 		renderMaterialSettings.pipelineState.stencilBack.depthFailOperation = StencilOperation::IncrementAndClamp;
 		renderMaterialSettings.pipelineState.stencilBack.writeMask = 0xFF;
 
-		m_meshStencilMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+		m_meshStencilMaterial = std::move(material);
+		m_meshStencilRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 	}
 
 	// Emissive pass
@@ -348,8 +351,10 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 		const auto bindings = gbuffer.getTextureBindings({"EmissiveColor"});
 		m_gbufferEmissiveIndex = bindings[0].index;
 
+		auto material = graphics.getMaterial(*graphics.getUberShader(EmissiveShaderName));
+
 		RenderMaterial::Settings renderMaterialSettings;
-		renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EmissiveShaderName));
+		renderMaterialSettings.material = material.get();
 		renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
 		renderMaterialSettings.pipelineState.depth.test = true;
 		renderMaterialSettings.pipelineState.depth.write = false;
@@ -361,7 +366,8 @@ LightPass::LightPass(RenderResourceManager& resourceManager, const GBuffer& gbuf
 			{bindings[0].bindingOptionName, static_cast<int32_t>(0)}
 		};
 
-		m_lightEmissiveMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+		m_lightEmissiveMaterial = std::move(material);
+		m_lightEmissiveRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 	}
 }
 
@@ -440,13 +446,13 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 {
 	const auto& renderScene = getRenderScene();
 
-	if (!renderScene.isValid() || !m_meshMaterial)
+	if (!renderScene.isValid() || !m_meshRenderMaterial)
 		return;
 
 	auto& commandBuffer = context.getCommandBuffer();
 
 	// Update GBuffer set
-	auto gbufferSet = m_meshMaterial->createSet(GBufferSetIndex);
+	auto gbufferSet = m_meshRenderMaterial->createSet(GBufferSetIndex);
 
 	for (uint32_t i = 0; i < settings.gbuffer.size(); i++)
 	{
@@ -459,7 +465,7 @@ void LightPass::execute(FrameGraphContext& context, const Settings& settings)
 	m_gbufferSet = gbufferSet.get();
 
 	// Update emissive set
-	auto emissiveSet = m_lightEmissiveMaterial->createSet(0);
+	auto emissiveSet = m_lightEmissiveRenderMaterial->createSet(0);
 	emissiveSet->update(0, *context.getImageView(settings.gbuffer[m_gbufferEmissiveIndex]), *m_gbufferSampler);
 
 	m_emissiveSet = emissiveSet.get();
@@ -685,8 +691,10 @@ void LightPass::createShaders()
 	graphics.setUberShader("GlobalLightShader", shader);
 	auto uberShader = graphics.getUberShader(std::string("GlobalLightShader"));
 
+	m_lightMaterial = graphics.getMaterial(*uberShader);
+
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(uberShader);
+	renderMaterialSettings.material = m_lightMaterial.get();
 	renderMaterialSettings.shaderLibraryManager = m_shaderLibraryManager;
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;
@@ -702,11 +710,11 @@ void LightPass::createShaders()
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
 	renderMaterialSettings.pipelineState.stencil = true;
-	m_meshMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+	m_meshRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
 	renderMaterialSettings.pipelineState.stencil = false;
-	m_directionalMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+	m_directionalRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	// Image Based Lighting materials
 	m_iblMaterials.clear();
@@ -717,7 +725,7 @@ void LightPass::createShaders()
 		if (lightingModel.environmentLightMaterial)
 		{
 			RenderMaterial::Settings materialSettings = renderMaterialSettings;
-			materialSettings.material = lightingModel.environmentLightMaterial;
+			materialSettings.material = lightingModel.environmentLightMaterial.get();
 
 			m_iblMaterials.emplace_back(std::make_shared<RenderMaterial>(*m_resourceManager, materialSettings));
 		}
@@ -731,15 +739,15 @@ void LightPass::createShaders()
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Front;
 	renderMaterialSettings.pipelineState.stencil = true;
-	m_meshShadowMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+	m_meshShadowRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
 	renderMaterialSettings.pipelineState.rasterization.cullMode = CullMode::Back;
 	renderMaterialSettings.pipelineState.stencil = false;
-	m_directionalShadowMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
+	m_directionalShadowRenderMaterial = std::make_shared<RenderMaterial>(*m_resourceManager, renderMaterialSettings);
 
-	m_useFrameSet = m_meshMaterial->hasBinding("FrameData") && m_meshMaterial->getBinding("FrameData").set != RenderMaterial::InvalidBindingIndex;
-	m_useLightSet = m_meshMaterial->hasBinding("LightData") && m_meshMaterial->getBinding("LightData").set != RenderMaterial::InvalidBindingIndex;
-	m_useLightShadowSet = m_meshShadowMaterial->hasBinding("CascadedShadowData") && m_meshShadowMaterial->getBinding("CascadedShadowData").set != RenderMaterial::InvalidBindingIndex;
+	m_useFrameSet = m_meshRenderMaterial->hasBinding("FrameData") && m_meshRenderMaterial->getBinding("FrameData").set != RenderMaterial::InvalidBindingIndex;
+	m_useLightSet = m_meshRenderMaterial->hasBinding("LightData") && m_meshRenderMaterial->getBinding("LightData").set != RenderMaterial::InvalidBindingIndex;
+	m_useLightShadowSet = m_meshShadowRenderMaterial->hasBinding("CascadedShadowData") && m_meshShadowRenderMaterial->getBinding("CascadedShadowData").set != RenderMaterial::InvalidBindingIndex;
 	
 	// Buffers and descriptor sets (one per frame in flight)
 	Buffer::Settings frameBufferSettings;
@@ -753,7 +761,7 @@ void LightPass::createShaders()
 	{
 		m_frameDataBuffer = m_resourceManager->createBuffer(frameBufferSettings);
 
-		m_frameDataDescriptorSet = m_meshMaterial->createSet(FrameSetIndex);
+		m_frameDataDescriptorSet = m_meshRenderMaterial->createSet(FrameSetIndex);
 		m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 	}
 
@@ -761,7 +769,7 @@ void LightPass::createShaders()
 	const auto& textures = m_gbuffer->getTextures();
 	for (const auto& texture : textures)
 	{
-		if (!m_meshMaterial->hasBinding(texture.name))
+		if (!m_meshRenderMaterial->hasBinding(texture.name))
 			m_gbufferBindings[gbufferBindingIndex] = InvalidGBufferBinding;
 
 		gbufferBindingIndex++;
@@ -913,7 +921,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 	if (pointCount > 0 || spotCount > 0)
 	{
 		// Step #1 : Fill stencil buffer for mesh lights
-		m_meshStencilMaterial->bindTo(commandBuffer);
+		m_meshStencilRenderMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindDescriptorSet(StencilFrameSetIndex, *m_frameDataDescriptorSet);
 
@@ -950,7 +958,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 		}
 
 		// Step #2 : draw lights that don't cast any shadows
-		m_meshMaterial->bindTo(commandBuffer);
+		m_meshRenderMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindDescriptorSet(GBufferSetIndex, *m_gbufferSet);
 
@@ -998,7 +1006,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 		}
 
 		// Step #3 : draw lights that cast shadows
-		m_meshShadowMaterial->bindTo(commandBuffer);
+		m_meshShadowRenderMaterial->bindTo(commandBuffer);
 
 		// PointLights
 		if (pointCount > 0)
@@ -1051,7 +1059,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 	if (directionalCount > 0)
 	{
 		// Step #1 : draw lights that don't cast any shadows
-		m_directionalMaterial->bindTo(commandBuffer);
+		m_directionalRenderMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindVertexBuffer(*m_quadMesh->getBuffer(), 0);
 
@@ -1074,7 +1082,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 		}
 
 		// Step #2 : draw lights that cast shadows
-		m_directionalShadowMaterial->bindTo(commandBuffer);
+		m_directionalShadowRenderMaterial->bindTo(commandBuffer);
 
 		for (size_t i = directionalIndex; i < directionalIndex + directionalCount; i++)
 		{
@@ -1114,7 +1122,7 @@ void LightPass::drawElements(CommandBuffer& commandBuffer, bool applyPostProcess
 		}
 
 		// Emissive lighting
-		m_lightEmissiveMaterial->bindTo(commandBuffer);
+		m_lightEmissiveRenderMaterial->bindTo(commandBuffer);
 
 		commandBuffer.bindDescriptorSet(0, *m_emissiveSet);
 

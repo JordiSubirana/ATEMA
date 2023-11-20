@@ -2355,7 +2355,7 @@ const uint8_t BRDFData[63563UL + 1] = {
 			if (!graphics.uberShaderExists(*settings.environmentLibName))
 				graphics.setUberShader(*settings.environmentLibName, *settings.environmentLib);
 
-			model.environmentLightMaterial = std::make_shared<Material>(graphics.getUberShader(*settings.environmentLibName));
+			model.environmentLightMaterial = graphics.getMaterial(*graphics.getUberShader(*settings.environmentLibName));
 		}
 
 		return model;

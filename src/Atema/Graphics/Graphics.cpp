@@ -296,6 +296,24 @@ StdHash Graphics::ImageSettings::hash(const ImageSettings& settings)
 }
 
 //-----
+// MaterialSettings
+Graphics::MaterialSettings::MaterialSettings(const UberShader& uberShader, const MaterialData& metaData) :
+	uberShader(&uberShader),
+	metaData(metaData)
+{
+}
+
+StdHash Graphics::MaterialSettings::hash(const MaterialSettings& settings)
+{
+	StdHash hash = 0;
+
+	DefaultStdHasher::hashCombine(hash, settings.uberShader);
+	DefaultStdHasher::hashCombine(hash, settings.metaData);
+
+	return hash;
+}
+
+//-----
 // Graphics
 Graphics::Graphics()
 {
@@ -336,10 +354,17 @@ Graphics::Graphics()
 
 	m_samplerManager.addLoader(&loadSampler);
 
+	m_materialManager.addLoader([this](const MaterialSettings& settings)
+		{
+			return loadMaterial(settings);
+		});
+
 	// Hashers
 	m_uberShaderOptionsManager.setHasher(&UberInstanceSettings::hash);
 
 	m_imageManager.setHasher(&ImageSettings::hash);
+
+	m_materialManager.setHasher(&MaterialSettings::hash);
 
 	// Before uber managers to properly destroy UberShaders after Shader deletion
 	m_resourceManagers.emplace_back(&m_graphicsPipelineManager);
@@ -352,6 +377,7 @@ Graphics::Graphics()
 	m_resourceManagers.emplace_back(&m_uberShaderStageManager);
 	m_resourceManagers.emplace_back(&m_imageManager);
 	m_resourceManagers.emplace_back(&m_samplerManager);
+	m_resourceManagers.emplace_back(&m_materialManager);
 
 	m_shaderManager.setDeleter([this](Ptr<Shader> shader)
 		{
@@ -361,6 +387,16 @@ Graphics::Graphics()
 				m_shaderToUber.erase(it);
 
 			shader.reset();
+		});
+
+	m_materialManager.setDeleter([this](Ptr<Material> material)
+		{
+			const auto it = m_materialToUber.find(material.get());
+
+			if (it != m_materialToUber.end())
+				m_materialToUber.erase(it);
+
+			material.reset();
 		});
 
 	auto deleteUberShader = [this](Ptr<UberShader> uberShader)
@@ -662,6 +698,11 @@ Ptr<Sampler> Graphics::getSampler(const Sampler::Settings& settings)
 	return m_samplerManager.get(settings);
 }
 
+Ptr<Material> Graphics::getMaterial(const UberShader& uberShader, const MaterialData& metaData)
+{
+	return m_materialManager.get({ uberShader, metaData });
+}
+
 Ptr<UberShader> Graphics::loadUberShader(const std::filesystem::path& path)
 {
 	auto uberShader = AtslLoader::load(path);
@@ -850,6 +891,29 @@ Ptr<Image> Graphics::loadImage(const ImageSettings& settings)
 Ptr<Sampler> Graphics::loadSampler(const Sampler::Settings& settings)
 {
 	return Sampler::create(settings);
+}
+
+Ptr<Material> Graphics::loadMaterial(const MaterialSettings& settings)
+{
+	auto material = std::make_shared<Material>(*settings.uberShader, settings.metaData);
+
+	auto& resourceHandle = initializeResourceHandle(material.get());
+
+	if (m_materialToUber.find(material.get()) == m_materialToUber.end())
+	{
+		const auto it = m_uberShaders.find(settings.uberShader);
+
+		if (it != m_uberShaders.end())
+			m_materialToUber[material.get()] = it->second.lock();
+	}
+
+	auto resourcePtr = material.get();
+	onDestroy(settings.uberShader, resourceHandle, [this, resourcePtr]()
+		{
+			m_materialManager.remove(resourcePtr);
+		});
+
+	return material;
 }
 
 void Graphics::onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback)

@@ -30,6 +30,7 @@
 
 namespace at
 {
+	class Material;
 	class RenderMaterial;
 	class Mesh;
 
@@ -54,7 +55,7 @@ namespace at
 
 	protected:
 		static size_t getCubemapFaceIndex(CubemapFace face);
-		void initialize(Ptr<RenderMaterial> renderMaterial);
+		void initialize(Ptr<Material> material, Ptr<RenderMaterial> renderMaterial);
 		RenderMaterial& getRenderMaterial() const;
 
 		// This methods should not be called in derived classes
@@ -67,6 +68,7 @@ namespace at
 	private:
 		Ptr<Mesh> m_mesh;
 
+		Ptr<Material> m_material;
 		Ptr<RenderMaterial> m_renderMaterial;
 
 		Ptr<Buffer> m_cubeDataBuffer;

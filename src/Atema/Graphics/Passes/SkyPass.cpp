@@ -296,14 +296,17 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager) :
 	renderMaterialSettings.pipelineState.depth.write = false;
 	renderMaterialSettings.pipelineState.depth.compareOperation = CompareOperation::LessOrEqual;
 
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkyBoxShaderName));
-	m_skyBoxMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+	m_skyBoxMaterial = graphics.getMaterial(*graphics.getUberShader(SkyBoxShaderName));
+	renderMaterialSettings.material = m_skyBoxMaterial.get();
+	m_skyBoxRenderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkySphereShaderName));
-	m_skySphereMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+	m_skySphereMaterial = graphics.getMaterial(*graphics.getUberShader(SkySphereShaderName));
+	renderMaterialSettings.material = m_skySphereMaterial.get();
+	m_skySphereRenderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(SkySphereToBoxShaderName));
-	m_skySphereToBoxMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
+	m_skySphereToBoxMaterial = graphics.getMaterial(*graphics.getUberShader(SkySphereToBoxShaderName));
+	renderMaterialSettings.material = m_skySphereToBoxMaterial.get();
+	m_skySphereToBoxRenderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
 	m_sampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));
 
@@ -313,7 +316,7 @@ SkyPass::SkyPass(RenderResourceManager& resourceManager) :
 
 	m_frameDataBuffer = m_resourceManager->createBuffer(bufferSettings);
 
-	m_frameDataDescriptorSet = m_skyBoxMaterial->createSet(FrameSetIndex);
+	m_frameDataDescriptorSet = m_skyBoxRenderMaterial->createSet(FrameSetIndex);
 	m_frameDataDescriptorSet->update(0, m_frameDataBuffer->getBuffer(), m_frameDataBuffer->getOffset(), m_frameDataBuffer->getSize());
 }
 
@@ -383,26 +386,26 @@ void SkyPass::execute(FrameGraphContext& context, const Settings& settings)
 	{
 		skyMesh = m_boxMesh.get();
 
-		skyTextureSet = m_skyBoxMaterial->createSet(SkySetIndex);
+		skyTextureSet = m_skyBoxRenderMaterial->createSet(SkySetIndex);
 
-		m_skyBoxMaterial->bindTo(commandBuffer);
+		m_skyBoxRenderMaterial->bindTo(commandBuffer);
 	}
 	else
 	{
 		/*
 		skyMesh = m_boxMesh.get();
 
-		skyTextureSet = m_skySphereToBoxMaterial->createSet(SkySetIndex);
+		skyTextureSet = m_skySphereToBoxRenderMaterial->createSet(SkySetIndex);
 
-		m_skySphereToBoxMaterial->bindTo(commandBuffer);
+		m_skySphereToBoxRenderMaterial->bindTo(commandBuffer);
 		//*/
 
 		//*
 		skyMesh = m_sphereMesh.get();
 
-		skyTextureSet = m_skySphereMaterial->createSet(SkySetIndex);
+		skyTextureSet = m_skySphereRenderMaterial->createSet(SkySetIndex);
 
-		m_skySphereMaterial->bindTo(commandBuffer);
+		m_skySphereRenderMaterial->bindTo(commandBuffer);
 		//*/
 	}
 

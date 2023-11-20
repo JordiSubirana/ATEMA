@@ -44,7 +44,7 @@ namespace at
 		RenderScene(RenderResourceManager& resourceManager, AbstractFrameRenderer& frameRenderer);
 		RenderScene(const RenderScene& other) = default;
 		RenderScene(RenderScene&& other) noexcept = default;
-		~RenderScene() = default;
+		~RenderScene();
 
 		bool isValid() const noexcept;
 
@@ -67,7 +67,7 @@ namespace at
 		const Camera& getCamera() const noexcept;
 		const Ptr<SkyBox>& getSkyBox() const noexcept;
 		RenderMaterial& getRenderMaterial(Ptr<Material> material);
-		RenderMaterialInstance& getRenderMaterialInstance(const MaterialInstance& materialInstance);
+		RenderMaterialInstance& getRenderMaterialInstance(MaterialInstance& materialInstance);
 		const std::vector<Ptr<RenderObject>>& getRenderObjects() const noexcept;
 		const std::vector<Ptr<RenderLight>>& getRenderLights() const noexcept;
 
@@ -78,6 +78,13 @@ namespace at
 		void updateResources() override;
 
 	private:
+		template <typename T>
+		struct RenderData
+		{
+			Ptr<T> resource;
+			Connection connection;
+		};
+
 		AbstractFrameRenderer* m_frameRenderer;
 
 		const Camera* m_camera;
@@ -90,8 +97,8 @@ namespace at
 		std::vector<Ptr<RenderLight>> m_renderLights;
 		std::unordered_map<const Light*, size_t> m_renderLightIndices;
 
-		std::unordered_map<const Material*, Ptr<RenderMaterial>> m_renderMaterials;
-		std::unordered_map<const MaterialInstance*, Ptr<RenderMaterialInstance>> m_renderMaterialInstances;
+		std::unordered_map<const Material*, RenderData<RenderMaterial>> m_renderMaterials;
+		std::unordered_map<const MaterialInstance*, RenderData<RenderMaterialInstance>> m_renderMaterialInstances;
 	};
 }
 

@@ -220,9 +220,11 @@ EnvironmentPrefilterPass::EnvironmentPrefilterPass(RenderResourceManager& resour
 
 	if (!graphics.uberShaderExists(EnvironmentPrefilterShaderName))
 		graphics.setUberShader(EnvironmentPrefilterShaderName, EnvironmentPrefilterShader);
-	
+
+	auto material = graphics.getMaterial(*graphics.getUberShader(EnvironmentPrefilterShaderName));
+
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EnvironmentPrefilterShaderName));
+	renderMaterialSettings.material = material.get();
 	renderMaterialSettings.shaderLibraryManager = &ShaderLibraryManager::instance();
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;
@@ -230,7 +232,7 @@ EnvironmentPrefilterPass::EnvironmentPrefilterPass(RenderResourceManager& resour
 
 	auto renderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
-	initialize(std::move(renderMaterial));
+	initialize(std::move(material), std::move(renderMaterial));
 
 	// Buffer
 	Buffer::Settings bufferSettings;

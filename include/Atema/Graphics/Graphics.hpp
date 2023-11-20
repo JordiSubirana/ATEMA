@@ -119,6 +119,8 @@ namespace at
 
 		Ptr<Sampler> getSampler(const Sampler::Settings& settings);
 
+		Ptr<Material> getMaterial(const UberShader& uberShader, const MaterialData& metaData = {});
+
 	private:
 		struct UberInstanceSettings
 		{
@@ -158,6 +160,17 @@ namespace at
 			const ImageLoader::Settings& settings;
 		};
 
+		struct MaterialSettings
+		{
+			MaterialSettings() = delete;
+			MaterialSettings(const UberShader& uberShader, const MaterialData& metaData = {});
+
+			static StdHash hash(const MaterialSettings& settings);
+
+			const UberShader* uberShader;
+			const MaterialData metaData;
+		};
+
 		struct ResourceHandle
 		{
 			Signal<> onDestroy;
@@ -173,6 +186,7 @@ namespace at
 		static Ptr<GraphicsPipeline> loadGraphicsPipeline(const GraphicsPipeline::Settings& settings);
 		static Ptr<Image> loadImage(const ImageSettings& settings);
 		static Ptr<Sampler> loadSampler(const Sampler::Settings& settings);
+		Ptr<Material> loadMaterial(const MaterialSettings& settings);
 
 		void onDestroy(const UberShader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
 		void onDestroy(const Shader* resource, ResourceHandle& dstHandle, std::function<void()> callback);
@@ -204,9 +218,11 @@ namespace at
 		ResourceManager<GraphicsPipeline, GraphicsPipeline::Settings> m_graphicsPipelineManager;
 		ResourceManager<Image, ImageSettings> m_imageManager;
 		ResourceManager<Sampler, Sampler::Settings> m_samplerManager;
+		ResourceManager<Material, MaterialSettings> m_materialManager;
 
 		std::unordered_map<const UberShader*, WPtr<UberShader>> m_uberShaders;
 		std::unordered_map<Shader*, Ptr<UberShader>> m_shaderToUber;
+		std::unordered_map<Material*, Ptr<UberShader>> m_materialToUber;
 
 		std::unordered_map<const void*, Ptr<ResourceHandle>> m_resourceHandles;
 	};

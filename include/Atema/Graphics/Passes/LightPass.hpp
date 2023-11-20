@@ -36,6 +36,7 @@
 
 namespace at
 {
+	class Material;
 	struct LightingModel;
 	class RenderResourceManager;
 	class RenderLight;
@@ -127,13 +128,19 @@ namespace at
 		bool m_useFrameSet;
 		bool m_useLightSet;
 		bool m_useLightShadowSet;
-		Ptr<RenderMaterial> m_meshStencilMaterial;
-		Ptr<RenderMaterial> m_meshMaterial;
-		Ptr<RenderMaterial> m_meshShadowMaterial;
-		Ptr<RenderMaterial> m_directionalMaterial;
-		Ptr<RenderMaterial> m_directionalShadowMaterial;
+
+		Ptr<Material> m_lightMaterial;
+		Ptr<RenderMaterial> m_meshRenderMaterial;
+		Ptr<RenderMaterial> m_meshShadowRenderMaterial;
+		Ptr<RenderMaterial> m_directionalRenderMaterial;
+		Ptr<RenderMaterial> m_directionalShadowRenderMaterial;
+
+		Ptr<Material> m_meshStencilMaterial;
+		Ptr<RenderMaterial> m_meshStencilRenderMaterial;
+
 		size_t m_gbufferEmissiveIndex;
-		Ptr<RenderMaterial> m_lightEmissiveMaterial;
+		Ptr<Material> m_lightEmissiveMaterial;
+		Ptr<RenderMaterial> m_lightEmissiveRenderMaterial;
 
 		std::map<size_t, std::string> m_gbufferOptions;
 		std::vector<uint32_t> m_gbufferBindings;

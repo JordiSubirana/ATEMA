@@ -88,3 +88,13 @@ const std::vector<MaterialData::Parameter>& MaterialData::getParameters() const 
 {
 	return m_parameters;
 }
+
+Hash MaterialData::getHash() const
+{
+	Hash hash = 0;
+
+	for (const auto& [k, index] : m_indices)
+		DefaultHasher::hashCombine(hash, m_parameters[index]);
+
+	return hash;
+}

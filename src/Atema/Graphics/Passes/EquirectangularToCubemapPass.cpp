@@ -64,8 +64,10 @@ EquirectangularToCubemapPass::EquirectangularToCubemapPass(RenderResourceManager
 	if (!graphics.uberShaderExists(EquirectangularToCubemapShaderName))
 		graphics.setUberShader(EquirectangularToCubemapShaderName, EquirectangularToCubemapShader);
 
+	auto material = graphics.getMaterial(*graphics.getUberShader(EquirectangularToCubemapShaderName));
+
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(EquirectangularToCubemapShaderName));
+	renderMaterialSettings.material = material.get();
 	renderMaterialSettings.shaderLibraryManager = &ShaderLibraryManager::instance();
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;
@@ -73,7 +75,7 @@ EquirectangularToCubemapPass::EquirectangularToCubemapPass(RenderResourceManager
 
 	auto renderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
-	initialize(std::move(renderMaterial));
+	initialize(std::move(material), std::move(renderMaterial));
 
 	// Sampler
 	m_sampler = graphics.getSampler(Sampler::Settings(SamplerFilter::Linear));

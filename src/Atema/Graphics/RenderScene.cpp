@@ -33,6 +33,11 @@ RenderScene::RenderScene(RenderResourceManager& resourceManager, AbstractFrameRe
 {
 }
 
+RenderScene::~RenderScene()
+{
+	clear();
+}
+
 bool RenderScene::isValid() const noexcept
 {
 	return m_camera;
@@ -116,7 +121,13 @@ void RenderScene::clear()
 {
 	clearLights();
 	clearRenderables();
+
+	for (auto& [id, renderData] : m_renderMaterials)
+		renderData.connection.disconnect();
 	m_renderMaterials.clear();
+
+	for (auto& [id, renderData] : m_renderMaterialInstances)
+		renderData.connection.disconnect();
 	m_renderMaterialInstances.clear();
 }
 
@@ -168,17 +179,33 @@ RenderMaterial& RenderScene::getRenderMaterial(Ptr<Material> material)
 
 		const auto renderMaterialPtr = renderMaterial.get();
 
-		m_renderMaterials[key] = std::move(renderMaterial);
+		auto& renderData = m_renderMaterials[key];
+		renderData.resource = std::move(renderMaterial);
+		renderData.connection = key->onDestroy.connect([this, key]()
+			{
+				auto it = m_renderMaterials.find(key);
+
+				if (it != m_renderMaterials.end())
+				{
+					// Destroy render resource
+					destroyAfterUse(std::move(it->second.resource));
+
+					// Disconnect
+					it->second.connection.disconnect();
+
+					m_renderMaterials.erase(it);
+				}
+			});
 
 		return *renderMaterialPtr;
 	}
 
-	return *it->second;
+	return *it->second.resource;
 }
 
-RenderMaterialInstance& RenderScene::getRenderMaterialInstance(const MaterialInstance& materialInstance)
+RenderMaterialInstance& RenderScene::getRenderMaterialInstance(MaterialInstance& materialInstance)
 {
-	const auto key = &materialInstance;
+	auto key = &materialInstance;
 
 	const auto it = m_renderMaterialInstances.find(key);
 
@@ -188,12 +215,28 @@ RenderMaterialInstance& RenderScene::getRenderMaterialInstance(const MaterialIns
 
 		const auto renderMaterialInstancePtr = renderMaterialInstance.get();
 
-		m_renderMaterialInstances[key] = std::move(renderMaterialInstance);
+		auto& renderData = m_renderMaterialInstances[key];
+		renderData.resource = std::move(renderMaterialInstance);
+		renderData.connection = key->onDestroy.connect([this, key]()
+			{
+				auto it = m_renderMaterialInstances.find(key);
+
+				if (it != m_renderMaterialInstances.end())
+				{
+					// Destroy render resource
+					destroyAfterUse(std::move(it->second.resource));
+
+					// Disconnect
+					it->second.connection.disconnect();
+
+					m_renderMaterialInstances.erase(it);
+				}
+			});
 
 		return *renderMaterialInstancePtr;
 	}
 
-	return *it->second;
+	return *it->second.resource;
 }
 
 const std::vector<Ptr<RenderObject>>& RenderScene::getRenderObjects() const noexcept
@@ -213,6 +256,14 @@ void RenderScene::updateResources()
 
 		for (auto& resource : m_renderObjects)
 			resource->update();
+
+		static size_t i = 0;
+		if (i != m_renderObjects.size())
+		{
+			i = m_renderObjects.size();
+
+			std::cout << "Objects : " << i << "\n";
+		}
 	}
 
 	{
@@ -220,19 +271,43 @@ void RenderScene::updateResources()
 
 		for (auto& resource : m_renderLights)
 			resource->update();
+
+		static size_t i = 0;
+		if (i != m_renderLights.size())
+		{
+			i = m_renderLights.size();
+
+			std::cout << "Lights : " << i << "\n";
+		}
 	}
 
 	{
 		ATEMA_BENCHMARK("Materials");
 
-		for (auto& [id, resource] : m_renderMaterials)
-			resource->update();
+		for (auto& [id, renderData] : m_renderMaterials)
+			renderData.resource->update();
+
+		static size_t i = 0;
+		if (i != m_renderMaterials.size())
+		{
+			i = m_renderMaterials.size();
+
+			std::cout << "Materials : " << i << "\n";
+		}
 	}
 
 	{
 		ATEMA_BENCHMARK("Material Instances");
 
-		for (auto& [id, resource] : m_renderMaterialInstances)
-			resource->update();
+		for (auto& [id, renderData] : m_renderMaterialInstances)
+			renderData.resource->update();
+
+		static size_t i = 0;
+		if (i != m_renderMaterialInstances.size())
+		{
+			i = m_renderMaterialInstances.size();
+
+			std::cout << "Material Instances : " << i << "\n";
+		}
 	}
 }

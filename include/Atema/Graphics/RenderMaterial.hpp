@@ -50,7 +50,7 @@ namespace at
 
 		struct Settings
 		{
-			Ptr<Material> material;
+			Material* material = nullptr;
 			ID id = InvalidID;
 			std::vector<UberShader::Option> uberShaderOptions;
 			const ShaderLibraryManager* shaderLibraryManager = nullptr;
@@ -90,8 +90,7 @@ namespace at
 		void updateResources() override;
 
 	private:
-		Ptr<Material> m_material;
-		Ptr<UberShader> m_uberShader;
+		Material* m_material;
 
 		ID m_id;
 

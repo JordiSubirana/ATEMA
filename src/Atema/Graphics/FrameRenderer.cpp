@@ -71,7 +71,7 @@ Ptr<RenderMaterial> FrameRenderer::createRenderMaterial(Ptr<Material> material)
 	addLightingModel(lightingModelName);
 
 	RenderMaterial::Settings settings;
-	settings.material = std::move(material);
+	settings.material = material.get();
 	settings.id = materialID;
 	settings.shaderLibraryManager = &m_shaderLibraryManager;
 

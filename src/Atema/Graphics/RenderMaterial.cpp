@@ -148,13 +148,13 @@ RenderMaterial::RenderMaterial(RenderResourceManager& resourceManager, const Set
 {
 	auto& graphics = Graphics::instance();
 
-	m_uberShader = graphics.getUberShader(m_material->getUberShader(), settings.uberShaderOptions, settings.shaderLibraryManager);
+	auto uberShader = graphics.getUberShader(m_material->getUberShader(), settings.uberShaderOptions, settings.shaderLibraryManager);
 
 	GraphicsPipeline::Settings pipelineSettings;
 	pipelineSettings.state = settings.pipelineState;
 
-	auto& vertexReflection = m_uberShader->getReflection(AstShaderStage::Vertex);
-	auto& fragmentReflection = m_uberShader->getReflection(AstShaderStage::Fragment);
+	auto& vertexReflection = uberShader->getReflection(AstShaderStage::Vertex);
+	auto& fragmentReflection = uberShader->getReflection(AstShaderStage::Fragment);
 
 	// Override vertex input
 	//TODO: Take multiple vertex buffers into account
@@ -235,8 +235,8 @@ RenderMaterial::RenderMaterial(RenderResourceManager& resourceManager, const Set
 		m_descriptorSetLayouts[setIndex] = std::move(descriptorSetLayout);
 	}
 
-	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShader(*m_uberShader, AstShaderStage::Vertex));
-	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShader(*m_uberShader, AstShaderStage::Fragment));
+	pipelineSettings.vertexShader = graphics.getShader(*graphics.getUberShader(*uberShader, AstShaderStage::Vertex));
+	pipelineSettings.fragmentShader = graphics.getShader(*graphics.getUberShader(*uberShader, AstShaderStage::Fragment));
 
 	m_pipeline = graphics.getGraphicsPipeline(pipelineSettings);
 

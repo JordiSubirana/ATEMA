@@ -197,8 +197,10 @@ EnvironmentIrradiancePass::EnvironmentIrradiancePass(RenderResourceManager& reso
 	if (!graphics.uberShaderExists(IrradianceShaderName))
 		graphics.setUberShader(IrradianceShaderName, IrradianceShader);
 
+	auto material = graphics.getMaterial(*graphics.getUberShader(IrradianceShaderName));
+
 	RenderMaterial::Settings renderMaterialSettings;
-	renderMaterialSettings.material = std::make_shared<Material>(graphics.getUberShader(IrradianceShaderName));
+	renderMaterialSettings.material = material.get();
 	renderMaterialSettings.shaderLibraryManager = &ShaderLibraryManager::instance();
 	renderMaterialSettings.pipelineState.depth.test = false;
 	renderMaterialSettings.pipelineState.depth.write = false;
@@ -206,7 +208,7 @@ EnvironmentIrradiancePass::EnvironmentIrradiancePass(RenderResourceManager& reso
 
 	auto renderMaterial = std::make_shared<RenderMaterial>(resourceManager, renderMaterialSettings);
 
-	initialize(std::move(renderMaterial));
+	initialize(std::move(material), std::move(renderMaterial));
 
 	// Buffer
 	Buffer::Settings bufferSettings;

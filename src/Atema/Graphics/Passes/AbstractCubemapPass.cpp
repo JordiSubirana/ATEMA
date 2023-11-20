@@ -78,8 +78,9 @@ AbstractCubemapPass::AbstractCubemapPass() :
 	m_cubeDataBuffer->unmap();
 }
 
-void AbstractCubemapPass::initialize(Ptr<RenderMaterial> renderMaterial)
+void AbstractCubemapPass::initialize(Ptr<Material> material, Ptr<RenderMaterial> renderMaterial)
 {
+	m_material = std::move(material);
 	m_renderMaterial = std::move(renderMaterial);
 
 	m_cubeDescriptorSet = m_renderMaterial->createSet(CubeDataSetIndex);

@@ -79,6 +79,7 @@ namespace at
 		float m_exposure;
 		float m_gamma;
 
+		Ptr<Material> m_material;
 		Ptr<RenderMaterial> m_renderMaterial;
 		Ptr<BufferAllocation> m_toneMappingBuffer;
 		Ptr<DescriptorSet> m_toneMappingSet;

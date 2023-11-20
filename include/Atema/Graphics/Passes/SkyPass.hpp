@@ -31,6 +31,7 @@
 
 namespace at
 {
+	class Material;
 	class RenderMaterial;
 	class Mesh;
 
@@ -68,9 +69,12 @@ namespace at
 	private:
 		RenderResourceManager* m_resourceManager;
 
-		Ptr<RenderMaterial> m_skyBoxMaterial;
-		Ptr<RenderMaterial> m_skySphereMaterial;
-		Ptr<RenderMaterial> m_skySphereToBoxMaterial;
+		Ptr<Material> m_skyBoxMaterial;
+		Ptr<Material> m_skySphereMaterial;
+		Ptr<Material> m_skySphereToBoxMaterial;
+		Ptr<RenderMaterial> m_skyBoxRenderMaterial;
+		Ptr<RenderMaterial> m_skySphereRenderMaterial;
+		Ptr<RenderMaterial> m_skySphereToBoxRenderMaterial;
 		Ptr<Mesh> m_boxMesh;
 		Ptr<Mesh> m_sphereMesh;
 		Ptr<Sampler> m_sampler;

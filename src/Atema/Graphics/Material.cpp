@@ -61,8 +61,8 @@ namespace
 }
 
 // Material
-Material::Material(Ptr<UberShader> uberShader, const MaterialData& metaData) :
-	m_uberShader(std::move(uberShader)),
+Material::Material(const UberShader& uberShader, const MaterialData& metaData) :
+	m_uberShader(&uberShader),
 	m_metaData(metaData)
 {
 	
