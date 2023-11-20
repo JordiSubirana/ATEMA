@@ -40,9 +40,10 @@
 #include "Resources.hpp"
 #include "Scene.hpp"
 #include "Scenes/TestScene.hpp"
+#include "Scenes/TardisScene.hpp"
+#include "Scenes/PBRSpheresScene.hpp"
 
 #include <fstream>
-#include "Scenes/PBRSpheresScene.hpp"
 
 using namespace at;
 
@@ -296,6 +297,11 @@ void SandboxApplication::updateScene()
 			case Settings::SceneType::Test:
 			{
 				m_scene = std::make_unique<TestScene>();
+				break;
+			}
+			case Settings::SceneType::Tardis:
+			{
+				m_scene = std::make_unique<TardisScene>();
 				break;
 			}
 			case Settings::SceneType::PBRSpheres:

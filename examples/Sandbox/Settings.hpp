@@ -61,6 +61,7 @@ public:
 		None,
 		Default,
 		Test,
+		Tardis,
 		PBRSpheres,
 	};
 
